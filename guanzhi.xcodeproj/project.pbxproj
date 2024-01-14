@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D17042BE2B541C26005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BD2B541C26005683D2 /* SearchView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
 		D19912052B529346002A711A /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912042B529346002A711A /* Constants.swift */; };
 		D19912072B52972B002A711A /* UIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912062B52972B002A711A /* UIView.swift */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D17042BD2B541C26005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		D19912042B529346002A711A /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		D19912062B52972B002A711A /* UIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIView.swift; sourceTree = "<group>"; };
@@ -42,6 +44,7 @@
 			isa = PBXGroup;
 			children = (
 				D1CE061A2B526930001303F2 /* FrontView.swift */,
+				D17042BD2B541C26005683D2 /* SearchView.swift */,
 				D19912012B5292A6002A711A /* MyView.swift */,
 				D19912062B52972B002A711A /* UIView.swift */,
 			);
@@ -166,6 +169,7 @@
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
 				D1CE061B2B526930001303F2 /* FrontView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
+				D17042BE2B541C26005683D2 /* SearchView.swift in Sources */,
 				D19912072B52972B002A711A /* UIView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
