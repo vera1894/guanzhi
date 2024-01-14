@@ -8,9 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		D17042BE2B541C26005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BD2B541C26005683D2 /* SearchView.swift */; };
+		D17042C02B542346005683D2 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BF2B542346005683D2 /* TestView.swift */; };
+		D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042C22B542A43005683D2 /* TextFieldView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
 		D19912052B529346002A711A /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912042B529346002A711A /* Constants.swift */; };
-		D19912072B52972B002A711A /* UIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912062B52972B002A711A /* UIView.swift */; };
+		D19912072B52972B002A711A /* TagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912062B52972B002A711A /* TagView.swift */; };
 		D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE06182B526930001303F2 /* guanzhiApp.swift */; };
 		D1CE061B2B526930001303F2 /* FrontView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE061A2B526930001303F2 /* FrontView.swift */; };
 		D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061C2B526931001303F2 /* Assets.xcassets */; };
@@ -19,9 +21,11 @@
 
 /* Begin PBXFileReference section */
 		D17042BD2B541C26005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		D17042BF2B542346005683D2 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
+		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		D19912042B529346002A711A /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-		D19912062B52972B002A711A /* UIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIView.swift; sourceTree = "<group>"; };
+		D19912062B52972B002A711A /* TagView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagView.swift; sourceTree = "<group>"; };
 		D1CE06152B526930001303F2 /* guanzhi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = guanzhi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1CE06182B526930001303F2 /* guanzhiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = guanzhiApp.swift; sourceTree = "<group>"; };
 		D1CE061A2B526930001303F2 /* FrontView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontView.swift; sourceTree = "<group>"; };
@@ -40,13 +44,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D17042C12B5429EA005683D2 /* UIElement */ = {
+			isa = PBXGroup;
+			children = (
+				D19912062B52972B002A711A /* TagView.swift */,
+				D17042C22B542A43005683D2 /* TextFieldView.swift */,
+			);
+			path = UIElement;
+			sourceTree = "<group>";
+		};
 		D19912002B529285002A711A /* View */ = {
 			isa = PBXGroup;
 			children = (
 				D1CE061A2B526930001303F2 /* FrontView.swift */,
 				D17042BD2B541C26005683D2 /* SearchView.swift */,
+				D17042BF2B542346005683D2 /* TestView.swift */,
 				D19912012B5292A6002A711A /* MyView.swift */,
-				D19912062B52972B002A711A /* UIView.swift */,
+				D17042C12B5429EA005683D2 /* UIElement */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -165,12 +179,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D17042C02B542346005683D2 /* TestView.swift in Sources */,
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
+				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,
 				D1CE061B2B526930001303F2 /* FrontView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
 				D17042BE2B541C26005683D2 /* SearchView.swift in Sources */,
-				D19912072B52972B002A711A /* UIView.swift in Sources */,
+				D19912072B52972B002A711A /* TagView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

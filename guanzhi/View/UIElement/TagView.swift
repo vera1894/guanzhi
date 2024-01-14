@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct UIView: View {
+struct TagView: View {
     let tagText:String
     
     var body: some View {
@@ -34,6 +34,6 @@ struct UIView: View {
 
 struct UIView_Previews: PreviewProvider {
     static var previews: some View {
-        UIView(tagText: "大师")
+        TagView(tagText: "大师")
     }
 }

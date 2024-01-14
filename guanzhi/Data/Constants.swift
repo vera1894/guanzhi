@@ -21,6 +21,11 @@ struct Constants{
     static let TextColorTxBlack: Color = Color(red: 0, green: 0, blue: 0)
     static let iconSizeM: CGFloat = 32
     static let heightHeightL: CGFloat = 54
+    static let heightHeightM: CGFloat = 40
+    static let mainPrimaryWhite: Color = .white
+    static let cornerRCornerRM: CGFloat = 20
+    static let mainPrimaryGery: Color = Color(red: 0.85, green: 0.85, blue: 0.85)
+    
     //test
     
 }

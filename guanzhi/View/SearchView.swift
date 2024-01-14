@@ -28,19 +28,19 @@ struct FullScreenView: View {
     
     var body: some View {
         ZStack {
-            Color.black
+            Color.white
                 .edgesIgnoringSafeArea(.all)
             
             VStack {
-                Text("全屏视图")
-                    .font(.title)
-                    .foregroundColor(.white)
+                TextFieldView()
                 
                 Button("关闭") {
                     presentationMode.wrappedValue.dismiss()
                 }
                 .padding()
-                .foregroundColor(.white)
+                .foregroundColor(.black)
+                
+                Spacer()
             }
         }
     }
