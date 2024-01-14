@@ -1,4 +1,4 @@
-//
+//  常量值
 //  Constants.swift
 //  guanzhi
 //

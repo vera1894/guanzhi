@@ -1,4 +1,4 @@
-//
+//  通用设计元素
 //  UIView.swift
 //  guanzhi
 //

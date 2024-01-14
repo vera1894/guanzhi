@@ -14,7 +14,6 @@
 		D1CE061B2B526930001303F2 /* FrontView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE061A2B526930001303F2 /* FrontView.swift */; };
 		D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061C2B526931001303F2 /* Assets.xcassets */; };
 		D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061F2B526931001303F2 /* Preview Assets.xcassets */; };
-		D1CE06272B528B65001303F2 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE06262B528B65001303F2 /* LocationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,7 +25,6 @@
 		D1CE061A2B526930001303F2 /* FrontView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrontView.swift; sourceTree = "<group>"; };
 		D1CE061C2B526931001303F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1CE061F2B526931001303F2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		D1CE06262B528B65001303F2 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,7 +77,6 @@
 			children = (
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
 				D19912002B529285002A711A /* View */,
-				D1CE06262B528B65001303F2 /* LocationManager.swift */,
 				D19912032B52931A002A711A /* Data */,
 				D1CE061C2B526931001303F2 /* Assets.xcassets */,
 				D1CE061E2B526931001303F2 /* Preview Content */,
@@ -170,7 +167,6 @@
 				D1CE061B2B526930001303F2 /* FrontView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
 				D19912072B52972B002A711A /* UIView.swift in Sources */,
-				D1CE06272B528B65001303F2 /* LocationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
