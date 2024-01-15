@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MapKit
 
 struct SearchView: View {
     @State private var isPresented = false
@@ -26,6 +27,11 @@ struct SearchView: View {
 struct FullScreenView: View {
     @Environment(\.presentationMode) var presentationMode
     
+    @State private var searchText = ""
+    @State private var searchResults: [MKLocalSearchCompletion] = []
+    private let completer = MKLocalSearchCompleter()
+    
+    
     var body: some View {
         ZStack {
             Color.white
@@ -41,11 +47,38 @@ struct FullScreenView: View {
                 .foregroundColor(.black)
                 
                 Spacer()
+                
+                VStack {
+                    TextField("Search", text: $searchText, onEditingChanged: { _ in
+                        performSearch()
+                    })
+                    .padding()
+                    .background(Color(.systemGray5))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                    
+                    List(searchResults, id: \.self) { result in
+                        Text(result.title)
+                    }
+
+                }
+                
+                
             }
+            
         }
+        
+        
+    }
+    
+    func performSearch() {
+        completer.queryFragment = searchText
+                completer.resultTypes = .address
+                
+               
     }
 }
 
 #Preview {
-    SearchView()
+    FullScreenView()
 }
