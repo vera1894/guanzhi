@@ -9,10 +9,30 @@ import SwiftUI
 import MapKit
 
 struct SearchableMap: View {
-    @State private var position = MapCameraPosition.automatic
+    @State private var position :MapCameraPosition = .region(.defaultRegion)
     @State private var isSheetPresented: Bool = true
     @State private var searchResults = [SearchResult]()
     @State private var selectedLocation: SearchResult?
+
+    
+    func getUserLocation() {
+        let locationManager = CLLocationManager()
+        locationManager.requestWhenInUseAuthorization()
+        
+        DispatchQueue.global().async {
+            if CLLocationManager.locationServicesEnabled() {
+                locationManager.desiredAccuracy = kCLLocationAccuracyBest
+                locationManager.startUpdatingLocation()
+                
+                if let location = locationManager.location?.coordinate {
+                    var region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+                    position = .region(region)
+                    print("经纬度",location.latitude,location.longitude)
+                }
+            }
+        }
+        
+    }
     
     var body: some View {
         Map(position: $position, selection: $selectedLocation){
@@ -24,6 +44,10 @@ struct SearchableMap: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear{
+            getUserLocation()
+            
+        }
         .onChange(of: selectedLocation) {
             isSheetPresented = selectedLocation == nil
         }
@@ -198,5 +222,17 @@ struct SearchResult: Identifiable, Hashable {
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+}
+
+extension CLLocationCoordinate2D {
+    static var defaultLocation: CLLocationCoordinate2D{
+        return .init(latitude: 39.9042, longitude: 116.4074)
+    }
+}
+
+extension MKCoordinateRegion{
+    static var defaultRegion:MKCoordinateRegion{
+        return .init(center: .defaultLocation, latitudinalMeters: 1000, longitudinalMeters: 1000)
     }
 }
