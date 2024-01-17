@@ -18,7 +18,7 @@ struct TagView: View {
                   .weight(.medium)
               )
               .kerning(0.22)
-              .foregroundColor(Constants.TextColorTxBlack) }
+              .foregroundColor(Constants.textColorTxBlack) }
         .padding(.horizontal, Constants.spacingSpacingS)
         .padding(.vertical, Constants.spacingSpacingXxs)
         .background(Color.red)

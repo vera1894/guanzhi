@@ -32,7 +32,7 @@ struct MyView: View {
                             Text("Onettoooo")
                               .font(Font.custom("PingFang SC", size: 14))
                               .kerning(0.22)
-                              .foregroundColor(Constants.TextColorTxGery)
+                              .foregroundColor(Constants.textColorTxGery)
                         }
                        
                     }
