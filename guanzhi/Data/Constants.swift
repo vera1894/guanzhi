@@ -17,14 +17,16 @@ struct Constants{
     static let spacingSpacing0: CGFloat = 0
     static let spacingSpacingXxs: CGFloat = 2
     static let spacingSpacingS: CGFloat = 10
-    static let textColorTxGery: Color = Color(red: 0.61, green: 0.61, blue: 0.61)
-    static let textColorTxBlack: Color = Color(red: 0, green: 0, blue: 0)
     static let iconSizeM: CGFloat = 32
     static let heightHeightL: CGFloat = 54
     static let heightHeightM: CGFloat = 40
     static let mainPrimaryWhite: Color = .white
     static let cornerRCornerRM: CGFloat = 20
     static let mainPrimaryGery: Color = Color(red: 0.85, green: 0.85, blue: 0.85)
+    
+    
+    static let textColorTxGery: Color = Color(red: 0.61, green: 0.61, blue: 0.61)
+    static let textColorTxBlack: Color = Color(red: 0, green: 0, blue: 0)
     
     //test
     

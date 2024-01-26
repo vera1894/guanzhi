@@ -40,7 +40,7 @@ struct FrontView: View {
                 Button {
                     getUserLocation()
                 } label: {
-                    Image("location")
+                    Image("icon-location")
                         .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
                         .padding(.trailing,Constants.spacingSpacingXs)
                 }
@@ -72,7 +72,7 @@ struct FrontView: View {
                         Button{
                             
                         }label: {
-                            Image("camera")
+                            Image("icon-camera")
                             .frame(width: 40, height: 40)
                             .padding(.trailing,Constants.spacingSpacingM)
                         }
