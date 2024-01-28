@@ -13,7 +13,7 @@ struct SearchableMap: View {
     @State private var isSheetPresented: Bool = true
     @State private var searchResults = [SearchResult]()
     @State private var selectedLocation: SearchResult?
-
+    
     
     func getUserLocation() {
         let locationManager = CLLocationManager()
@@ -35,15 +35,40 @@ struct SearchableMap: View {
     }
     
     var body: some View {
-        Map(position: $position, selection: $selectedLocation){
-            ForEach(searchResults) { result in
-                Marker(coordinate: result.location) {
-                    Image(systemName: "mappin")
+        ZStack{
+            Map(position: $position, selection: $selectedLocation){
+                ForEach(searchResults) { result in
+                    Marker(coordinate: result.location) {
+                        Image(systemName: "mappin")
+                    }
+                    .tag(result)
                 }
-                .tag(result)
             }
+            .ignoresSafeArea()
+            
+            HStack{
+                Spacer()
+                VStack(alignment: .center, spacing: Constants.spacingSpacingM){
+                    Button {
+                        
+                    } label: {
+                        Image("骷髅头")
+                            .resizable()
+                            .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
+                    }
+                    Button {
+                        getUserLocation()
+                    } label: {
+                        Image("icon-location")
+                            .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
+                    }
+                }.padding(Constants.spacingSpacingM)
+            }
+            
+            
+            
         }
-        .ignoresSafeArea()
+        
         .onAppear{
             getUserLocation()
             
@@ -92,8 +117,8 @@ struct SheetView: View {
                     isShowingImagePicker = true
                 }label: {
                     Image("icon-camera")
-                    .frame(width: 40, height: 40)
-                    .padding(.trailing,Constants.spacingSpacingM)
+                        .frame(width: 40, height: 40)
+                        .padding(.trailing,Constants.spacingSpacingM)
                 }
             }                    
             .sheet(isPresented: $isShowingImagePicker) {
