@@ -25,7 +25,7 @@ struct SearchableMap: View {
                 locationManager.startUpdatingLocation()
                 
                 if let location = locationManager.location?.coordinate {
-                    var region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+                    let region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
                     position = .region(region)
                     print("经纬度",location.latitude,location.longitude)
                 }
