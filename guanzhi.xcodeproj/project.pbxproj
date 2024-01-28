@@ -23,6 +23,7 @@
 
 /* Begin PBXFileReference section */
 		D1093C2A2B64FB95008553A3 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
@@ -98,6 +99,7 @@
 		D1CE06172B526930001303F2 /* guanzhi */ = {
 			isa = PBXGroup;
 			children = (
+				D1093C2E2B669795008553A3 /* Info.plist */,
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
 				D19912002B529285002A711A /* View */,
 				D19912032B52931A002A711A /* Data */,
@@ -152,11 +154,12 @@
 			};
 			buildConfigurationList = D1CE06102B526930001303F2 /* Build configuration list for PBXProject "guanzhi" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = D1CE060C2B526930001303F2;
 			productRefGroup = D1CE06162B526930001303F2 /* Products */;
@@ -326,6 +329,7 @@
 				DEVELOPMENT_TEAM = Z4GPL9AA5M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = guanzhi/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "我们需要获取您的相机权限以提供服务";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "我们需要访问您的位置以提供定位服务";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "需要获取您的位置以提供相关服务";
@@ -360,6 +364,7 @@
 				DEVELOPMENT_TEAM = Z4GPL9AA5M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = guanzhi/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "我们需要获取您的相机权限以提供服务";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "我们需要访问您的位置以提供定位服务";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "需要获取您的位置以提供相关服务";
