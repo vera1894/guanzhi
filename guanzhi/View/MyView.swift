@@ -12,7 +12,7 @@ struct MyView: View {
         VStack{
             //name
             HStack(alignment: .center, spacing: Constants.spacingSpacingXs) {
-                HStack(alignment: .center, spacing: Constants.iconSizeS) { Image("骷髅头")
+                HStack(alignment: .center, spacing: Constants.iconSizeS) { Image("icon-avatar")
                         .frame(width: Constants.iconSizeXl, height: Constants.iconSizeXl)
                     VStack{
                         // tx/OptionPageTitle
