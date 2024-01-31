@@ -12,9 +12,8 @@ struct TextfieldStyles: View {
     @State private var text: String = ""
     
     var body: some View {
-        TextField("Placeholder", text: $text)
-                    .textFieldStyle(RoundedTextFieldStyle()) // 应用自定义的 TextField 样式
-                    .padding() // 添加一些外边距
+        TextField("🔍想瞧瞧哪里？", text: $text)
+                    .textFieldStyle(TextFieldStyle_capsuleFill())
         
         Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
         
@@ -28,7 +27,7 @@ struct TextfieldStyles: View {
 }
 
 
-struct RoundedTextFieldStyle: TextFieldStyle {
+struct TextFieldStyle_capsuleFill: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding(10) // 设置内边距

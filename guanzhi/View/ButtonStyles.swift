@@ -15,12 +15,12 @@ struct ButtonStyles: View {
         
         HStack {
             Button{
-                //定位
+                //定位图标
             }label: { }
         .buttonStyle(IconStylePosition(isAnimating: $isLocated))
             
             Button{
-                //Seee位置
+                //Seee位置，需要添加是否已经定位的状态 isLocated
             }label: { }
         .buttonStyle(SeeePositionStyle(isEnabled: true))
             
@@ -39,12 +39,12 @@ struct ButtonStyles: View {
             .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
             
             Button(action: {
-                // 头像-s
+                // 头像-m
             }) { }
             .buttonStyle(AvatarStyle_m(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
             
             Button(action: {
-                // 头像-s
+                // 头像-l
             }) { }
             .buttonStyle(AvatarStyle_l(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
         }
@@ -52,42 +52,42 @@ struct ButtonStyles: View {
         HStack(alignment: .top) {
             
             Button{
-                //返回按钮
+                //返回按钮-圆形
             }label: {
                 Image("icon-back")
             }
             .buttonStyle(ButtonStyle_m())
             
             Button{
-                //关闭按钮
+                //关闭按钮-圆形
             }label: {
                 Image("icon-close")
             }
             .buttonStyle(ButtonStyle_m())
             
             Button{
-                //定位按钮
+                //定位按钮-圆形
             }label: {
                 Image("icon-location")
             }
             .buttonStyle(ButtonStyle_m())
             
             Button{
-                //更多按钮
+                //更多按钮-圆形
             }label: {
                 Image("icon-more")
             }
             .buttonStyle(ButtonStyle_m())
             
             Button{
-                //设置按钮
+                //设置按钮-圆形
             }label: {
                 Image("icon-setting")
             }
             .buttonStyle(ButtonStyle_m())
             
             Button{
-                //提醒按钮
+                //提醒按钮-圆形
             }label: {
                 Image("icon-notification")
             }
@@ -99,14 +99,14 @@ struct ButtonStyles: View {
         
         VStack(spacing: 10) {
             Button(action: {
-                        // 查看路线
+                        // 查看路线-胶囊按钮s
                     }) {
                         Text("🧭 查看路线")
                     }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary_s(isEnabled: true))
             
             Button(action: {
-                        // 分享地点
+                        // 分享地点-胶囊按钮hug
                     }) {
                         Text("📷 分享地点")
                     }
@@ -114,14 +114,14 @@ struct ButtonStyles: View {
             
             HStack {
                 Button(action: {
-                            // 贴贴
+                            // 贴贴--胶囊按钮hug
                         }) {
                             Text("🫂 贴贴")
                         }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
                 
                 Button(action: {
-                            // 贴贴（禁用）
+                            // 贴贴（禁用）-胶囊按钮hug
                         }) {
                             Text("🫂 贴贴")
                         }
@@ -130,14 +130,14 @@ struct ButtonStyles: View {
             
             HStack {
                 Button(action: {
-                            // 下一步
+                            // 下一步-胶囊按钮hug
                         }) {
                             Text("🔜 下一步")
                         }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
                 
                 Button(action: {
-                            // 下一步（禁用）
+                            // 下一步（禁用）-胶囊按钮hug
                         }) {
                             Text("🔜 下一步")
                         }
@@ -147,42 +147,42 @@ struct ButtonStyles: View {
             VStack {
                 
                 Button(action: {
-                            // 发布
+                            // 发布-胶囊按钮fill
                         }) {
                             Text("✅ 发布")
                         }
                     .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: true))
                 
                 Button(action: {
-                            // 发布
+                            // 求助（紫色）-胶囊按钮fill
                         }) {
                             Text("🥺 求一下这里最新的照片或视频")
                         }
                     .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
                 
                 Button(action: {
-                            // 发布
+                            // 查看求助（紫色）-胶囊按钮fill
                         }) {
                             Text("🥺 查看求助信息")
                         }
                     .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
                 
                 Button(action: {
-                            // 发布
+                            // 帮他（紫色）-胶囊按钮fill
                         }) {
                             Text("📷 帮助ta了解这里的情况")
                         }
                     .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
                 
                 Button(action: {
-                            // 发布
+                            // 去查看求助（紫色）-胶囊按钮fill
                         }) {
                             Text("🥺 去查看")
                         }
                     .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
                 
                 Button(action: {
-                            // 发布
+                            // 查看路线（紫色）-胶囊按钮fill
                         }) {
                             Text("🧭 查看路线")
                         }
@@ -194,52 +194,51 @@ struct ButtonStyles: View {
                 
                 HStack {
                     Button(action: {
-                                // 返回
+                                // 返回（白色）-胶囊按钮hug
                             }) {
                                 Text("🔙️ 返回")
                             }
                         .buttonStyle(ButtonStyle_capsuleHugLeft(isEnabled: true))
                     
                     Button(action: {
-                                // 下一步
+                                // 下一步-胶囊按钮fill
                             }) {
                                 Text("🔜 下一步")
                             }
                         .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: true))
-                }  //注册-返回&下一步
+                }
                 
                 HStack {
                     Button(action: {
-                                // 下一步
+                                // 返回（白色）-胶囊按钮hug
                             }) {
                                 Text("🔙️ 返回")
                             }
                         .buttonStyle(ButtonStyle_capsuleHugLeft(isEnabled: true))
                     
                     Button(action: {
-                                // 下一步
+                                // 下一步（禁用）-胶囊按钮fill
                             }) {
                                 Text("🔜 下一步")
                             }
                         .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: false))
-                }  //注册-返回&下一步（禁用）
+                }
                 
                 HStack {
                     Button(action: {
-                                // 返回
+                                // 返回（白色）-胶囊按钮hug
                             }) {
                                 Text("🔙️ 返回")
                             }
                         .buttonStyle(ButtonStyle_capsuleHugLeft(isEnabled: true))
                     
                     Button(action: {
-                                // 下一步
+                                // 完成-胶囊按钮fill
                             }) {
                                 Text("✅ 完成")
                             }
                         .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: true))
-                }  //注册-返回&完成
-                
+                }
             }  //注册登录页面
             
         }
