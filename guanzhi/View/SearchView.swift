@@ -8,12 +8,12 @@
 import SwiftUI
 import MapKit
 
-struct SearchableMap: View {
+struct SearchView: View {
     @State private var position :MapCameraPosition = .region(.defaultRegion)
     @State private var isSheetPresented: Bool = true
     @State private var searchResults = [SearchResult]()
     @State private var selectedLocation: SearchResult?
-    
+    @State private var isShowMyView: Bool = false
     
     func getUserLocation() {
         let locationManager = CLLocationManager()
@@ -35,43 +35,50 @@ struct SearchableMap: View {
     }
     
     var body: some View {
-        ZStack{
-            Map(position: $position, selection: $selectedLocation){
-                ForEach(searchResults) { result in
-                    Marker(coordinate: result.location) {
-                        Image(systemName: "mappin")
+        NavigationStack{
+            ZStack{
+                Map(position: $position, selection: $selectedLocation){
+                    ForEach(searchResults) { result in
+                        Marker(coordinate: result.location) {
+                            Image(systemName: "mappin")
+                        }
+                        .tag(result)
                     }
-                    .tag(result)
                 }
-            }
-            .ignoresSafeArea()
-            
-            HStack{
-                Spacer()
-                VStack(alignment: .center, spacing: Constants.spacingSpacingM){
-                    Button {
+                .ignoresSafeArea()
+                
+                HStack{
+                    Spacer()
+                    VStack(alignment: .center, spacing: Constants.spacingSpacingM){
+                        Button {
+                            isSheetPresented = false
+                            isShowMyView = true
+                        } label: {
+                            Image("骷髅头")
+                                .resizable()
+                                .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
+                        }.buttonStyle(ButtonStyle_s())
+                            .navigationDestination(isPresented: $isShowMyView) {
+                                MyView()
+                            }
                         
-                    } label: {
-                        Image("骷髅头")
-                            .resizable()
-                            .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
-                    }
-                    Button {
-                        getUserLocation()
-                    } label: {
-                        Image("icon-location")
-                            .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
-                    }
-                }.padding(Constants.spacingSpacingM)
+                        Button {
+                            getUserLocation()
+                        } label: {
+                            Image("icon-location")
+                                .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
+                        }.buttonStyle(ButtonStyle_s())
+                    }.padding(Constants.spacingSpacingM)
+                }
+                
+                
+                
             }
-            
-            
-            
         }
+        
         
         .onAppear{
             getUserLocation()
-            
         }
         .onChange(of: selectedLocation) {
             isSheetPresented = selectedLocation == nil
@@ -120,7 +127,7 @@ struct SheetView: View {
                         .frame(width: 40, height: 40)
                         .padding(.trailing,Constants.spacingSpacingM)
                 }
-            }                    
+            }
             .sheet(isPresented: $isShowingImagePicker) {
                 CameraView(image: $image)
             }
@@ -192,7 +199,7 @@ struct TextFieldGrayBackgroundColor: ViewModifier {
 
 struct Previews: PreviewProvider {
     static var previews: some View {
-        SearchableMap()
+        SearchView()
     }
 }
 //===================================

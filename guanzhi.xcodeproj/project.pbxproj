@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C2A2B64FB95008553A3 /* CameraView.swift */; };
+		D1093C302B6A7D99008553A3 /* testView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C2F2B6A7D99008553A3 /* testView.swift */; };
+		D1093C322B6A819A008553A3 /* SwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C312B6A819A008553A3 /* SwiftUIView.swift */; };
 		D17042C02B542346005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BF2B542346005683D2 /* SearchView.swift */; };
 		D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042C22B542A43005683D2 /* TextFieldView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
@@ -22,6 +24,8 @@
 /* Begin PBXFileReference section */
 		D1093C2A2B64FB95008553A3 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D1093C2F2B6A7D99008553A3 /* testView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testView.swift; sourceTree = "<group>"; };
+		D1093C312B6A819A008553A3 /* SwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIView.swift; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
@@ -59,6 +63,8 @@
 			children = (
 				D17042BF2B542346005683D2 /* SearchView.swift */,
 				D19912012B5292A6002A711A /* MyView.swift */,
+				D1093C2F2B6A7D99008553A3 /* testView.swift */,
+				D1093C312B6A819A008553A3 /* SwiftUIView.swift */,
 				D1093C2A2B64FB95008553A3 /* CameraView.swift */,
 				D17042C12B5429EA005683D2 /* UIElement */,
 				FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */,
@@ -186,7 +192,9 @@
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
+				D1093C322B6A819A008553A3 /* SwiftUIView.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
+				D1093C302B6A7D99008553A3 /* testView.swift in Sources */,
 				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
