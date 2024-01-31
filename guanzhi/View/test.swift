@@ -24,32 +24,13 @@ struct test: View {
     .buttonStyle(IconStylePosition(isAnimating: $isLocated))
         
         
+        
+        
     }
 }
 
 
 
-
-struct IconStylePositionLoading: View {
-    
-    @Binding var isAnimating: Bool
-    let animationDuration: Double = 1 // 定义动画周期为1秒
-    
-    var body: some View {
-        Image("icon-position")
-            .frame(width: 24, height: 33)
-            .shadow(color: Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
-            .grayscale(isAnimating ? 1 : 0)
-            .onAppear {
-                withAnimation(Animation.linear(duration: animationDuration).repeatForever(autoreverses: true)) {
-                    isAnimating = true // 开始动画
-                }
-            }
-            .onDisappear {
-                isAnimating = false // 停止动画
-            }
-    }
-}
 
 
 

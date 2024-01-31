@@ -23,6 +23,13 @@ struct ButtonStyles: View {
                 //Seee位置
             }label: { }
         .buttonStyle(SeeePositionStyle(isEnabled: true))
+            
+            Button{
+                //播放按钮
+            }label: {
+                Image("icon-play")
+            }
+            .buttonStyle(ButtonStyle_play())
         }
         
         HStack(alignment: .top) {
@@ -240,17 +247,6 @@ struct ButtonStyles: View {
     }
 }
 
-struct ButtonStyle_s: ButtonStyle {
-
-    func makeBody(configuration: Self.Configuration) -> some View {
-        configuration.label
-            .frame(width: 32, height: 32)
-            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
-            .brightness(configuration.isPressed ? -0.2 : 0)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-    }
-}
-
 struct ButtonStyle_m: ButtonStyle {
 
     func makeBody(configuration: Self.Configuration) -> some View {
@@ -284,6 +280,7 @@ struct ButtonStyle_capsuleHugPrimary: ButtonStyle {
                 RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
                     .stroke(Color.black, lineWidth: 4)
             )
+            .compositingGroup()
             .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
@@ -292,27 +289,25 @@ struct ButtonStyle_capsuleHugPrimary: ButtonStyle {
 }
 
 struct ButtonStyle_capsuleHugPrimary_s: ButtonStyle {
-//    var foregroundColor: Color
-//    var backgroundColor: Color
-//    var borderColor: Color
-//    var borderWidth: CGFloat
+    
     var isEnabled: Bool
 
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
-            .font(.system(size: 16, weight: .semibold, design: .rounded))
+            .font(.system(size: 14, weight: .medium, design: .rounded))
             .foregroundColor(Color("text-black"))
             .padding(.horizontal, 10)
             .padding(.vertical, 2)
             .frame(height: 24, alignment: .center)
             .background(
-                RoundedCorner(radius: 12, corners: [.topLeft, .topRight, .bottomLeft, .bottomRight])
+                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft, .bottomRight])
                     .fill(Color("color-primary"))
             )
             .overlay(
-                RoundedCorner(radius: 12, corners: [.topLeft, .topRight, .bottomLeft, .bottomRight])
-                    .stroke(Color.black, lineWidth: 4)
+                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft, .bottomRight])
+                    .stroke(Color.black, lineWidth: 2)
             )
+            .compositingGroup()
             .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
@@ -332,8 +327,15 @@ struct ButtonStyle_capsuleHugLeft: ButtonStyle {
             .padding(.vertical, 10)
             .frame(height: 32, alignment: .center)
             .background(
-                CombinedBackgroundAndBorder(radius: 20, corners: [.topLeft, .topRight, .bottomLeft], isEnabled: isEnabled, isPressed: configuration.isPressed)
+                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomRight])
+                    .fill(Color("color-white"))
             )
+            .overlay(
+                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomRight])
+                    .stroke(Color.black, lineWidth: 4)
+            )
+            .compositingGroup()
+            .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-gray").opacity(1), radius: 0, x: 2, y: 4)
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
@@ -360,6 +362,7 @@ struct ButtonStyle_capsuleFillPrimary: ButtonStyle {
                 RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
                     .stroke(Color.black, lineWidth: 4)
             )
+            .compositingGroup()
             .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
@@ -387,10 +390,22 @@ struct ButtonStyle_capsuleFillSecondary: ButtonStyle {
                 RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
                     .stroke(Color.black, lineWidth: 4)
             )
+            .compositingGroup()
             .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-secondary").opacity(1), radius: 0, x: 2, y: 4)
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct ButtonStyle_play: ButtonStyle {
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .frame(width: 40, height: 40)
+            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
+            .brightness(configuration.isPressed ? -0.2 : 0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
     }
 }
 
@@ -557,7 +572,7 @@ struct RoundedCorner: Shape {  //定义一个 View 扩展来实现单个角的�
 }
 
 
-struct CombinedBackgroundAndBorder: View {  //解决白色背景按钮的内部投影问题
+struct CombinedBackgroundAndBorder_white: View {  //解决白色背景按钮的内部投影问题 未使用
     var radius: CGFloat
     var corners: UIRectCorner
     var isEnabled: Bool
