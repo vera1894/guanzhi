@@ -10,61 +10,78 @@ import SwiftUI
 struct TextfieldStyles: View {
     
     @State private var text: String = ""
+    @FocusState private var isFocused: Bool
     
     var body: some View {
+        
+        
+        TextField_capsuleFill(text: $text)
+            .focused($isFocused)
+        //                    .onTapGesture {  //用在页面中的其他地方，点击收起键盘
+        //                        isFocused = false
+        //                            }
+        
+        
         TextField("🔍想瞧瞧哪里？", text: $text)
                     .textFieldStyle(TextFieldStyle_capsuleFill())
-        
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-        
-        Button(action: {
-                    // 查看路线
-                }) {
-                    Text("🧭 查看路线")
-                }
-                .buttonStyle(TextfieldFill(isEnabled: true))
+                    .focused($isFocused)
+
+                    
     }
 }
+
+
+
+
+
+struct TextField_capsuleFill: View {
+    @Binding var text: String
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        TextField("🔍想瞧瞧哪里？", text: $text)
+            .focused($isFocused)
+            .font(.system(size: 16, weight: .regular, design: .default))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 7)
+            .background(Color(.systemGray6)) // 设置背景颜色
+            .cornerRadius(20) // 设置圆角
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.black, lineWidth: 4)) // 设置边框
+            .shadow(color: isFocused ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
+            .frame(height: 40)
+    }
+}
+
 
 
 struct TextFieldStyle_capsuleFill: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
-            .padding(10) // 设置内边距
-            .background(Color(.systemGray6)) // 设置背景颜色
-            .cornerRadius(8) // 设置圆角
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1)) // 设置边框
-    }
-}
-
-
-struct TextfieldFill: ButtonStyle {
-
-    var isEnabled: Bool
-
-    func makeBody(configuration: Self.Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 16, weight: .semibold, design: .rounded))
-            .foregroundColor(Color("text-black"))
+            .font(.system(size: 16, weight: .regular, design: .default))
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .frame(height: 32, alignment: .center)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
-                    .fill(Color("color-white"))
-            )
-            .overlay(
-                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
-                    .stroke(Color.black, lineWidth: 4)
-            )
-            .compositingGroup()
-            .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-secondary").opacity(1), radius: 0, x: 2, y: 4)
-            .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
-            .grayscale(isEnabled ? 0 : 1)
-            .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .padding(.vertical, 7)
+            .background(Color(.systemGray6)) // 设置背景颜色
+            .cornerRadius(20) // 设置圆角
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.black, lineWidth: 4)) // 设置边框
+            .shadow(color: Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
+            .frame(height: 40)
+            .toolbar {  //键盘上方的小功能栏，收起键盘
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") {
+                        UIApplication.shared.endEditing()
+                    }
+                }
+            }
     }
 }
+
+extension UIApplication {  //收起键盘
+    func endEditing() {
+        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 
 #Preview {
     TextfieldStyles()
