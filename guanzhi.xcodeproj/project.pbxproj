@@ -26,11 +26,8 @@
 /* Begin PBXFileReference section */
 		D1093C2A2B64FB95008553A3 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-<<<<<<< HEAD
 		D1093C2F2B6A7D99008553A3 /* testView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testView.swift; sourceTree = "<group>"; };
 		D1093C312B6A819A008553A3 /* SwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIView.swift; sourceTree = "<group>"; };
-=======
->>>>>>> dev
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
@@ -201,11 +198,8 @@
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
-<<<<<<< HEAD
 				D1093C322B6A819A008553A3 /* SwiftUIView.swift in Sources */,
-=======
 				FF3D12232B69D76A00C36711 /* test.swift in Sources */,
->>>>>>> dev
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
 				D1093C302B6A7D99008553A3 /* testView.swift in Sources */,
 				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,
@@ -340,7 +334,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"guanzhi/Preview Content\"";
-				DEVELOPMENT_TEAM = Z4GPL9AA5M;
+				DEVELOPMENT_TEAM = 9R4PBK8CL4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = guanzhi/Info.plist;
@@ -375,7 +369,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"guanzhi/Preview Content\"";
-				DEVELOPMENT_TEAM = Z4GPL9AA5M;
+				DEVELOPMENT_TEAM = 9R4PBK8CL4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = guanzhi/Info.plist;

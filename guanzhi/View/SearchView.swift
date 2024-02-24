@@ -54,10 +54,10 @@ struct SearchView: View {
                             isSheetPresented = false
                             isShowMyView = true
                         } label: {
-                            Image("骷髅头")
+                            Image("icon-avatar")
                                 .resizable()
                                 .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
-                        }.buttonStyle(ButtonStyle_s())
+                        }.buttonStyle(ButtonStyle_m())
                             .navigationDestination(isPresented: $isShowMyView) {
                                 MyView()
                             }
@@ -67,7 +67,7 @@ struct SearchView: View {
                         } label: {
                             Image("icon-location")
                                 .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
-                        }.buttonStyle(ButtonStyle_s())
+                        }.buttonStyle(ButtonStyle_m())
                     }.padding(Constants.spacingSpacingM)
                 }
                 
