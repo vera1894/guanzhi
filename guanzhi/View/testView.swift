@@ -11,7 +11,7 @@ struct testView: View {
     @State private var selectedTab = 0
         
         var body: some View {
-            VStack {
+            VStack (alignment: .center, spacing: 0){
                 HStack(alignment: .top,spacing: Constants.iconSizeS) {
                     //Spacer()
                     TabButton(title: "我分享的", isSelected: selectedTab == 0) {
@@ -24,14 +24,28 @@ struct testView: View {
                     Spacer()
                 }
                 .padding()
-                
+                Divider()
                 if selectedTab == 0 {
-                    Text("第一个选项卡")
+                    List {
+                        SwiftUIView().listRowInsets(EdgeInsets())
+                        SwiftUIView().listRowInsets(EdgeInsets())
+                        SwiftUIView().listRowInsets(EdgeInsets())
+                              
+                            }
+                    
+                    .listStyle(PlainListStyle())
+                      
                 } else {
-                    Text("第二个选项卡")
+                    List {
+                        SwiftUIView().listRowInsets(EdgeInsets())
+                        SwiftUIView().listRowInsets(EdgeInsets())
+                        SwiftUIView().listRowInsets(EdgeInsets())
+                              
+                            }.listStyle(PlainListStyle())
+                       
                 }
                 
-                Spacer()
+                
             }
         }
 }
