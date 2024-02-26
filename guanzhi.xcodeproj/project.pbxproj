@@ -16,6 +16,7 @@
 		D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE06182B526930001303F2 /* guanzhiApp.swift */; };
 		D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061C2B526931001303F2 /* Assets.xcassets */; };
 		D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061F2B526931001303F2 /* Preview Assets.xcassets */; };
+		FF05E4462B84CC1300F5D375 /* AlertStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF05E4452B84CC1300F5D375 /* AlertStyles.swift */; };
 		FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */; };
 		FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */; };
 		FF3D12232B69D76A00C36711 /* test.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3D12222B69D76A00C36711 /* test.swift */; };
@@ -32,6 +33,7 @@
 		D1CE06182B526930001303F2 /* guanzhiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = guanzhiApp.swift; sourceTree = "<group>"; };
 		D1CE061C2B526931001303F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1CE061F2B526931001303F2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		FF05E4452B84CC1300F5D375 /* AlertStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AlertStyles.swift; path = guanzhi/View/AlertStyles.swift; sourceTree = SOURCE_ROOT; };
 		FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextfieldStyles.swift; sourceTree = "<group>"; };
 		FF3D12222B69D76A00C36711 /* test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = test.swift; sourceTree = "<group>"; };
@@ -65,6 +67,7 @@
 				D1093C2A2B64FB95008553A3 /* CameraView.swift */,
 				D17042C12B5429EA005683D2 /* UIElement */,
 				FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */,
+				FF05E4452B84CC1300F5D375 /* AlertStyles.swift */,
 				FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */,
 				FF3D12222B69D76A00C36711 /* test.swift */,
 			);
@@ -194,6 +197,7 @@
 				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
+				FF05E4462B84CC1300F5D375 /* AlertStyles.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
