@@ -11,10 +11,17 @@ import MapKit
 struct SearchView: View {
     @State private var position :MapCameraPosition = .region(.defaultRegion)
     @State private var isSheetPresented: Bool = true
-    @State private var searchResults = [SearchResult]()
+    // @State private var searchResults = [SearchResult]()
+    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
     @State private var selectedLocation: SearchResult?
     @State private var isShowMyView: Bool = false
     
+    
+    // let testLocation1 = CLLocationCoordinate2D.testLocation1
+    // let testLocation2 = CLLocationCoordinate2D.testLocation2
+    //    let searchResult1 = SearchResult(location: CLLocationCoordinate2D.testLocation1)
+    //    let searchResult2 = SearchResult(location: CLLocationCoordinate2D.testLocation2)
+    //    
     func getUserLocation() {
         let locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
@@ -59,7 +66,7 @@ struct SearchView: View {
                                 .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
                         }.buttonStyle(ButtonStyle_m())
                             .navigationDestination(isPresented: $isShowMyView) {
-                                MyView()
+                                MyView(isSheetPresented: $isSheetPresented)
                             }
                         
                         Button {
@@ -277,10 +284,28 @@ extension CLLocationCoordinate2D {
     static var defaultLocation: CLLocationCoordinate2D{
         return .init(latitude: 39.9042, longitude: 116.4074)
     }
+    static var testLocation1: CLLocationCoordinate2D{
+        return .init(latitude: 39.92, longitude: 116.39)
+    }
+    static var testLocation2: CLLocationCoordinate2D{
+        return .init(latitude: 39.93, longitude: 116.40)
+    }
 }
 
 extension MKCoordinateRegion{
     static var defaultRegion:MKCoordinateRegion{
         return .init(center: .defaultLocation, latitudinalMeters: 1000, longitudinalMeters: 1000)
+    }
+}
+
+//右滑返回
+extension UINavigationController: UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+    
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        return viewControllers.count > 1
     }
 }

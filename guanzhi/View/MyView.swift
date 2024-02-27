@@ -6,9 +6,13 @@
 //
 
 import SwiftUI
+import Combine
 
 struct MyView: View {
     @State private var isShowSettingView: Bool = false
+    @Environment(\.presentationMode) var presentationMode
+    @Binding var isSheetPresented: Bool
+    
     var body: some View {
         NavigationView {
             VStack{
@@ -60,11 +64,25 @@ struct MyView: View {
             SettingView()
         }
         )
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading:
+                                Button(action: {
+            // 添加返回按钮点击的操作
+            print("按钮点击!!")
+            presentationMode.wrappedValue.dismiss()
+        }) {
+            Image("icon-back")
+        }.buttonStyle(ButtonStyle_m())
+        )
+        .onDisappear{
+            isSheetPresented = true
+        }
+        
     }
 }
 
 struct MyView_Previews: PreviewProvider {
     static var previews: some View {
-        MyView()
+        MyView(isSheetPresented: .constant(false))
     }
 }
