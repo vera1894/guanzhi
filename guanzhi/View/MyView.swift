@@ -54,7 +54,14 @@ struct MyView: View {
                 Spacer()
             }
             
-        }.navigationBarItems(trailing:
+        }.navigationBarItems(leading:
+                                Button(action: {
+            // 添加返回按钮点击的操作
+            print("按钮点击!!")
+            presentationMode.wrappedValue.dismiss()
+        }) {
+            Image("icon-back")
+        }.buttonStyle(ButtonStyle_m()),trailing:
                                 Button(action: {
             // 添加按钮点击的操作
             isShowSettingView = true
@@ -65,15 +72,8 @@ struct MyView: View {
         }
         )
         .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading:
-                                Button(action: {
-            // 添加返回按钮点击的操作
-            print("按钮点击!!")
-            presentationMode.wrappedValue.dismiss()
-        }) {
-            Image("icon-back")
-        }.buttonStyle(ButtonStyle_m())
-        )
+//        .navigationBarItems(
+//        )
         .onDisappear{
             isSheetPresented = true
         }

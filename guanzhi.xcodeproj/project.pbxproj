@@ -10,6 +10,8 @@
 		D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C2A2B64FB95008553A3 /* CameraView.swift */; };
 		D1093C302B6A7D99008553A3 /* testView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C2F2B6A7D99008553A3 /* testView.swift */; };
 		D1093C322B6A819A008553A3 /* SwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C312B6A819A008553A3 /* SwiftUIView.swift */; };
+		D13FFDCB2B90CA9A007E1970 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDCA2B90CA9A007E1970 /* SheetView.swift */; };
+		D13FFDCD2B90CAD0007E1970 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDCC2B90CAD0007E1970 /* CardView.swift */; };
 		D17042C02B542346005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BF2B542346005683D2 /* SearchView.swift */; };
 		D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042C22B542A43005683D2 /* TextFieldView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
@@ -29,6 +31,8 @@
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D1093C2F2B6A7D99008553A3 /* testView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testView.swift; sourceTree = "<group>"; };
 		D1093C312B6A819A008553A3 /* SwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIView.swift; sourceTree = "<group>"; };
+		D13FFDCA2B90CA9A007E1970 /* SheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetView.swift; sourceTree = "<group>"; };
+		D13FFDCC2B90CAD0007E1970 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
@@ -55,6 +59,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D13FFDC92B90CA7A007E1970 /* frontPage */ = {
+			isa = PBXGroup;
+			children = (
+				D17042BF2B542346005683D2 /* SearchView.swift */,
+				D13FFDCA2B90CA9A007E1970 /* SheetView.swift */,
+				D13FFDCC2B90CAD0007E1970 /* CardView.swift */,
+			);
+			path = frontPage;
+			sourceTree = "<group>";
+		};
 		D17042C12B5429EA005683D2 /* UIElement */ = {
 			isa = PBXGroup;
 			children = (
@@ -67,7 +81,7 @@
 		D19912002B529285002A711A /* View */ = {
 			isa = PBXGroup;
 			children = (
-				D17042BF2B542346005683D2 /* SearchView.swift */,
+				D13FFDC92B90CA7A007E1970 /* frontPage */,
 				D19912012B5292A6002A711A /* MyView.swift */,
 				D1F67AB22B8A193A00292FEB /* SettingView.swift */,
 				D1093C2F2B6A7D99008553A3 /* testView.swift */,
@@ -201,10 +215,12 @@
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
+				D13FFDCD2B90CAD0007E1970 /* CardView.swift in Sources */,
 				D1093C322B6A819A008553A3 /* SwiftUIView.swift in Sources */,
 				FF3D12232B69D76A00C36711 /* test.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
 				D1093C302B6A7D99008553A3 /* testView.swift in Sources */,
+				D13FFDCB2B90CA9A007E1970 /* SheetView.swift in Sources */,
 				D1F67AB32B8A193A00292FEB /* SettingView.swift in Sources */,
 				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,

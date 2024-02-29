@@ -11,17 +11,14 @@ import MapKit
 struct SearchView: View {
     @State private var position :MapCameraPosition = .region(.defaultRegion)
     @State private var isSheetPresented: Bool = true
-    // @State private var searchResults = [SearchResult]()
-    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
+     @State private var searchResults = [SearchResult]()
+//    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
     @State private var selectedLocation: SearchResult?
     @State private var isShowMyView: Bool = false
+    @State private var scene: MKLookAroundScene?
+    @State private var isCardPresented: Bool = false
     
     
-    // let testLocation1 = CLLocationCoordinate2D.testLocation1
-    // let testLocation2 = CLLocationCoordinate2D.testLocation2
-    //    let searchResult1 = SearchResult(location: CLLocationCoordinate2D.testLocation1)
-    //    let searchResult2 = SearchResult(location: CLLocationCoordinate2D.testLocation2)
-    //    
     func getUserLocation() {
         let locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
@@ -52,7 +49,27 @@ struct SearchView: View {
                         .tag(result)
                     }
                 }
+                .overlay(alignment: .bottom) {
+                           if selectedLocation != nil {
+                               //弹出卡片
+                               
+                           }
+                       }
                 .ignoresSafeArea()
+                .onChange(of: selectedLocation) {
+                    if let selectedLocation {
+                                    Task {
+                                        scene = try? await fetchScene(for: selectedLocation.location)
+                                    }
+                                }
+                    isSheetPresented = selectedLocation == nil
+                    isCardPresented = selectedLocation != nil
+                }
+                .onChange(of: searchResults) {
+                    if let firstResult = searchResults.first, searchResults.count == 1 {
+                        selectedLocation = firstResult
+                    }
+                }
                 
                 HStack{
                     Spacer()
@@ -87,110 +104,24 @@ struct SearchView: View {
         .onAppear{
             getUserLocation()
         }
-        .onChange(of: selectedLocation) {
-            isSheetPresented = selectedLocation == nil
-        }
-        .onChange(of: searchResults) {
-            if let firstResult = searchResults.first, searchResults.count == 1 {
-                selectedLocation = firstResult
-            }
-        }
+
         .sheet(isPresented: $isSheetPresented) {
             SheetView(searchResults: $searchResults)
         }
+        .sheet(isPresented: $isCardPresented) {
+            CardView()
+        }
+
     }
+    //待注释
+    private func fetchScene(for coordinate: CLLocationCoordinate2D) async throws -> MKLookAroundScene? {
+            let lookAroundScene = MKLookAroundSceneRequest(coordinate: coordinate)
+            return try await lookAroundScene.scene
+        }
 }
 
 //===================================
 
-struct SheetView: View {
-    @State private var search: String = ""
-    @State private var locationService = LocationService(completer: .init())
-    @Binding var searchResults: [SearchResult]
-    @State private var isShowingImagePicker = false
-    @State private var image: UIImage?
-    
-    var body: some View {
-        VStack {
-            // 1 搜索栏
-            HStack {
-                // Image(systemName: "magnifyingglass")
-                HStack{
-                    Text(" 🔍")
-                    TextField("想瞧瞧哪里？", text: $search)
-                        .autocorrectionDisabled()
-                        .onSubmit {
-                            Task {
-                                searchResults = (try? await locationService.search(with: search)) ?? []
-                            }
-                        }
-                }.modifier(TextFieldGrayBackgroundColor())
-                
-                //相机按钮
-                Button{
-                    isShowingImagePicker = true
-                }label: {
-                    Image("icon-camera")
-                        .frame(width: 40, height: 40)
-                        .padding(.trailing,Constants.spacingSpacingM)
-                }
-            }
-            .sheet(isPresented: $isShowingImagePicker) {
-                CameraView(image: $image)
-            }
-            
-            
-            Spacer()
-            
-            // 2
-            List {
-                ForEach(locationService.completions) { completion in
-                    Button(action: {didTapOnCompletion(completion) }) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(completion.title)
-                                .font(.headline)
-                                .fontDesign(.rounded)
-                            Text(completion.subTitle)
-                            // Show the URL if it's present
-                            if let url = completion.url {
-                                Link(url.absoluteString, destination: url)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                    // 3
-                    .listRowBackground(Color.clear)
-                }
-            }
-            // 4
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-        }
-        // 5
-        .onChange(of: search) {
-            locationService.update(queryFragment: search)
-        }
-        
-        
-        .padding()
-        // 2 用户无法通过向下滑动来关闭工作表视图
-        .interactiveDismissDisabled()//
-        // 3 工作表视图有两种可能的尺寸：小尺寸（200 点高）和大尺寸（默认尺寸）
-        .presentationDetents([.height(120), .large])
-        // 4 模糊效果
-        .presentationBackground(.regularMaterial)
-        // 5 用户可以与其后面的地图视图进行交互
-        .presentationBackgroundInteraction(.enabled(upThrough: .large))
-    }
-    
-    private func didTapOnCompletion(_ completion: SearchCompletions) {
-        Task {
-            if let singleLocation = try? await locationService.search(with: "\(completion.title) \(completion.subTitle)").first {
-                searchResults = [singleLocation]
-            }
-        }
-    }
-}
 
 struct TextFieldGrayBackgroundColor: ViewModifier {
     func body(content: Content) -> some View {
