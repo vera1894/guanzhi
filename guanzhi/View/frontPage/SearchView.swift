@@ -11,12 +11,13 @@ import MapKit
 struct SearchView: View {
     @State private var position :MapCameraPosition = .region(.defaultRegion)
     @State private var isSheetPresented: Bool = true
-     @State private var searchResults = [SearchResult]()
-//    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
+    @State private var searchResults = [SearchResult]()
+    //    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
     @State private var selectedLocation: SearchResult?
     @State private var isShowMyView: Bool = false
     @State private var scene: MKLookAroundScene?
     @State private var isCardPresented: Bool = false
+    @State private var cardName = "" //详情卡片地名
     
     
     func getUserLocation() {
@@ -50,20 +51,27 @@ struct SearchView: View {
                     }
                 }
                 .overlay(alignment: .bottom) {
-                           if selectedLocation != nil {
-                               //弹出卡片
-                               
-                           }
-                       }
+                    if selectedLocation != nil {
+                        //弹出卡片
+                        
+                    }
+                }
                 .ignoresSafeArea()
                 .onChange(of: selectedLocation) {
                     if let selectedLocation {
-                                    Task {
-                                        scene = try? await fetchScene(for: selectedLocation.location)
-                                    }
-                                }
-                    isSheetPresented = selectedLocation == nil
-                    isCardPresented = selectedLocation != nil
+                        
+                    }
+                    getAddressFromLocation(for: selectedLocation?.location){
+                        address in
+                        if let address = address{
+                            cardName = address
+                        }
+                    }
+                    print("cardname",cardName)
+                    isSheetPresented = selectedLocation == nil //未选中地址的时候弹出搜索卡片
+                    isCardPresented = selectedLocation != nil //选中地址的时候弹出详情卡片
+                    print("已选择地址",selectedLocation)
+                    
                 }
                 .onChange(of: searchResults) {
                     if let firstResult = searchResults.first, searchResults.count == 1 {
@@ -104,20 +112,32 @@ struct SearchView: View {
         .onAppear{
             getUserLocation()
         }
-
+        
         .sheet(isPresented: $isSheetPresented) {
             SheetView(searchResults: $searchResults)
         }
         .sheet(isPresented: $isCardPresented) {
-            CardView()
+            CardView(name: $cardName)
         }
-
+        
     }
-    //待注释
-    private func fetchScene(for coordinate: CLLocationCoordinate2D) async throws -> MKLookAroundScene? {
-            let lookAroundScene = MKLookAroundSceneRequest(coordinate: coordinate)
-            return try await lookAroundScene.scene
+    
+    //根据地址翻译地名
+    private func getAddressFromLocation(for location:CLLocationCoordinate2D?,completion:@escaping(String?)->Void){
+        if let location = location{
+            let location = CLLocation(latitude: location.latitude, longitude: location.longitude)
+            CLGeocoder().reverseGeocodeLocation(location) { placemarks, error in
+                if let error = error{
+                    print("定位错误：\(error.localizedDescription)")
+                    
+                }else if let placemark = placemarks?.first{
+                    let address = "\(placemark.name ?? "")\(placemark.locality ?? "")\(placemark.administrativeArea ?? "")\(placemark.country ?? "")"
+                    print("地址：",address)
+                    completion(address)
+                }
+            }
         }
+    }
 }
 
 //===================================

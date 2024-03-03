@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct CardView: View {
+    @Binding var name : String
+    
     var body: some View {
         VStack{
-            Text("北京渔阳国际滑雪场")
-            Text("北京渔阳国际滑雪场")
+            
+            Text("\(name)")
             Button(action: {
                         // 帮他（紫色）-胶囊按钮fill
                     }) {
@@ -27,5 +29,5 @@ struct CardView: View {
 }
 
 #Preview {
-    CardView()
+    CardView(name: .constant("111"))
 }
