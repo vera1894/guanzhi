@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct test: View {
+struct PhotosPreview: View {
     
     @State private var selectedPhoto: String? = nil
     @State private var isSelected = [false, false, false, false] // 初始状态，所有按钮均未选中
@@ -90,5 +90,5 @@ struct PhotoButton: View {
 
 
 #Preview {
-    test()
+    PhotosPreview()
 }

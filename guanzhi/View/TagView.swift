@@ -12,7 +12,7 @@ struct TagView: View {
     
     var body: some View {
         HStack(alignment: .center, spacing: Constants.spacingSpacingXs) { // tx/Tag
-            Text("🎨\(tagText)")
+            Text(tagText)
               .font(
                 Font.custom("PingFang SC", size: 14)
                   .weight(.medium)
@@ -34,6 +34,6 @@ struct TagView: View {
 
 struct UIView_Previews: PreviewProvider {
     static var previews: some View {
-        TagView(tagText: "大师")
+        TagView(tagText: "🎨 大师")
     }
 }

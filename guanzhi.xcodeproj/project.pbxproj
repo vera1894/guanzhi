@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C2A2B64FB95008553A3 /* CameraView.swift */; };
 		D17042C02B542346005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BF2B542346005683D2 /* SearchView.swift */; };
-		D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042C22B542A43005683D2 /* TextFieldView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
 		D19912052B529346002A711A /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912042B529346002A711A /* Constants.swift */; };
 		D19912072B52972B002A711A /* TagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912062B52972B002A711A /* TagView.swift */; };
@@ -19,13 +18,17 @@
 		FF05E4462B84CC1300F5D375 /* AlertStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF05E4452B84CC1300F5D375 /* AlertStyles.swift */; };
 		FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */; };
 		FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */; };
-		FF3D12232B69D76A00C36711 /* test.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3D12222B69D76A00C36711 /* test.swift */; };
+		FF3D12232B69D76A00C36711 /* PhotosPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3D12222B69D76A00C36711 /* PhotosPreview.swift */; };
+		FF7B72E32B97F6B60045E866 /* OTPTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72E22B97F6B60045E866 /* OTPTextField.swift */; };
+		FF7B72E52B99474F0045E866 /* PhoneNumberTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72E42B99474F0045E866 /* PhoneNumberTextField.swift */; };
+		FF7B72E72B99DF530045E866 /* NicknameTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72E62B99DF530045E866 /* NicknameTextField.swift */; };
+		FF7B72EA2B99E6BC0045E866 /* CapsuleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72E92B99E6BC0045E866 /* CapsuleTextField.swift */; };
+		FF7B72EC2B99EB4E0045E866 /* RoundedRectangleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		D1093C2A2B64FB95008553A3 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
-		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		D19912042B529346002A711A /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		D19912062B52972B002A711A /* TagView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagView.swift; sourceTree = "<group>"; };
@@ -36,7 +39,12 @@
 		FF05E4452B84CC1300F5D375 /* AlertStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AlertStyles.swift; path = guanzhi/View/AlertStyles.swift; sourceTree = SOURCE_ROOT; };
 		FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextfieldStyles.swift; sourceTree = "<group>"; };
-		FF3D12222B69D76A00C36711 /* test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = test.swift; sourceTree = "<group>"; };
+		FF3D12222B69D76A00C36711 /* PhotosPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosPreview.swift; sourceTree = "<group>"; };
+		FF7B72E22B97F6B60045E866 /* OTPTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPTextField.swift; sourceTree = "<group>"; };
+		FF7B72E42B99474F0045E866 /* PhoneNumberTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberTextField.swift; sourceTree = "<group>"; };
+		FF7B72E62B99DF530045E866 /* NicknameTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameTextField.swift; sourceTree = "<group>"; };
+		FF7B72E92B99E6BC0045E866 /* CapsuleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleTextField.swift; sourceTree = "<group>"; };
+		FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedRectangleTextField.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,8 +61,7 @@
 		D17042C12B5429EA005683D2 /* UIElement */ = {
 			isa = PBXGroup;
 			children = (
-				D19912062B52972B002A711A /* TagView.swift */,
-				D17042C22B542A43005683D2 /* TextFieldView.swift */,
+				FF7B72E82B99E6640045E866 /* TextfieldStyles */,
 			);
 			path = UIElement;
 			sourceTree = "<group>";
@@ -66,10 +73,11 @@
 				D19912012B5292A6002A711A /* MyView.swift */,
 				D1093C2A2B64FB95008553A3 /* CameraView.swift */,
 				D17042C12B5429EA005683D2 /* UIElement */,
+				D19912062B52972B002A711A /* TagView.swift */,
 				FF1500042B62AB2C00FD84BA /* ButtonStyles.swift */,
 				FF05E4452B84CC1300F5D375 /* AlertStyles.swift */,
-				FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */,
-				FF3D12222B69D76A00C36711 /* test.swift */,
+				FF3D12222B69D76A00C36711 /* PhotosPreview.swift */,
+				FF7B72ED2B99F6A20045E866 /* Deprecated */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -116,6 +124,26 @@
 				D1CE061F2B526931001303F2 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		FF7B72E82B99E6640045E866 /* TextfieldStyles */ = {
+			isa = PBXGroup;
+			children = (
+				FF7B72E22B97F6B60045E866 /* OTPTextField.swift */,
+				FF7B72E42B99474F0045E866 /* PhoneNumberTextField.swift */,
+				FF7B72E62B99DF530045E866 /* NicknameTextField.swift */,
+				FF7B72E92B99E6BC0045E866 /* CapsuleTextField.swift */,
+				FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */,
+			);
+			path = TextfieldStyles;
+			sourceTree = "<group>";
+		};
+		FF7B72ED2B99F6A20045E866 /* Deprecated */ = {
+			isa = PBXGroup;
+			children = (
+				FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */,
+			);
+			path = Deprecated;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -192,13 +220,17 @@
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
-				FF3D12232B69D76A00C36711 /* test.swift in Sources */,
+				FF3D12232B69D76A00C36711 /* PhotosPreview.swift in Sources */,
+				FF7B72E32B97F6B60045E866 /* OTPTextField.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
-				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,
+				FF7B72EC2B99EB4E0045E866 /* RoundedRectangleTextField.swift in Sources */,
+				FF7B72E52B99474F0045E866 /* PhoneNumberTextField.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
+				FF7B72EA2B99E6BC0045E866 /* CapsuleTextField.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
 				FF05E4462B84CC1300F5D375 /* AlertStyles.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
+				FF7B72E72B99DF530045E866 /* NicknameTextField.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

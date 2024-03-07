@@ -12,8 +12,12 @@ struct guanzhiApp: App {
     var body: some Scene {
         WindowGroup {
 //            SearchableMap()
-            test()
-//            TextfieldStyles()
+//            OTPTextField(numberOfFields: 4)
+            PhoneNumberTextField()
+//            NicknameTextField()
+//            CapsuleTextField()
+//            RoundedRectangleTextField()
+
         }
     }
 }
