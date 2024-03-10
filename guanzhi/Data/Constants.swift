@@ -12,6 +12,7 @@ struct Constants{
     static let spacingSpacingXs: CGFloat = 8
     static let spacingSpacingM: CGFloat = 16
     static let iconSizeXl: CGFloat = 64
+    static let iconSizeL: CGFloat = 40
     static let iconSizeS: CGFloat = 24
     static let spacingSpacing0: CGFloat = 0
     static let spacingSpacingXxs: CGFloat = 2

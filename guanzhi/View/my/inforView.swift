@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct testView: View {
+struct inforView: View {
     @State private var selectedTab = 0
         
         var body: some View {
@@ -27,9 +27,9 @@ struct testView: View {
                 Divider()
                 if selectedTab == 0 {
                     List {
-                        SwiftUIView().listRowInsets(EdgeInsets())
-                        SwiftUIView().listRowInsets(EdgeInsets())
-                        SwiftUIView().listRowInsets(EdgeInsets())
+                        postView().listRowInsets(EdgeInsets())
+                        postView().listRowInsets(EdgeInsets())
+                        postView().listRowInsets(EdgeInsets())
                               
                             }
                     
@@ -37,9 +37,9 @@ struct testView: View {
                       
                 } else {
                     List {
-                        SwiftUIView().listRowInsets(EdgeInsets())
-                        SwiftUIView().listRowInsets(EdgeInsets())
-                        SwiftUIView().listRowInsets(EdgeInsets())
+                        postView().listRowInsets(EdgeInsets())
+                        postView().listRowInsets(EdgeInsets())
+                        postView().listRowInsets(EdgeInsets())
                               
                             }.listStyle(PlainListStyle())
                        
@@ -65,5 +65,5 @@ struct TabButton: View {
     }
 }
 #Preview {
-    testView()
+    inforView()
 }

@@ -50,7 +50,7 @@ struct MyView: View {
                 
                 .frame(width: 430, alignment: .leading)
                 
-                testView()
+                inforView()
                 Spacer()
             }
             

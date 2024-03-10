@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SwiftUIView: View {
+struct postView: View {
     var body: some View {
         HStack(alignment: .top, spacing: Constants.spacingSpacingXs) {
             Rectangle()
@@ -68,5 +68,5 @@ struct SwiftUIView: View {
 }
 
 #Preview {
-    SwiftUIView()
+    postView()
 }
