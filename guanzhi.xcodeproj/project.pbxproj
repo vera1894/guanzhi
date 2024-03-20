@@ -24,6 +24,8 @@
 		FF7B72E72B99DF530045E866 /* NicknameTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72E62B99DF530045E866 /* NicknameTextField.swift */; };
 		FF7B72EA2B99E6BC0045E866 /* CapsuleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72E92B99E6BC0045E866 /* CapsuleTextField.swift */; };
 		FF7B72EC2B99EB4E0045E866 /* RoundedRectangleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */; };
+		FF7B72F02B9A05270045E866 /* AutoNotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72EF2B9A05270045E866 /* AutoNotificationBanner.swift */; };
+		FFC4CBBE2BA09D270082F97D /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC4CBBD2BA09D270082F97D /* ToastView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +47,8 @@
 		FF7B72E62B99DF530045E866 /* NicknameTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameTextField.swift; sourceTree = "<group>"; };
 		FF7B72E92B99E6BC0045E866 /* CapsuleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleTextField.swift; sourceTree = "<group>"; };
 		FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedRectangleTextField.swift; sourceTree = "<group>"; };
+		FF7B72EF2B9A05270045E866 /* AutoNotificationBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoNotificationBanner.swift; sourceTree = "<group>"; };
+		FFC4CBBD2BA09D270082F97D /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +65,7 @@
 		D17042C12B5429EA005683D2 /* UIElement */ = {
 			isa = PBXGroup;
 			children = (
+				FF7B72EE2B9A04DB0045E866 /* NotificationStyles */,
 				FF7B72E82B99E6640045E866 /* TextfieldStyles */,
 			);
 			path = UIElement;
@@ -146,6 +151,15 @@
 			path = Deprecated;
 			sourceTree = "<group>";
 		};
+		FF7B72EE2B9A04DB0045E866 /* NotificationStyles */ = {
+			isa = PBXGroup;
+			children = (
+				FF7B72EF2B9A05270045E866 /* AutoNotificationBanner.swift */,
+				FFC4CBBD2BA09D270082F97D /* ToastView.swift */,
+			);
+			path = NotificationStyles;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -216,6 +230,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FFC4CBBE2BA09D270082F97D /* ToastView.swift in Sources */,
 				D17042C02B542346005683D2 /* SearchView.swift in Sources */,
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */,
@@ -229,6 +244,7 @@
 				FF7B72EA2B99E6BC0045E866 /* CapsuleTextField.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
 				FF05E4462B84CC1300F5D375 /* AlertStyles.swift in Sources */,
+				FF7B72F02B9A05270045E866 /* AutoNotificationBanner.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 				FF7B72E72B99DF530045E866 /* NicknameTextField.swift in Sources */,
 			);

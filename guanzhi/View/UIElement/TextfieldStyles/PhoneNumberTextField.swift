@@ -14,6 +14,7 @@ struct PhoneNumberTextField: View {
     var body: some View {
         
         ZStack { //用于在最底层增加点击收起键盘
+            
             Color.clear // 最底层放置的收起键盘透明背景
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -53,6 +54,7 @@ struct PhoneNumberTextField: View {
                             }
                         }
                 }
+            
         }
     }
 }

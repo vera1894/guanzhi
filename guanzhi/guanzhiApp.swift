@@ -13,10 +13,13 @@ struct guanzhiApp: App {
         WindowGroup {
 //            SearchableMap()
 //            OTPTextField(numberOfFields: 4)
-            PhoneNumberTextField()
+//            PhoneNumberTextField()
 //            NicknameTextField()
 //            CapsuleTextField()
 //            RoundedRectangleTextField()
+            ToastRootView {
+                AutoNotificationBanner()
+            }
 
         }
     }

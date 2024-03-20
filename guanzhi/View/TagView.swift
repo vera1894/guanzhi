@@ -12,13 +12,14 @@ struct TagView: View {
     
     var body: some View {
         HStack(alignment: .center, spacing: Constants.spacingSpacingXs) { // tx/Tag
-            Text(tagText)
-              .font(
-                Font.custom("PingFang SC", size: 14)
-                  .weight(.medium)
-              )
-              .kerning(0.22)
-              .foregroundColor(Constants.textColorTxBlack) }
+            Label(
+                title: { Text(tagText) },
+                icon: { }
+            )
+            .font(Font.custom("PingFang SC", size: 14).weight(.medium))
+            .kerning(0.22)
+            .foregroundColor(Constants.textColorTxBlack)
+            }
         .padding(.horizontal, Constants.spacingSpacingS)
         .padding(.vertical, Constants.spacingSpacingXxs)
         .background(Color.red)
