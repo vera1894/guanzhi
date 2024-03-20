@@ -14,6 +14,12 @@
 		D13FFDCD2B90CAD0007E1970 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDCC2B90CAD0007E1970 /* CardView.swift */; };
 		D13FFDD02B9DEFBC007E1970 /* SwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDCF2B9DEFBC007E1970 /* SwiftUIView.swift */; };
 		D13FFDD22B9DFA0F007E1970 /* detailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDD12B9DFA0F007E1970 /* detailView.swift */; };
+		D13FFDD52BAB36FA007E1970 /* LogInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDD42BAB36FA007E1970 /* LogInView.swift */; };
+		D13FFDD82BAB379A007E1970 /* UserLoginModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDD72BAB379A007E1970 /* UserLoginModel.swift */; };
+		D13FFDDA2BAB3808007E1970 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDD92BAB3808007E1970 /* NetworkService.swift */; };
+		D13FFDDC2BAB383A007E1970 /* OTORequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDDB2BAB383A007E1970 /* OTORequests.swift */; };
+		D13FFDDE2BAB3897007E1970 /* OTOTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDDD2BAB3897007E1970 /* OTOTypes.swift */; };
+		D13FFDE02BAB38D4007E1970 /* MessageInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDDF2BAB38D4007E1970 /* MessageInputViewModel.swift */; };
 		D17042C02B542346005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BF2B542346005683D2 /* SearchView.swift */; };
 		D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042C22B542A43005683D2 /* TextFieldView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
@@ -37,6 +43,12 @@
 		D13FFDCC2B90CAD0007E1970 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
 		D13FFDCF2B9DEFBC007E1970 /* SwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIView.swift; sourceTree = "<group>"; };
 		D13FFDD12B9DFA0F007E1970 /* detailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = detailView.swift; sourceTree = "<group>"; };
+		D13FFDD42BAB36FA007E1970 /* LogInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInView.swift; sourceTree = "<group>"; };
+		D13FFDD72BAB379A007E1970 /* UserLoginModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLoginModel.swift; sourceTree = "<group>"; };
+		D13FFDD92BAB3808007E1970 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
+		D13FFDDB2BAB383A007E1970 /* OTORequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTORequests.swift; sourceTree = "<group>"; };
+		D13FFDDD2BAB3897007E1970 /* OTOTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTOTypes.swift; sourceTree = "<group>"; };
+		D13FFDDF2BAB38D4007E1970 /* MessageInputViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageInputViewModel.swift; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D17042C22B542A43005683D2 /* TextFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
@@ -86,6 +98,26 @@
 			path = my;
 			sourceTree = "<group>";
 		};
+		D13FFDD32BAB36D3007E1970 /* loginView */ = {
+			isa = PBXGroup;
+			children = (
+				D13FFDD42BAB36FA007E1970 /* LogInView.swift */,
+			);
+			path = loginView;
+			sourceTree = "<group>";
+		};
+		D13FFDD62BAB377A007E1970 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				D13FFDD72BAB379A007E1970 /* UserLoginModel.swift */,
+				D13FFDD92BAB3808007E1970 /* NetworkService.swift */,
+				D13FFDDB2BAB383A007E1970 /* OTORequests.swift */,
+				D13FFDDD2BAB3897007E1970 /* OTOTypes.swift */,
+				D13FFDDF2BAB38D4007E1970 /* MessageInputViewModel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		D17042C12B5429EA005683D2 /* UIElement */ = {
 			isa = PBXGroup;
 			children = (
@@ -101,6 +133,7 @@
 		D19912002B529285002A711A /* View */ = {
 			isa = PBXGroup;
 			children = (
+				D13FFDD32BAB36D3007E1970 /* loginView */,
 				D13FFDC92B90CA7A007E1970 /* frontPage */,
 				D13FFDCE2B9DEF58007E1970 /* my */,
 				D1093C2A2B64FB95008553A3 /* CameraView.swift */,
@@ -140,6 +173,7 @@
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
 				D19912002B529285002A711A /* View */,
 				D19912032B52931A002A711A /* Data */,
+				D13FFDD62BAB377A007E1970 /* Models */,
 				D1CE061C2B526931001303F2 /* Assets.xcassets */,
 				D1CE061E2B526931001303F2 /* Preview Content */,
 			);
@@ -231,11 +265,17 @@
 				FF1500052B62AB2C00FD84BA /* ButtonStyles.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
 				D13FFDCD2B90CAD0007E1970 /* CardView.swift in Sources */,
+				D13FFDDE2BAB3897007E1970 /* OTOTypes.swift in Sources */,
+				D13FFDD52BAB36FA007E1970 /* LogInView.swift in Sources */,
 				D1093C322B6A819A008553A3 /* postView.swift in Sources */,
 				D13FFDD22B9DFA0F007E1970 /* detailView.swift in Sources */,
 				FF3D12232B69D76A00C36711 /* test.swift in Sources */,
+				D13FFDDA2BAB3808007E1970 /* NetworkService.swift in Sources */,
+				D13FFDE02BAB38D4007E1970 /* MessageInputViewModel.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
+				D13FFDD82BAB379A007E1970 /* UserLoginModel.swift in Sources */,
 				D1093C302B6A7D99008553A3 /* inforView.swift in Sources */,
+				D13FFDDC2BAB383A007E1970 /* OTORequests.swift in Sources */,
 				D13FFDCB2B90CA9A007E1970 /* SheetView.swift in Sources */,
 				D1F67AB32B8A193A00292FEB /* SettingView.swift in Sources */,
 				D17042C32B542A43005683D2 /* TextFieldView.swift in Sources */,

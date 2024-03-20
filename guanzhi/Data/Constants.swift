@@ -29,5 +29,10 @@ struct Constants{
     static let textColorTxBlack: Color = Color(red: 0, green: 0, blue: 0)
     
     //test
+    static let AMAP_API_KEY = "eebca36f478063b51c90efd82a1c8403"
+
+    static let BASE_HOST = "https://onettoo.com"
+
+    static let MessageTime = 60  //短信验证码等待时间
     
 }
