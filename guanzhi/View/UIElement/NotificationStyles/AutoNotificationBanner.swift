@@ -213,7 +213,7 @@ struct AutoNotificationBanner: View {
             Toast.shared.present(style: .notificationOnly(
                 title: "⛔验证码错误请重试",
                 symbol: "",
-                tint: Color("rainbow-red"),
+                tint: Color("color-primary"),
                 isUserInteractionEnabled: true,
                 timing: .short,
                 isAutoClose: true)
@@ -226,7 +226,10 @@ struct AutoNotificationBanner: View {
                 tint: Color("color-primary"),
                 isUserInteractionEnabled: true,
                 timing: .long,
-                isAutoClose: true)
+                isAutoClose: true,
+                buttonText: "查看求助信息",
+                isButtonAction: true
+            )
             )}
         
         

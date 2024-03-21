@@ -71,7 +71,7 @@ fileprivate struct ToastItem: Identifiable {
 enum ToastStyle {
     case notificationOnly(title: String, symbol: String?, tint: Color, isUserInteractionEnabled: Bool, timing: ToastTime, isAutoClose: Bool)
     case notificationOfWelcome(title: String, symbol: String?, tint: Color, isUserInteractionEnabled: Bool, timing: ToastTime, isAutoClose: Bool)
-    case notificationWithButton(title: String, symbol: String?, tint: Color, isUserInteractionEnabled: Bool, timing: ToastTime, isAutoClose: Bool)
+    case notificationWithButton(title: String, symbol: String?, tint: Color, isUserInteractionEnabled: Bool, timing: ToastTime, isAutoClose: Bool, buttonText: String, isButtonAction: Bool)
 }
 
 enum ToastTime: CGFloat {
@@ -341,7 +341,7 @@ fileprivate struct ToastView: View {
         .transition(.offset(y: -150))
             
             
-        case .notificationWithButton(let title, let symbol, let tint, let isUserInteractionEnabled, let timing, let isAutoClose):
+        case .notificationWithButton(let title, let symbol, let tint, let isUserInteractionEnabled, let timing, let isAutoClose, let buttonText, let isButtonAction):
             ZStack {
                 
                 VStack {
@@ -408,9 +408,11 @@ fileprivate struct ToastView: View {
                     Spacer()
                     
                     Button(action: {
-                                // 求助（紫色）-胶囊按钮fill
+                        if isButtonAction{
+                            
+                        }
                             }) {
-                                Text("🥺 求一下这里最新的照片或视频")
+                                Text(buttonText)
                             }
                         .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
                         .padding(.vertical,24)
