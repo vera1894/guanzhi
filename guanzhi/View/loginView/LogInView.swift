@@ -39,7 +39,7 @@ struct LogInView: View {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(Color("LightBlue")).frame(height: 48)
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color("DarkBlue"), lineWidth: 1)
+                       .stroke(Color("DarkBlue"), lineWidth: 1)
                         .frame(height: 48)
                     TextField("", text: $userlogin.phone)
                        
