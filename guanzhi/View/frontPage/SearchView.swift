@@ -14,10 +14,13 @@ struct SearchView: View {
     @State private var searchResults = [SearchResult]()
     //    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
     @State private var selectedLocation: SearchResult?
+<<<<<<< HEAD:guanzhi/View/frontPage/SearchView.swift
     @State private var isShowMyView: Bool = false
     @State private var scene: MKLookAroundScene?
     @State private var isCardPresented: Bool = false
     @State private var cardName = "" //详情卡片地名
+=======
+>>>>>>> dev:guanzhi/View/SearchView.swift
     
     
     func getUserLocation() {
@@ -40,6 +43,7 @@ struct SearchView: View {
     }
     
     var body: some View {
+<<<<<<< HEAD:guanzhi/View/frontPage/SearchView.swift
         NavigationStack{
             ZStack{
                 Map(position: $position, selection: $selectedLocation){
@@ -105,10 +109,46 @@ struct SearchView: View {
                 
                 
                 
+=======
+        ZStack{
+            Map(position: $position, selection: $selectedLocation){
+                ForEach(searchResults) { result in
+                    Marker(coordinate: result.location) {
+                        Image(systemName: "mappin")
+                    }
+                    .tag(result)
+                }
+>>>>>>> dev:guanzhi/View/SearchView.swift
             }
+            .ignoresSafeArea()
+            
+            HStack{
+                Spacer()
+                VStack(alignment: .center, spacing: Constants.spacingSpacingM){
+                    Button {
+                        
+                    } label: {
+                        Image("骷髅头")
+                            .resizable()
+                            .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
+                    }
+                    Button {
+                        getUserLocation()
+                    } label: {
+                        Image("icon-location")
+                            .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
+                    }
+                }.padding(Constants.spacingSpacingM)
+            }
+            
+            
+            
         }
         
+<<<<<<< HEAD:guanzhi/View/frontPage/SearchView.swift
         
+=======
+>>>>>>> dev:guanzhi/View/SearchView.swift
         .onAppear{
             getUserLocation()
         }
@@ -142,6 +182,97 @@ struct SearchView: View {
 
 //===================================
 
+<<<<<<< HEAD:guanzhi/View/frontPage/SearchView.swift
+=======
+struct SheetView: View {
+    @State private var search: String = ""
+    @State private var locationService = LocationService(completer: .init())
+    @Binding var searchResults: [SearchResult]
+    @State private var isShowingImagePicker = false
+    @State private var image: UIImage?
+    
+    var body: some View {
+        VStack {
+            // 1 搜索栏
+            HStack {
+                // Image(systemName: "magnifyingglass")
+                HStack{
+                    Text(" 🔍")
+                    TextField("想瞧瞧哪里？", text: $search)
+                        .autocorrectionDisabled()
+                        .onSubmit {
+                            Task {
+                                searchResults = (try? await locationService.search(with: search)) ?? []
+                            }
+                        }
+                }.modifier(TextFieldGrayBackgroundColor())
+                
+                //相机按钮
+                Button{
+                    isShowingImagePicker = true
+                }label: {
+                    Image("icon-camera")
+                        .frame(width: 40, height: 40)
+                        .padding(.trailing,Constants.spacingSpacingM)
+                }
+            }                    
+            .sheet(isPresented: $isShowingImagePicker) {
+                CameraView(image: $image)
+            }
+            
+            
+            Spacer()
+            
+            // 2
+            List {
+                ForEach(locationService.completions) { completion in
+                    Button(action: {didTapOnCompletion(completion) }) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(completion.title)
+                                .font(.headline)
+                                .fontDesign(.rounded)
+                            Text(completion.subTitle)
+                            // Show the URL if it's present
+                            if let url = completion.url {
+                                Link(url.absoluteString, destination: url)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                    // 3
+                    .listRowBackground(Color.clear)
+                }
+            }
+            // 4
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+        }
+        // 5
+        .onChange(of: search) {
+            locationService.update(queryFragment: search)
+        }
+        
+        
+        .padding()
+        // 2 用户无法通过向下滑动来关闭工作表视图
+        .interactiveDismissDisabled()//
+        // 3 工作表视图有两种可能的尺寸：小尺寸（200 点高）和大尺寸（默认尺寸）
+        .presentationDetents([.height(120), .large])
+        // 4 模糊效果
+        .presentationBackground(.regularMaterial)
+        // 5 用户可以与其后面的地图视图进行交互
+        .presentationBackgroundInteraction(.enabled(upThrough: .large))
+    }
+    
+    private func didTapOnCompletion(_ completion: SearchCompletions) {
+        Task {
+            if let singleLocation = try? await locationService.search(with: "\(completion.title) \(completion.subTitle)").first {
+                searchResults = [singleLocation]
+            }
+        }
+    }
+}
+>>>>>>> dev:guanzhi/View/SearchView.swift
 
 struct TextFieldGrayBackgroundColor: ViewModifier {
     func body(content: Content) -> some View {

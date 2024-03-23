@@ -9,7 +9,19 @@ import SwiftUI
 
 struct ButtonStyles: View {
     
-    @State private var isLocated: Bool = false //是否已经定位
+    @State private var isLocated: Bool = false //已经定位？
+    @State private var isCaptureEnabled: Bool = true  //拍摄按钮可用？
+    
+    @State private var isFlashOn: Bool = false //camera闪光灯开启？
+    @State private var isDateShow: Bool = false //camera日期显示？
+    @State private var isBackCamera: Bool = false //camera使用后摄像头？
+    
+    @State private var isTieTieEnabled: Bool = true //贴贴可用？
+    @State private var isNextEnabled: Bool = true //下一步可用？
+    
+    
+    
+    
     
     var body: some View {
         
@@ -30,6 +42,14 @@ struct ButtonStyles: View {
                 Image("icon-play")
             }
             .buttonStyle(ButtonStyle_play())
+            
+            Button{
+                //闪光灯按钮
+            }label: {
+                Image("iconCamera-capture")
+            }
+            .buttonStyle(ButtonStyle_CameraCapture(isEnabled: isCaptureEnabled))
+            
         }
         
         HStack(alignment: .top) {
@@ -95,6 +115,33 @@ struct ButtonStyles: View {
             
         }
         
+        HStack {  //摄像控件
+            
+            Button{
+                //闪光灯按钮
+                isFlashOn.toggle()
+            }label: {
+                Image(isFlashOn ? "iconCamera-flashOn" : "iconCamera-flashOff")
+            }
+        .buttonStyle(ButtonStyle_CameraControl())
+            
+            Button{
+                //时间显示按钮
+                isDateShow.toggle()
+            }label: {
+                Image(isDateShow ? "iconCamera-dateShow" : "iconCamera-dateHide")
+            }
+            .buttonStyle(ButtonStyle_CameraControl())
+            
+            Button{
+                //切换摄像头按钮
+                isBackCamera.toggle()
+            }label: {
+                Image("iconCamera-switchCamera")
+            }
+            .buttonStyle(ButtonStyle_CameraControl())
+            
+        }
         
         
         VStack(spacing: 10) {
@@ -118,7 +165,7 @@ struct ButtonStyles: View {
                         }) {
                             Text("🫂 贴贴")
                         }
-                    .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
+                    .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: isTieTieEnabled))
                 
                 Button(action: {
                             // 贴贴（禁用）-胶囊按钮hug
@@ -134,7 +181,7 @@ struct ButtonStyles: View {
                         }) {
                             Text("🔜 下一步")
                         }
-                    .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
+                    .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: isNextEnabled))
                 
                 Button(action: {
                             // 下一步（禁用）-胶囊按钮hug
@@ -205,7 +252,7 @@ struct ButtonStyles: View {
                             }) {
                                 Text("🔜 下一步")
                             }
-                        .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: true))
+                        .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: isNextEnabled))
                 }
                 
                 HStack {
@@ -514,7 +561,7 @@ struct SeeePositionStyle: ButtonStyle {
                 .offset(y: 32)
             Image("例子")
                 .resizable()
-                .scaledToFit()
+                .scaledToFill()
                 .clipShape(Circle())
                 .frame(width: 64, height: 64)
                 .overlay(Circle().stroke(Color.black, lineWidth: 4))
@@ -533,7 +580,7 @@ struct SeeePositionStyle: ButtonStyle {
 struct IconStylePosition: ButtonStyle {
 
     @Binding var isAnimating: Bool
-    let animationDuration: Double = 1 // 定义动画周期为1秒
+    let animationDuration: Double = 0.8 // 定义动画周期为1秒
 
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
@@ -549,6 +596,30 @@ struct IconStylePosition: ButtonStyle {
             .onDisappear {
                 isAnimating = false // 停止动画
             }
+    }
+}
+
+struct ButtonStyle_CameraControl: ButtonStyle {
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .frame(width: 32, height: 32)
+//            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
+            .brightness(configuration.isPressed ? -0.2 : 0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct ButtonStyle_CameraCapture: ButtonStyle {
+
+    var isEnabled: Bool
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+        .frame(width: 80, height: 80)
+        .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
+        .grayscale(isEnabled ? 0 : 1)
+        .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
     }
 }
 
