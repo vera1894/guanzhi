@@ -34,26 +34,24 @@ struct LogInView: View {
                     .padding(.top,150)
                 Text("我们将发送验证码到你的手机上")
                     .font(.system(size: 20))
-                    
-                ZStack(alignment: .center){
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color("LightBlue")).frame(height: 48)
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                       .stroke(Color("DarkBlue"), lineWidth: 1)
-                        .frame(height: 48)
-                    TextField("", text: $userlogin.phone)
-                       
-                        .font(.body.weight(.semibold))
-                        .accentColor(Color("DarkBlue"))//光标颜色
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.numberPad)
-                        .padding(.horizontal,12)
+                    .padding(.bottom,60)
+               
+                    PhoneNumberTextField(phoneNumber: $userlogin.phone)
+//                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+//                        .fill(Color("LightBlue")).frame(height: 48)
+//                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+//                       .stroke(Color("DarkBlue"), lineWidth: 1)
+//                        .frame(height: 48)
+//                    TextField("", text: $userlogin.phone)
+//
+//                        .font(.body.weight(.semibold))
+//                        .accentColor(Color("DarkBlue"))//光标颜色
+//                        .multilineTextAlignment(.center)
+//                        .keyboardType(.numberPad)
+//                        .padding(.horizontal,12)
                          
-                }
-                .padding(.top,60)
-                .padding(.horizontal,44)
-                .shadow(color: Color("CardShadow"), radius: 30, x: 0, y: 15)
-                
+                    .frame(height: 54)
+                .padding(.horizontal,Constants.spacingSpacingM)
                 
                 
                 Spacer()
@@ -94,20 +92,14 @@ struct LogInView: View {
                         print("input是否为空",userlogin.phone.isEmpty)
                        
                     } label: {
-                        
-                        ZStack{
-                            Circle()
-                                .frame(height: 44)
-                                .foregroundColor(Color(isChecked ? "ButtonPressed":"ButtonDefault"))
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(Color.white)
-                        }
+                        Text("🔜 下一步")
+                       
                         
                         .animation(.easeInOut(duration: 0.3))
   
                     }
-                    
+                    .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: isChecked))
+                    .padding(.horizontal,Constants.spacingSpacingM)
                         .padding(.bottom,40)
                         
                 }
