@@ -409,7 +409,7 @@ fileprivate struct ToastView: View {
                     
                     Button(action: {
                         if isButtonAction{
-                            
+                            //添加动作
                         }
                             }) {
                                 Text(buttonText)

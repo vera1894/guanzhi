@@ -26,6 +26,7 @@
 		FF7B72EC2B99EB4E0045E866 /* RoundedRectangleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */; };
 		FF7B72F02B9A05270045E866 /* AutoNotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7B72EF2B9A05270045E866 /* AutoNotificationBanner.swift */; };
 		FFC4CBBE2BA09D270082F97D /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC4CBBD2BA09D270082F97D /* ToastView.swift */; };
+		FFC4CBC72BAC32E20082F97D /* GlobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC4CBC62BAC32E20082F97D /* GlobeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +50,7 @@
 		FF7B72EB2B99EB4E0045E866 /* RoundedRectangleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedRectangleTextField.swift; sourceTree = "<group>"; };
 		FF7B72EF2B9A05270045E866 /* AutoNotificationBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoNotificationBanner.swift; sourceTree = "<group>"; };
 		FFC4CBBD2BA09D270082F97D /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
+		FFC4CBC62BAC32E20082F97D /* GlobeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */,
+				FFC4CBC62BAC32E20082F97D /* GlobeView.swift */,
 			);
 			path = Deprecated;
 			sourceTree = "<group>";
@@ -242,6 +245,7 @@
 				FF7B72E52B99474F0045E866 /* PhoneNumberTextField.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
 				FF7B72EA2B99E6BC0045E866 /* CapsuleTextField.swift in Sources */,
+				FFC4CBC72BAC32E20082F97D /* GlobeView.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
 				FF05E4462B84CC1300F5D375 /* AlertStyles.swift in Sources */,
 				FF7B72F02B9A05270045E866 /* AutoNotificationBanner.swift in Sources */,
