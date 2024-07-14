@@ -17,9 +17,13 @@ struct guanzhiApp: App {
 //            NicknameTextField()
 //            CapsuleTextField()
 //            RoundedRectangleTextField()
-            ToastRootView {
-                AutoNotificationBanner()
-            }
+//            ToastRootView {
+//                AutoNotificationBanner()
+//            }
+//            CustomBottomSheetView()
+//            GlobeView()
+            MapTestView()
+//            GlobalTest()
 
         }
     }

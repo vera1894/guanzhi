@@ -317,7 +317,7 @@ struct ButtonStyle_capsuleHugPrimary: ButtonStyle {
             .foregroundColor(Color("text-black"))
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .frame(height: 32, alignment: .center)
+            .frame(height: 40, alignment: .center)
             .background(
                 RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
                     .fill(Color("color-primary"))
