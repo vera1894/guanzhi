@@ -13,8 +13,11 @@ struct SheetView: View {
     @Binding var searchResults: [SearchResult]
     @State private var isShowingImagePicker = false
     @State private var image: UIImage?
+    @State private var isShowPostView = false
+    @Binding var cardName : String
     
     var body: some View {
+        
         VStack {
             // 1 搜索栏
             HStack {
@@ -40,7 +43,15 @@ struct SheetView: View {
                 }
             }
             .sheet(isPresented: $isShowingImagePicker) {
-                CameraView(image: $image)
+                NavigationStack{
+                    CameraView(image: $image)
+                    { image in
+                        self.image = image
+                        isShowPostView = true
+                    }.navigationDestination(isPresented: $isShowPostView) {
+                        PostUIView(image: self.image,cardName: $cardName)
+                    }
+                }
             }
             
             
@@ -70,6 +81,7 @@ struct SheetView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
         }
+        
         // 5
         .onChange(of: search) {
             locationService.update(queryFragment: search)

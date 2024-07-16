@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import UIKit
 
 
 enum OTONetworkError: Error {
@@ -71,27 +72,31 @@ struct OTONetwork {
             throw error
         }
     }
+    
+    
+    
+   
 
     // 创建一个request方法，返回一个AnyPublisher
-    static func requestPublisher(_ req: OTORequest) -> AnyPublisher<[String: Any], Error> {
-        do {
-            guard let url = URL(string: "\(Constants.BASE_HOST)\(req.request.path)") else { throw OTONetworkError.badURL }
-            var request = URLRequest(url: url)
-            request.httpMethod = req.request.method.rawValue
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .tryMap { data, response in
-                    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw OTONetworkError.badRequest }
-                    guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                        throw OTONetworkError.responseNotJson
-                    }
-                    return result
-                }
-                .eraseToAnyPublisher()
-        } catch {
-            print("请求错误: path: \(req.request.path), 参数: \(req.request.param), 错误: \(error.localizedDescription)")
-            return Fail(error: error).eraseToAnyPublisher()
-        }
-    }
+//    static func requestPublisher(_ req: OTORequest) -> AnyPublisher<[String: Any], Error> {
+//        do {
+//            guard let url = URL(string: "\(Constants.BASE_HOST)\(req.request.path)") else { throw OTONetworkError.badURL }
+//            var request = URLRequest(url: url)
+//            request.httpMethod = req.request.method.rawValue
+//            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+//            request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
+//            return URLSession.shared.dataTaskPublisher(for: request)
+//                .tryMap { data, response in
+//                    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw OTONetworkError.badRequest }
+//                    guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+//                        throw OTONetworkError.responseNotJson
+//                    }
+//                    return result
+//                }
+//                .eraseToAnyPublisher()
+//        } catch {
+//            print("请求错误: path: \(req.request.path), 参数: \(req.request.param), 错误: \(error.localizedDescription)")
+//            return Fail(error: error).eraseToAnyPublisher()
+//        }
+//    }
 }

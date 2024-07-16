@@ -10,7 +10,8 @@ import SwiftUI
 struct CameraView: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     @Environment(\.presentationMode) var presentationMode
-    
+    var onImagePicked: ((UIImage) -> Void)?
+   
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         let parent: CameraView
         
@@ -18,18 +19,22 @@ struct CameraView: UIViewControllerRepresentable {
             self.parent = parent
         }
         
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any])  {
             if let uiImage = info[.originalImage] as? UIImage {
                 parent.image = uiImage
-                UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
+                parent.onImagePicked?(uiImage)
+                
+                //UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
             }
-            parent.presentationMode.wrappedValue.dismiss()
+           
         }
         
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.presentationMode.wrappedValue.dismiss()
         }
+        
+        
     }
     
     func makeCoordinator() -> Coordinator {

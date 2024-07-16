@@ -1,0 +1,6 @@
+framework module Pods_guanzhi {
+  umbrella header "Pods-guanzhi-umbrella.h"
+
+  export *
+  module * { export * }
+}

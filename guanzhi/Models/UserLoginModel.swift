@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 fileprivate let loginTokenKey = "loginTokenKey"
 
@@ -19,7 +20,7 @@ class UserLoginModel: ObservableObject {
         }
     }    // 手机号
     @Published var code: String = ""       // 验证码
-    @Published var userName: String = ""   // 代号
+  //  @Published var userName: String = ""   // 代号
     @Published var nickName: String = ""   // 昵称
     @Published var loginState: Int = 1     // 注册状态，1未注册 0已注册
     @Published var header: String = ""     // 令牌
@@ -27,11 +28,13 @@ class UserLoginModel: ObservableObject {
     @Published var firstSendMessage: Bool = false //是否已从首页发送验证码
     
     @Published var noticeText: String = "" //提示文字
-    @Published var codePassed: Bool = false //代号是否通过验证
+   // @Published var codePassed: Bool = false //代号是否通过验证
     @Published var namePassed : Bool = false //名字是否通过验证
 
     
     @Published var sendStatus: Bool = false //是否发送成功
+   // @Published var image: UIImage = UIImage()
+    @Published var userName:String = "" //登录用户昵称
     
     func sendCode(phNumber:String){
         DispatchQueue.main.async {
@@ -60,37 +63,37 @@ class UserLoginModel: ObservableObject {
     }
     
     //验证代号
-    func checkUserName(name:String){
-        print("code:",name)
-        if !ValidateEnum.codeName(name).isRight{
-            print(ValidateEnum.codeName(name).isRight)
-            self.noticeText = "代号由6-20位字母、数字、下划线或减号组合而成"
-        }else{
-            DispatchQueue.main.async {
-                Task{
-                    guard let data = try? await OTONetwork.request(.checkName(name: name)) else {
-                        return
-                    }
-                    do {
-                        let decoder = JSONDecoder()
-                        if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-                            let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-                            if response.respCode == 0{
-                                self.codePassed = true
-                                print("代号验证成功")
-                            }else{
-                                self.noticeText = response.respMsg ?? ""
-                            }
-                        }
-                    }
-                    catch {
-                        print("Error decoding JSON: \(error)")
-                    }
-                }
-            }
-        }
-       
-    }
+//    func checkUserName(name:String){
+//        print("code:",name)
+//        if !ValidateEnum.codeName(name).isRight{
+//            print(ValidateEnum.codeName(name).isRight)
+//            self.noticeText = "代号由6-20位字母、数字、下划线或减号组合而成"
+//        }else{
+//            DispatchQueue.main.async {
+//                Task{
+//                    guard let data = try? await OTONetwork.request(.checkName(name: name)) else {
+//                        return
+//                    }
+//                    do {
+//                        let decoder = JSONDecoder()
+//                        if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+//                            let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+//                            if response.respCode == 0{
+//                                self.codePassed = true
+//                                print("代号验证成功")
+//                            }else{
+//                                self.noticeText = response.respMsg ?? ""
+//                            }
+//                        }
+//                    }
+//                    catch {
+//                        print("Error decoding JSON: \(error)")
+//                    }
+//                }
+//            }
+//        }
+//       
+//    }
     
     func regulayExpression(regularExpress: String, validateString: String) -> [String] {
         do {
@@ -132,7 +135,7 @@ class UserLoginModel: ObservableObject {
             }else{
                 DispatchQueue.main.async {
                     Task {
-                        guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone, code: self.code, nickName: self.nickName, userName: self.userName)) else { return }
+                        guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone,nickName: self.nickName)) else { return }
                         print("注册结果", data)
                         
                         do {
@@ -162,6 +165,33 @@ class UserLoginModel: ObservableObject {
 
     }
     
+    //获取用户昵称
+    func getUserInfo(){
+        DispatchQueue.main.async {
+            Task {
+                guard let data = try? await OTONetwork.request(.userInfo) else {
+                    return
+                }
+                print(data)
+                do {
+                    let decoder = JSONDecoder()
+                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+                        let response = try decoder.decode(OTOResponseDataModel.self, from: jsonData)
+                        if response.respCode == 0 {
+                            print("请求成功")
+                            print(response.datas.nickname)
+                        }
+                        
+                        self.noticeText = response.respMsg ?? ""
+                        
+                    }
+                } catch {
+                    print("Error decoding JSON: \(error)")
+                }
+            }
+        }
+    }
+    
 }
 
 class OTOLoginStatusManager {
@@ -181,6 +211,8 @@ class OTOLoginStatusManager {
     func updateLoginStatus() {
         if let _ = UserDefaults.standard.string(forKey: loginTokenKey) {
             isLoggedIn = true
+            print("isloggein:已登录")
+            print("userdefaults用户存储",UserDefaults.standard.string(forKey: loginTokenKey) )
         } else {
             isLoggedIn = false
         }

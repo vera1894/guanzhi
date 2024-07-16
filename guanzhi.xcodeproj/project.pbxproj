@@ -29,19 +29,26 @@
 		D13FFDEF2BAF1F26007E1970 /* NicknameTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDEA2BAF1F26007E1970 /* NicknameTextField.swift */; };
 		D13FFDF02BAF1F26007E1970 /* OTPTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDEB2BAF1F26007E1970 /* OTPTextField.swift */; };
 		D13FFDF42BAF1F5D007E1970 /* AlertStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13FFDF32BAF1F5D007E1970 /* AlertStyles.swift */; };
+		D15FE4CD2C030DB30097377E /* PostUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15FE4CC2C030DB30097377E /* PostUIView.swift */; };
 		D17042C02B542346005683D2 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17042BF2B542346005683D2 /* SearchView.swift */; };
 		D19912022B5292A6002A711A /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912012B5292A6002A711A /* MyView.swift */; };
 		D19912052B529346002A711A /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912042B529346002A711A /* Constants.swift */; };
 		D19912072B52972B002A711A /* TagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19912062B52972B002A711A /* TagView.swift */; };
+		D19F20A32BC2DA1A00721144 /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F20A22BC2DA1A00721144 /* MessageView.swift */; };
+		D19F20A52BC2DE2F00721144 /* NameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F20A42BC2DE2F00721144 /* NameView.swift */; };
 		D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE06182B526930001303F2 /* guanzhiApp.swift */; };
 		D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061C2B526931001303F2 /* Assets.xcassets */; };
 		D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061F2B526931001303F2 /* Preview Assets.xcassets */; };
 		D1F67AB32B8A193A00292FEB /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F67AB22B8A193A00292FEB /* SettingView.swift */; };
-		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
+		D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */; };
+		FF05E4462B84CC1300F5D375 /* BuildFile in Sources */ = {isa = PBXBuildFile; };
 		FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_guanzhi.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		85B32ABF81BE56D4F7168B76 /* Pods-guanzhi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-guanzhi.release.xcconfig"; path = "Target Support Files/Pods-guanzhi/Pods-guanzhi.release.xcconfig"; sourceTree = "<group>"; };
+		BF04D7B541F8EA61A15C6461 /* Pods-guanzhi.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-guanzhi.debug.xcconfig"; path = "Target Support Files/Pods-guanzhi/Pods-guanzhi.debug.xcconfig"; sourceTree = "<group>"; };
 		D1093C2A2B64FB95008553A3 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D1093C2F2B6A7D99008553A3 /* inforView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = inforView.swift; sourceTree = "<group>"; };
@@ -65,10 +72,13 @@
 		D13FFDEA2BAF1F26007E1970 /* NicknameTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NicknameTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/NicknameTextField.swift"; sourceTree = "<group>"; };
 		D13FFDEB2BAF1F26007E1970 /* OTPTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = OTPTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/OTPTextField.swift"; sourceTree = "<group>"; };
 		D13FFDF32BAF1F5D007E1970 /* AlertStyles.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AlertStyles.swift; path = ../../AlertStyles.swift; sourceTree = "<group>"; };
+		D15FE4CC2C030DB30097377E /* PostUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostUIView.swift; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		D19912042B529346002A711A /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		D19912062B52972B002A711A /* TagView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagView.swift; sourceTree = "<group>"; };
+		D19F20A22BC2DA1A00721144 /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
+		D19F20A42BC2DE2F00721144 /* NameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameView.swift; sourceTree = "<group>"; };
 		D1CE06152B526930001303F2 /* guanzhi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = guanzhi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1CE06182B526930001303F2 /* guanzhiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = guanzhiApp.swift; sourceTree = "<group>"; };
 		D1CE061C2B526931001303F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -82,12 +92,31 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3F08088C5D0FF0978F6DCC2D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		720003218D3FAA9F1D0B6DE4 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				BF04D7B541F8EA61A15C6461 /* Pods-guanzhi.debug.xcconfig */,
+				85B32ABF81BE56D4F7168B76 /* Pods-guanzhi.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		D13FFDC92B90CA7A007E1970 /* frontPage */ = {
 			isa = PBXGroup;
 			children = (
@@ -96,6 +125,8 @@
 				D13FFDCC2B90CAD0007E1970 /* CardView.swift */,
 				D13FFDCF2B9DEFBC007E1970 /* SwiftUIView.swift */,
 				D13FFDD12B9DFA0F007E1970 /* detailView.swift */,
+				D15FE4CC2C030DB30097377E /* PostUIView.swift */,
+				D1093C2A2B64FB95008553A3 /* CameraView.swift */,
 			);
 			path = frontPage;
 			sourceTree = "<group>";
@@ -115,6 +146,8 @@
 			isa = PBXGroup;
 			children = (
 				D13FFDD42BAB36FA007E1970 /* LogInView.swift */,
+				D19F20A22BC2DA1A00721144 /* MessageView.swift */,
+				D19F20A42BC2DE2F00721144 /* NameView.swift */,
 			);
 			path = loginView;
 			sourceTree = "<group>";
@@ -146,7 +179,6 @@
 				D13FFDD32BAB36D3007E1970 /* loginView */,
 				D13FFDC92B90CA7A007E1970 /* frontPage */,
 				D13FFDCE2B9DEF58007E1970 /* my */,
-				D1093C2A2B64FB95008553A3 /* CameraView.swift */,
 				D17042C12B5429EA005683D2 /* UIElement */,
 				D19912062B52972B002A711A /* TagView.swift */,
 				D13FFDF32BAF1F5D007E1970 /* AlertStyles.swift */,
@@ -169,6 +201,8 @@
 			children = (
 				D1CE06172B526930001303F2 /* guanzhi */,
 				D1CE06162B526930001303F2 /* Products */,
+				720003218D3FAA9F1D0B6DE4 /* Pods */,
+				3F08088C5D0FF0978F6DCC2D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -238,9 +272,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D1CE06232B526931001303F2 /* Build configuration list for PBXNativeTarget "guanzhi" */;
 			buildPhases = (
+				D196ADB15401B4B915F29BC3 /* [CP] Check Pods Manifest.lock */,
 				D1CE06112B526930001303F2 /* Sources */,
 				D1CE06122B526930001303F2 /* Frameworks */,
 				D1CE06132B526930001303F2 /* Resources */,
+				B81AC937F7C5893005A5F5B5 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -297,6 +333,48 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		B81AC937F7C5893005A5F5B5 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-guanzhi/Pods-guanzhi-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-guanzhi/Pods-guanzhi-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-guanzhi/Pods-guanzhi-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D196ADB15401B4B915F29BC3 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-guanzhi-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		D1CE06112B526930001303F2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -306,7 +384,9 @@
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				D13FFDD02B9DEFBC007E1970 /* SwiftUIView.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
+				D15FE4CD2C030DB30097377E /* PostUIView.swift in Sources */,
 				D13FFDCD2B90CAD0007E1970 /* CardView.swift in Sources */,
+				D19F20A52BC2DE2F00721144 /* NameView.swift in Sources */,
 				D13FFDDE2BAB3897007E1970 /* OTOTypes.swift in Sources */,
 				D13FFDD52BAB36FA007E1970 /* LogInView.swift in Sources */,
 				D13FFDF42BAF1F5D007E1970 /* AlertStyles.swift in Sources */,
@@ -314,6 +394,7 @@
 				D13FFDD22B9DFA0F007E1970 /* detailView.swift in Sources */,
 				D13FFDDA2BAB3808007E1970 /* NetworkService.swift in Sources */,
 				D13FFDE02BAB38D4007E1970 /* MessageInputViewModel.swift in Sources */,
+				D19F20A32BC2DA1A00721144 /* MessageView.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
 				D13FFDD82BAB379A007E1970 /* UserLoginModel.swift in Sources */,
 				D13FFDE22BAF1E80007E1970 /* ButtonStyles.swift in Sources */,
@@ -328,7 +409,7 @@
 				D13FFDEC2BAF1F26007E1970 /* PhoneNumberTextField.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
 				D13FFDE52BAF1F1C007E1970 /* AutoNotificationBanner.swift in Sources */,
-				FF05E4462B84CC1300F5D375 /* (null) in Sources */,
+				FF05E4462B84CC1300F5D375 /* BuildFile in Sources */,
 				D13FFDED2BAF1F26007E1970 /* RoundedRectangleTextField.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 				D13FFDEE2BAF1F26007E1970 /* CapsuleTextField.swift in Sources */,
@@ -455,6 +536,7 @@
 		};
 		D1CE06242B526931001303F2 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BF04D7B541F8EA61A15C6461 /* Pods-guanzhi.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -489,6 +571,7 @@
 		};
 		D1CE06252B526931001303F2 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 85B32ABF81BE56D4F7168B76 /* Pods-guanzhi.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

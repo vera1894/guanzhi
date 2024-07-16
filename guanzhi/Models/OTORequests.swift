@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 
 enum RequestMethod: String {
@@ -19,6 +20,17 @@ struct OTOResponseModel: Codable {
     let datas: String?
 }
 
+struct OTOResponseDataModel: Codable {
+    let respMsg: String?
+    let respCode: Int
+    let datas: dataModel
+}
+
+struct dataModel: Codable {
+    let phone: String?
+    let nickname: String?
+}
+
 
 struct OTORequestBaseModel {
     let path: String
@@ -30,10 +42,11 @@ enum OTORequest {
     case checkName(name: String)
     case SendVerifiedCode(phoneNumber: String)
     case checkCodeOrLogin(phoneNumber: String, code: String)
-    case Register(phoneNumber: String, code: String, nickName: String, userName: String)
-    case InsertDoodle(cityCode: Int?, data: String, districtCode: Int?, latitude: Double, longitude: Double, provinceCode: Int?)
+    case Register(phoneNumber: String,nickName: String)
+    case InsertDoodle(address: String, cityCode: Int?, data: String, deleted:Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String)
     case QueryDoodle(isSelf: Bool, latitude: Double, longitude: Double, page: Int?, radius: Double?, size: Int?)
     case UpdateDoodle(cityCode: Int?, data: String, districtCode: Int?, latitude: Double, longitude: Double, provinceCode: Int?, id: Int)
+    case userInfo
 }
 
 extension OTORequest {
@@ -46,43 +59,58 @@ extension OTORequest {
                 param: [
                     "name": name
                 ])
-            
+        
+        //发送验证码
         case .SendVerifiedCode(let phoneNumber):
             return .init(
-                path: "/api/user/sendCode",
+                path: "/api/guan/sendCode",
                 method: .post,
                 param: [
                     "phone": phoneNumber
                 ])
             
+        //登录
         case .checkCodeOrLogin(let phoneNumber, let code):
             return .init(
-                path: "/api/user/checkCodeOrLogin",
+                path: "/api/guan/login",
                 method: .post,
                 param: [
                     "phone": phoneNumber,
                     "code": code
                 ])
-            
-        case .Register(let phoneNumber, let code, let nickName, let userName):
+        
+        //注册
+        case .Register(let phoneNumber, let nickName):
             return .init(
-                path: "/api/user/register",
+                path: "/api/guan/register",
                 method: .post,
                 param: [
                     "phone": phoneNumber,
-                    "nickname": nickName,
-                    "name": userName,
-                    "code": code,
+                    "jpushId":"",
+                    "platform":"app",
+                    "nickname": nickName
+                    
                 ])
             
-        case .InsertDoodle(let cityCode, let data, let districtCode, let latitude, let longitude, let provinceCode):
+     
+        case .InsertDoodle(let address, let cityCode, let data, let deleted, let districtCode, let imagePath, let latitude, let longitude, let provinceCode, let title):
             var param: [String: Any] = [
+                "address": address,
+               // "cityCode": cityCode as Any,
                 "data": data,
+              //  "deleted": deleted as Any,
+               // "districtCode": districtCode as Any,
+                "imagePath": imagePath,
                 "latitude": latitude,
-                "longitude": longitude
+                "longitude": longitude,
+              //  "provinceCode": provinceCode as Any,
+                "title":title
             ]
             if let cityCode = cityCode {
                 param["cityCode"] = cityCode
+            }
+            if let deleted = deleted{
+                param["deleted"] = deleted
             }
             if let districtCode = districtCode {
                 param["districtCode"] = districtCode
@@ -91,10 +119,17 @@ extension OTORequest {
                 param["provinceCode"] = provinceCode
             }
             return .init(
-                path: "/api/doodle/insert",
+                path: "/api/guan/share/insert",
                 method: .post,
                 param: param
             )
+            
+        case .userInfo :
+            return .init(
+                path: "/api/guan/user/info",
+                method: .post,
+                param: [:]
+                )
             
         case .QueryDoodle(let isSelf, let latitude, let longitude, let page, let radius, let size):
             var param: [String: Any] = [
