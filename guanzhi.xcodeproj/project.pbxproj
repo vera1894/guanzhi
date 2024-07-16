@@ -38,6 +38,12 @@
 		D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061F2B526931001303F2 /* Preview Assets.xcassets */; };
 		D1F67AB32B8A193A00292FEB /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F67AB22B8A193A00292FEB /* SettingView.swift */; };
 		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
+		FF21EFD12C469D5A0065A207 /* GlobeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCB2C469D5A0065A207 /* GlobeViewModel.swift */; };
+		FF21EFD22C469D5A0065A207 /* GlobalTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCC2C469D5A0065A207 /* GlobalTest.swift */; };
+		FF21EFD32C469D5A0065A207 /* MapTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCD2C469D5A0065A207 /* MapTestView.swift */; };
+		FF21EFD42C469D5A0065A207 /* GlobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCE2C469D5A0065A207 /* GlobeView.swift */; };
+		FF21EFD52C469D5A0065A207 /* Place.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCF2C469D5A0065A207 /* Place.swift */; };
+		FF21EFD62C469D5A0065A207 /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFD02C469D5A0065A207 /* MapViewModel.swift */; };
 		FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */; };
 /* End PBXBuildFile section */
 
@@ -74,6 +80,12 @@
 		D1CE061C2B526931001303F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D1CE061F2B526931001303F2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		D1F67AB22B8A193A00292FEB /* SettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingView.swift; path = guanzhi/View/my/SettingView.swift; sourceTree = SOURCE_ROOT; };
+		FF21EFCB2C469D5A0065A207 /* GlobeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobeViewModel.swift; sourceTree = "<group>"; };
+		FF21EFCC2C469D5A0065A207 /* GlobalTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobalTest.swift; sourceTree = "<group>"; };
+		FF21EFCD2C469D5A0065A207 /* MapTestView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapTestView.swift; sourceTree = "<group>"; };
+		FF21EFCE2C469D5A0065A207 /* GlobeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobeView.swift; sourceTree = "<group>"; };
+		FF21EFCF2C469D5A0065A207 /* Place.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Place.swift; sourceTree = "<group>"; };
+		FF21EFD02C469D5A0065A207 /* MapViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
 		FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextfieldStyles.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -217,6 +229,12 @@
 		FF7B72ED2B99F6A20045E866 /* Deprecated */ = {
 			isa = PBXGroup;
 			children = (
+				FF21EFCC2C469D5A0065A207 /* GlobalTest.swift */,
+				FF21EFCE2C469D5A0065A207 /* GlobeView.swift */,
+				FF21EFCB2C469D5A0065A207 /* GlobeViewModel.swift */,
+				FF21EFCD2C469D5A0065A207 /* MapTestView.swift */,
+				FF21EFD02C469D5A0065A207 /* MapViewModel.swift */,
+				FF21EFCF2C469D5A0065A207 /* Place.swift */,
 				FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */,
 			);
 			path = Deprecated;
@@ -303,9 +321,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				D17042C02B542346005683D2 /* SearchView.swift in Sources */,
+				FF21EFD32C469D5A0065A207 /* MapTestView.swift in Sources */,
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				D13FFDD02B9DEFBC007E1970 /* SwiftUIView.swift in Sources */,
 				D1093C2B2B64FB95008553A3 /* CameraView.swift in Sources */,
+				FF21EFD12C469D5A0065A207 /* GlobeViewModel.swift in Sources */,
 				D13FFDCD2B90CAD0007E1970 /* CardView.swift in Sources */,
 				D13FFDDE2BAB3897007E1970 /* OTOTypes.swift in Sources */,
 				D13FFDD52BAB36FA007E1970 /* LogInView.swift in Sources */,
@@ -315,10 +335,13 @@
 				D13FFDDA2BAB3808007E1970 /* NetworkService.swift in Sources */,
 				D13FFDE02BAB38D4007E1970 /* MessageInputViewModel.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
+				FF21EFD52C469D5A0065A207 /* Place.swift in Sources */,
 				D13FFDD82BAB379A007E1970 /* UserLoginModel.swift in Sources */,
 				D13FFDE22BAF1E80007E1970 /* ButtonStyles.swift in Sources */,
 				D13FFDE62BAF1F1C007E1970 /* ToastView.swift in Sources */,
+				FF21EFD62C469D5A0065A207 /* MapViewModel.swift in Sources */,
 				D1093C302B6A7D99008553A3 /* inforView.swift in Sources */,
+				FF21EFD22C469D5A0065A207 /* GlobalTest.swift in Sources */,
 				D13FFDDC2BAB383A007E1970 /* OTORequests.swift in Sources */,
 				D13FFDEF2BAF1F26007E1970 /* NicknameTextField.swift in Sources */,
 				D13FFDCB2B90CA9A007E1970 /* SheetView.swift in Sources */,
@@ -326,6 +349,7 @@
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
 				D13FFDEC2BAF1F26007E1970 /* PhoneNumberTextField.swift in Sources */,
+				FF21EFD42C469D5A0065A207 /* GlobeView.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
 				D13FFDE52BAF1F1C007E1970 /* AutoNotificationBanner.swift in Sources */,
 				FF05E4462B84CC1300F5D375 /* (null) in Sources */,
