@@ -1,5 +1,5 @@
 //
-//  PhoneNumberTextField.swift
+//  NicknameTextField.swift
 //  guanzhi
 //
 //  Created by 晨光 訾 on 2024/3/7.
@@ -7,15 +7,13 @@
 
 import SwiftUI
 
-struct PhoneNumberTextField: View {
-//    @State private var phoneNumber: String = ""
-    @Binding var phoneNumber: String
+struct NicknameTextField: View {
+    @State private var nickname: String = ""
     @FocusState private var isFocused: Bool
     
     var body: some View {
         
         ZStack { //用于在最底层增加点击收起键盘
-            
             Color.clear // 最底层放置的收起键盘透明背景
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -30,19 +28,18 @@ struct PhoneNumberTextField: View {
                 .frame(height: 54)
                 .frame(width: .infinity)
                 .overlay {
-                    TextField("输入手机号", text: $phoneNumber)
+                    TextField("输入名字", text: $nickname)
                         .font(.system(size: 20).bold())
-                        .keyboardType(.numberPad)
                         .frame(height: 54)
                         .frame(width: .infinity)
                         .background(Color.gray.opacity(0))
                         .cornerRadius(20)
                         .multilineTextAlignment(.center)
                         .focused($isFocused)
-                        .onChange(of: phoneNumber) { newValue in
-                            // 确保输入不超过11位数字
-                            if newValue.count >= 11 {
-                                phoneNumber = String(newValue.prefix(11))
+                        .onChange(of: nickname) { newValue in
+                            // 确保输入不超过20位字符
+                            if newValue.count >= 20 {
+                                nickname = String(newValue.prefix(20))
                                 isFocused = false
                             }
                         }
@@ -55,14 +52,10 @@ struct PhoneNumberTextField: View {
                             }
                         }
                 }
-            
         }
     }
 }
 
-
 #Preview {
-//    PhoneNumberTextField()
-    @State var phoneNumber = ""
-        return PhoneNumberTextField(phoneNumber: $phoneNumber)
+    NicknameTextField()
 }
