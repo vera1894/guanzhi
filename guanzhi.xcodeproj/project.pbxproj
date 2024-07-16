@@ -37,6 +37,7 @@
 		D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061C2B526931001303F2 /* Assets.xcassets */; };
 		D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D1CE061F2B526931001303F2 /* Preview Assets.xcassets */; };
 		D1F67AB32B8A193A00292FEB /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F67AB22B8A193A00292FEB /* SettingView.swift */; };
+<<<<<<< Updated upstream
 		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		FF21EFD12C469D5A0065A207 /* GlobeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCB2C469D5A0065A207 /* GlobeViewModel.swift */; };
 		FF21EFD22C469D5A0065A207 /* GlobalTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCC2C469D5A0065A207 /* GlobalTest.swift */; };
@@ -44,6 +45,10 @@
 		FF21EFD42C469D5A0065A207 /* GlobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCE2C469D5A0065A207 /* GlobeView.swift */; };
 		FF21EFD52C469D5A0065A207 /* Place.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFCF2C469D5A0065A207 /* Place.swift */; };
 		FF21EFD62C469D5A0065A207 /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF21EFD02C469D5A0065A207 /* MapViewModel.swift */; };
+=======
+		D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */; };
+		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
+>>>>>>> Stashed changes
 		FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +68,7 @@
 		D13FFDDD2BAB3897007E1970 /* OTOTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTOTypes.swift; sourceTree = "<group>"; };
 		D13FFDDF2BAB38D4007E1970 /* MessageInputViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageInputViewModel.swift; sourceTree = "<group>"; };
 		D13FFDE12BAF1E80007E1970 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
+<<<<<<< Updated upstream
 		D13FFDE32BAF1F1C007E1970 /* AutoNotificationBanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AutoNotificationBanner.swift; path = guanzhi/View/UIElement/NotificationStyles/AutoNotificationBanner.swift; sourceTree = SOURCE_ROOT; };
 		D13FFDE42BAF1F1C007E1970 /* ToastView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ToastView.swift; path = guanzhi/View/UIElement/NotificationStyles/ToastView.swift; sourceTree = SOURCE_ROOT; };
 		D13FFDE72BAF1F26007E1970 /* PhoneNumberTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhoneNumberTextField.swift; sourceTree = "<group>"; };
@@ -70,6 +76,15 @@
 		D13FFDE92BAF1F26007E1970 /* CapsuleTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CapsuleTextField.swift; sourceTree = "<group>"; };
 		D13FFDEA2BAF1F26007E1970 /* NicknameTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NicknameTextField.swift; sourceTree = "<group>"; };
 		D13FFDEB2BAF1F26007E1970 /* OTPTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OTPTextField.swift; sourceTree = "<group>"; };
+=======
+		D13FFDE32BAF1F1C007E1970 /* AutoNotificationBanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AutoNotificationBanner.swift; path = "../../Documents/未命名文件夹/UIElement/NotificationStyles/AutoNotificationBanner.swift"; sourceTree = SOURCE_ROOT; };
+		D13FFDE42BAF1F1C007E1970 /* ToastView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ToastView.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/NotificationStyles/ToastView.swift"; sourceTree = "<group>"; };
+		D13FFDE72BAF1F26007E1970 /* PhoneNumberTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PhoneNumberTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/PhoneNumberTextField.swift"; sourceTree = "<group>"; };
+		D13FFDE82BAF1F26007E1970 /* RoundedRectangleTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RoundedRectangleTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/RoundedRectangleTextField.swift"; sourceTree = "<group>"; };
+		D13FFDE92BAF1F26007E1970 /* CapsuleTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CapsuleTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/CapsuleTextField.swift"; sourceTree = "<group>"; };
+		D13FFDEA2BAF1F26007E1970 /* NicknameTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NicknameTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/NicknameTextField.swift"; sourceTree = "<group>"; };
+		D13FFDEB2BAF1F26007E1970 /* OTPTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = OTPTextField.swift; path = "../../../../../../Documents/未命名文件夹/UIElement/TextfieldStyles/OTPTextField.swift"; sourceTree = "<group>"; };
+>>>>>>> Stashed changes
 		D13FFDF32BAF1F5D007E1970 /* AlertStyles.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AlertStyles.swift; path = ../../AlertStyles.swift; sourceTree = "<group>"; };
 		D17042BF2B542346005683D2 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SearchView.swift; path = guanzhi/View/frontPage/SearchView.swift; sourceTree = SOURCE_ROOT; };
 		D19912012B5292A6002A711A /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MyView.swift; path = guanzhi/View/my/MyView.swift; sourceTree = SOURCE_ROOT; };
@@ -100,6 +115,26 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+<<<<<<< Updated upstream
+=======
+		3F08088C5D0FF0978F6DCC2D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		720003218D3FAA9F1D0B6DE4 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				BF04D7B541F8EA61A15C6461 /* Pods-guanzhi.debug.xcconfig */,
+				85B32ABF81BE56D4F7168B76 /* Pods-guanzhi.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+>>>>>>> Stashed changes
 		D13FFDC92B90CA7A007E1970 /* frontPage */ = {
 			isa = PBXGroup;
 			children = (
@@ -149,8 +184,9 @@
 				FF7B72EE2B9A04DB0045E866 /* NotificationStyles */,
 				FF7B72E82B99E6640045E866 /* TextfieldStyles */,
 			);
-			path = UIElement;
-			sourceTree = "<group>";
+			name = UIElement;
+			path = guanzhi/View/UIElement;
+			sourceTree = SOURCE_ROOT;
 		};
 		D19912002B529285002A711A /* View */ = {
 			isa = PBXGroup;
@@ -246,8 +282,9 @@
 				D13FFDE32BAF1F1C007E1970 /* AutoNotificationBanner.swift */,
 				D13FFDE42BAF1F1C007E1970 /* ToastView.swift */,
 			);
-			path = NotificationStyles;
-			sourceTree = "<group>";
+			name = NotificationStyles;
+			path = guanzhi/View/UIElement/NotificationStyles;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
