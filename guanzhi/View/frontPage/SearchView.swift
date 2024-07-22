@@ -12,6 +12,8 @@ struct SearchView: View {
     
     @Namespace var mapScope
     
+    @AppStorage("isFirstLaunch") private var isFirstLaunch: Bool = true
+    
     @State private var position :MapCameraPosition = .region(.defaultRegion)
     @State private var isShowSearchView: Bool = true
     @State private var searchResults = [SearchResult]()
@@ -99,25 +101,25 @@ struct SearchView: View {
                         }
                         UserAnnotation()
                     }
-                    .overlay(alignment: .bottom) {
-                        if selectedLocation != nil {
-                            //弹出卡片
-                            
-                        }
-                    }
+//                    .overlay(alignment: .bottom) {
+//                        if selectedLocation != nil {
+//                            //弹出卡片
+//                            
+//                        }
+//                    }
                     .onChange(of: selectedLocation) {
                         if selectedLocation != nil {
-                            
-                        }
-                        getAddressFromLocation(for: selectedLocation?.location){
-                            address in
-                            if let address = address{
-                                resultCardName = address
+                            getAddressFromLocation(for: selectedLocation?.location){
+                                address in
+                                if let address = address{
+                                    resultCardName = address
+                                }
                             }
                         }
+                        
                         print("cardname",resultCardName)
-                        isShowSearchView = selectedLocation == nil //未选中地址的时候弹出搜索卡片
-                        isShowResultCard = selectedLocation != nil //选中地址的时候弹出详情卡片
+//                        isShowSearchView = selectedLocation == nil //未选中地址的时候弹出搜索卡片
+//                        isShowResultCard = selectedLocation != nil //选中地址的时候弹出详情卡片
                         print("已选择地址",selectedLocation as Any)
                         
                     }
@@ -142,9 +144,14 @@ struct SearchView: View {
                                 VStack(spacing: 16) {
                                     Button(action: {
                                         // 头像-s
-                                        isShowSearchView = false
+                                        print(searchResults)
                                         isShowMyView = true
-                                    }) { }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                                                    isShowSearchView = false
+                                                }
+                                    }) {
+                                        
+                                    }
                                     .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
                                     .navigationDestination(isPresented: $isShowMyView) {
                                         MyView(isSheetPresented: $isShowSearchView)
@@ -152,6 +159,7 @@ struct SearchView: View {
                                     
                                     Button{
                                         //提醒按钮-圆形
+                                        
                                     }label: {
                                         Image("icon-notification")
                                     }
@@ -174,19 +182,22 @@ struct SearchView: View {
                    
                     
                     .onAppear{
-                        getUserLocation()
                         
-                        if let location = locatedPosition { selectedLocation = SearchResult(location: location)
-                            print("进入界面",selectedLocation as Any)}
-                        
-                        getAddressFromLocation(for: selectedLocation?.location){
-                            address in
-                            if let address = address{
-                                resultCardName = address
+                        if isFirstLaunch {
+                            isFirstLaunch = false
+                            getUserLocation()
+                            
+                            if let location = locatedPosition { selectedLocation = SearchResult(location: location)
+                                print("进入界面",selectedLocation as Any)}
+                            
+                            getAddressFromLocation(for: selectedLocation?.location){
+                                address in
+                                if let address = address{
+                                    resultCardName = address
+                                }
                             }
+                            print(searchResults)
                         }
-                        
-                     
                     }
                     
                     .sheet(isPresented: $isShowSearchView) {

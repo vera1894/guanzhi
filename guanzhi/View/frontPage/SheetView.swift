@@ -85,23 +85,8 @@ struct SheetView: View {
                     .buttonStyle(ButtonStyle_m())
                 }
                 
-                //相机按钮
-//                Button(action: {
-//                    // 分享地点-胶囊按钮hug
-//                    isShowingImagePicker = true
-//                }) {
-//                    Text("📷 分享地点")
-//                }
-//                .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
-                
-//                Button{
-//                    isShowingImagePicker = true
-//                }label: {
-//                    Image("icon-camera")
-//                        .frame(width: 40, height: 40)
-//                        .padding(.trailing,Constants.spacingSpacingM)
-//                }
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.5, blendDuration: 0.3), value: currentDetent)
             .padding(.top, 32)
             .padding(.horizontal)
             .padding(.bottom, 8)

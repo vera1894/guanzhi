@@ -59,6 +59,7 @@ struct MyView: View {
             // 添加返回按钮点击的操作
             print("按钮点击!!")
             presentationMode.wrappedValue.dismiss()
+            isSheetPresented = true
         }) {
             Image("icon-back")
         }.buttonStyle(ButtonStyle_m()),trailing:
@@ -74,9 +75,9 @@ struct MyView: View {
         .navigationBarBackButtonHidden(true)
 //        .navigationBarItems(
 //        )
-        .onDisappear{
-            isSheetPresented = true
-        }
+//        .onDisappear{
+//            isSheetPresented = true
+//        }
         
     }
 }
