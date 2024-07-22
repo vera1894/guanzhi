@@ -103,7 +103,7 @@ struct MessageView: View {
                 //OTPTextField(numberOfFields: 4, enterValue: $codeString)
                // inputView(vm: vm)
                // TextField("", text: $input).keyboardType(.numberPad) //临时结局方式
-                PhoneNumberTextField(phoneNumber: $input,hintText: "请输入验证码")
+                PhoneNumberTextField(phoneNumber: $input,placeholder: "请输入验证码")
                     .frame(height: 54)
                     .padding(.horizontal,Constants.spacingSpacingM)
                

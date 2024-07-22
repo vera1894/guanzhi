@@ -585,7 +585,7 @@ struct IconStylePosition: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
         Image("icon-position")
-            .frame(width: 24, height: 33)
+            .frame(width: 32, height: 32)
             .shadow(color: Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
             .grayscale(isAnimating ? 0 : 1)
             .onAppear {

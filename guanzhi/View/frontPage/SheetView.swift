@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MapKit
 
 struct SheetView: View {
     @State private var search: String = ""
@@ -15,33 +16,96 @@ struct SheetView: View {
     @State private var image: UIImage?
     @State private var isShowPostView = false
     @Binding var cardName : String
+    let placeholder = "🔍想瞧瞧哪里？"
+    @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
+    @Binding var selectedLocation: SearchResult?
+    @Binding var position: MapCameraPosition
+   
     
     var body: some View {
         
         VStack {
             // 1 搜索栏
-            HStack {
+            HStack(spacing: 8) {
                 // Image(systemName: "magnifyingglass")
-                HStack{
-                    Text(" 🔍")
-                    TextField("想瞧瞧哪里？", text: $search)
-                        .autocorrectionDisabled()
-                        .onSubmit {
-                            Task {
-                                searchResults = (try? await locationService.search(with: search)) ?? []
-                            }
+               
+//                    Text(" 🔍")
+//                    TextField("想瞧瞧哪里？", text: $search)
+//                        .autocorrectionDisabled()
+//                        .onSubmit {
+//                            Task {
+//                                searchResults = (try? await locationService.search(with: search)) ?? []
+//                            }
+//                        }
+                    
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
+                        .stroke(.black, lineWidth: 4)
+                        .foregroundStyle(Color("color-white").opacity(1))
+                        .frame(height: 32)
+                        .frame(width: .infinity)
+                        .overlay {
+                            TextField(placeholder, text: $search)
+                                .font(.system(size: 16, weight: .regular, design: .default))
+                                .padding(.horizontal, 16)
+                                .frame(height: 32)
+                                .frame(width: .infinity)
+                                .background(Color.gray.opacity(0))
+                                .cornerRadius(20)
+                                .multilineTextAlignment(.leading)
+                                .autocorrectionDisabled()
+                                .onTapGesture {
+                                    currentDetent = .large
+                                }
+                                .onSubmit {
+                                    Task {
+                                        searchResults = (try? await locationService.search(with: search)) ?? []
+                                    }
+                                }
+                                
                         }
-                }.modifier(TextFieldGrayBackgroundColor())
+                
+                if currentDetent != .large { // 根据 BottomSheet 的状态隐藏或显示
+                    Button(action: {
+                        // 分享地点-胶囊按钮hug
+                        isShowingImagePicker = true
+                    }) {
+                        Text("📷 分享地点")
+                    }
+                    .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
+                } else {
+                    Button{
+                        //关闭按钮-圆形
+                        search = ""
+                        currentDetent = .height(60)
+                        
+                    }label: {
+                        Image("icon-close")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
                 
                 //相机按钮
-                Button{
-                    isShowingImagePicker = true
-                }label: {
-                    Image("icon-camera")
-                        .frame(width: 40, height: 40)
-                        .padding(.trailing,Constants.spacingSpacingM)
-                }
+//                Button(action: {
+//                    // 分享地点-胶囊按钮hug
+//                    isShowingImagePicker = true
+//                }) {
+//                    Text("📷 分享地点")
+//                }
+//                .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
+                
+//                Button{
+//                    isShowingImagePicker = true
+//                }label: {
+//                    Image("icon-camera")
+//                        .frame(width: 40, height: 40)
+//                        .padding(.trailing,Constants.spacingSpacingM)
+//                }
             }
+            .padding(.top, 32)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+//            .frame(width: .infinity, height: .infinity)
             .sheet(isPresented: $isShowingImagePicker) {
                 NavigationStack{
                     CameraView(image: $image)
@@ -82,17 +146,17 @@ struct SheetView: View {
             .scrollContentBackground(.hidden)
         }
         
+        
         // 5
         .onChange(of: search) {
             locationService.update(queryFragment: search)
         }
-        
-        
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .presentationCornerRadius(20)
         // 2 用户无法通过向下滑动来关闭工作表视图
         .interactiveDismissDisabled()//
         // 3 工作表视图有两种可能的尺寸：小尺寸（200 点高）和大尺寸（默认尺寸）
-        .presentationDetents([.height(120), .large])
+        .presentationDetents([.height(60), .large], selection: $currentDetent)
         // 4 模糊效果
         .presentationBackground(.regularMaterial)
         // 5 用户可以与其后面的地图视图进行交互
@@ -103,6 +167,10 @@ struct SheetView: View {
         Task {
             if let singleLocation = try? await locationService.search(with: "\(completion.title) \(completion.subTitle)").first {
                 searchResults = [singleLocation]
+                selectedLocation = singleLocation
+                position = .region(MKCoordinateRegion(center: singleLocation.location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
+                currentDetent = .height(60)
+//                currentDetent = .height(60)
             }
         }
     }

@@ -37,7 +37,7 @@ struct LogInView: View {
                     .font(.system(size: 20))
                     .padding(.bottom,60)
                 
-                PhoneNumberTextField(phoneNumber: $userlogin.phone)
+                PhoneNumberTextField(phoneNumber: $userlogin.phone, placeholder: "请输入手机号")
                     .frame(height: 54)
                     .padding(.horizontal,Constants.spacingSpacingM)
                 

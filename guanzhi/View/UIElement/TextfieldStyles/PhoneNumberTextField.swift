@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct PhoneNumberTextField: View {
-    @State private var phoneNumber: String = ""
+//    @State private var phoneNumber: String = ""
+    @Binding var phoneNumber: String
     @FocusState private var isFocused: Bool
+    var placeholder: String // 输入框占位符参数
     
     var body: some View {
         
@@ -29,7 +31,7 @@ struct PhoneNumberTextField: View {
                 .frame(height: 54)
                 .frame(width: .infinity)
                 .overlay {
-                    TextField("输入手机号", text: $phoneNumber)
+                    TextField(placeholder, text: $phoneNumber)
                         .font(.system(size: 20).bold())
                         .keyboardType(.numberPad)
                         .frame(height: 54)
@@ -61,5 +63,7 @@ struct PhoneNumberTextField: View {
 
 
 #Preview {
-    PhoneNumberTextField()
+//    PhoneNumberTextField()
+    @State var phoneNumber = ""
+    return PhoneNumberTextField(phoneNumber: $phoneNumber, placeholder: "请输入手机号")
 }

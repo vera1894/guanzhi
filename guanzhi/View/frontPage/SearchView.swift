@@ -9,17 +9,23 @@ import SwiftUI
 import MapKit
 
 struct SearchView: View {
+    
+    @Namespace var mapScope
+    
     @State private var position :MapCameraPosition = .region(.defaultRegion)
-    @State private var isSheetPresented: Bool = true
+    @State private var isShowSearchView: Bool = true
     @State private var searchResults = [SearchResult]()
     //    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
     @State private var selectedLocation: SearchResult?
     
     @State private var isShowMyView: Bool = false
     @State private var scene: MKLookAroundScene?
-    @State private var isCardPresented: Bool = false
-    @State private var cardName = "" //详情卡片地名
+    @State private var isShowResultCard: Bool = false
+    @State private var resultCardName = "" //详情卡片地名
     @State var locatedPosition : CLLocationCoordinate2D?
+    
+    @State private var detents: Set<PresentationDetent> = [.height(60), .large]
+    @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
     
     
     func getUserLocation() {
@@ -34,12 +40,14 @@ struct SearchView: View {
                 if let location = locationManager.location?.coordinate {
                     getAddressFromLocation(for: location) { String in
                         if let address = String{
-                            cardName = address
-                            print("cardname:",cardName)
+                            resultCardName = address
+                            print("cardname:",resultCardName)
                         }
                     }
                     let region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-                    position = .region(region)
+                    withAnimation {
+                        position = .region(region)
+                                        }
                     locatedPosition = location
                    // searchResults.append(SearchResult(location: location))
                     print("经纬度",location.latitude,location.longitude)
@@ -72,13 +80,24 @@ struct SearchView: View {
             NavigationStack{
                 ZStack{
                     
-                    Map(position: $position, selection: $selectedLocation){
+                    Map(position: $position, interactionModes: [.all], selection: $selectedLocation, scope: mapScope){
                         ForEach(searchResults) { result in
                             Marker(coordinate: result.location) {
                                 Image(systemName: "mappin")
                             }
                             .tag(result)
                         }
+                        Annotation("", coordinate: .testLocation1, anchor: .bottom) {
+                            ZStack {
+                                
+                                Button{
+                                    //Seee位置，需要添加是否已经定位的状态 isLocated
+                                }label: { }
+                            .buttonStyle(SeeePositionStyle(isEnabled: true))
+                                
+                            }
+                        }
+                        UserAnnotation()
                     }
                     .overlay(alignment: .bottom) {
                         if selectedLocation != nil {
@@ -86,21 +105,20 @@ struct SearchView: View {
                             
                         }
                     }
-                    .ignoresSafeArea()
                     .onChange(of: selectedLocation) {
-                        if let selectedLocation {
+                        if selectedLocation != nil {
                             
                         }
                         getAddressFromLocation(for: selectedLocation?.location){
                             address in
                             if let address = address{
-                                cardName = address
+                                resultCardName = address
                             }
                         }
-                        print("cardname",cardName)
-                        isSheetPresented = selectedLocation == nil //未选中地址的时候弹出搜索卡片
-                        isCardPresented = selectedLocation != nil //选中地址的时候弹出详情卡片
-                        print("已选择地址",selectedLocation)
+                        print("cardname",resultCardName)
+                        isShowSearchView = selectedLocation == nil //未选中地址的时候弹出搜索卡片
+                        isShowResultCard = selectedLocation != nil //选中地址的时候弹出详情卡片
+                        print("已选择地址",selectedLocation as Any)
                         
                     }
                     .onChange(of: searchResults) {
@@ -108,98 +126,90 @@ struct SearchView: View {
                             selectedLocation = firstResult
                         }
                     }
-                    
-                    
-                    //                VStack{
-                    //                    VStack{
-                    //                        Spacer()
-                    //
-                    //                        HStack {
-                    //                            Label(
-                    //                                title: {
-                    //                                    Text("🌍世界虽大 吾可观之👀")
-                    //                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    //                                        .foregroundColor(Color("text-black"))
-                    //                                        .padding(.horizontal, 16)
-                    //                                        .padding(.vertical, 10)
-                    //                                },
-                    //                                icon: {}
-                    //                            )
-                    //                            .padding(.bottom,4)
-                    //
-                    //
-                    //                        }
-                    //
-                    //                    }
-                    //                    .frame(height: 110, alignment: .center)
-                    //                    .frame(maxWidth: .infinity)
-                    //                    .background(
-                    //                        UnevenRoundedRectangle(cornerRadii: .init(topLeading: 0, bottomLeading: 20.0, bottomTrailing: 20.0, topTrailing: 0), style: .continuous)
-                    //                            .foregroundColor(Color("color-primary"))
-                    //                    )
-                    //                    .overlay(
-                    //                        UnevenRoundedRectangle(cornerRadii: .init(topLeading: 0, bottomLeading: 20.0, bottomTrailing: 20.0, topTrailing: 0), style: .continuous)
-                    //                            .stroke(Color.black, lineWidth: 4)
-                    //                    )
-                    //                    .compositingGroup()
-                    //                    .shadow(color: Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
-                    //
-                    //                    Spacer()
-                    //                }.ignoresSafeArea()
-                    
-                    HStack{
-                        Spacer()
-                        VStack(alignment: .center, spacing: Constants.spacingSpacingM){
-                            Button {
-                                isSheetPresented = false
-                                isShowMyView = true
-                            } label: {
-                                Image("icon-avatar")
-                                    .resizable()
-                                    .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
-                            }.buttonStyle(ButtonStyle_m())
-                                .navigationDestination(isPresented: $isShowMyView) {
-                                    MyView(isSheetPresented: $isSheetPresented)
+                    .overlay(alignment:.bottomTrailing) {
+                        if isShowSearchView == true {
+                            VStack(spacing: 32) {
+                                
+                                VStack {
+                                    MapPitchToggle(scope: mapScope)
                                 }
-                            
-                            Button {
-                                getUserLocation()
-                            } label: {
-                                Image("icon-location")
-                                    .frame(width: Constants.iconSizeM, height: Constants.iconSizeM)
-                            }.buttonStyle(ButtonStyle_m())
-                        }.padding(Constants.spacingSpacingM)
+                                .mapControlVisibility(.visible)
+                                .buttonBorderShape(.circle)
+                                .padding(.top, 60)
+                                
+                                Spacer()
+                                
+                                VStack(spacing: 16) {
+                                    Button(action: {
+                                        // 头像-s
+                                        isShowSearchView = false
+                                        isShowMyView = true
+                                    }) { }
+                                    .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
+                                    .navigationDestination(isPresented: $isShowMyView) {
+                                        MyView(isSheetPresented: $isShowSearchView)
+                                    }
+                                    
+                                    Button{
+                                        //提醒按钮-圆形
+                                    }label: {
+                                        Image("icon-notification")
+                                    }
+                                    .buttonStyle(ButtonStyle_m())
+                                    
+                                    Button{
+                                        //定位按钮-圆形
+                                        getUserLocation()
+                                    }label: {
+                                        Image("icon-location")
+                                    }
+                                    .buttonStyle(ButtonStyle_m())
+                                }
+                            }
+                            .padding(.horizontal, 5)
+                            .padding(.bottom, 80)
+                        }
                     }
-                    
+                    .mapScope(mapScope)
+                   
                     
                     .onAppear{
                         getUserLocation()
                         
                         if let location = locatedPosition { selectedLocation = SearchResult(location: location)
-                        print("进入界面",selectedLocation)}
+                            print("进入界面",selectedLocation as Any)}
                         
                         getAddressFromLocation(for: selectedLocation?.location){
                             address in
                             if let address = address{
-                                cardName = address
+                                resultCardName = address
                             }
                         }
                         
                      
                     }
                     
-                    .sheet(isPresented: $isSheetPresented) {
-                        SheetView(searchResults: $searchResults, cardName: $cardName)
+                    .sheet(isPresented: $isShowSearchView) {
+                        SheetView(
+                            searchResults: $searchResults,
+                            cardName: $resultCardName,
+                            currentDetent: $currentDetent,
+                            selectedLocation: $selectedLocation,
+                            position: $position
+                        )
                     }
-                    .sheet(isPresented: $isCardPresented) {
-                        CardView(name: $cardName)
+                    
+                    .sheet(isPresented: $isShowResultCard) {
+                        ResultCardView(
+                            name: $resultCardName,
+                            isShowResultCard: $isShowResultCard,
+                            isShowSearchView: $isShowSearchView, 
+                            sesrchViewHight: $currentDetent,
+                            searchResults: $searchResults,
+                            selectedLocation: $selectedLocation)
                     }
-                    
-                    
-                    
+                       
                 }
-                
-                
             }.navigationBarBackButtonHidden(true)
                 .onAppear{
                     Toast.shared.present(style: .notificationOfWelcome(

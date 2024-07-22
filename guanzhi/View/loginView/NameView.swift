@@ -34,7 +34,7 @@ struct nameView:View{
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .stroke(Color("DarkBlue"), lineWidth: 1)
                     .frame(height: 48)
-                PhoneNumberTextField(phoneNumber: $userlogin.nickName,hintText: "请输入名字")
+                PhoneNumberTextField(phoneNumber: $userlogin.nickName,placeholder: "请输入名字")
                     .frame(height: 54)
                     .padding(.horizontal,Constants.spacingSpacingM)
 //                TextField("", text: $userlogin.nickName)
