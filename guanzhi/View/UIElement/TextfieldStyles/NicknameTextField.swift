@@ -8,18 +8,19 @@
 import SwiftUI
 
 struct NicknameTextField: View {
-    @State private var nickname: String = ""
+    @Binding var nickname: String
     @FocusState private var isFocused: Bool
+    var placeholder: String // 输入框占位符参数
     
     var body: some View {
         
-        ZStack { //用于在最底层增加点击收起键盘
-            Color.clear // 最底层放置的收起键盘透明背景
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    isFocused = false
-                }
-                .edgesIgnoringSafeArea(.all)
+//        ZStack { //用于在最底层增加点击收起键盘
+//            Color.clear // 最底层放置的收起键盘透明背景
+//                .contentShape(Rectangle())
+//                .onTapGesture {
+//                    isFocused = false
+//                }
+//                .edgesIgnoringSafeArea(.all)
             
             RoundedRectangle(cornerRadius: 20)
                 .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
@@ -28,7 +29,7 @@ struct NicknameTextField: View {
                 .frame(height: 54)
                 .frame(width: .infinity)
                 .overlay {
-                    TextField("输入名字", text: $nickname)
+                    TextField(placeholder, text: $nickname)
                         .font(.system(size: 20).bold())
                         .frame(height: 54)
                         .frame(width: .infinity)
@@ -52,10 +53,10 @@ struct NicknameTextField: View {
                             }
                         }
                 }
-        }
+//        }
     }
 }
 
 #Preview {
-    NicknameTextField()
+    NicknameTextField(nickname: .constant(""), placeholder: "请输入名字")
 }

@@ -179,7 +179,7 @@ class UserLoginModel: ObservableObject {
                         let response = try decoder.decode(OTOResponseDataModel.self, from: jsonData)
                         if response.respCode == 0 {
                             print("请求成功")
-                            print(response.datas.nickname)
+                            print(response.datas.nickname as Any)
                         }
                         
                         self.noticeText = response.respMsg ?? ""
@@ -212,7 +212,7 @@ class OTOLoginStatusManager {
         if let _ = UserDefaults.standard.string(forKey: loginTokenKey) {
             isLoggedIn = true
             print("isloggein:已登录")
-            print("userdefaults用户存储",UserDefaults.standard.string(forKey: loginTokenKey) )
+            print("userdefaults用户存储",UserDefaults.standard.string(forKey: loginTokenKey) as Any )
         } else {
             isLoggedIn = false
         }

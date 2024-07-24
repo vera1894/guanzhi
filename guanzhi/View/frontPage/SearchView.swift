@@ -21,6 +21,7 @@ struct SearchView: View {
     @State private var selectedLocation: SearchResult?
     
     @State private var isShowMyView: Bool = false
+    @State private var isShowLogInView: Bool = false  //临时测试
     @State private var scene: MKLookAroundScene?
     @State private var isShowResultCard: Bool = false
     @State private var resultCardName = "" //详情卡片地名
@@ -158,12 +159,16 @@ struct SearchView: View {
                                     }
                                     
                                     Button{
-                                        //提醒按钮-圆形
+                                        //提醒按钮-圆形 //测试登录页面导航问题
+                                        isShowLogInView = true
                                         
                                     }label: {
                                         Image("icon-notification")
                                     }
                                     .buttonStyle(ButtonStyle_m())
+                                    .navigationDestination(isPresented: $isShowLogInView) {
+                                        LogInView(userlogin: UserLoginModel())
+                                    }
                                     
                                     Button{
                                         //定位按钮-圆形

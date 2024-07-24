@@ -11,8 +11,9 @@ import SwiftUI
 struct guanzhiApp: App {
     var body: some Scene {
         WindowGroup {
-//            LogInView(userlogin: OTOLoginStatusManager.shared.userLogin)
-            SearchView()
+            LogInView(userlogin: OTOLoginStatusManager.shared.userLogin)
+//            MessageView(userlogin: UserLoginModel())
+//            SearchView()
 //            GlobalTest()
         }
     }

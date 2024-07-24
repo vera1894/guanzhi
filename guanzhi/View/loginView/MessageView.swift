@@ -17,6 +17,7 @@ import SwiftUI
 //验证验证码，未注册需要注册
 struct MessageView: View {
     
+//    @FocusState private var fieldFocus: Int?
     @State private var next =  false
     @ObservedObject var userlogin : UserLoginModel
   //  @ObservedObject var vm : MessageinputViewModel
@@ -28,12 +29,12 @@ struct MessageView: View {
     
     @Environment(\.presentationMode) var presentationMode
     
-    @State var codeString = ["","","",""]
-    @State var input = "" //临时输入框方案
+//    @State var codeString = ["","","",""]
+    @State private var enterSMSCode = ""
+    @State private var isComplete = false
     
     //判断跳转路径
     func topage() -> some View{
-        
         if userlogin.loginState == 1{
             return AnyView(nameView(userlogin: userlogin))
         }
@@ -42,9 +43,7 @@ struct MessageView: View {
             return AnyView(SearchView())
         }else {
             return AnyView(EmptyView())
-            
         }
-        
     }
     
     //验证验证码
@@ -81,7 +80,7 @@ struct MessageView: View {
                     }
                     //验证码错误
                     else {
-                        print(response.respMsg)
+                        print(response.respMsg as Any)
                     }
         
                 }
@@ -90,100 +89,105 @@ struct MessageView: View {
             }
         }
     }
+    
     var body: some View {
+        ZStack {  //用于在最底层增加点击收起键盘
+            Color.clear // 最底层放置的收起键盘透明背景
+                .contentShape(Rectangle())
+                .onTapGesture {
+//                    fieldFocus = nil
+                    UIApplication.shared.endEditing()
+                    print("点击底层")
+                }
+                .edgesIgnoringSafeArea(.all)
+            
             VStack{
-                Text("请输入短信验证码")
-                    .fontWeight(.semibold)
-                    .font(.system(size: 24))
-                    .padding(.bottom,10)
-                    .padding(.top,150)
-                Text("输入\( userlogin.phone)收到的短信验证码")
-                    .font(.system(size: 20))
+                    Text("请输入短信验证码")
+                        .fontWeight(.semibold)
+                        .font(.system(size: 24))
+                        .padding(.bottom,10)
+                        .padding(.top,150)
+                    Text("输入\( userlogin.phone)收到的短信验证码")
+                        .font(.system(size: 20))
+                        .padding(.bottom,60)
                 
-                //OTPTextField(numberOfFields: 4, enterValue: $codeString)
-               // inputView(vm: vm)
-               // TextField("", text: $input).keyboardType(.numberPad) //临时结局方式
-                PhoneNumberTextField(phoneNumber: $input,placeholder: "请输入验证码")
+                    
+                OTPTextField(numberOfFields: 4, enterSMSCode: $enterSMSCode, isComplete: $isComplete)
                     .frame(height: 54)
-                    .padding(.horizontal,Constants.spacingSpacingM)
-               
-                Button {
-                    userlogin.sendCode(phNumber:userlogin.phone)
-                    if userlogin.sendStatus{
-                        userlogin.time = Constants.MessageTime
-                    }
-                    
-                    if userlogin.noticeText.count != 0{
-                        showNotice = true
-                    }
-                } label: {
-                    if userlogin.time == 0 || !userlogin.sendStatus {
-                        Text("重新发送验证码").underline().font(.system(size: 16))
-                      
-                    }else{
-                        Text("\(userlogin.time)秒后可重新发送")
-                    }
+    //                inputView(vm: vm)
+                   // TextField("", text: $input).keyboardType(.numberPad) //临时结局方式
+    //                PhoneNumberTextField(phoneNumber: $input,placeholder: "请输入验证码")
+    //                    .frame(height: 54)
+    //                    .padding(.horizontal,Constants.spacingSpacingM)
                    
-                }.padding(20)
-                .disabled(userlogin.time != 0 && userlogin.sendStatus )
-                .onReceive(timer) { time in
-                    if userlogin.firstSendMessage && userlogin.time > 0 {
-                        userlogin.time -= 1
-                    }
-                }
-
-                Spacer()
-                
-                ZStack{
-                    
                     Button {
-                        presentationMode.wrappedValue.dismiss()
-                    } label: {
-                        ZStack{
-                            Circle()
-                                .frame(height: 36)
-                                .foregroundColor(Color("ButtonPressed"))
-                               
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(Color.white)
+                        userlogin.sendCode(phNumber:userlogin.phone)
+                        if userlogin.sendStatus{
+                            userlogin.time = Constants.MessageTime
                         }
-                    }.animation(.easeInOut(duration: 0.5))
-                        .padding(.bottom,40)
-                        .offset(x:-60)
-
-                    //下一步按钮
-                    Button {
-                      //  checkCode(phNumber: userlogin.phone, code: codeString.joined())
                         
-                        checkCode(phNumber: userlogin.phone, code: input)
-                        
+                        if userlogin.noticeText.count != 0{
+                            showNotice = true
+                        }
                     } label: {
-                        Text("🔜 下一步")
+                        if userlogin.time == 0 || !userlogin.sendStatus {
+                            Text("重新发送验证码").underline().font(.system(size: 16))
+                          
+                        }else{
+                            Text("\(userlogin.time)秒后可重新发送")
+                        }
+                       
+                    }.padding(20)
+                    .disabled(userlogin.time != 0 && userlogin.sendStatus )
+                    .onReceive(timer) { time in
+                        if userlogin.firstSendMessage && userlogin.time > 0 {
+                            userlogin.time -= 1
+                        }
                     }
-                    .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: next))
-                    .navigationDestination(isPresented: $next) {
-                        topage()
-                    }
-                    .padding(20)
-                        
-                   
-                }
-                
-                
-                
-            }
-            .navigationBarBackButtonHidden(true)
 
-            //提示 - 待调整
-//            .hud(isPresented: $showNotice){
-//                Text("\(userlogin.noticeText)")
-//            }
-            .onAppear{
-                if userlogin.sendStatus == false{
-                    showNotice = true
-                    userlogin.time = 0
+                    Spacer()
+                    
+                    HStack{
+                        Button(action: {
+                                    // 返回（白色）-胶囊按钮hug
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                                }) {
+                                    Text("🔙️ 返回")
+                                }
+                            .buttonStyle(ButtonStyle_capsuleHugLeft(isEnabled: true))
+                        
+                        Button(action: {
+                                    // 下一步（禁用）-胶囊按钮fill
+//                              checkCode(phNumber: userlogin.phone, code: codeString.joined())
+                              checkCode(phNumber: userlogin.phone, code: enterSMSCode)
+                                }) {
+                                    Text("🔜 下一步")
+                                }
+                            .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: isComplete))
+                            .navigationDestination(isPresented: $next) {
+                                topage()
+                            }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                    
+                    
                 }
+                .navigationBarBackButtonHidden(true)
+
+                //提示 - 待调整
+    //            .hud(isPresented: $showNotice){
+    //                Text("\(userlogin.noticeText)")
+    //            }
+                .onAppear{
+                    if userlogin.sendStatus == false{
+                        showNotice = true
+                        userlogin.time = 0
+                    }
             }
+        }
     }
 }
 
