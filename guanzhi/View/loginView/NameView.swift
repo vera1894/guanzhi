@@ -15,7 +15,7 @@ struct nameView:View{
     @ObservedObject var userlogin : UserLoginModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showNotice = false
-    
+    @State private var isLoading = false
 
     var body: some View {
 
@@ -65,17 +65,22 @@ struct nameView:View{
                     
                         Button(action: {
                                     // 下一步（禁用）-胶囊按钮fill
+                                isLoading = true
                                 userlogin.register()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                 if userlogin.namePassed{
+                                    isLoading = false
                                     next = true
                                 }else{
                                     showNotice = true
+                                    isLoading = false
                                 }
-                              
+                            }
                                 }) {
                                     Text("🔜 下一步")
                                 }
                             .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: userlogin.nickName.count != 0))
+                            .disabled(!(userlogin.nickName.count != 0))
                             .navigationDestination(isPresented: $next) {
                                 SearchView()
                             }
@@ -83,11 +88,18 @@ struct nameView:View{
                 }
                 .padding(.horizontal)
                 .padding(.bottom)
+            
+            if isLoading {
+                ProcessingView()
             }
+            
+            }
+        .background(Color("color-white"))
         }
     }
 
 
 #Preview {
     nameView(userlogin: UserLoginModel())
+        .preferredColorScheme(.dark) // 设置为夜间模式
 }

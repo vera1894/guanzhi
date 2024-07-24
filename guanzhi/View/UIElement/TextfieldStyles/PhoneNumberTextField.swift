@@ -27,7 +27,7 @@ struct PhoneNumberTextField: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
                 .stroke(.black, lineWidth: 4)
-                .foregroundStyle(.white.opacity(1))
+                .foregroundStyle(Color("color-white").opacity(1))
                 .frame(height: 54)
                 .frame(width: .infinity)
                 .overlay {
@@ -66,4 +66,5 @@ struct PhoneNumberTextField: View {
 //    PhoneNumberTextField()
     @State var phoneNumber = ""
     return PhoneNumberTextField(phoneNumber: $phoneNumber, placeholder: "请输入手机号")
+        .preferredColorScheme(.dark) // 设置为夜间模式
 }

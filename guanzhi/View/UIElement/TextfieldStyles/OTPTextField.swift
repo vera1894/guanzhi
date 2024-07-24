@@ -41,7 +41,7 @@ struct OTPTextField: View {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
                         .stroke(.black, lineWidth: 4)
-                        .foregroundStyle(.white.opacity(1))
+                        .foregroundStyle(Color("color-white").opacity(1))
                         .frame(width: 54, height: 54)
                         .overlay {
                             TextField("", text: $enterValue[index], onEditingChanged: {editing in

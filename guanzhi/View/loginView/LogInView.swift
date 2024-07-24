@@ -82,12 +82,10 @@ struct LogInView: View {
                         
                     } label: {
                         Text("🔜 下一步")
-                        
-                        
                             .animation(.easeInOut(duration: 0.3))
-                        
                     }
                     .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: isChecked))
+                    .disabled(!isChecked)
                     .navigationDestination(isPresented: $nextPage) {
                         MessageView(userlogin: userlogin)
                     }
@@ -102,6 +100,7 @@ struct LogInView: View {
                     print("loginstate:",userlogin.loginState)
             }
             }
+            .background(Color("color-white"))
         }
         
     }
@@ -109,4 +108,5 @@ struct LogInView: View {
 
 #Preview {
     LogInView(userlogin: UserLoginModel())
+        .preferredColorScheme(.dark) // 设置为夜间模式
 }

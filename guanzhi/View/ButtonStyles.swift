@@ -331,6 +331,7 @@ struct ButtonStyle_capsuleHugPrimary: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -358,6 +359,7 @@ struct ButtonStyle_capsuleHugPrimary_s: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -385,6 +387,7 @@ struct ButtonStyle_capsuleHugLeft: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -413,6 +416,7 @@ struct ButtonStyle_capsuleFillPrimary: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -441,6 +445,7 @@ struct ButtonStyle_capsuleFillSecondary: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -483,6 +488,7 @@ struct AvatarStyle_s: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -514,6 +520,7 @@ struct AvatarStyle_m: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -545,6 +552,7 @@ struct AvatarStyle_l: ButtonStyle {
             .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -574,6 +582,7 @@ struct SeeePositionStyle: ButtonStyle {
         .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
         .grayscale(isEnabled ? 0 : 1)
         .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+        .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 
@@ -620,6 +629,7 @@ struct ButtonStyle_CameraCapture: ButtonStyle {
         .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
         .grayscale(isEnabled ? 0 : 1)
         .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+        .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
     }
 }
 

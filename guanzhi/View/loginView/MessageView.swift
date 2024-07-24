@@ -32,6 +32,7 @@ struct MessageView: View {
 //    @State var codeString = ["","","",""]
     @State private var enterSMSCode = ""
     @State private var isComplete = false
+    @State private var isLoading = false
     
     //判断跳转路径
     func topage() -> some View{
@@ -70,6 +71,7 @@ struct MessageView: View {
                             userlogin.getUserInfo()
                         }
                         next = true
+                        isLoading = false
                     }
 
                     //未注册
@@ -77,10 +79,13 @@ struct MessageView: View {
                         print("需要注册")
                         userlogin.loginState = 1
                         next = true
+                        isLoading = false
                     }
                     //验证码错误
                     else {
                         print(response.respMsg as Any)
+                        isLoading = false
+                        //弹出错误信息顶栏
                     }
         
                 }
@@ -161,11 +166,13 @@ struct MessageView: View {
                         Button(action: {
                                     // 下一步（禁用）-胶囊按钮fill
 //                              checkCode(phNumber: userlogin.phone, code: codeString.joined())
-                              checkCode(phNumber: userlogin.phone, code: enterSMSCode)
+                            checkCode(phNumber: userlogin.phone, code: enterSMSCode)
+                            isLoading = true
                                 }) {
                                     Text("🔜 下一步")
                                 }
                             .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: isComplete))
+                            .disabled(!isComplete)
                             .navigationDestination(isPresented: $next) {
                                 topage()
                             }
@@ -184,10 +191,17 @@ struct MessageView: View {
                 .onAppear{
                     if userlogin.sendStatus == false{
                         showNotice = true
-                        userlogin.time = 0
+//                        userlogin.time = 0
+                        print(userlogin.time)
                     }
             }
+            
+            if isLoading {
+                ProcessingView()
+            }
+            
         }
+        .background(Color("color-white"))
     }
 }
 
@@ -197,4 +211,5 @@ struct MessageView: View {
 
 #Preview {
     MessageView(userlogin: UserLoginModel())
+        .preferredColorScheme(.dark) // 设置为夜间模式
 }

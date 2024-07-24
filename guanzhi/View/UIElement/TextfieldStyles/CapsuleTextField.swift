@@ -26,7 +26,7 @@ struct CapsuleTextField: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
                 .stroke(.black, lineWidth: 4)
-                .foregroundStyle(.white.opacity(1))
+                .foregroundStyle(Color("color-white").opacity(1))
                 .frame(height: 40)
                 .frame(width: .infinity)
                 .overlay {
