@@ -13,12 +13,13 @@ struct guanzhiApp: App {
     
     var body: some Scene {
         WindowGroup {
-            LogInView(userlogin: OTOLoginStatusManager.shared.userLogin)
+//            LogInView(userlogin: OTOLoginStatusManager.shared.userLogin)
 //            MessageView(userlogin: UserLoginModel())
 //            nameView(userlogin: UserLoginModel())
-//            SearchView()
+            SearchView(userlogin: UserLoginModel())
 //            GlobalTest()
-                .preferredColorScheme(.dark) // 设置为夜间模式
+//            MapTestView()
+//                .preferredColorScheme(.dark) // 设置为夜间模式
         }
     }
 }

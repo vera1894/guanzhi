@@ -82,7 +82,7 @@ struct nameView:View{
                             .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: userlogin.nickName.count != 0))
                             .disabled(!(userlogin.nickName.count != 0))
                             .navigationDestination(isPresented: $next) {
-                                SearchView()
+                                SearchView(userlogin: UserLoginModel())
                             }
                     }
                 }

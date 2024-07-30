@@ -596,15 +596,15 @@ struct IconStylePosition: ButtonStyle {
         Image("icon-position")
             .frame(width: 32, height: 32)
             .shadow(color: Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
-            .grayscale(isAnimating ? 0 : 1)
-            .onAppear {
-                withAnimation(Animation.linear(duration: animationDuration).repeatForever(autoreverses: true)) {
-                    isAnimating = true // 开始动画
-                }
-            }
-            .onDisappear {
-                isAnimating = false // 停止动画
-            }
+//            .grayscale(isAnimating ? 0 : 1)
+//            .onAppear {
+//                withAnimation(Animation.linear(duration: animationDuration).repeatForever(autoreverses: true)) {
+//                    isAnimating = false // 开始动画
+//                }
+//            }
+//            .onDisappear {
+//                isAnimating = false // 停止动画
+//            }
     }
 }
 

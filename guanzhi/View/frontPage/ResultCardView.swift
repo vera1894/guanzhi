@@ -18,6 +18,7 @@ struct ResultCardView: View {
     @State private var resultCardCurrentDetent: PresentationDetent = .height(140)
     @Binding var searchResults: [SearchResult]
     @Binding var selectedLocation: SearchResult?
+    @Binding var isShowMarker: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15, content: {
@@ -31,18 +32,26 @@ struct ResultCardView: View {
                 Button{
                     //关闭按钮-圆形
                     //点击后关闭地点信息栏，显示搜索底栏
-                    isShowSearchView = true
-                    isShowResultCard = false
-                    isInputMessage = false
-                    sesrchViewHight = .height(60)
+                    print("Close Button Clicked in ResultCardView")
+                    withAnimation(.spring()) {
+                        isShowMarker = false
+                        isShowSearchView = true
+                        isShowResultCard = false
+    //                    isInputMessage = false
+                        sesrchViewHight = .height(60)
+                    }
                     searchResults.removeAll()
+                    selectedLocation = nil
+                    print([SearchResult].self)  //测试
                 }label: {
                     Image("icon-close")
                 }
                 .buttonStyle(ButtonStyle_m())
             }
             .padding(.bottom, 8)
-            .frame(width: .infinity, height: .infinity)
+            .frame(maxWidth: .infinity)
+            
+            Spacer()
            
             if isInputMessage == false {
                 VStack(alignment: .leading) {
@@ -62,6 +71,7 @@ struct ResultCardView: View {
             } else {
                 VStack(spacing: 16) {
                     RoundedRectangleTextField()
+                        .frame(maxHeight: .infinity)
                     Button(action: {
                                 // 求助（紫色）-胶囊按钮fill
                         isShowSearchView = true
@@ -81,6 +91,7 @@ struct ResultCardView: View {
         .padding(.top, 20)
         .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onDisappear {isShowSearchView = true}// 在滑动关闭视图时也能更新变量
         .presentationDetents(resultCardDetents, selection: $resultCardCurrentDetent) // 绑定 BottomSheet 的状态
         .presentationCornerRadius(20)
         .presentationBackground(.regularMaterial)
@@ -91,5 +102,5 @@ struct ResultCardView: View {
 }
 
 #Preview {
-    ResultCardView(name: .constant("地点名称"), isShowResultCard: .constant(false), isShowSearchView: .constant(true), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil))
+    ResultCardView(name: .constant("地点名称"), isShowResultCard: .constant(false), isShowSearchView: .constant(true), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil), isShowMarker: .constant(true))
 }

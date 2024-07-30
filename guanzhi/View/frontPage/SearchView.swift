@@ -11,24 +11,31 @@ import MapKit
 struct SearchView: View {
     
     @Namespace var mapScope
-    
-    @AppStorage("isFirstLaunch") private var isFirstLaunch: Bool = true
+    @ObservedObject var userlogin : UserLoginModel
+    @State private var hasVisitedPage: Bool = { //用于检测是否打开app后第一次到此页面
+            let key = "HasVisitedPage"
+            if !UserDefaults.standard.contains(key: key) {
+                UserDefaults.standard.set(true, forKey: key) // 初始状态设为 true
+            }
+            return UserDefaults.standard.bool(forKey: key)
+        }()
     
     @State private var position :MapCameraPosition = .region(.defaultRegion)
-    @State private var isShowSearchView: Bool = true
     @State private var searchResults = [SearchResult]()
-    //    @State private var searchResults = [SearchResult(location: CLLocationCoordinate2D.testLocation1),SearchResult(location: CLLocationCoordinate2D.testLocation2)]
-    @State private var selectedLocation: SearchResult?
-    
+    @State private var selectedLocation: SearchResult? = nil
+    @State private var isShowMarker: Bool = false
+    @State private var locationAnimating: Bool = false  //结果位置标记动画暂时无用
     @State private var isShowMyView: Bool = false
-    @State private var isShowLogInView: Bool = false  //临时测试
+    @State private var isShowLogInView: Bool = false  //临时测试登录页面
     @State private var scene: MKLookAroundScene?
+    @State private var isShowSearchView: Bool = true
     @State private var isShowResultCard: Bool = false
     @State private var resultCardName = "" //详情卡片地名
     @State var locatedPosition : CLLocationCoordinate2D?
     
     @State private var detents: Set<PresentationDetent> = [.height(60), .large]
     @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
+    @State private var currentSearchTask: Task<Void, Never>? = nil // 添加任务管理
     
     
     func getUserLocation() {
@@ -48,10 +55,10 @@ struct SearchView: View {
                         }
                     }
                     let region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-                    withAnimation {
+                    withAnimation(Animation.spring()) {
                         position = .region(region)
+                        locatedPosition = location
                                         }
-                    locatedPosition = location
                    // searchResults.append(SearchResult(location: location))
                     print("经纬度",location.latitude,location.longitude)
                 }
@@ -77,6 +84,8 @@ struct SearchView: View {
         }
     }
     
+    
+    
     var body: some View {
         
         ToastRootView {
@@ -84,12 +93,44 @@ struct SearchView: View {
                 ZStack{
                     
                     Map(position: $position, interactionModes: [.all], selection: $selectedLocation, scope: mapScope){
-                        ForEach(searchResults) { result in
-                            Marker(coordinate: result.location) {
-                                Image(systemName: "mappin")
+//                        ForEach(searchResults) { result in
+//                            Marker(coordinate: result.location) {
+//                                Image(systemName: "mappin")
+//                            }
+//                            .tag(result)
+//                        }
+//                        if let result = searchResults.first {
+//                                Marker(coordinate: result.location) {
+//                                    Image(systemName: "mappin")
+//                                }
+//                                .tag(result)
+//                            }
+//                        if isShowMarker {
+//                            if let result = searchResults.first {
+//                                Marker(coordinate: result.location) {
+//                                    Image(systemName: "mappin")
+//                                }
+//                                .tag(result)
+//                            }
+//                        }
+//                        if isShowMarker, let result = searchResults.first {
+//                                                    Marker(coordinate: result.location) {
+//                                                        Image(systemName: "mappin")
+//                                                    }
+//                                                    .tag(result)
+//                                                }
+                        if isShowMarker, let result = searchResults.first {
+                            withAnimation(.spring()) {
+                                Annotation("", coordinate: result.location, anchor: .bottom) {
+                                    Button{
+                                        //定位图标
+                                    }label: { }
+                                .buttonStyle(IconStylePosition(isAnimating: $locationAnimating))
+                                }
                             }
-                            .tag(result)
-                        }
+                        } //测试
+                        
+                            
                         Annotation("", coordinate: .testLocation1, anchor: .bottom) {
                             ZStack {
                                 
@@ -102,33 +143,74 @@ struct SearchView: View {
                         }
                         UserAnnotation()
                     }
+                    .animation(.spring(), value: selectedLocation)
 //                    .overlay(alignment: .bottom) {
 //                        if selectedLocation != nil {
 //                            //弹出卡片
 //                            
 //                        }
 //                    }
+//                    .onChange(of: selectedLocation) {
+//                        if selectedLocation != nil {
+//                            getAddressFromLocation(for: selectedLocation?.location){
+//                                address in
+//                                if let address = address{
+//                                    resultCardName = address
+//                                }
+//                            }
+//                        }
+//                        
+//                        print("cardname",resultCardName)
+////                        isShowSearchView = selectedLocation == nil //未选中地址的时候弹出搜索卡片
+////                        isShowResultCard = selectedLocation != nil //选中地址的时候弹出详情卡片
+//                        print("已选择地址",selectedLocation as Any)
+//                        
+//                    }
                     .onChange(of: selectedLocation) {
-                        if selectedLocation != nil {
-                            getAddressFromLocation(for: selectedLocation?.location){
-                                address in
-                                if let address = address{
-                                    resultCardName = address
+                        print("Selected Location Changed: \(String(describing: selectedLocation))")
+                        if let selectedLocation = selectedLocation {
+                            getAddressFromLocation(for: selectedLocation.location) { address in
+                                if let address = address {
+                                    DispatchQueue.main.async {
+                                        resultCardName = address
+                                        print("Selected Location Address: \(address)")
+                                    }
                                 }
                             }
                         }
-                        
-                        print("cardname",resultCardName)
-//                        isShowSearchView = selectedLocation == nil //未选中地址的时候弹出搜索卡片
-//                        isShowResultCard = selectedLocation != nil //选中地址的时候弹出详情卡片
-                        print("已选择地址",selectedLocation as Any)
-                        
                     }
+//                    .onChange(of: searchResults) {
+//                        if let firstResult = searchResults.first, searchResults.count == 1 {
+//                            selectedLocation = firstResult
+//                        }
+//                    }
                     .onChange(of: searchResults) {
-                        if let firstResult = searchResults.first, searchResults.count == 1 {
-                            selectedLocation = firstResult
+                        print("Search Results Changed: \(searchResults)")
+                        if let firstResult = searchResults.first {
+                            DispatchQueue.main.async {
+                                print("First Search Result Selected: \(firstResult)")
+                                selectedLocation = firstResult
+                                isShowMarker = true
+                            }
                         }
                     }
+//                    .onChange(of: isShowResultCard) { newValue in
+//                        print("Is Show Result Card Changed: \(newValue)")
+//                        if !newValue {
+//                            selectedLocation = nil
+//                            searchResults.removeAll()
+//                        }
+//                    }
+                    .onChange(of: isShowResultCard) {
+                        print("Is Show Result Card Changed: \(isShowResultCard)")
+                                            if !isShowResultCard {
+                                                DispatchQueue.main.async {
+                                                    print("Hiding Result Card")
+                                                    selectedLocation = nil
+                                                    searchResults.removeAll()
+                                                }
+                                            }
+                                        }
                     .overlay(alignment:.bottomTrailing) {
                         if isShowSearchView == true {
                             VStack(spacing: 32) {
@@ -184,12 +266,9 @@ struct SearchView: View {
                         }
                     }
                     .mapScope(mapScope)
-                   
-                    
                     .onAppear{
-                        
-                        if isFirstLaunch {
-                            isFirstLaunch = false
+                        if hasVisitedPage {
+                            hasVisitedPage = false
                             getUserLocation()
                             
                             if let location = locatedPosition { selectedLocation = SearchResult(location: location)
@@ -198,10 +277,13 @@ struct SearchView: View {
                             getAddressFromLocation(for: selectedLocation?.location){
                                 address in
                                 if let address = address{
-                                    resultCardName = address
+                                    DispatchQueue.main.async {
+                                        resultCardName = address
+                                    }
                                 }
                             }
                             print(searchResults)
+                        
                         }
                     }
                     
@@ -211,10 +293,14 @@ struct SearchView: View {
                             cardName: $resultCardName,
                             currentDetent: $currentDetent,
                             selectedLocation: $selectedLocation,
-                            position: $position
+                            position: $position, 
+                            isShowSearchView: $isShowSearchView,
+                            isShowResultCard: $isShowResultCard,
+                            isShowMarker: $isShowMarker,
+                            currentSearchTask: $currentSearchTask  // 传递任务管理
                         )
+                        .animation(.spring(), value: isShowSearchView)
                     }
-                    
                     .sheet(isPresented: $isShowResultCard) {
                         ResultCardView(
                             name: $resultCardName,
@@ -222,15 +308,27 @@ struct SearchView: View {
                             isShowSearchView: $isShowSearchView, 
                             sesrchViewHight: $currentDetent,
                             searchResults: $searchResults,
-                            selectedLocation: $selectedLocation)
+                            selectedLocation: $selectedLocation, 
+                            isShowMarker: $isShowMarker)
+                        .animation(.spring(), value: isShowResultCard)
+                        .presentationDragIndicator(.hidden)
+                        .interactiveDismissDisabled(true) // 禁用拖动关闭功能
+//                        .presentationBackgroundInteraction(.disabled) // 禁用所有拖动交互
                     }
-                       
+                    
+                   
+                    //根据登录状态决定是否显示登录页面
+//                    if !OTOLoginStatusManager.shared.isLoggedIn {
+//                        LogInView(userlogin: UserLoginModel())
+//                    }
+                    
+                    
                 }
             }.navigationBarBackButtonHidden(true)
                 .onAppear{
                     Toast.shared.present(style: .notificationOfWelcome(
                         title: "🌍世界虽大 吾可观之👀",
-                        symbol: "",
+                        symbol: " ",
                         tint: Color("color-primary"),
                         isUserInteractionEnabled: true,
                         timing: .medium,
@@ -257,7 +355,7 @@ struct TextFieldGrayBackgroundColor: ViewModifier {
 
 struct Previews: PreviewProvider {
     static var previews: some View {
-        SearchView()
+        SearchView(userlogin: UserLoginModel())
     }
 }
 //===================================
@@ -299,15 +397,18 @@ class LocationService: NSObject, MKLocalSearchCompleterDelegate {
     }
     
     func search(with query: String, coordinate: CLLocationCoordinate2D? = nil) async throws -> [SearchResult] {
+        completions.removeAll()
         let mapKitRequest = MKLocalSearch.Request()
         mapKitRequest.naturalLanguageQuery = query
         mapKitRequest.resultTypes = .pointOfInterest
         if let coordinate {
             mapKitRequest.region = .init(.init(origin: .init(coordinate), size: .init(width: 1, height: 1)))
         }
+        
         let search = MKLocalSearch(request: mapKitRequest)
         
         let response = try await search.start()
+        print([SearchResult].self)  //测试
         
         return response.mapItems.compactMap { mapItem in
             guard let location = mapItem.placemark.location?.coordinate else { return nil }
@@ -321,6 +422,8 @@ class LocationService: NSObject, MKLocalSearchCompleterDelegate {
 struct SearchResult: Identifiable, Hashable {
     let id = UUID()
     let location: CLLocationCoordinate2D
+//    let lookAroundScene: MKLookAroundScene? // 新增属性
+//        let title: String // 新增属性
     
     static func == (lhs: SearchResult, rhs: SearchResult) -> Bool {
         lhs.id == rhs.id
@@ -361,4 +464,9 @@ extension UINavigationController: UIGestureRecognizerDelegate {
     }
 }
 
+extension UserDefaults {
+    func contains(key: String) -> Bool {
+        return self.object(forKey: key) != nil
+    }
+}
 

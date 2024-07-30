@@ -28,7 +28,7 @@ struct MyView: View {
                                         .weight(.semibold)
                                 )
                                 .kerning(0.22)
-                                .foregroundColor(.black)
+                                .foregroundColor(Color("color-black"))
                             // tx/SecondaryInfo
                             HStack{
                                 Text("☠️")
@@ -54,7 +54,9 @@ struct MyView: View {
                 Spacer()
             }
             
-        }.navigationBarItems(leading:
+        }
+        .navigationBarItems(
+            leading:
                                 Button(action: {
             // 添加返回按钮点击的操作
             print("按钮点击!!")
@@ -62,7 +64,8 @@ struct MyView: View {
             isSheetPresented = true
         }) {
             Image("icon-back")
-        }.buttonStyle(ButtonStyle_m()),trailing:
+        }.buttonStyle(ButtonStyle_m()),
+            trailing:
                                 Button(action: {
             // 添加按钮点击的操作
             isShowSettingView = true
@@ -70,9 +73,12 @@ struct MyView: View {
             Image(systemName: "gear") // 设置图标
         }.navigationDestination(isPresented: $isShowSettingView) {
             SettingView()
-        }
-        )
+        })
+//        .frame(height: 30)
         .navigationBarBackButtonHidden(true)
+        .onDisappear {
+                        isSheetPresented = true // 在滑动关闭视图时也能更新变量
+                    }
 //        .navigationBarItems(
 //        )
 //        .onDisappear{

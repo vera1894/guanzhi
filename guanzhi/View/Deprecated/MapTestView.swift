@@ -116,6 +116,7 @@ struct MapTestView: View {
         .task {
             showBottomSheet = true  //显示搜索底栏
             showLocationsBottomSheet = false  //显示地点底栏
+            print("开始测试")
         }
         .sheet(isPresented: $showBottomSheet) {  //搜索框底栏
             ScrollView(.vertical, content: {
@@ -128,13 +129,13 @@ struct MapTestView: View {
                             .stroke(.black, lineWidth: 4)
                             .foregroundStyle(Color("color-white").opacity(1))
                             .frame(height: 40)
-                            .frame(width: .infinity)
+                            .frame(maxWidth: .infinity)
                             .overlay {
                                 TextField(placeholder, text: $mapData.searchTxt)
                                     .font(.system(size: 18, weight: .regular, design: .default))
                                     .padding(.horizontal, 16)
                                     .frame(height: 40)
-                                    .frame(width: .infinity)
+                                    .frame(maxWidth: .infinity)
                                     .background(Color.gray.opacity(0))
                                     .cornerRadius(20)
                                     .multilineTextAlignment(.leading)
@@ -177,7 +178,7 @@ struct MapTestView: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 8)
-                    .frame(width: .infinity, height: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     if !mapData.places.isEmpty && mapData.searchTxt != "" {
                         ScrollView {
@@ -189,6 +190,7 @@ struct MapTestView: View {
                                         .background(.clear)
                                         .cornerRadius(8)
                                         .onTapGesture {
+                                            print("开始测试搜索")
                                             mapData.selectPlace(place: place)
                                             isFocused = false
                                             locationSheetText = place.placemark.name ?? ""
@@ -242,7 +244,7 @@ struct MapTestView: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 8)
-                    .frame(width: .infinity, height: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     VStack {
                         Text("没有瞧到有用的信息？去试试求助👇")
@@ -257,7 +259,7 @@ struct MapTestView: View {
                             .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
                     }
                     .padding(.horizontal)
-                    .frame(width: .infinity, height: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     
                 })

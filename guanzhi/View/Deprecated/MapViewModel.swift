@@ -11,6 +11,12 @@ import CoreLocation
 
 // All Map Data Goes Here....
 
+struct Place: Identifiable {
+    
+    var id = UUID().uuidString
+    var placemark: CLPlacemark
+}
+
 class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // 创建一个 CLLocationManager 实例，用于管理和获取设备的地理位置

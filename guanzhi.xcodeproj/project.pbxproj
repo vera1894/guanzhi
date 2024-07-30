@@ -44,13 +44,12 @@
 		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */; };
 		FF47FFE12C47C4F000A4A8F8 /* HelpCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF47FFE02C47C4F000A4A8F8 /* HelpCardView.swift */; };
-		FF84F3D02C46BACC002126BF /* GlobeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84F3CA2C46BAC8002126BF /* GlobeViewModel.swift */; };
 		FF84F3D12C46BACC002126BF /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84F3CB2C46BAC9002126BF /* MapViewModel.swift */; };
-		FF84F3D22C46BACC002126BF /* GlobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84F3CC2C46BAC9002126BF /* GlobeView.swift */; };
 		FF84F3D32C46BACC002126BF /* GlobalTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84F3CD2C46BACA002126BF /* GlobalTest.swift */; };
 		FF84F3D42C46BACC002126BF /* Place.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84F3CE2C46BACB002126BF /* Place.swift */; };
 		FF84F3D52C46BACC002126BF /* MapTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84F3CF2C46BACC002126BF /* MapTestView.swift */; };
 		FFD24BE92C50E27A00BCE228 /* ProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */; };
+		FFD24BEB2C58B85700BCE228 /* LookAroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,13 +93,12 @@
 		D1F67AB22B8A193A00292FEB /* SettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingView.swift; sourceTree = "<group>"; };
 		FF2D288E2B6A79A100143D0A /* TextfieldStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextfieldStyles.swift; sourceTree = "<group>"; };
 		FF47FFE02C47C4F000A4A8F8 /* HelpCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCardView.swift; sourceTree = "<group>"; };
-		FF84F3CA2C46BAC8002126BF /* GlobeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobeViewModel.swift; sourceTree = "<group>"; };
 		FF84F3CB2C46BAC9002126BF /* MapViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
-		FF84F3CC2C46BAC9002126BF /* GlobeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobeView.swift; sourceTree = "<group>"; };
 		FF84F3CD2C46BACA002126BF /* GlobalTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlobalTest.swift; sourceTree = "<group>"; };
 		FF84F3CE2C46BACB002126BF /* Place.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Place.swift; sourceTree = "<group>"; };
 		FF84F3CF2C46BACC002126BF /* MapTestView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapTestView.swift; sourceTree = "<group>"; };
 		FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
+		FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookAroundView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +136,7 @@
 				D17042BF2B542346005683D2 /* SearchView.swift */,
 				D13FFDCA2B90CA9A007E1970 /* SheetView.swift */,
 				D13FFDCC2B90CAD0007E1970 /* ResultCardView.swift */,
+				FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */,
 				FF47FFE02C47C4F000A4A8F8 /* HelpCardView.swift */,
 				D13FFDCF2B9DEFBC007E1970 /* SwiftUIView.swift */,
 				D13FFDD12B9DFA0F007E1970 /* detailView.swift */,
@@ -269,8 +268,6 @@
 			isa = PBXGroup;
 			children = (
 				FF84F3CD2C46BACA002126BF /* GlobalTest.swift */,
-				FF84F3CC2C46BAC9002126BF /* GlobeView.swift */,
-				FF84F3CA2C46BAC8002126BF /* GlobeViewModel.swift */,
 				FF84F3CF2C46BACC002126BF /* MapTestView.swift */,
 				FF84F3CB2C46BAC9002126BF /* MapViewModel.swift */,
 				FF84F3CE2C46BACB002126BF /* Place.swift */,
@@ -412,7 +409,6 @@
 				D19F20A52BC2DE2F00721144 /* NameView.swift in Sources */,
 				D13FFDDE2BAB3897007E1970 /* OTOTypes.swift in Sources */,
 				D13FFDD52BAB36FA007E1970 /* LogInView.swift in Sources */,
-				FF84F3D02C46BACC002126BF /* GlobeViewModel.swift in Sources */,
 				D13FFDF42BAF1F5D007E1970 /* AlertStyles.swift in Sources */,
 				D1093C322B6A819A008553A3 /* postView.swift in Sources */,
 				D13FFDD22B9DFA0F007E1970 /* detailView.swift in Sources */,
@@ -422,6 +418,7 @@
 				D19F20A32BC2DA1A00721144 /* MessageView.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
 				D13FFDD82BAB379A007E1970 /* UserLoginModel.swift in Sources */,
+				FFD24BEB2C58B85700BCE228 /* LookAroundView.swift in Sources */,
 				D13FFDE22BAF1E80007E1970 /* ButtonStyles.swift in Sources */,
 				D13FFDE62BAF1F1C007E1970 /* ToastView.swift in Sources */,
 				D1093C302B6A7D99008553A3 /* inforView.swift in Sources */,
@@ -438,7 +435,6 @@
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
 				D13FFDE52BAF1F1C007E1970 /* AutoNotificationBanner.swift in Sources */,
 				FF05E4462B84CC1300F5D375 /* (null) in Sources */,
-				FF84F3D22C46BACC002126BF /* GlobeView.swift in Sources */,
 				D13FFDED2BAF1F26007E1970 /* RoundedRectangleTextField.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 				D13FFDEE2BAF1F26007E1970 /* CapsuleTextField.swift in Sources */,

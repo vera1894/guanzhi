@@ -41,7 +41,7 @@ struct MessageView: View {
         }
         if userlogin.loginState == 0{
             //登陆成功
-            return AnyView(SearchView())
+            return AnyView(SearchView(userlogin: UserLoginModel()))
         }else {
             return AnyView(EmptyView())
         }

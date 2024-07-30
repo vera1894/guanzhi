@@ -20,7 +20,10 @@ struct SheetView: View {
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
     @Binding var selectedLocation: SearchResult?
     @Binding var position: MapCameraPosition
-   
+    @Binding var isShowSearchView: Bool
+    @Binding var isShowResultCard: Bool
+    @Binding var isShowMarker: Bool
+    @Binding var currentSearchTask: Task<Void, Never>?  // 添加任务管理
     
     var body: some View {
         
@@ -43,26 +46,28 @@ struct SheetView: View {
                         .stroke(.black, lineWidth: 4)
                         .foregroundStyle(Color("color-white").opacity(1))
                         .frame(height: 32)
-                        .frame(width: .infinity)
+                        .frame(maxWidth: .infinity)
                         .overlay {
                             TextField(placeholder, text: $search)
                                 .font(.system(size: 16, weight: .regular, design: .default))
                                 .padding(.horizontal, 16)
                                 .frame(height: 32)
-                                .frame(width: .infinity)
+                                .frame(maxWidth: .infinity)
                                 .background(Color.gray.opacity(0))
                                 .cornerRadius(20)
                                 .multilineTextAlignment(.leading)
                                 .autocorrectionDisabled()
                                 .onTapGesture {
                                     currentDetent = .large
+                                    selectedLocation = nil
+                                    searchResults.removeAll()
                                 }
                                 .onSubmit {
-                                    Task {
+                                    currentSearchTask?.cancel() // 取消当前任务
+                                    currentSearchTask = Task {
                                         searchResults = (try? await locationService.search(with: search)) ?? []
                                     }
                                 }
-                                
                         }
                 
                 if currentDetent != .large { // 根据 BottomSheet 的状态隐藏或显示
@@ -73,11 +78,15 @@ struct SheetView: View {
                         Text("📷 分享地点")
                     }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
+                    
                 } else {
                     Button{
                         //关闭按钮-圆形
                         search = ""
+                        UIApplication.shared.endEditing()
                         currentDetent = .height(60)
+                        selectedLocation = nil
+                        searchResults.removeAll()
                         
                     }label: {
                         Image("icon-close")
@@ -137,6 +146,7 @@ struct SheetView: View {
             locationService.update(queryFragment: search)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .disabled(!isShowSearchView)
         .presentationCornerRadius(20)
         // 2 用户无法通过向下滑动来关闭工作表视图
         .interactiveDismissDisabled()//
@@ -150,12 +160,26 @@ struct SheetView: View {
     
     private func didTapOnCompletion(_ completion: SearchCompletions) {
         Task {
-            if let singleLocation = try? await locationService.search(with: "\(completion.title) \(completion.subTitle)").first {
-                searchResults = [singleLocation]
-                selectedLocation = singleLocation
-                position = .region(MKCoordinateRegion(center: singleLocation.location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
-                currentDetent = .height(60)
-//                currentDetent = .height(60)
+            // 取消当前任务
+            currentSearchTask?.cancel()
+                // 启动新任务
+            currentSearchTask = Task {
+                if let singleLocation = try? await locationService.search(with: "\(completion.title) \(completion.subTitle)").first {
+                    searchResults = [singleLocation]
+                    selectedLocation = singleLocation
+                    print("Selected Location in SheetView: \(String(describing: selectedLocation))")
+                    withAnimation(Animation.spring()) {
+                        position = .region(MKCoordinateRegion(center: singleLocation.location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
+                        isShowMarker = true
+                        isShowSearchView = false
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+//                        search = ""
+                        currentDetent = .height(60)
+                        isShowResultCard = true
+                        print([SearchResult].self)  //测试
+                    }
+                }
             }
         }
     }
