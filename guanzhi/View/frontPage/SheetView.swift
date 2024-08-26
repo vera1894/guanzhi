@@ -102,8 +102,7 @@ struct SheetView: View {
 //            .frame(width: .infinity, height: .infinity)
             .sheet(isPresented: $isShowingImagePicker) {
                 NavigationStack{
-                    CameraView(image: $image)
-                    { image in
+                    CameraOldView(image: $image) { image in
                         self.image = image
                         isShowPostView = true
                     }.navigationDestination(isPresented: $isShowPostView) {

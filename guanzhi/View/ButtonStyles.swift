@@ -634,8 +634,6 @@ struct ButtonStyle_CameraCapture: ButtonStyle {
 }
 
 
-
-
 extension View {  //定义一个 View 扩展来实现单个角的圆角
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape( RoundedCorner(radius: radius, corners: corners) )

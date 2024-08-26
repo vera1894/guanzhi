@@ -7,15 +7,15 @@
 
 import SwiftUI
 
-struct CameraView: UIViewControllerRepresentable {
+struct CameraOldView: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     @Environment(\.presentationMode) var presentationMode
     var onImagePicked: ((UIImage) -> Void)?
    
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let parent: CameraView
+        let parent: CameraOldView
         
-        init(_ parent: CameraView) {
+        init(_ parent: CameraOldView) {
             self.parent = parent
         }
         
@@ -41,17 +41,17 @@ struct CameraView: UIViewControllerRepresentable {
         Coordinator(self)
     }
     
-    func makeUIViewController(context: UIViewControllerRepresentableContext<CameraView>) -> UIImagePickerController {
+    func makeUIViewController(context: UIViewControllerRepresentableContext<CameraOldView>) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
         picker.sourceType = .camera
         // 设置拍照界面为全屏
-       // picker.modalPresentationStyle = .fullScreen
+        picker.modalPresentationStyle = .fullScreen
         
         return picker
     }
     
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: UIViewControllerRepresentableContext<CameraView>) {
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: UIViewControllerRepresentableContext<CameraOldView>) {
     }
 }
 
@@ -75,7 +75,7 @@ struct ContentView: View {
         }
         .padding()
         .sheet(isPresented: $isShowingImagePicker) {
-            CameraView(image: $image)
+            CameraOldView(image: $image)
         }
     }
 }

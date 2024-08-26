@@ -20,7 +20,7 @@ struct SearchView: View {
             return UserDefaults.standard.bool(forKey: key)
         }()
     
-    @State private var position :MapCameraPosition = .region(.defaultRegion)
+    @State private var position :MapCameraPosition = .automatic /*.region(.defaultRegion)*/
     @State private var searchResults = [SearchResult]()
     @State private var selectedLocation: SearchResult? = nil
     @State private var isShowMarker: Bool = false
@@ -32,11 +32,13 @@ struct SearchView: View {
     @State private var isShowResultCard: Bool = false
     @State private var resultCardName = "" //详情卡片地名
     @State var locatedPosition : CLLocationCoordinate2D?
-    
     @State private var detents: Set<PresentationDetent> = [.height(60), .large]
     @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
     @State private var currentSearchTask: Task<Void, Never>? = nil // 添加任务管理
     
+    @State private var isShowCameraView: Bool = false
+    @State private var isShowPostView = false
+    @State private var image: UIImage?
     
     func getUserLocation() {
         let locationManager = CLLocationManager()
@@ -83,8 +85,6 @@ struct SearchView: View {
             }
         }
     }
-    
-    
     
     var body: some View {
         
@@ -143,6 +143,8 @@ struct SearchView: View {
                         }
                         UserAnnotation()
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .mapStyle(.standard(elevation: .realistic))
                     .animation(.spring(), value: selectedLocation)
 //                    .overlay(alignment: .bottom) {
 //                        if selectedLocation != nil {
@@ -179,11 +181,6 @@ struct SearchView: View {
                             }
                         }
                     }
-//                    .onChange(of: searchResults) {
-//                        if let firstResult = searchResults.first, searchResults.count == 1 {
-//                            selectedLocation = firstResult
-//                        }
-//                    }
                     .onChange(of: searchResults) {
                         print("Search Results Changed: \(searchResults)")
                         if let firstResult = searchResults.first {
@@ -194,13 +191,6 @@ struct SearchView: View {
                             }
                         }
                     }
-//                    .onChange(of: isShowResultCard) { newValue in
-//                        print("Is Show Result Card Changed: \(newValue)")
-//                        if !newValue {
-//                            selectedLocation = nil
-//                            searchResults.removeAll()
-//                        }
-//                    }
                     .onChange(of: isShowResultCard) {
                         print("Is Show Result Card Changed: \(isShowResultCard)")
                                             if !isShowResultCard {
@@ -242,15 +232,17 @@ struct SearchView: View {
                                     
                                     Button{
                                         //提醒按钮-圆形 //测试登录页面导航问题
-                                        isShowLogInView = true
+                                        isShowSearchView = false
+//                                        isShowLogInView = true
+                                        isShowCameraView = true
                                         
                                     }label: {
                                         Image("icon-notification")
                                     }
                                     .buttonStyle(ButtonStyle_m())
-                                    .navigationDestination(isPresented: $isShowLogInView) {
-                                        LogInView(userlogin: UserLoginModel())
-                                    }
+//                                    .navigationDestination(isPresented: $isShowLogInView) {
+//                                        LogInView(userlogin: UserLoginModel())
+//                                    }
                                     
                                     Button{
                                         //定位按钮-圆形
@@ -286,7 +278,6 @@ struct SearchView: View {
                         
                         }
                     }
-                    
                     .sheet(isPresented: $isShowSearchView) {
                         SheetView(
                             searchResults: $searchResults,
@@ -315,14 +306,27 @@ struct SearchView: View {
                         .interactiveDismissDisabled(true) // 禁用拖动关闭功能
 //                        .presentationBackgroundInteraction(.disabled) // 禁用所有拖动交互
                     }
+//                    .safeAreaInset(edge: .bottom) {
+//                        <#code#>
+//                    }
                     
-                   
                     //根据登录状态决定是否显示登录页面
 //                    if !OTOLoginStatusManager.shared.isLoggedIn {
 //                        LogInView(userlogin: UserLoginModel())
 //                    }
                     
-                    
+                    if isShowCameraView {
+//                        CameraView(image: $image) { image in
+//                            self.image = image
+//                            isShowPostView = true
+//                        }.navigationDestination(isPresented: $isShowPostView) {
+//                            PostUIView(image: self.image,cardName: $resultCardName)
+//                        }
+//                        .ignoresSafeArea(.all)
+//                        CaptureView()
+//                            .ignoresSafeArea(.all)
+                    }
+                     
                 }
             }.navigationBarBackButtonHidden(true)
                 .onAppear{
