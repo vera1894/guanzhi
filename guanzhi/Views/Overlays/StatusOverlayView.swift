@@ -63,15 +63,15 @@ struct StatusOverlayView: View {
 
 #Preview("Interrupted") {
     // 创建状态为 .interrupted 未授权 的 CameraView 预览。
-    CameraView(camera: PreviewCameraModel(status: .interrupted))
+    CameraView(camera: PreviewCameraModel(status: .interrupted), appState: AppStateModel())
 }
 
 #Preview("Failed") {
     // 创建状态为 .failed 失败 的 CameraView 预览。
-    CameraView(camera: PreviewCameraModel(status: .failed))
+    CameraView(camera: PreviewCameraModel(status: .failed), appState: AppStateModel())
 }
 
 #Preview("Unauthorized") {
     // 创建状态为 .unauthorized 中断 的 CameraView 预览。
-    CameraView(camera: PreviewCameraModel(status: .unauthorized))
+    CameraView(camera: PreviewCameraModel(status: .unauthorized), appState: AppStateModel())
 }

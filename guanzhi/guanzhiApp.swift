@@ -11,27 +11,42 @@ import SwiftUI
 @main
 struct guanzhiApp: App {
     @Environment(\.colorScheme) var colorScheme
-    @State private var camera: CameraModel?
+    @State var appState = AppStateModel()
+
+//    @State private var camera: CameraModel?
     
     var body: some Scene {
         WindowGroup {
-            if let camera = camera {
-                CameraView(camera: camera)
-                    .statusBarHidden(true)
-                    .task {
-                        // Start the capture pipeline.
-                        await camera.start()
-                    }
-            } else {
-                Text("Loading camera...")
-                    .task {
-                        self.camera = await CameraModel.create()
-                    }
-            }
+//            if let camera = camera {
+//                SearchView(camera: camera, userlogin: UserLoginModel())
+////                CameraView(camera: camera)
+////                    .statusBarHidden(true)
+//                    .task {
+//                        // Start the capture pipeline.
+//                        await camera.start()
+//                    }
+//            } else {
+//                Text("Loading camera...")
+//                    .task {
+//                        self.camera = await CameraModel.create()
+//                    }
+//            }
 //            LogInView(userlogin: OTOLoginStatusManager.shared.userLogin)
 //            MessageView(userlogin: UserLoginModel())
 //            nameView(userlogin: UserLoginModel())
-//            SearchView(userlogin: UserLoginModel())
+//            if let appState = appState {
+                SearchView(userlogin: UserLoginModel(), appState: appState)
+//                    .task {
+//                        await appState.create()
+//                    }
+//            } else {
+//                Text("Loading")
+//                    .task {
+//                        self.appState = await appState?.create()
+//                    }
+//            }
+            
+//                .environment(appState)
 //            GlobalTest()
 //            MapTestView()
 //            CaptureView()

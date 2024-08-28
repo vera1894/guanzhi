@@ -8,10 +8,15 @@
 import SwiftUI
 import MapKit
 
-struct SearchView: View {
+struct SearchView<AppStateModel: AppState>: View {
     
     @Namespace var mapScope
     @ObservedObject var userlogin : UserLoginModel
+//    @State var appState = AppStateModel
+//    @Environment(AppStateModel.self) var appState
+//    @State var appState = AppStateModel()
+    @State var appState: AppStateModel
+    
     @State private var hasVisitedPage: Bool = { //用于检测是否打开app后第一次到此页面
             let key = "HasVisitedPage"
             if !UserDefaults.standard.contains(key: key) {
@@ -23,20 +28,20 @@ struct SearchView: View {
     @State private var position :MapCameraPosition = .automatic /*.region(.defaultRegion)*/
     @State private var searchResults = [SearchResult]()
     @State private var selectedLocation: SearchResult? = nil
-    @State private var isShowMarker: Bool = false
+//    @State private var isShowMarker: Bool = false
     @State private var locationAnimating: Bool = false  //结果位置标记动画暂时无用
     @State private var isShowMyView: Bool = false
     @State private var isShowLogInView: Bool = false  //临时测试登录页面
     @State private var scene: MKLookAroundScene?
-    @State private var isShowSearchView: Bool = true
-    @State private var isShowResultCard: Bool = false
+//    @State private var isShowSearchView: Bool = true
+//    @State private var isShowResultCard: Bool = false
     @State private var resultCardName = "" //详情卡片地名
     @State var locatedPosition : CLLocationCoordinate2D?
     @State private var detents: Set<PresentationDetent> = [.height(60), .large]
     @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
     @State private var currentSearchTask: Task<Void, Never>? = nil // 添加任务管理
     
-    @State private var isShowCameraView: Bool = false
+//    @State private var isShowCameraView: Bool = false //显示拍摄页面
     @State private var isShowPostView = false
     @State private var image: UIImage?
     
@@ -119,7 +124,7 @@ struct SearchView: View {
 //                                                    }
 //                                                    .tag(result)
 //                                                }
-                        if isShowMarker, let result = searchResults.first {
+                        if appState.isShowingShowMarker, let result = searchResults.first {
                             withAnimation(.spring()) {
                                 Annotation("", coordinate: result.location, anchor: .bottom) {
                                     Button{
@@ -187,13 +192,13 @@ struct SearchView: View {
                             DispatchQueue.main.async {
                                 print("First Search Result Selected: \(firstResult)")
                                 selectedLocation = firstResult
-                                isShowMarker = true
+                                appState.isShowingShowMarker = true
                             }
                         }
                     }
-                    .onChange(of: isShowResultCard) {
-                        print("Is Show Result Card Changed: \(isShowResultCard)")
-                                            if !isShowResultCard {
+                    .onChange(of: appState.isShowingResultCardView) {
+                        print("Is Show Result Card Changed: \(appState.isShowingResultCardView)")
+                                            if !appState.isShowingResultCardView {
                                                 DispatchQueue.main.async {
                                                     print("Hiding Result Card")
                                                     selectedLocation = nil
@@ -202,7 +207,7 @@ struct SearchView: View {
                                             }
                                         }
                     .overlay(alignment:.bottomTrailing) {
-                        if isShowSearchView == true {
+                        if appState.isShowingSearchView == true {
                             VStack(spacing: 32) {
                                 
                                 VStack {
@@ -220,21 +225,24 @@ struct SearchView: View {
                                         print(searchResults)
                                         isShowMyView = true
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                                                    isShowSearchView = false
+                                            appState.isShowingSearchView = false
                                                 }
                                     }) {
                                         
                                     }
                                     .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
                                     .navigationDestination(isPresented: $isShowMyView) {
-                                        MyView(isSheetPresented: $isShowSearchView)
+                                        MyView(isSheetPresented: $appState.isShowingSearchView)
                                     }
                                     
                                     Button{
                                         //提醒按钮-圆形 //测试登录页面导航问题
-                                        isShowSearchView = false
+//                                        isShowSearchView = false
 //                                        isShowLogInView = true
-                                        isShowCameraView = true
+//                                        isShowCameraView = true
+                                        appState.isShowingCameraView = true
+                                        appState.isShowingSearchView = false
+                                        print("appState.isShowingCameraView")
                                         
                                     }label: {
                                         Image("icon-notification")
@@ -278,30 +286,26 @@ struct SearchView: View {
                         
                         }
                     }
-                    .sheet(isPresented: $isShowSearchView) {
+                    .sheet(isPresented: $appState.isShowingSearchView) {
                         SheetView(
+                            appState: appState,
                             searchResults: $searchResults,
                             cardName: $resultCardName,
                             currentDetent: $currentDetent,
                             selectedLocation: $selectedLocation,
-                            position: $position, 
-                            isShowSearchView: $isShowSearchView,
-                            isShowResultCard: $isShowResultCard,
-                            isShowMarker: $isShowMarker,
+                            position: $position,
                             currentSearchTask: $currentSearchTask  // 传递任务管理
                         )
-                        .animation(.spring(), value: isShowSearchView)
+                        .animation(.spring(), value: appState.isShowingSearchView)
                     }
-                    .sheet(isPresented: $isShowResultCard) {
+                    .sheet(isPresented: $appState.isShowingResultCardView) {
                         ResultCardView(
+                            appState: appState,
                             name: $resultCardName,
-                            isShowResultCard: $isShowResultCard,
-                            isShowSearchView: $isShowSearchView, 
                             sesrchViewHight: $currentDetent,
                             searchResults: $searchResults,
-                            selectedLocation: $selectedLocation, 
-                            isShowMarker: $isShowMarker)
-                        .animation(.spring(), value: isShowResultCard)
+                            selectedLocation: $selectedLocation)
+                        .animation(.spring(), value: appState.isShowingResultCardView)
                         .presentationDragIndicator(.hidden)
                         .interactiveDismissDisabled(true) // 禁用拖动关闭功能
 //                        .presentationBackgroundInteraction(.disabled) // 禁用所有拖动交互
@@ -314,8 +318,12 @@ struct SearchView: View {
 //                    if !OTOLoginStatusManager.shared.isLoggedIn {
 //                        LogInView(userlogin: UserLoginModel())
 //                    }
-                    
-                    if isShowCameraView {
+//                    .sheet(isPresented: $appState.isShowingCameraView) {
+//                        CameraViewWrapper(appState: appState)
+//                            .ignoresSafeArea() // 让视图覆盖整个屏幕区域
+//                            .frame(maxWidth: .infinity, maxHeight: .infinity) // 让视图占满整个屏幕
+//                    }
+                    if /*isShowCameraView*/ appState.isShowingCameraView {
 //                        CameraView(image: $image) { image in
 //                            self.image = image
 //                            isShowPostView = true
@@ -325,7 +333,13 @@ struct SearchView: View {
 //                        .ignoresSafeArea(.all)
 //                        CaptureView()
 //                            .ignoresSafeArea(.all)
+                        
+//                        CameraView(camera: camera)
+                        CameraViewWrapper(appState: appState)
+//                            .animation(.easeInOut, value: isShowCameraView)
+                            .transition(.move(edge: .bottom))
                     }
+                        
                      
                 }
             }.navigationBarBackButtonHidden(true)
@@ -359,7 +373,7 @@ struct TextFieldGrayBackgroundColor: ViewModifier {
 
 struct Previews: PreviewProvider {
     static var previews: some View {
-        SearchView(userlogin: UserLoginModel())
+        SearchView(userlogin: UserLoginModel(), appState: AppStateModel())
     }
 }
 //===================================
@@ -474,3 +488,24 @@ extension UserDefaults {
     }
 }
 
+
+struct CameraViewWrapper<AppStateModel: AppState>: View {
+    @State private var camera: CameraModel?
+    @State var appState: AppStateModel
+    
+    var body: some View {
+        if let camera = camera {
+            CameraView(camera: camera, appState: appState)
+                .task {
+                    await camera.start()
+                }
+        } else {
+            Rectangle()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .foregroundStyle(Color.gray)
+                .task {
+                    self.camera = await CameraModel.create()
+                }
+        }
+    }
+}

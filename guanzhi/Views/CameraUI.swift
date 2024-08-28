@@ -9,9 +9,10 @@ import SwiftUI
 import AVFoundation
 
 /// A view that presents the main camera user interface. 展示主要相机用户界面的视图。
-struct CameraUI<CameraModel: Camera>: PlatformView {
+struct CameraUI<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 
     @State var camera: CameraModel
+    @State var appState: AppStateModel
     @Binding var swipeDirection: SwipeDirection
     
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -50,7 +51,7 @@ struct CameraUI<CameraModel: Camera>: PlatformView {
             FeaturesToolbar(camera: camera)
             Spacer()
 //            CaptureModeView(camera: camera, direction: $swipeDirection) //暂时禁用拍摄模式切换
-            MainToolbar(camera: camera)
+            MainToolbar(camera: camera, appState: appState)
 //                .background(Color.red)
 //                .padding(.bottom, bottomPadding)
         }
@@ -65,7 +66,7 @@ struct CameraUI<CameraModel: Camera>: PlatformView {
                 
 //                CaptureModeView(camera: camera, direction: $swipeDirection)  //暂时禁用拍摄模式切换
 //                    .offset(x: -250) // The vertical offset from center.
-                MainToolbar(camera: camera)
+                MainToolbar(camera: camera, appState: appState)
                 FeaturesToolbar(camera: camera)
                     .frame(width: 250)
                     .offset(x: 250) // The vertical offset from center.
@@ -95,5 +96,5 @@ struct CameraUI<CameraModel: Camera>: PlatformView {
 }
 
 #Preview {
-    CameraUI(camera: PreviewCameraModel(), swipeDirection: .constant(.left))
+    CameraUI(camera: PreviewCameraModel(), appState: AppStateModel(), swipeDirection: .constant(.left))
 }

@@ -9,18 +9,20 @@ import SwiftUI
 import PhotosUI
 
 /// A view that displays controls to capture, switch cameras, and view the last captured media item. 一个视图，显示用于捕获、切换相机和查看最近捕获的媒体项的控件。
-struct MainToolbar<CameraModel: Camera>: PlatformView {
+struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @State var camera: CameraModel
+    @State var appState: AppStateModel
+        
     var cameraMainHeight: CGFloat = 180
     
     var body: some View {
         VStack {
             HStack {
-                PhotosPreview(camera: camera)
+                PhotosPreview(camera: camera, appState: appState)
                     .frame(height: 60)
 //                    .background(Color.blue)
             }
@@ -57,6 +59,7 @@ struct MainToolbar<CameraModel: Camera>: PlatformView {
 
 #Preview {
     Group {
-        MainToolbar(camera: PreviewCameraModel())
+        MainToolbar(camera: PreviewCameraModel(), appState: AppStateModel())
+            .background(Color.blue)
     }
 }

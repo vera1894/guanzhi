@@ -11,14 +11,14 @@ import AVKit
 
 // 定义一个 @MainActor 的结构体 CameraView，它泛型参数为 CameraModel，且遵循 PlatformView 协议
 @MainActor
-struct CameraView<CameraModel: Camera>: PlatformView {
+struct CameraView<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     
     // 环境变量，用于获取设备的垂直、水平尺寸类别
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @State var camera: CameraModel
-    
+    @State var appState: AppStateModel
     // The direction a person swipes on the camera preview or mode selector. 状态变量，保存用户在相机预览或模式选择器上的滑动方向
     @State var swipeDirection = SwipeDirection.left
     @State private var isShowPhoto = false
@@ -50,7 +50,7 @@ struct CameraView<CameraModel: Camera>: PlatformView {
             }
             
             // The main camera user interface. 主相机用户界面
-            CameraUI(camera: camera, swipeDirection: $swipeDirection)
+            CameraUI(camera: camera, appState: appState, swipeDirection: $swipeDirection)
             
 //            HStack {
 //                
@@ -111,7 +111,7 @@ struct CameraView<CameraModel: Camera>: PlatformView {
 }
 
 #Preview {
-    CameraView(camera: PreviewCameraModel())
+    CameraView(camera: PreviewCameraModel(), appState: AppStateModel())
 }
 
 // 定义滑动方向的枚举

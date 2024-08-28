@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LogInView: View {
+    
     @Environment(\.dismiss) var logInDismiss
     @State var sendStatus = false //手机号发送是否成功
     @State var nextPage = false //是否支持跳转

@@ -8,17 +8,18 @@
 import SwiftUI
 import MapKit
 
-struct ResultCardView: View {
+struct ResultCardView<AppStateModel: AppState>: View {
+    @State var appState: AppStateModel
     @Binding var name : String
-    @Binding var isShowResultCard: Bool
-    @Binding var isShowSearchView: Bool
+//    @Binding var isShowResultCard: Bool
+//    @Binding var isShowSearchView: Bool
     @Binding var sesrchViewHight: PresentationDetent
     @State private var isInputMessage: Bool = false
     @State private var resultCardDetents: Set<PresentationDetent> = [.height(140), .large]
     @State private var resultCardCurrentDetent: PresentationDetent = .height(140)
     @Binding var searchResults: [SearchResult]
     @Binding var selectedLocation: SearchResult?
-    @Binding var isShowMarker: Bool
+//    @Binding var isShowMarker: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15, content: {
@@ -34,9 +35,9 @@ struct ResultCardView: View {
                     //点击后关闭地点信息栏，显示搜索底栏
                     print("Close Button Clicked in ResultCardView")
                     withAnimation(.spring()) {
-                        isShowMarker = false
-                        isShowSearchView = true
-                        isShowResultCard = false
+                        appState.isShowingShowMarker = false
+                        appState.isShowingSearchView = true
+                        appState.isShowingResultCardView = false
     //                    isInputMessage = false
                         sesrchViewHight = .height(60)
                     }
@@ -74,8 +75,8 @@ struct ResultCardView: View {
                         .frame(maxHeight: .infinity)
                     Button(action: {
                                 // 求助（紫色）-胶囊按钮fill
-                        isShowSearchView = true
-                        isShowResultCard = false
+                        appState.isShowingSearchView = true
+                        appState.isShowingResultCardView = false
                         isInputMessage = false
                         sesrchViewHight = .height(60)
                         searchResults.removeAll()
@@ -91,7 +92,7 @@ struct ResultCardView: View {
         .padding(.top, 20)
         .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onDisappear {isShowSearchView = true}// 在滑动关闭视图时也能更新变量
+        .onDisappear {appState.isShowingSearchView = true}// 在滑动关闭视图时也能更新变量
         .presentationDetents(resultCardDetents, selection: $resultCardCurrentDetent) // 绑定 BottomSheet 的状态
         .presentationCornerRadius(20)
         .presentationBackground(.regularMaterial)
@@ -102,5 +103,5 @@ struct ResultCardView: View {
 }
 
 #Preview {
-    ResultCardView(name: .constant("地点名称"), isShowResultCard: .constant(false), isShowSearchView: .constant(true), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil), isShowMarker: .constant(true))
+    ResultCardView(appState: AppStateModel(), name: .constant("地点名称"), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil))
 }

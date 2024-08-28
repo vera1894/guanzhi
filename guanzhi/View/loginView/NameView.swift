@@ -8,7 +8,8 @@
 import SwiftUI
 
 //名字
-struct nameView:View{
+struct nameView: View {
+    
     @State var input = ""
     @State var next =  false
     
@@ -82,7 +83,7 @@ struct nameView:View{
                             .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: userlogin.nickName.count != 0))
                             .disabled(!(userlogin.nickName.count != 0))
                             .navigationDestination(isPresented: $next) {
-                                SearchView(userlogin: UserLoginModel())
+                                SearchView(userlogin: UserLoginModel(), appState: AppStateModel())
                             }
                     }
                 }

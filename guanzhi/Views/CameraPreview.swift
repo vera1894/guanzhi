@@ -105,5 +105,5 @@ struct DefaultPreviewSource: PreviewSource {
 
 
 #Preview {
-    CameraView(camera: PreviewCameraModel())
+    CameraView(camera: PreviewCameraModel(), appState: AppStateModel())
 }

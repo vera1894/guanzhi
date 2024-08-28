@@ -8,11 +8,14 @@
 import SwiftUI
 import MapKit
 
-struct SheetView: View {
+struct SheetView<AppStateModel: AppState>: View {
+//    @Environment(AppStateModel.self) var appState
+    @State var appState: AppStateModel
+    
     @State private var search: String = ""
     @State private var locationService = LocationService(completer: .init())
     @Binding var searchResults: [SearchResult]
-    @State private var isShowingImagePicker = false
+//    @State private var isShowCameraView = false
     @State private var image: UIImage?
     @State private var isShowPostView = false
     @Binding var cardName : String
@@ -20,9 +23,10 @@ struct SheetView: View {
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
     @Binding var selectedLocation: SearchResult?
     @Binding var position: MapCameraPosition
-    @Binding var isShowSearchView: Bool
-    @Binding var isShowResultCard: Bool
-    @Binding var isShowMarker: Bool
+//    @Binding var isShowSearchView: Bool
+//    @Binding var isShowResultCard: Bool
+//    @Binding var isShowMarker: Bool
+//    @Binding var isShowCameraView: Bool
     @Binding var currentSearchTask: Task<Void, Never>?  // 添加任务管理
     
     var body: some View {
@@ -73,7 +77,13 @@ struct SheetView: View {
                 if currentDetent != .large { // 根据 BottomSheet 的状态隐藏或显示
                     Button(action: {
                         // 分享地点-胶囊按钮hug
-                        isShowingImagePicker = true
+//                        @Bindable var appState = appState
+                        appState.isShowingCameraView = true
+                        appState.isShowingSearchView = false
+//                        print(appState.isShowingCameraView)
+//                        isShowCameraView = true
+//                        isShowSearchView = false
+//                        appState.showingCameraToggle()
                     }) {
                         Text("📷 分享地点")
                     }
@@ -100,16 +110,19 @@ struct SheetView: View {
             .padding(.horizontal)
             .padding(.bottom, 8)
 //            .frame(width: .infinity, height: .infinity)
-            .sheet(isPresented: $isShowingImagePicker) {
-                NavigationStack{
-                    CameraOldView(image: $image) { image in
-                        self.image = image
-                        isShowPostView = true
-                    }.navigationDestination(isPresented: $isShowPostView) {
-                        PostUIView(image: self.image,cardName: $cardName)
-                    }
-                }
-            }
+//            .sheet(isPresented: $isShowCameraView) {
+////                CameraViewWrapper()
+//                
+////                NavigationStack{
+////                    CameraOldView(image: $image) { image in
+////                        self.image = image
+////                        isShowPostView = true
+////                    }.navigationDestination(isPresented: $isShowPostView) {
+////                        PostUIView(image: self.image,cardName: $cardName)
+////                    }
+////                }
+//                
+//            }
             
             
             Spacer()
@@ -145,7 +158,7 @@ struct SheetView: View {
             locationService.update(queryFragment: search)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .disabled(!isShowSearchView)
+        .disabled(!appState.isShowingSearchView)
         .presentationCornerRadius(20)
         // 2 用户无法通过向下滑动来关闭工作表视图
         .interactiveDismissDisabled()//
@@ -169,13 +182,13 @@ struct SheetView: View {
                     print("Selected Location in SheetView: \(String(describing: selectedLocation))")
                     withAnimation(Animation.spring()) {
                         position = .region(MKCoordinateRegion(center: singleLocation.location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
-                        isShowMarker = true
-                        isShowSearchView = false
+                        appState.isShowingShowMarker = true
+                        appState.isShowingSearchView = false
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
 //                        search = ""
                         currentDetent = .height(60)
-                        isShowResultCard = true
+                        appState.isShowingResultCardView = true
                         print([SearchResult].self)  //测试
                     }
                 }
@@ -183,6 +196,8 @@ struct SheetView: View {
         }
     }
 }
+
+
 
 //#Preview {
 //    SheetView()
