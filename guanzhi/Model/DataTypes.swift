@@ -108,7 +108,7 @@ struct Movie: Sendable {
 class PhotoFeatures {
     var isFlashEnabled = false
     var isLivePhotoEnabled = true //
-    var qualityPrioritization: QualityPrioritization = .quality
+    var qualityPrioritization: QualityPrioritization = .balanced
     
 /// 获取当前启用的照片功能。
     var current: EnabledPhotoFeatures {

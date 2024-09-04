@@ -9,8 +9,8 @@ import SwiftUI
 
 struct RoundedRectangleTextField: View {
     
-    let placeholder = "填写求助信息"
-    @State private var text: String = ""
+    @Binding var placeholder: String
+    @Binding var inputText: String
     @FocusState private var isFocused: Bool
     
     var body: some View {
@@ -30,8 +30,9 @@ struct RoundedRectangleTextField: View {
                 .frame(height: .infinity)
                 .frame(width: .infinity)
                 .overlay {
-                    TextField(placeholder, text: $text, axis: .vertical)
+                    TextField(placeholder, text: $inputText, axis: .vertical)
                         .font(.system(size: 18, weight: .regular, design: .default))
+                        .foregroundColor(.black)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .frame(minWidth: 100, maxWidth: .infinity, minHeight: 40, maxHeight: .infinity, alignment: .topLeading)
@@ -39,15 +40,18 @@ struct RoundedRectangleTextField: View {
                         .cornerRadius(20)
                         .multilineTextAlignment(.leading)
                         .focused($isFocused)
-                        .onChange(of: text) { newValue in
+                        .onChange(of: inputText) { newValue in
                             // 确保输入不超过400位字符
                             if newValue.count >= 400 {
-                                text = String(newValue.prefix(400))
+                                inputText = String(newValue.prefix(400))
                                 isFocused = false
                             }
                         }
                         .onSubmit {
                             // 当用户按下键盘上的提交/完成按钮时执行的操作
+                        }
+                        .onAppear{
+                            isFocused = true
                         }
                 }
         }
@@ -55,5 +59,5 @@ struct RoundedRectangleTextField: View {
 }
 
 #Preview {
-    RoundedRectangleTextField()
+    RoundedRectangleTextField(placeholder: .constant("填写求助信息"), inputText: .constant(""))
 }

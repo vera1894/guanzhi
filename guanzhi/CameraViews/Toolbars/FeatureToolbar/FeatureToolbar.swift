@@ -19,30 +19,36 @@ struct FeaturesToolbar<CameraModel: Camera>: PlatformView {
         // 将相机的 photoFeatures 绑定到本地变量 features
         @Bindable var features = camera.photoFeatures
         
-        HStack(spacing: 30) {
-            switch camera.captureMode {
-            case .photo:
-                // 如果相机处于照片捕获模式，根据设备大小调整控件布局
-                if isCompactSize {
-                    livePhotoButton // 显示 Live Photo 按钮
+        HStack {
+            Spacer()
+            VStack(spacing: 16) {
+                switch camera.captureMode {
+                case .photo:
+                    // 如果相机处于照片捕获模式，根据设备大小调整控件布局
+                    if isCompactSize {
+                        Spacer()
+                        livePhotoButton // 显示 Live Photo 按钮
+                        SwitchCameraButtonSmall(camera: camera)
+    //                    prioritizePicker // 显示优先级选择器
+                    } else {
+                        Spacer()
+                        livePhotoButton
+                        prioritizePicker
+                    }
+                    
+                case .video:
+                    // 如果相机处于视频捕获模式，根据是否支持 HDR 视频来显示 HDR 按钮
                     Spacer()
-                    prioritizePicker // 显示优先级选择器
-                } else {
-                    Spacer()
-                    livePhotoButton
-                    prioritizePicker
-                }
-                
-            case .video:
-                // 如果相机处于视频捕获模式，根据是否支持 HDR 视频来显示 HDR 按钮
-                Spacer()
-                if camera.isHDRVideoSupported {
-                    hdrButton
+                    if camera.isHDRVideoSupported {
+                        hdrButton
+                    }
                 }
             }
+            .buttonStyle(DefaultButtonStyle(size: isRegularSize ? .large : .small))
+            .padding([.leading, .trailing])
+            .padding(.bottom, 32)
         }
-        .buttonStyle(DefaultButtonStyle(size: isRegularSize ? .large : .small))
-        .padding([.leading, .trailing])
+        
     }
     
     //  A button to toggle the enabled state of Live Photo capture. 用于切换 Live Photo 捕获功能的按钮
@@ -57,6 +63,9 @@ struct FeaturesToolbar<CameraModel: Camera>: PlatformView {
         }
         .frame(width: smallButtonSize.width, height: smallButtonSize.height)
     }
+    
+
+    
     
     // 用于选择照片质量优先级的选择器
     @ViewBuilder

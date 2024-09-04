@@ -10,13 +10,15 @@ import MapKit
 
 struct ResultCardView<AppStateModel: AppState>: View {
     @State var appState: AppStateModel
-    @Binding var name : String
+//    @Binding var name : String
 //    @Binding var isShowResultCard: Bool
 //    @Binding var isShowSearchView: Bool
     @Binding var sesrchViewHight: PresentationDetent
     @State private var isInputMessage: Bool = false
     @State private var resultCardDetents: Set<PresentationDetent> = [.height(140), .large]
     @State private var resultCardCurrentDetent: PresentationDetent = .height(140)
+    @State private var textFieldPlaceholder: String = "填写求助信息"
+    @State private var textFieldInputText: String = ""
     @Binding var searchResults: [SearchResult]
     @Binding var selectedLocation: SearchResult?
 //    @Binding var isShowMarker: Bool
@@ -24,7 +26,7 @@ struct ResultCardView<AppStateModel: AppState>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15, content: {
             HStack(spacing: 8) {
-                Text("\(name)")
+                Text("\(appState.resultLocationName)")
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(Color("text-black"))
                 
@@ -71,7 +73,7 @@ struct ResultCardView<AppStateModel: AppState>: View {
                 }
             } else {
                 VStack(spacing: 16) {
-                    RoundedRectangleTextField()
+                    RoundedRectangleTextField(placeholder: $textFieldPlaceholder, inputText: $textFieldInputText)
                         .frame(maxHeight: .infinity)
                     Button(action: {
                                 // 求助（紫色）-胶囊按钮fill
@@ -103,5 +105,5 @@ struct ResultCardView<AppStateModel: AppState>: View {
 }
 
 #Preview {
-    ResultCardView(appState: AppStateModel(), name: .constant("地点名称"), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil))
+    ResultCardView(appState: AppStateModel(), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil))
 }

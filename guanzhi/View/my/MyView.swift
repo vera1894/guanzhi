@@ -8,10 +8,11 @@
 import SwiftUI
 import Combine
 
-struct MyView: View {
+struct MyView<AppStateModel: AppState>: View {
+    @State var appState: AppStateModel
     @State private var isShowSettingView: Bool = false
     @Environment(\.presentationMode) var presentationMode
-    @Binding var isSheetPresented: Bool
+//    @Binding var isSheetPresented: Bool
     
     var body: some View {
         NavigationView {
@@ -57,11 +58,12 @@ struct MyView: View {
         }
         .navigationBarItems(
             leading:
-                                Button(action: {
+                    Button(action: {
             // 添加返回按钮点击的操作
             print("按钮点击!!")
             presentationMode.wrappedValue.dismiss()
-            isSheetPresented = true
+            appState.isShowingSearchView = true
+                                    
         }) {
             Image("icon-back")
         }.buttonStyle(ButtonStyle_m()),
@@ -77,7 +79,7 @@ struct MyView: View {
 //        .frame(height: 30)
         .navigationBarBackButtonHidden(true)
         .onDisappear {
-                        isSheetPresented = true // 在滑动关闭视图时也能更新变量
+            appState.isShowingSearchView = true // 在滑动关闭视图时也能更新变量
                     }
 //        .navigationBarItems(
 //        )
@@ -90,6 +92,6 @@ struct MyView: View {
 
 struct MyView_Previews: PreviewProvider {
     static var previews: some View {
-        MyView(isSheetPresented: .constant(false))
+        MyView(appState: AppStateModel())
     }
 }

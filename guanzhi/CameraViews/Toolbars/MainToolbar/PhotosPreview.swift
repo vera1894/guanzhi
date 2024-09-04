@@ -75,10 +75,9 @@ struct PhotosPreview<CameraModel: Camera, AppStateModel: AppState>: PlatformView
                         }
                     })
                     .buttonStyle(CapturedThumbnailButton(isSelected: camera.selectedMedia[index], index: index))
-                    .disabled(index >= camera.capturedMedia.count) // 禁用没有媒体的按钮
+                    .disabled(index >= camera.capturedMedia.count || appState.isReadyToPost) // 禁用没有媒体的按钮
                 }
                 
-
                 
                 
     //            Button("删除") {
@@ -107,34 +106,38 @@ struct PhotosPreview<CameraModel: Camera, AppStateModel: AppState>: PlatformView
             HStack {
                 Spacer()
                 
-                if camera.selectedMedia.firstIndex(of: true) != nil {
-//                    Button("清除") {
-//                        // 清除所有选中状态
-//                        for i in camera.selectedMedia.indices {
-//                            camera.selectedMedia[i] = false
-//                        }
-//                    }
-                    Button{
-                        //返回按钮-圆形
-                        for i in camera.selectedMedia.indices {
-                            camera.selectedMedia[i] = false
+                if appState.isReadyToPost == false {
+                    if camera.selectedMedia.firstIndex(of: true) != nil {
+    //                    Button("清除") {
+    //                        // 清除所有选中状态
+    //                        for i in camera.selectedMedia.indices {
+    //                            camera.selectedMedia[i] = false
+    //                        }
+    //                    }
+                        Button{
+                            //返回按钮-圆形
+                            for i in camera.selectedMedia.indices {
+                                camera.selectedMedia[i] = false
+                            }
+                        }label: {
+                            Image("icon-back")
                         }
-                    }label: {
-                        Image("icon-back")
+                        .buttonStyle(ButtonStyle_m())
+                        
+                    } else {
+                        Button{
+                            //关闭按钮-圆形
+                            print("关闭摄像页面")
+                            appState.isShowingCameraView = false
+                            appState.isShowingSearchView = true
+                        }label: {
+                            Image("icon-close")
+                        }
+                        .buttonStyle(ButtonStyle_m())
                     }
-                    .buttonStyle(ButtonStyle_m())
-                    
-                } else {
-                    Button{
-                        //关闭按钮-圆形
-                        print("关闭摄像页面")
-                        appState.isShowingCameraView = false
-                        appState.isShowingSearchView = true
-                    }label: {
-                        Image("icon-close")
-                    }
-                    .buttonStyle(ButtonStyle_m())
                 }
+                
+                
                 
             }
             .padding()

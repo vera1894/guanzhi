@@ -26,27 +26,37 @@ struct CameraView<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     var body: some View {
         ZStack {
             // A container view that manages the placement of the preview. 一个容器视图，管理预览的布局
-            VStack {
-                PreviewContainer(camera: camera) {
-                    CameraPreview(source: camera.previewSource)
-                        .onTapGesture { location in
-                            // Focus and expose at the tapped point. 在点击的点对焦和曝光
-                            Task { await camera.focusAndExpose(at: location) }
-                        }
-//                        .simultaneousGesture(swipeGesture) //滑动切换拍摄模式手势
-                        /// The value of `shouldFlashScreen` changes briefly to `true` when capture
-                        /// starts, then immediately changes to `false`. Use this to
-                        /// flash the screen to provide visual feedback.
-                        /// `shouldFlashScreen` 的值在捕获开始时短暂变为 `true`，然后立即变为 `false`。使用此值来闪烁屏幕以提供视觉反馈。
-                        .opacity(camera.shouldFlashScreen ? 0 : 1)
+            if appState.isReadyToPost == false {
+                VStack {
+                    Spacer()
                     
+                    PreviewContainer(camera: camera) {
+                        CameraPreview(source: camera.previewSource)
+                            .onTapGesture { location in
+                                // Focus and expose at the tapped point. 在点击的点对焦和曝光
+                                Task { await camera.focusAndExpose(at: location) }
+                            }
+    //                        .simultaneousGesture(swipeGesture) //滑动切换拍摄模式手势
+                            /// The value of `shouldFlashScreen` changes briefly to `true` when capture
+                            /// starts, then immediately changes to `false`. Use this to
+                            /// flash the screen to provide visual feedback.
+                            /// `shouldFlashScreen` 的值在捕获开始时短暂变为 `true`，然后立即变为 `false`。使用此值来闪烁屏幕以提供视觉反馈。
+                            .opacity(camera.shouldFlashScreen ? 0 : 1)
+                        
+                    }
+                    .offset(y: -200)
                 }
-                Spacer()
             }
+            
 //            .ignoresSafeArea(.all)
             
             if camera.selectedMedia.firstIndex(of: true) != nil {
-                SeceltedPhotoView(camera: camera)
+                VStack {
+                    Spacer()
+                    
+                    SeceltedPhotoView(camera: camera)
+                        .offset(y: -200)
+                }
             }
             
             // The main camera user interface. 主相机用户界面
@@ -96,7 +106,7 @@ struct CameraView<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 //            }
             
         } // ZStack
-        .background(Color.gray)
+        .background(Color("color-deep"))
         
     }
 

@@ -315,7 +315,7 @@ struct ButtonStyle_capsuleHugPrimary: ButtonStyle {
         configuration.label
             .font(.system(size: 16, weight: .semibold, design: .rounded))
             .foregroundColor(Color("text-black"))
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 10)
             .padding(.vertical, 10)
             .frame(height: 32, alignment: .center)
             .background(

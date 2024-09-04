@@ -36,6 +36,7 @@ struct guanzhiApp: App {
 //            nameView(userlogin: UserLoginModel())
 //            if let appState = appState {
                 SearchView(userlogin: UserLoginModel(), appState: appState)
+//            MainToolbar(camera: PreviewCameraModel(), appState: AppStateModel())
 //                    .task {
 //                        await appState.create()
 //                    }

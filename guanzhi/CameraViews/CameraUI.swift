@@ -48,11 +48,14 @@ struct CameraUI<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     @ViewBuilder
     var compactUI: some View {
         VStack(spacing: 0) {
-            FeaturesToolbar(camera: camera)
+            if camera.selectedMedia.firstIndex(of: true) != nil || appState.isReadyToPost == true {  
+            } else {
+                FeaturesToolbar(camera: camera)
+            }
             Spacer()
 //            CaptureModeView(camera: camera, direction: $swipeDirection) //暂时禁用拍摄模式切换
             MainToolbar(camera: camera, appState: appState)
-//                .background(Color.red)
+//                .background(Color.blue)
 //                .padding(.bottom, bottomPadding)
         }
     }
@@ -67,9 +70,12 @@ struct CameraUI<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 //                CaptureModeView(camera: camera, direction: $swipeDirection)  //暂时禁用拍摄模式切换
 //                    .offset(x: -250) // The vertical offset from center.
                 MainToolbar(camera: camera, appState: appState)
-                FeaturesToolbar(camera: camera)
-                    .frame(width: 250)
-                    .offset(x: 250) // The vertical offset from center.
+                if camera.selectedMedia.firstIndex(of: true) != nil || appState.isReadyToPost == true {
+                } else {
+                    FeaturesToolbar(camera: camera)
+                        .frame(width: 250)
+                        .offset(x: 250) // The vertical offset from center.
+                }
             }
             .frame(width: 740)
             .background(.ultraThinMaterial.opacity(0.8))

@@ -8,6 +8,7 @@
 import Observation
 import SwiftUI
 import Combine
+import MapKit
 
 //@MainActor
 protocol AppState: AnyObject {
@@ -16,6 +17,10 @@ protocol AppState: AnyObject {
     var isShowingSearchView: Bool { get set }
     var isShowingResultCardView: Bool { get set }
     var isShowingShowMarker: Bool { get set }
+    var isReadyToPost: Bool { get set }
+    var postText: String { get set }
+    var resultLocationName: String { get set }
+    var resultLocation: CLLocationCoordinate2D { get set }
     func showingCameraToggle()
 //    func create() async -> AppStateModel
     
@@ -23,12 +28,15 @@ protocol AppState: AnyObject {
 
 @Observable
 class AppStateModel: AppState {
-    
     // 定义所有窗口的显示开关变量
     var isShowingCameraView: Bool = false
     var isShowingSearchView: Bool = true
     var isShowingResultCardView: Bool = false
     var isShowingShowMarker: Bool = false
+    var isReadyToPost: Bool = false
+    var postText: String = ""
+    var resultLocationName: String = ""
+    var resultLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
 //    var isShowingSettingsView: Bool = false
     
 //    private var _isShowingCameraView: Bool = false

@@ -35,7 +35,7 @@ struct SearchView<AppStateModel: AppState>: View {
     @State private var scene: MKLookAroundScene?
 //    @State private var isShowSearchView: Bool = true
 //    @State private var isShowResultCard: Bool = false
-    @State private var resultCardName = "" //详情卡片地名
+//    @State private var resultCardName = "" //详情卡片地名
     @State var locatedPosition : CLLocationCoordinate2D?
     @State private var detents: Set<PresentationDetent> = [.height(60), .large]
     @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
@@ -57,8 +57,8 @@ struct SearchView<AppStateModel: AppState>: View {
                 if let location = locationManager.location?.coordinate {
                     getAddressFromLocation(for: location) { String in
                         if let address = String{
-                            resultCardName = address
-                            print("cardname:",resultCardName)
+                            appState.resultLocationName = address
+                            print("cardname:",appState.resultLocationName)
                         }
                     }
                     let region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
@@ -179,7 +179,8 @@ struct SearchView<AppStateModel: AppState>: View {
                             getAddressFromLocation(for: selectedLocation.location) { address in
                                 if let address = address {
                                     DispatchQueue.main.async {
-                                        resultCardName = address
+                                        appState.resultLocationName = address
+                                        appState.resultLocation = selectedLocation.location
                                         print("Selected Location Address: \(address)")
                                     }
                                 }
@@ -232,7 +233,7 @@ struct SearchView<AppStateModel: AppState>: View {
                                     }
                                     .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
                                     .navigationDestination(isPresented: $isShowMyView) {
-                                        MyView(isSheetPresented: $appState.isShowingSearchView)
+                                        MyView(appState: appState)
                                     }
                                     
                                     Button{
@@ -278,7 +279,7 @@ struct SearchView<AppStateModel: AppState>: View {
                                 address in
                                 if let address = address{
                                     DispatchQueue.main.async {
-                                        resultCardName = address
+                                        appState.resultLocationName = address
                                     }
                                 }
                             }
@@ -290,7 +291,6 @@ struct SearchView<AppStateModel: AppState>: View {
                         SheetView(
                             appState: appState,
                             searchResults: $searchResults,
-                            cardName: $resultCardName,
                             currentDetent: $currentDetent,
                             selectedLocation: $selectedLocation,
                             position: $position,
@@ -301,7 +301,6 @@ struct SearchView<AppStateModel: AppState>: View {
                     .sheet(isPresented: $appState.isShowingResultCardView) {
                         ResultCardView(
                             appState: appState,
-                            name: $resultCardName,
                             sesrchViewHight: $currentDetent,
                             searchResults: $searchResults,
                             selectedLocation: $selectedLocation)
@@ -309,6 +308,9 @@ struct SearchView<AppStateModel: AppState>: View {
                         .presentationDragIndicator(.hidden)
                         .interactiveDismissDisabled(true) // 禁用拖动关闭功能
 //                        .presentationBackgroundInteraction(.disabled) // 禁用所有拖动交互
+                    }
+                    .navigationDestination(isPresented: $appState.isShowingCameraView) {
+                        CameraViewWrapper(appState: appState)
                     }
 //                    .safeAreaInset(edge: .bottom) {
 //                        <#code#>
@@ -323,22 +325,22 @@ struct SearchView<AppStateModel: AppState>: View {
 //                            .ignoresSafeArea() // 让视图覆盖整个屏幕区域
 //                            .frame(maxWidth: .infinity, maxHeight: .infinity) // 让视图占满整个屏幕
 //                    }
-                    if /*isShowCameraView*/ appState.isShowingCameraView {
-//                        CameraView(image: $image) { image in
-//                            self.image = image
-//                            isShowPostView = true
-//                        }.navigationDestination(isPresented: $isShowPostView) {
-//                            PostUIView(image: self.image,cardName: $resultCardName)
-//                        }
-//                        .ignoresSafeArea(.all)
-//                        CaptureView()
-//                            .ignoresSafeArea(.all)
-                        
-//                        CameraView(camera: camera)
-                        CameraViewWrapper(appState: appState)
-//                            .animation(.easeInOut, value: isShowCameraView)
-                            .transition(.move(edge: .bottom))
-                    }
+//                    if /*isShowCameraView*/ appState.isShowingCameraView {
+////                        CameraView(image: $image) { image in
+////                            self.image = image
+////                            isShowPostView = true
+////                        }.navigationDestination(isPresented: $isShowPostView) {
+////                            PostUIView(image: self.image,cardName: $resultCardName)
+////                        }
+////                        .ignoresSafeArea(.all)
+////                        CaptureView()
+////                            .ignoresSafeArea(.all)
+//                        
+////                        CameraView(camera: camera)
+//                        CameraViewWrapper(appState: appState)
+////                            .animation(.easeInOut, value: isShowCameraView)
+//                            .transition(.move(edge: .bottom))
+//                    }
                         
                      
                 }
@@ -494,18 +496,26 @@ struct CameraViewWrapper<AppStateModel: AppState>: View {
     @State var appState: AppStateModel
     
     var body: some View {
-        if let camera = camera {
-            CameraView(camera: camera, appState: appState)
-                .task {
-                    await camera.start()
-                }
-        } else {
-            Rectangle()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .foregroundStyle(Color.gray)
-                .task {
-                    self.camera = await CameraModel.create()
-                }
+        NavigationView {
+            if let camera = camera {
+                CameraView(camera: camera, appState: appState)
+                    .task {
+                        await camera.start()
+                    }
+            } else {
+                Rectangle()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .foregroundStyle(Color.gray)
+                    .task {
+                        self.camera = await CameraModel.create()
+                    }
+            }
         }
+        .navigationBarBackButtonHidden(true)
+        .navigationTitle("")
+        .onDisappear {
+            appState.isShowingSearchView = true // 在滑动关闭视图时也能更新变量
+            appState.isShowingCameraView = false
+                    }
     }
 }

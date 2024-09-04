@@ -308,7 +308,7 @@
 				D13FFDD62BAB377A007E1970 /* Models */,
 				FF3CD12E2C78791B00AF7086 /* Capture */,
 				FF3CD12D2C78791100AF7086 /* Model */,
-				FF3CD12C2C78790C00AF7086 /* Views */,
+				FF3CD12C2C78790C00AF7086 /* CameraViews */,
 				FF3CD12A2C78788900AF7086 /* Support */,
 				D1CE061E2B526931001303F2 /* Preview Content */,
 			);
@@ -334,7 +334,7 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
-		FF3CD12C2C78790C00AF7086 /* Views */ = {
+		FF3CD12C2C78790C00AF7086 /* CameraViews */ = {
 			isa = PBXGroup;
 			children = (
 				FF6BC4DE2C7C188300423660 /* CameraPreview.swift */,
@@ -344,7 +344,7 @@
 				FF3CD1442C7879B600AF7086 /* Toolbars */,
 				FF3CD1432C7879A100AF7086 /* Overlays */,
 			);
-			path = Views;
+			path = CameraViews;
 			sourceTree = "<group>";
 		};
 		FF3CD12D2C78791100AF7086 /* Model */ = {

@@ -9,10 +9,11 @@ import SwiftUI
 import Foundation
 import Alamofire
 
-struct PostUIView: View {
+struct PostUIView<AppStateModel: AppState>: View {
+    @State var appState: AppStateModel
     var image: UIImage? = UIImage(named: "IMG-1")
     @State private var thinking: String = ""
-    @Binding var cardName : String
+//    @Binding var cardName : String
   //  @ObservedObject var userlogin : UserLoginModel
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
@@ -30,7 +31,7 @@ struct PostUIView: View {
                         Text("没有图片")
                     }
                     Spacer()
-                    Text("📍" + cardName)
+                    Text("📍" + appState.resultLocationName)
                        // .foregroundColor(Color("text-white"))
                     Divider().foregroundColor(Color("text-white"))
                     TextField("分享一下想法吧", text: $thinking)
@@ -47,8 +48,8 @@ struct PostUIView: View {
                                         print(uploadResponse)  // 打印上传响应的内容
                                     print(uploadResponse.datas)
                                     if let imagePath = uploadResponse.datas{
-                                        shareInsert(address: cardName, cityCode: 0, data: thinking, deleted: 0, districtCode: 0, imagePath: imagePath, latitude: 0, longitude: 0, provinceCode: 0, title: "")
-                                        self.presentationMode.wrappedValue.dismiss()
+                                        shareInsert(address: appState.resultLocationName, cityCode: 0, data: thinking, deleted: 0, districtCode: 0, imagePath: imagePath, latitude: 0, longitude: 0, provinceCode: 0, title: "")
+                                        self.presentationMode.wrappedValue.dismiss()  //关闭当前视图
                                         print("发布结果")
                                     }
                                     case .failure(let error):
@@ -99,8 +100,6 @@ struct PostUIView: View {
         
         
     }
-    
-    
     
     func uploadImage(_ image: UIImage, completion: @escaping (Result<UploadResponse, Error>) -> Void){
         if let url = URL(string: "\(Constants.BASE_HOST)/api/guan/uploadImage") {
@@ -226,12 +225,7 @@ struct PostUIView: View {
 
                     task.resume()
             }
-           
-            
-            
-            
-            
-            
+              
         }
     }
 }
@@ -239,10 +233,10 @@ struct PostUIView: View {
 //#Preview {
 //    PostUIView(cardName: .constant("dd"))
 //}
-extension Data {
-    mutating func appendString(_ string: String) {
-        if let data = string.data(using: .utf8) {
-            append(data)
+    extension Data {
+        mutating func appendString(_ string: String) {
+            if let data = string.data(using: .utf8) {
+                append(data)
+            }
         }
     }
-}

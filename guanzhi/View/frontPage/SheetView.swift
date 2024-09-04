@@ -18,7 +18,7 @@ struct SheetView<AppStateModel: AppState>: View {
 //    @State private var isShowCameraView = false
     @State private var image: UIImage?
     @State private var isShowPostView = false
-    @Binding var cardName : String
+//    @Binding var cardName : String
     let placeholder = "🔍想瞧瞧哪里？"
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
     @Binding var selectedLocation: SearchResult?

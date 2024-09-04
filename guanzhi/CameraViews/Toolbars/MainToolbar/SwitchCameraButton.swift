@@ -26,3 +26,22 @@ struct SwitchCameraButton<CameraModel: Camera>: View {
         .allowsHitTesting(!camera.isSwitchingVideoDevices) // 如果相机正在切换视频设备，则禁用点击事件。
     }
 }
+
+struct SwitchCameraButtonSmall<CameraModel: Camera>: View {
+    
+    @State var camera: CameraModel
+    
+    var body: some View {
+        Button { // 创建一个按钮，当点击时切换相机。
+            Task { // 异步任务，调用相机的切换视频设备方法。
+                await camera.switchVideoDevices()
+            }
+        } label: {
+            Image(systemName: "arrow.triangle.2.circlepath.circle")
+        }
+        .buttonStyle(DefaultButtonStyle(size: .large))
+        .frame(width: smallButtonSize.width, height: smallButtonSize.height)
+        .disabled(camera.captureActivity.isRecording) // 如果相机正在录制，则禁用按钮。
+        .allowsHitTesting(!camera.isSwitchingVideoDevices) // 如果相机正在切换视频设备，则禁用点击事件。
+    }
+}

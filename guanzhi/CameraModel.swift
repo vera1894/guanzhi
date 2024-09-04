@@ -20,7 +20,6 @@ import Observation
 ///
 
 protocol MediaItemProtocol {}
-
 extension Photo: MediaItemProtocol {}
 extension Movie: MediaItemProtocol {}
 

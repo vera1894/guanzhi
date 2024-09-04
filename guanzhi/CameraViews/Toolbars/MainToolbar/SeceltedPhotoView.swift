@@ -61,7 +61,7 @@ struct SeceltedPhotoView<CameraModel: Camera>: PlatformView {
                             }
                         }
                     
-                    Spacer()
+//                    Spacer()
                 }
 //            }
               
