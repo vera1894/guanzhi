@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import UIKit
+//import UIKit
 
 fileprivate let loginTokenKey = "loginTokenKey"
 
@@ -34,7 +34,8 @@ class UserLoginModel: ObservableObject {
     
     @Published var sendStatus: Bool = false //是否发送成功
    // @Published var image: UIImage = UIImage()
-    @Published var userName:String = "" //登录用户昵称
+    @Published var userName: String = "" //登录用户昵称
+    @Published var userId : Int = -1 //登录用户id
     
     func sendCode(phNumber:String){
         DispatchQueue.main.async {
@@ -166,6 +167,7 @@ class UserLoginModel: ObservableObject {
     }
     
     //获取用户昵称
+    
     func getUserInfo(){
         DispatchQueue.main.async {
             Task {
@@ -178,8 +180,11 @@ class UserLoginModel: ObservableObject {
                     if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
                         let response = try decoder.decode(OTOResponseDataModel.self, from: jsonData)
                         if response.respCode == 0 {
+                            self.userName = response.datas.nickname ?? "用户"
+                            self.userId = response.datas.id ?? -1
                             print("请求成功")
                             print(response.datas.nickname as Any)
+                            print("获取userId",self.userId)
                         }
                         
                         self.noticeText = response.respMsg ?? ""
@@ -191,6 +196,32 @@ class UserLoginModel: ObservableObject {
             }
         }
     }
+    
+//    func getUserInfo(){
+//        DispatchQueue.main.async {
+//            Task {
+//                guard let data = try? await OTONetwork.request(.userInfo) else {
+//                    return
+//                }
+//                print(data)
+//                do {
+//                    let decoder = JSONDecoder()
+//                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+//                        let response = try decoder.decode(OTOResponseDataModel.self, from: jsonData)
+//                        if response.respCode == 0 {
+//                            print("请求成功")
+//                            print(response.datas.nickname as Any)
+//                        }
+//                        
+//                        self.noticeText = response.respMsg ?? ""
+//                        
+//                    }
+//                } catch {
+//                    print("Error decoding JSON: \(error)")
+//                }
+//            }
+//        }
+//    }
     
 }
 
@@ -235,5 +266,9 @@ class OTOLoginStatusManager {
     func getToken() -> String? {
         return UserDefaults.standard.string(forKey: loginTokenKey)
     }
+    
+    func getUserID() -> Int {
+            return userLogin.userId
+        }
 }
 

@@ -67,6 +67,7 @@ struct MyView<AppStateModel: AppState>: View {
         }) {
             Image("icon-back")
         }.buttonStyle(ButtonStyle_m()),
+            
             trailing:
                                 Button(action: {
             // 添加按钮点击的操作
@@ -79,8 +80,10 @@ struct MyView<AppStateModel: AppState>: View {
 //        .frame(height: 30)
         .navigationBarBackButtonHidden(true)
         .onDisappear {
-            appState.isShowingSearchView = true // 在滑动关闭视图时也能更新变量
-                    }
+            if isShowSettingView != true{
+                appState.isShowingSearchView = true // 在滑动关闭视图时也能更新变量
+            }
+        }
 //        .navigationBarItems(
 //        )
 //        .onDisappear{

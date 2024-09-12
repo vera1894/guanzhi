@@ -11,12 +11,15 @@ import PhotosUI
 import AVFoundation
 import AVKit
 
-struct SeceltedPhotoView<CameraModel: Camera>: PlatformView {
+struct SeceltedPhotoView<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @State var camera: CameraModel
+    @State var appState: AppStateModel
+//    @State private var appState.isPlayingLivePhoto = false
+    @State private var livePhoto: PHLivePhoto? = nil // 添加这个状态变量来保存生成的 Live Photo
     var cameraMainHeight: CGFloat = 240
     
     private func generateThumbnail(from movie: Movie) -> UIImage? {
@@ -33,6 +36,12 @@ struct SeceltedPhotoView<CameraModel: Camera>: PlatformView {
         }
     }
     
+    func generateLivePhoto(photoURL: URL, videoURL: URL, completion: @escaping (PHLivePhoto?) -> Void) {
+        PHLivePhoto.request(withResourceFileURLs: [photoURL, videoURL], placeholderImage: nil, targetSize: .zero, contentMode: .aspectFit) { livePhoto, info in
+            completion(livePhoto)
+        }
+    }
+    
     var body: some View {
         ZStack {
 //            Rectangle()
@@ -46,17 +55,72 @@ struct SeceltedPhotoView<CameraModel: Camera>: PlatformView {
                     if let selectedIndex = camera.selectedMedia.firstIndex(of: true) {
                             let media = camera.capturedMedia[selectedIndex]
                             
+//                        if let photo = media as? Photo {
+//                            if let uiImage = UIImage(data: photo.data) {
+//                            Image(uiImage: uiImage)
+//                                    .resizable()
+//                                    .aspectRatio(contentMode: .fit)
+//                            }
+//                        } 
+                        
                         if let photo = media as? Photo {
                             if let uiImage = UIImage(data: photo.data) {
-                            Image(uiImage: uiImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
+                                Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .onTapGesture {
+                                            appState.isPlayingLivePhoto.toggle()
+                                        }
+                                        .overlay {
+                                            if  camera.livePhotoGroup[selectedIndex] != nil {
+                                                if appState.isPlayingLivePhoto, let livePhoto = camera.livePhotoGroup[selectedIndex] {
+                                                        LivePhotoView(livePhoto: livePhoto)
+                                                        .onAppear {
+                                                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                                                appState.isPlayingLivePhoto = false // 自动恢复到静态图片
+                                                            }
+                                                        }
+                                                }
+                                            }
+                                        }
+                                }
+                            
+//                                ZStack {
+//                                    Image(uiImage: UIImage(data: photo.data)!)
+//                                        .resizable()
+//                                        .aspectRatio(contentMode: .fit)
+//                                        .onTapGesture {
+//                                            appState.isPlayingLivePhoto.toggle()
+//                                        }
+//                                    if  camera.livePhotoGroup[selectedIndex] != nil {
+//                                        if appState.isPlayingLivePhoto, let livePhoto = camera.livePhotoGroup[selectedIndex] {
+//                                                LivePhotoView(livePhoto: livePhoto)
+//                                                .onAppear {
+//                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+//                                                        appState.isPlayingLivePhoto = false // 自动恢复到静态图片
+//                                                    }
+//                                                }
+//                                        }
+//                                    }
+//
+//                                    // 直接从 livePhotoGroup 读取已缓存的 Live Photo
+////                                    if appState.isPlayingLivePhoto, let livePhoto = camera.livePhotoGroup[selectedIndex] {
+////                                        LivePhotoView(livePhoto: livePhoto)
+////                                            .onAppear {
+////                                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+////                                                    appState.isPlayingLivePhoto = false // 自动恢复到静态图片
+////                                                }
+////                                            }
+////                                    }
+//                                }
                             }
-                        } else if let movie = media as? Movie, let thumbnailImage = generateThumbnail(from: movie) {
+                        
+                        else if let movie = media as? Movie, let thumbnailImage = generateThumbnail(from: movie) {
                             Image(uiImage: thumbnailImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                        } else {
+                        } 
+                        else {
                                 Text("No media available")
                             }
                         }
@@ -74,8 +138,24 @@ struct SeceltedPhotoView<CameraModel: Camera>: PlatformView {
     var height: CGFloat? { 80 }
 }
 
+struct LivePhotoView: UIViewRepresentable {
+    var livePhoto: PHLivePhoto
+
+    func makeUIView(context: Context) -> PHLivePhotoView {
+        let livePhotoView = PHLivePhotoView()
+        livePhotoView.livePhoto = livePhoto
+        livePhotoView.startPlayback(with: .full)
+        return livePhotoView
+    }
+
+    func updateUIView(_ uiView: PHLivePhotoView, context: Context) {
+        uiView.livePhoto = livePhoto
+        uiView.startPlayback(with: .full)  // 确保更新时播放
+    }
+}
+
 #Preview {
     Group {
-        SeceltedPhotoView(camera: PreviewCameraModel())
+        SeceltedPhotoView(camera: PreviewCameraModel(), appState: AppStateModel())
     }
 }

@@ -18,6 +18,7 @@ struct DeleteButton<CameraModel: Camera>: View {
             // 删除选中的媒体
             if let selectedIndex = camera.selectedMedia.firstIndex(of: true) {
                 camera.capturedMedia.remove(at: selectedIndex)
+                camera.livePhotoGroup.remove(at: selectedIndex)
                 camera.selectedMedia[selectedIndex] = false
                 
                 // 如果有剩余的媒体，将其向前移动

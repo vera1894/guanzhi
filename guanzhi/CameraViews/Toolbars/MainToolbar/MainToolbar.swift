@@ -24,7 +24,6 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     @State private var locatedPositionName : String = ""
     @State private var isLocationAvailable = false
     @State private var nextPage: Bool = false //
-    @State private var isLoading: Bool = false
         
     var cameraMainHeight: CGFloat = 180
     
@@ -93,7 +92,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 if appState.isReadyToPost == true { //改改改改改改改改改改改改
                     VStack(spacing: 16) {
                         HStack {
-                            Text("📍" + locatedPositionName)
+                            Text("📍" + (isLocationAvailable ? locatedPositionName : "地点获取中..."))
                                 .bold()
                             Spacer()
                         }
@@ -118,21 +117,22 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                     // 获取所有图片
                                     if isLocationAvailable == true {
                                                     // 执行下一步操作
-                                        isLoading = true
+                                        appState.isLoading = true
                                         
-                                        let images = camera.capturedMedia.compactMap { $0 as? Photo }.map { UIImage(data: $0.data) }.compactMap { $0 }
+                                        let photos = camera.capturedMedia.compactMap { $0 as? Photo }
 
-                                        // 上传所有图片
-                                        uploadImages(images) { result in
+                                        // 上传所有 Photo 对象
+                                        uploadImages(photos) { result in
                                             switch result {
                                             case .success(let imagePath):
+                                                // 注意这里将 combinedImagePaths 改为 imagePath
                                                 shareInsert(
                                                     address: locatedPositionName,
                                                     cityCode: nil,
                                                     data: appState.postText,
                                                     deleted: nil,
                                                     districtCode: nil,
-                                                    imagePath: imagePath,
+                                                    imagePath: imagePath,  // 使用成功回调中的 imagePath
                                                     latitude: locatedPosition?.latitude ?? 0.0,
                                                     longitude: locatedPosition?.longitude ?? 0.0,
                                                     provinceCode: nil,
@@ -141,7 +141,10 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                                 appState.isReadyToPost = false
                                                 appState.isShowingCameraView = false
                                                 appState.isShowingSearchView = true
-                                                isLoading = false
+                                                appState.isPushedGuanzhi = true
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                                    appState.isLoading = false
+                                                }
                                             case .failure(let error):
                                                 print("Failed to upload images: \(error)")
                                             }
@@ -175,8 +178,9 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                         if camera.selectedMedia.firstIndex(of: true) != nil {
                             DeleteButton(camera: camera)
                         } else {
-                            CaptureButton(camera: camera)
+                            CaptureButton(camera: camera, appState: appState)
                                 .disabled(camera.capturedMedia.count>3)
+                                .opacity((camera.capturedMedia.count>3) ? 0.3 : 1)
             //                    .background(Color.red)  //height 68
                         }
                         
@@ -199,11 +203,9 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                     }
                     .padding(.bottom, 32)
                 }
-                    
-                
             }
             
-            if isLoading {
+            if (appState.isLoading || camera.captureboxIsLoading) {
                 ProcessingView()
             }
         }
@@ -234,7 +236,14 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
         let respMsg:String
     }
     
-    func uploadImages(_ images: [UIImage], completion: @escaping (Result<String, Error>) -> Void) {
+    func generateUniqueFileName() -> String {
+        let userId = OTOLoginStatusManager.shared.getUserID()  // 替换为用户的实际 ID
+        let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))  // 13位时间戳
+        let randomNumber = String(format: "%05d", Int(arc4random_uniform(100000)))  // 5位随机数
+        return "\(userId)_\(timestamp)_\(randomNumber)"
+    }
+    
+    func uploadImages(_ photos: [Photo], completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: "\(Constants.BASE_HOST)/api/guan/uploadImage") else {
             print("Invalid URL")
             return
@@ -248,8 +257,8 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
         var imagePaths: [String] = []
         var uploadIndex = 0
 
-        func uploadNextImage() {
-            guard uploadIndex < images.count else {
+        func uploadNextPhoto() {
+            guard uploadIndex < photos.count else {
                 // 所有图片上传完成，拼接路径
                 let combinedPaths = imagePaths.joined(separator: ",")
                 completion(.success(combinedPaths))
@@ -257,41 +266,138 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 return
             }
 
-            let image = images[uploadIndex]
-            guard let jpegData = image.jpegData(compressionQuality: 0.5) else {
-                print("Failed to convert image to JPEG")
-                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to JPEG"])))
-                return
+            let photo = photos[uploadIndex]
+            let uniqueFileName = generateUniqueFileName()  // 使用自定义的命名方式
+
+            // 上传静态照片
+            func uploadFile(data: Data, fileName: String, mimeType: String) {
+                let formData = MultipartFormData()
+                formData.append(data, withName: "multipartFile", fileName: fileName, mimeType: mimeType)
+                
+                print("Starting upload for \(fileName)...")
+
+                AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers).responseDecodable(of: UploadResponse.self) { response in
+                    switch response.result {
+                    case .success(let uploadResponse):
+                        print("Response JSON: \(uploadResponse)")
+
+                        if let imagePath = uploadResponse.datas {
+                            imagePaths.append(imagePath)
+                            print("Uploaded \(fileName): \(imagePath)")
+                        } else {
+                            print("No image path returned in response")
+                            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned"])))
+                            return
+                        }
+                        uploadIndex += 1
+                        uploadNextPhoto()  // 递归上传下一个文件
+                    case .failure(let error):
+                        completion(.failure(error))
+                        print("Failed to upload \(fileName): \(error)")
+                    }
+                }
             }
 
-            let formData = MultipartFormData()
-            formData.append(jpegData, withName: "multipartFile", fileName: "image.jpg", mimeType: "image/jpeg")
-            print("Starting upload for image \(uploadIndex + 1)...")
+            // 上传静态图片
+            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg")
 
-            AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers).responseDecodable(of: UploadResponse.self) { response in
-                switch response.result {
-                case .success(let uploadResponse):
-                    print("Response JSON: \(uploadResponse)")
-                    
-                    if let imagePath = uploadResponse.datas {
-                        imagePaths.append(imagePath)
-                        print("Uploaded image \(uploadIndex + 1): \(imagePath)")
-                    } else {
-                        print("No image path returned in response")
-                        completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned"])))
-                        return
+            // 如果存在 Live Photo 视频，单独上传
+            if let livePhotoURL = photo.livePhotoMovieURL {
+                let fileManager = FileManager.default
+                if fileManager.fileExists(atPath: livePhotoURL.path) {
+                    do {
+                        let videoData = try Data(contentsOf: livePhotoURL)
+                        uploadFile(data: videoData, fileName: "\(uniqueFileName)_video.mov", mimeType: "video/quicktime")
+                    } catch {
+                        print("Failed to read live photo video data: \(error)")
+                        completion(.failure(error))
                     }
-                    uploadIndex += 1
-                    uploadNextImage()  // 递归调用，上传下一张图片
-                case .failure(let error):
-                    completion(.failure(error))
-                    print("Failed to upload image \(uploadIndex + 1): \(error)")
+                } else {
+                    print("Live Photo video file does not exist at path: \(livePhotoURL.path)")
                 }
             }
         }
-
-        uploadNextImage()  // 开始上传第一张图片
+        uploadNextPhoto()  // 开始上传第一个文件
     }
+    
+//    func uploadImages(_ photos: [Photo], completion: @escaping (Result<String, Error>) -> Void) {
+//        guard let url = URL(string: "\(Constants.BASE_HOST)/api/guan/uploadImage") else {
+//            print("Invalid URL")
+//            return
+//        }
+//
+//        let headers: HTTPHeaders = [
+//            "Content-Type": "multipart/form-data",
+//            "Authorization": OTOLoginStatusManager.shared.getToken()!
+//        ]
+//
+//        var imagePaths: [String] = []
+//        var uploadIndex = 0
+//
+//        func uploadNextPhoto() {
+//            guard uploadIndex < photos.count else {
+//                // 所有图片上传完成，拼接路径
+//                let combinedPaths = imagePaths.joined(separator: ",")
+//                completion(.success(combinedPaths))
+//                print("Combined image paths: \(combinedPaths)")
+//                return
+//            }
+//
+//            let photo = photos[uploadIndex]
+//            let photoUUID = UUID().uuidString  // 为每个 Live Photo 生成唯一的 UUID
+//
+//            // 上传静态照片
+//            func uploadFile(data: Data, fileName: String, mimeType: String) {
+//                let formData = MultipartFormData()
+//                formData.append(data, withName: "multipartFile", fileName: fileName, mimeType: mimeType)
+//                
+//                print("Starting upload for \(fileName)...")
+//
+//                AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers).responseDecodable(of: UploadResponse.self) { response in
+//                    switch response.result {
+//                    case .success(let uploadResponse):
+//                        print("Response JSON: \(uploadResponse)")
+//
+//                        if let imagePath = uploadResponse.datas {
+//                            imagePaths.append(imagePath)
+//                            print("Uploaded \(fileName): \(imagePath)")
+//                        } else {
+//                            print("No image path returned in response")
+//                            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned"])))
+//                            return
+//                        }
+//                        uploadIndex += 1
+//                        uploadNextPhoto()  // 递归上传下一个文件
+//                    case .failure(let error):
+//                        completion(.failure(error))
+//                        print("Failed to upload \(fileName): \(error)")
+//                    }
+//                }
+//            }
+//
+//            // 上传静态图片
+//            uploadFile(data: photo.data, fileName: "\(photoUUID)_photo.jpg", mimeType: "image/jpeg")
+//
+//            // 如果存在 Live Photo 视频，单独上传
+//            if let livePhotoURL = photo.livePhotoMovieURL {
+//                let fileManager = FileManager.default
+//                if fileManager.fileExists(atPath: livePhotoURL.path) {
+//                    do {
+//                        let videoData = try Data(contentsOf: livePhotoURL)
+//                        uploadFile(data: videoData, fileName: "\(photoUUID)_video.mov", mimeType: "video/quicktime")
+//                    } catch {
+//                        print("Failed to read live photo video data: \(error)")
+//                        completion(.failure(error))
+//                    }
+//                } else {
+//                    print("Live Photo video file does not exist at path: \(livePhotoURL.path)")
+//                }
+//            }
+//        }
+//        uploadNextPhoto()  // 开始上传第一个文件
+//    }
+    
+    
     
 //    func uploadImages(_ images: [UIImage], completion: @escaping (Result<String, Error>) -> Void) {
 //        guard let url = URL(string: "\(Constants.BASE_HOST)/api/guan/uploadImage") else {
@@ -304,116 +410,101 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 //            "Authorization": OTOLoginStatusManager.shared.getToken()!
 //        ]
 //
-//        // 只上传第一张图片
-//        if let firstImage = images.first {
-//            guard let jpegData = firstImage.jpegData(compressionQuality: 0.5) else {
+//        var imagePaths: [String] = []
+//        var uploadIndex = 0
+//
+//        func uploadNextImage() {
+//            guard uploadIndex < images.count else {
+//                // 所有图片上传完成，拼接路径
+//                let combinedPaths = imagePaths.joined(separator: ",")
+//                completion(.success(combinedPaths))
+//                print("Combined image paths: \(combinedPaths)")
+//                return
+//            }
+//
+//            let image = images[uploadIndex]
+//            guard let jpegData = image.jpegData(compressionQuality: 0.5) else {
 //                print("Failed to convert image to JPEG")
+//                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to JPEG"])))
 //                return
 //            }
 //
 //            let formData = MultipartFormData()
 //            formData.append(jpegData, withName: "multipartFile", fileName: "image.jpg", mimeType: "image/jpeg")
-//            print("Starting upload...")
+//            print("Starting upload for image \(uploadIndex + 1)...")
 //
 //            AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers).responseDecodable(of: UploadResponse.self) { response in
 //                switch response.result {
 //                case .success(let uploadResponse):
-//                    if let imagePath = uploadResponse.datas {
-//                        // 直接返回单张图片的路径
-//                        completion(.success(imagePath))
-//                    } else {
-//                        completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned"])))
-//                    }
 //                    print("Response JSON: \(uploadResponse)")
+//                    
+//                    if let imagePath = uploadResponse.datas {
+//                        imagePaths.append(imagePath)
+//                        print("Uploaded image \(uploadIndex + 1): \(imagePath)")
+//                    } else {
+//                        print("No image path returned in response")
+//                        completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned"])))
+//                        return
+//                    }
+//                    uploadIndex += 1
+//                    uploadNextImage()  // 递归调用，上传下一张图片
 //                case .failure(let error):
 //                    completion(.failure(error))
-//                    print("Failed to upload image: \(error)")
+//                    print("Failed to upload image \(uploadIndex + 1): \(error)")
 //                }
 //            }
-//        } else {
-//            print("No images to upload")
 //        }
+//        uploadNextImage()  // 开始上传第一张图片
 //    }
     
-    //    func uploadImage(_ image: UIImage, completion: @escaping (Result<UploadResponse, Error>) -> Void){
-    //        if let url = URL(string: "\(Constants.BASE_HOST)/api/guan/uploadImage") {
-    //            // 将照片转换为JPEG
-    //                guard let jpegData = image.jpegData(compressionQuality: 0.5) else {
-    //                    print("Failed to convert image to JPEG")
-    //                    return
-    //                }
-    //
-    //            // 创建请求头部
-    //                let headers: HTTPHeaders = [
-    //                    "Content-Type": "multipart/form-data",
-    //                    "Authorization": OTOLoginStatusManager.shared.getToken()!
-    //                ]
-    //
-    //            // 创建请求体
-    //                let formData = MultipartFormData()
-    //
-    //            formData.append(jpegData, withName: "multipartFile", fileName: "image.jpg", mimeType: "image/jpeg")
-    //
-    //            // 发送POST请求
-    //            AF.upload(multipartFormData:formData, to: url,method: .post,headers:headers).responseDecodable(of: UploadResponse.self) { response in
-    //                // Handle the response
-    //                switch response.result {
-    //
-    //                case .success(let uploadResponse):
-    //                    completion(.success(uploadResponse))
-    //                case .failure(let error):
-    //                    completion(.failure(error))
-    //                }
-    //            }
-    //
-    //        }
-    //    }
     
     func shareInsert(address: String, cityCode: Int?, data: String, deleted: Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String) {
         DispatchQueue.main.async {
             Task {
-                // 直接使用拼合的 imagePath 字符串
-                guard let responseData = try? await OTONetwork.request(.InsertDoodle(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title)) else {
-                    print("Failed to send request.")
-                    return
-                }
-                
                 do {
+                    // 使用 try 来捕获网络请求错误
+                    let responseData = try await OTONetwork.request(.InsertDoodle(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title))
+
+                    // 确保 responseData 是有效的 JSON 数据
                     let decoder = JSONDecoder()
                     if let jsonData = try? JSONSerialization.data(withJSONObject: responseData, options: []) {
                         let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+                        
                         if response.respCode == 0 {
                             print("发布分享成功: \(imagePath)")
                         } else {
                             print("Failed to publish: \(String(describing: response.respMsg))")
                         }
+                    } else {
+                        print("Failed to serialize response data.")
                     }
+
                 } catch {
-                    print("Error decoding JSON: \(error)")
+                    // 捕获网络请求或其他错误
+                    print("Error sending request: \(error)")
                 }
             }
         }
     }
     
-//    func shareInsert(address: String, cityCode: Int?, data: String, deleted:Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String){
+//    func shareInsert(address: String, cityCode: Int?, data: String, deleted: Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String) {
 //        DispatchQueue.main.async {
 //            Task {
-//                guard let data = try? await OTONetwork.request(.InsertDoodle(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title)) else {
+//                // 直接使用拼合的 imagePath 字符串
+//                guard let responseData = try? await OTONetwork.request(.InsertDoodle(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title)) else {
+//                    print("Failed to send request.")
 //                    return
 //                }
-//                print(data)
+//                
 //                do {
 //                    let decoder = JSONDecoder()
-//                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+//                    if let jsonData = try? JSONSerialization.data(withJSONObject: responseData, options: []) {
 //                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
 //                        if response.respCode == 0 {
-//                            print("发布分享成功")
-//                            print(response.respMsg)
-//                            
+//                            print("发布分享成功: \(imagePath)")
+//                        } else {
+//                            print("Failed to publish: \(String(describing: response.respMsg))")
 //                        }
-//                        
-//                        //self.noticeText = response.respMsg ?? ""
-//                        
 //                    }
 //                } catch {
 //                    print("Error decoding JSON: \(error)")
@@ -421,6 +512,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 //            }
 //        }
 //    }
+    
     
     func requestForImage(_ image: UIImage, completion: @escaping (Result<Data, Error>) -> Void) {
         

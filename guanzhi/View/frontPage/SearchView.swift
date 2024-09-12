@@ -91,6 +91,18 @@ struct SearchView<AppStateModel: AppState>: View {
         }
     }
     
+    private func showNotification() {
+        if appState.isPushedGuanzhi {
+            Toast.shared.present(style: .notificationOnly(
+                title: "🌍 发布成功",
+                symbol: "",
+                tint: Color("color-primary"),
+                isUserInteractionEnabled: true,
+                timing: .short,
+                isAutoClose: true))
+            }
+        }
+    
     var body: some View {
         
         ToastRootView {
@@ -318,7 +330,7 @@ struct SearchView<AppStateModel: AppState>: View {
                     
                     //根据登录状态决定是否显示登录页面
 //                    if !OTOLoginStatusManager.shared.isLoggedIn {
-//                        LogInView(userlogin: UserLoginModel())
+//                        LogInView(userlogin: userlogin)
 //                    }
 //                    .sheet(isPresented: $appState.isShowingCameraView) {
 //                        CameraViewWrapper(appState: appState)
@@ -341,20 +353,25 @@ struct SearchView<AppStateModel: AppState>: View {
 ////                            .animation(.easeInOut, value: isShowCameraView)
 //                            .transition(.move(edge: .bottom))
 //                    }
-                        
                      
-                }
-            }.navigationBarBackButtonHidden(true)
-                .onAppear{
-                    Toast.shared.present(style: .notificationOfWelcome(
-                        title: "🌍世界虽大 吾可观之👀",
-                        symbol: " ",
-                        tint: Color("color-primary"),
-                        isUserInteractionEnabled: true,
-                        timing: .medium,
-                        isAutoClose: true)
-                    )
-                }
+                } //ZStack
+                
+                
+            }
+            .navigationBarBackButtonHidden(true)
+            .onAppear{
+                Toast.shared.present(style: .notificationOfWelcome(
+                    title: "🌍世界虽大 吾可观之👀",
+                    symbol: " ",
+                    tint: Color("color-primary"),
+                    isUserInteractionEnabled: true,
+                    timing: .medium,
+                    isAutoClose: true)
+                )
+            }
+            .onChange(of: appState.isPushedGuanzhi) { oldValue, newValue in
+                showNotification()
+            }
         }
     }
     

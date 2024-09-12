@@ -29,6 +29,7 @@ struct OTOResponseDataModel: Codable {
 struct dataModel: Codable {
     let phone: String?
     let nickname: String?
+    let id: Int?
 }
 
 

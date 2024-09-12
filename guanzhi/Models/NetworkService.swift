@@ -25,15 +25,16 @@ struct OTONetwork {
         }
     }
 
-    
     static func request(_ req: OTORequest) async throws -> [String: Any] {
         do {
-//            print("""
-//=============开始请求=============
-//请求路径: \(req.request.path),
-//请求参数: \(req.request.param)
-//""")
-            guard let url = URL(string: "\(Constants.BASE_HOST)\(req.request.path)") else { throw OTONetworkError.badURL }
+            print("=============开始请求=============")
+            print("请求路径: \(req.request.path)")
+            print("请求参数: \(req.request.param)")
+
+            guard let url = URL(string: "\(Constants.BASE_HOST)\(req.request.path)") else {
+                print("无效的 URL")
+                throw OTONetworkError.badURL
+            }
             var request = URLRequest(url: url)
             request.httpMethod = req.request.method.rawValue
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -41,21 +42,25 @@ struct OTONetwork {
                 request.setValue(token, forHTTPHeaderField: "Authorization")
             }
             request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
-            let (data, response) = try await URLSession.shared.data(for: request)
             
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw OTONetworkError.invalidResponse
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP 状态码: \(httpResponse.statusCode)")
             }
+
             guard let resultData = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 throw OTONetworkError.responseNotJson
             }
-            guard httpResponse.statusCode == 200 else {
+
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 if let errorMsg = resultData["error"] as? String {
                     throw OTONetworkError.customError(errorMsg)
                 }
                 throw OTONetworkError.badRequest
             }
-//            print("返回数据: \(resultData)")
+
+            print("返回数据: \(resultData)")
             return resultData
         } catch {
             if let error = error as? OTONetworkError {
@@ -72,6 +77,63 @@ struct OTONetwork {
             throw error
         }
     }
+}
+
+
+//struct OTONetwork {
+//    static func setHeader(_ header: [String: String]) {
+//        header.forEach { key, value in
+//            URLSessionConfiguration.default.httpAdditionalHeaders?[key] = value
+//        }
+//    }
+//
+//    
+//    static func request(_ req: OTORequest) async throws -> [String: Any] {
+//        do {
+////            print("""
+////=============开始请求=============
+////请求路径: \(req.request.path),
+////请求参数: \(req.request.param)
+////""")
+//            guard let url = URL(string: "\(Constants.BASE_HOST)\(req.request.path)") else { throw OTONetworkError.badURL }
+//            var request = URLRequest(url: url)
+//            request.httpMethod = req.request.method.rawValue
+//            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+//            if OTOLoginStatusManager.shared.isLoggedIn, let token = OTOLoginStatusManager.shared.getToken() {
+//                request.setValue(token, forHTTPHeaderField: "Authorization")
+//            }
+//            request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
+//            let (data, response) = try await URLSession.shared.data(for: request)
+//            
+//            guard let httpResponse = response as? HTTPURLResponse else {
+//                throw OTONetworkError.invalidResponse
+//            }
+//            guard let resultData = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+//                throw OTONetworkError.responseNotJson
+//            }
+//            guard httpResponse.statusCode == 200 else {
+//                if let errorMsg = resultData["error"] as? String {
+//                    throw OTONetworkError.customError(errorMsg)
+//                }
+//                throw OTONetworkError.badRequest
+//            }
+////            print("返回数据: \(resultData)")
+//            return resultData
+//        } catch {
+//            if let error = error as? OTONetworkError {
+//                switch error {
+//                case .customError(let errorMsg):
+//                    DispatchQueue.main.async {
+//                       // ProgressHUD.showFailed(errorMsg)
+//                    }
+//                    print("服务器返回的错误信息: \(errorMsg)")
+//                default:
+//                    print("OTONetworkError: \(error.localizedDescription)")
+//                }
+//            }
+//            throw error
+//        }
+//    }
     
     
     
@@ -99,4 +161,4 @@ struct OTONetwork {
 //            return Fail(error: error).eraseToAnyPublisher()
 //        }
 //    }
-}
+

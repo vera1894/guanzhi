@@ -54,7 +54,7 @@ struct CameraView<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 VStack {
                     Spacer()
                     
-                    SeceltedPhotoView(camera: camera)
+                    SeceltedPhotoView(camera: camera, appState: appState)
                         .offset(y: -200)
                 }
             }

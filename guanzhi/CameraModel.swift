@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import AVFoundation
 import Observation
+import Photos
 
 /// An object that provides the interface to the features of the camera.
 ///
@@ -64,6 +65,7 @@ extension Movie: MediaItemProtocol {}
     public var mediasGroup: [MediaItemProtocol] = []
     let mediaStream: AsyncStream<[MediaItemProtocol]>
     private let mediaContinuation: AsyncStream<[MediaItemProtocol]>.Continuation?
+    var captureboxIsLoading = false
     
     
     private var _capturedMedia: [MediaItemProtocol] = []
@@ -77,6 +79,19 @@ extension Movie: MediaItemProtocol {}
                 }
             }
         }
+    
+    private var _livePhotoGroup: [PHLivePhoto?] = [] // 用于存储 PHLivePhoto
+    var livePhotoGroup: [PHLivePhoto?] {
+        get {
+            access(keyPath: \.livePhotoGroup)
+            return self._livePhotoGroup
+        }
+        set {
+            withMutation(keyPath: \.livePhotoGroup) {
+                _livePhotoGroup = newValue
+            }
+        }
+    }
     
     private var _capturedPhotos: [Photo] = []
     var capturedPhotos: [Photo] {
@@ -185,20 +200,72 @@ extension Movie: MediaItemProtocol {}
     // MARK: - Photo capture 照片捕获
     
     /// Captures a photo and writes it to the user's Photos library. 捕获一张照片并将其写入用户的照片库。
-    func capturePhoto() async {
+    func capturePhoto(saveToLibrary: Bool = false) async {
+        self.captureboxIsLoading = true
         do {
             let photo = try await captureService.capturePhoto(with: photoFeatures.current)
             self.capturedPhotos.append(photo)
-            self.capturedMedia.append(photo)
+            self.capturedMedia.append(photo)  // 目前使用的
+            
+            let currentIndex = self.capturedMedia.count - 1  // 当前捕获的索引
+                    self.livePhotoGroup.append(nil)  // 先插入一个占位符
+
+                    if let livePhotoMovieURL = photo.livePhotoMovieURL {
+                        let photoURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tempPhoto_\(UUID().uuidString).jpg")
+                        try? photo.data.write(to: photoURL)
+
+                        // 生成 Live Photo 逻辑
+                        PHLivePhoto.request(withResourceFileURLs: [photoURL, livePhotoMovieURL], placeholderImage: nil, targetSize: .zero, contentMode: .aspectFit) { livePhoto, info in
+                            DispatchQueue.main.async {
+                                if let livePhoto = livePhoto {
+                                    self.livePhotoGroup[currentIndex] = livePhoto // 用索引替换占位符
+                                } else {
+                                    self.livePhotoGroup[currentIndex] = nil // 处理失败或非 Live Photo
+                                }
+                            }
+                        }
+                    } else {
+                        self.livePhotoGroup[currentIndex] = nil // 非 Live Photo 的情况
+                    }
+            
+            self.captureboxIsLoading = false
             if capturedPhotos.first != nil {
                 print("Photo successfully captured")
             }
-//            try await mediasGroup.append(photo)
-            try await mediaLibrary.save(photo: photo)
+            
+            // 检查是否需要保存到系统照片库
+            if saveToLibrary {
+//                try await mediaLibrary.save(photo: photo)
+                try await saveAllPhotosToLibrary()
+            }
+            
         } catch {
             self.error = error
         }
     }
+    
+    func saveAllPhotosToLibrary() async throws {
+        for mediaItem in capturedMedia {
+            if let photo = mediaItem as? Photo {
+                try await mediaLibrary.save(photo: photo)
+            }
+        }
+    }
+    
+//    func capturePhoto() async {
+//        do {
+//            let photo = try await captureService.capturePhoto(with: photoFeatures.current)
+//            self.capturedPhotos.append(photo)
+//            self.capturedMedia.append(photo)  //目前使用的
+//            if capturedPhotos.first != nil {
+//                print("Photo successfully captured")
+//            }
+////            try await mediasGroup.append(photo)
+//            try await mediaLibrary.save(photo: photo)
+//        } catch {
+//            self.error = error
+//        }
+//    }
     
     /// Performs a focus and expose operation at the specified screen point. 在指定的屏幕点执行对焦和曝光操作
     func focusAndExpose(at point: CGPoint) async {

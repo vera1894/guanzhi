@@ -9,6 +9,7 @@ import Observation
 import SwiftUI
 import Combine
 import MapKit
+import Photos
 
 //@MainActor
 protocol AppState: AnyObject {
@@ -18,7 +19,13 @@ protocol AppState: AnyObject {
     var isShowingResultCardView: Bool { get set }
     var isShowingShowMarker: Bool { get set }
     var isReadyToPost: Bool { get set }
+    var isLoading: Bool { get set }
+    var captureboxIsLoading: Bool { get set }
+    var isPlayingLivePhoto: Bool { get set }
+    var livePhotoTemporarily: PHLivePhoto? { get set }
     var postText: String { get set }
+    var isPushingGuanzhi: Bool { get set }
+    var isPushedGuanzhi: Bool { get set }
     var resultLocationName: String { get set }
     var resultLocation: CLLocationCoordinate2D { get set }
     func showingCameraToggle()
@@ -34,7 +41,13 @@ class AppStateModel: AppState {
     var isShowingResultCardView: Bool = false
     var isShowingShowMarker: Bool = false
     var isReadyToPost: Bool = false
+    var isLoading: Bool = false
+    var captureboxIsLoading: Bool = false
+    var isPlayingLivePhoto: Bool = false
+    var livePhotoTemporarily: PHLivePhoto? = nil
     var postText: String = ""
+    var isPushingGuanzhi: Bool = false
+    var isPushedGuanzhi: Bool = false
     var resultLocationName: String = ""
     var resultLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
 //    var isShowingSettingsView: Bool = false

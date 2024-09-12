@@ -51,8 +51,6 @@ actor MediaLibrary {
     /// Saves a photo to the Photos library. 将照片保存到照片库。
     func save(photo: Photo) async throws {
         
-//        capturedPhotos.append(photo)
-        
         let location = try await currentLocation
         try await performChange {
             let creationRequest = PHAssetCreationRequest.forAsset()
@@ -66,7 +64,7 @@ actor MediaLibrary {
             // Save Live Photo data. 保存 Live Photo 数据。
             if let url = photo.livePhotoMovieURL {
                 let livePhotoOptions = PHAssetResourceCreationOptions()
-                livePhotoOptions.shouldMoveFile = true
+                livePhotoOptions.shouldMoveFile = false //******原始为true
                 creationRequest.addResource(with: .pairedVideo, fileURL: url, options: livePhotoOptions)
             }
             

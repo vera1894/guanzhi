@@ -7,6 +7,7 @@ A Camera implementation to use when working with SwiftUI previews.
 
 import Foundation
 import SwiftUI
+import Photos
 
 
 /// 该类主要用于模拟相机的行为，便于在 SwiftUI 预览中测试相机相关的功能，而不需要实际连接到物理设备。通过使用存根和模拟延迟，可以在开发和测试阶段更方便地进行 UI 调试和功能验证。
@@ -62,6 +63,19 @@ class PreviewCameraModel: Camera {
             }
         }
     
+    private var _livePhotoGroup: [PHLivePhoto?] = [] // 用于存储 PHLivePhoto
+    var livePhotoGroup: [PHLivePhoto?] {
+        get {
+            access(keyPath: \.livePhotoGroup)
+            return self._livePhotoGroup
+        }
+        set {
+            withMutation(keyPath: \.livePhotoGroup) {
+                _livePhotoGroup = newValue
+            }
+        }
+    }
+    
     private var _capturedPhotos: [Photo] = []
     var capturedPhotos: [Photo] {
         get {
@@ -109,7 +123,11 @@ class PreviewCameraModel: Camera {
     }
     
     // 模拟拍照的方法，未实现实际功能。
-    func capturePhoto() {
+    func capturePhoto(saveToLibrary: Bool) {
+        logger.debug("Photo capture isn't implemented in PreviewCamera.")
+    }
+    
+    func saveAllPhotosToLibrary() {
         logger.debug("Photo capture isn't implemented in PreviewCamera.")
     }
     
@@ -125,6 +143,8 @@ class PreviewCameraModel: Camera {
     
     // 获取录制时间，默认返回零。
     var recordingTime: TimeInterval { .zero }
+    
+    var captureboxIsLoading = false
     
     // 根据捕获模式返回相应的捕获能力。
     private func capabilities(for mode: CaptureMode) -> CaptureCapabilities {

@@ -6,6 +6,7 @@ A protocol that represents the model for the camera view.
 */
 
 import SwiftUI
+import Photos
 
 /// A protocol that represents the model for the camera view. 一个表示相机视图模型的协议。
 ///
@@ -59,7 +60,9 @@ protocol Camera: AnyObject {
     func focusAndExpose(at point: CGPoint) async
     
     /// Captures a photo and writes it to the user's photo library. 捕获照片并将其写入用户的照片库。
-    func capturePhoto() async
+    func capturePhoto(saveToLibrary: Bool) async
+    
+    func saveAllPhotosToLibrary() async throws
     
     /// A Boolean value that indicates whether to show visual feedback when capture begins. 一个布尔值，指示捕获开始时是否显示视觉反馈。
     var shouldFlashScreen: Bool { get }
@@ -79,7 +82,9 @@ protocol Camera: AnyObject {
     var capturedPhotos: [Photo] { get set }
     var capturedMovies: [Movie] { get set }
     var capturedMedia: [MediaItemProtocol] { get set }
+    var livePhotoGroup: [PHLivePhoto?] { get set }
     var selectedMedia: [Bool]  { get set }// 初始状态，所有按钮均未选中
+    var captureboxIsLoading: Bool { get set }
     
     /// An error if the camera encountered a problem. 如果相机遇到问题，则返回错误。
     var error: Error? { get }

@@ -9,10 +9,10 @@ import SwiftUI
 
 /// A view that displays an appropriate capture button for the selected mode. 一个视图，根据选择的模式显示适当的捕获按钮。
 @MainActor
-struct CaptureButton<CameraModel: Camera>: View {
+struct CaptureButton<CameraModel: Camera, AppStateModel: AppState>: View {
     
     @State var camera: CameraModel
-    
+    @State var appState: AppStateModel
     private let mainButtonDimension: CGFloat = 68
     
     var body: some View {
@@ -29,7 +29,8 @@ struct CaptureButton<CameraModel: Camera>: View {
             PhotoCaptureButton {
                 // 调用相机的拍照方法。
                 Task {
-                    await camera.capturePhoto()
+                    await camera.capturePhoto(saveToLibrary: false)
+                    appState.captureboxIsLoading = true
                 }
             }
         case .video:
@@ -37,6 +38,7 @@ struct CaptureButton<CameraModel: Camera>: View {
                 // 切换录制状态。
                 Task {
                     await camera.toggleRecording()
+                    appState.captureboxIsLoading = true
                 }
             }
         }
@@ -44,11 +46,11 @@ struct CaptureButton<CameraModel: Camera>: View {
 }
 
 #Preview("Photo") {
-    CaptureButton(camera: PreviewCameraModel(captureMode: .photo))
+    CaptureButton(camera: PreviewCameraModel(captureMode: .photo), appState: AppStateModel())
 }
 
 #Preview("Video") {
-    CaptureButton(camera: PreviewCameraModel(captureMode: .video))
+    CaptureButton(camera: PreviewCameraModel(captureMode: .video), appState: AppStateModel())
 }
 
 /// 拍照按钮的视图结构。
