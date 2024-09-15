@@ -238,6 +238,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     
     func generateUniqueFileName() -> String {
         let userId = OTOLoginStatusManager.shared.getUserID()  // 替换为用户的实际 ID
+        print("用户ID", userId)
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))  // 13位时间戳
         let randomNumber = String(format: "%05d", Int(arc4random_uniform(100000)))  // 5位随机数
         return "\(userId)_\(timestamp)_\(randomNumber)"
@@ -457,28 +458,24 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 //        uploadNextImage()  // 开始上传第一张图片
 //    }
     
-    
     func shareInsert(address: String, cityCode: Int?, data: String, deleted: Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String) {
         DispatchQueue.main.async {
             Task {
                 do {
                     // 使用 try 来捕获网络请求错误
-                    let responseData = try await OTONetwork.request(.InsertDoodle(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title))
+                    let responseData = try await OTONetwork.request(.insertShare(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title))
 
-                    // 确保 responseData 是有效的 JSON 数据
+                    // 使用 JSONDecoder 直接解码 Data
                     let decoder = JSONDecoder()
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: responseData, options: []) {
-                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-                        
-                        if response.respCode == 0 {
-                            print("发布分享成功: \(imagePath)")
-                        } else {
-                            print("Failed to publish: \(String(describing: response.respMsg))")
-                        }
-                    } else {
-                        print("Failed to serialize response data.")
-                    }
+                    // 如果 `datas` 字段为空或不需要使用，使用 `EmptyData`
+                    let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: responseData)
+                    // 如果 `datas` 字段为其他类型，替换 `EmptyData` 为实际的模型类型
 
+                    if response.respCode == 0 {
+                        print("发布分享成功: \(imagePath)")
+                    } else {
+                        print("Failed to publish: \(String(describing: response.respMsg))")
+                    }
                 } catch {
                     // 捕获网络请求或其他错误
                     print("Error sending request: \(error)")
@@ -486,6 +483,34 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             }
         }
     }
+//    func shareInsert(address: String, cityCode: Int?, data: String, deleted: Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String) {
+//        DispatchQueue.main.async {
+//            Task {
+//                do {
+//                    // 使用 try 来捕获网络请求错误
+//                    let responseData = try await OTONetwork.request(.insertShare(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title))
+//
+//                    // 确保 responseData 是有效的 JSON 数据
+//                    let decoder = JSONDecoder()
+//                    if let jsonData = try? JSONSerialization.data(withJSONObject: responseData, options: []) {
+//                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+//                        
+//                        if response.respCode == 0 {
+//                            print("发布分享成功: \(imagePath)")
+//                        } else {
+//                            print("Failed to publish: \(String(describing: response.respMsg))")
+//                        }
+//                    } else {
+//                        print("Failed to serialize response data.")
+//                    }
+//
+//                } catch {
+//                    // 捕获网络请求或其他错误
+//                    print("Error sending request: \(error)")
+//                }
+//            }
+//        }
+//    }
     
 //    func shareInsert(address: String, cityCode: Int?, data: String, deleted: Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String) {
 //        DispatchQueue.main.async {

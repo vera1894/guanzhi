@@ -48,52 +48,95 @@ struct MessageView: View {
     }
     
     //验证验证码
-    func checkCode(phNumber:String,code:String){
-        
+    func checkCode(phNumber: String, code: String) {
         Task {
-            guard let data = try? await OTONetwork.request(.checkCodeOrLogin(phoneNumber: phNumber, code: code)) else { return }
-            
-            print(data)
             do {
+                let data = try await OTONetwork.request(.checkCodeOrLogin(phoneNumber: phNumber, code: code))
                 let decoder = JSONDecoder()
-                if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-                    let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-                    //已注册
-                    if response.respCode == 0 {
-                        print("验证码验证成功")
-                        userlogin.loginState = 0
-                        if let string = response.datas {
-                            userlogin.header = "Bearer " + string
-                            print("登录令牌：", userlogin.header)
-                            
-                            OTOLoginStatusManager.shared.login(token: userlogin.header)
-                            //获取用户昵称
-                            userlogin.getUserInfo()
-                        }
-                        next = true
-                        isLoading = false
-                    }
+                let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
 
-                    //未注册
-                    if response.respCode == -1 && response.respMsg == "1" {
-                        print("需要注册")
-                        userlogin.loginState = 1
-                        next = true
-                        isLoading = false
+                if response.respCode == 0 {
+                    print("验证码验证成功")
+                    userlogin.loginState = 0
+                    if let tokenString = response.datas {
+                        userlogin.header = "Bearer " + tokenString
+                        print("登录令牌：", userlogin.header)
+                        OTOLoginStatusManager.shared.login(token: userlogin.header)
+                        userlogin.getUserInfo()
+                    } else {
+                        print("datas 不是一个字符串")
                     }
-                    //验证码错误
-                    else {
-                        print(response.respMsg as Any)
-                        isLoading = false
-                        //弹出错误信息顶栏
-                    }
-        
+                    next = true
+                    isLoading = false
+                } else if response.respCode == -1 && response.respMsg == "1" {
+                    print("需要注册")
+                    userlogin.loginState = 1
+                    next = true
+                    isLoading = false
+                } else {
+                    print(response.respMsg as Any)
+                    isLoading = false
                 }
             } catch {
-                print("Error decoding JSON: \(error)")
+                print("解码 JSON 时出错：\(error)")
             }
         }
     }
+//    func checkCode(phNumber:String,code:String){
+//        
+//        Task {
+//            guard let data = try? await OTONetwork.request(.checkCodeOrLogin(phoneNumber: phNumber, code: code)) else { return }
+//            
+//            print(data)
+//            do {
+//                let decoder = JSONDecoder()
+//                if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+//                    let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+//                    //已注册
+//                    if response.respCode == 0 {
+//                        print("验证码验证成功")
+//                        userlogin.loginState = 0
+//                        if let string = response.datas?.value as? String {
+//                            userlogin.header = "Bearer " + string
+//                            print("登录令牌：", userlogin.header)
+//                            
+//                            OTOLoginStatusManager.shared.login(token: userlogin.header)
+//                            userlogin.getUserInfo()
+//                        } else {
+//                            print("datas is not a string")
+//                        }
+////                        if let string = response.datas {
+////                            userlogin.header = "Bearer " + string
+////                            print("登录令牌：", userlogin.header)
+////                            
+////                            OTOLoginStatusManager.shared.login(token: userlogin.header)
+////                            //获取用户昵称
+////                            userlogin.getUserInfo()
+////                        }
+//                        next = true
+//                        isLoading = false
+//                    }
+//
+//                    //未注册
+//                    if response.respCode == -1 && response.respMsg == "1" {
+//                        print("需要注册")
+//                        userlogin.loginState = 1
+//                        next = true
+//                        isLoading = false
+//                    }
+//                    //验证码错误
+//                    else {
+//                        print(response.respMsg as Any)
+//                        isLoading = false
+//                        //弹出错误信息顶栏
+//                    }
+//        
+//                }
+//            } catch {
+//                print("Error decoding JSON: \(error)")
+//            }
+//        }
+//    }
     
     var body: some View {
         ZStack {  //用于在最底层增加点击收起键盘

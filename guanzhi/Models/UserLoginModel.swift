@@ -10,6 +10,8 @@ import Foundation
 
 fileprivate let loginTokenKey = "loginTokenKey"
 
+struct EmptyData: Codable {}
+
 class UserLoginModel: ObservableObject {
     @Published var phone: String = ""{
         didSet{
@@ -37,31 +39,54 @@ class UserLoginModel: ObservableObject {
     @Published var userName: String = "" //登录用户昵称
     @Published var userId : Int = -1 //登录用户id
     
-    func sendCode(phNumber:String){
-        DispatchQueue.main.async {
-            Task {
-                guard let data = try? await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber)) else {
-                    return
-                }
-                print(data)
-                do {
-                    let decoder = JSONDecoder()
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+    
+    func sendCode(phNumber: String) {
+            DispatchQueue.main.async {
+                Task {
+                    guard let data = try? await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber)) else {
+                        return
+                    }
+                    print(data)
+                    do {
+                        let decoder = JSONDecoder()
+                        let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
+                        
                         if response.respCode == 0 {
                             print("请求成功")
                             self.sendStatus = true
                         }
-                        
                         self.noticeText = response.respMsg ?? ""
-                        
+                    } catch {
+                        print("Error decoding JSON: \(error)")
                     }
-                } catch {
-                    print("Error decoding JSON: \(error)")
                 }
             }
         }
-    }
+//    func sendCode(phNumber:String){
+//        DispatchQueue.main.async {
+//            Task {
+//                guard let data = try? await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber)) else {
+//                    return
+//                }
+//                print(data)
+//                do {
+//                    let decoder = JSONDecoder()
+//                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+//                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+//                        if response.respCode == 0 {
+//                            print("请求成功")
+//                            self.sendStatus = true
+//                        }
+//                        
+//                        self.noticeText = response.respMsg ?? ""
+//                        
+//                    }
+//                } catch {
+//                    print("Error decoding JSON: \(error)")
+//                }
+//            }
+//        }
+//    }
     
     //验证代号
 //    func checkUserName(name:String){
@@ -135,35 +160,32 @@ class UserLoginModel: ObservableObject {
                 self.noticeText = "仅支持数字、英文、汉字"
             }else{
                 DispatchQueue.main.async {
-                    Task {
-                        guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone,nickName: self.nickName)) else { return }
-                        print("注册结果", data)
-                        
-                        do {
-                            let decoder = JSONDecoder()
-                            if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-                                let registerResponse = try decoder.decode(OTOResponseModel.self, from: jsonData)
-                                if registerResponse.respCode == 0 {
-                                    print("注册成功")
-                                    self.namePassed = true
-                                    if let string = registerResponse.datas {
-                                        self.header = "Bearer " + string
-                                        print("注册令牌：", self.header)
+                            Task {
+                                guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone, nickName: self.nickName)) else { return }
+                                print("注册结果", data)
+                                
+                                do {
+                                    let decoder = JSONDecoder()
+                                    let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
+                                    if response.respCode == 0 {
+                                        print("注册成功")
+                                        self.namePassed = true
+                                        if let tokenString = response.datas {
+                                            self.header = "Bearer " + tokenString
+                                            print("注册令牌：", self.header)
+                                        } else {
+                                            print("datas 不是一个字符串")
+                                        }
+                                    } else {
+                                        self.noticeText = response.respMsg ?? ""
                                     }
-                                }else{
-                                    self.noticeText = registerResponse.respMsg ?? ""
+                                } catch {
+                                    print("解析错误: \(error)")
                                 }
                             }
-                        } catch {
-                            print("解析错误: \(error)")
                         }
                     }
-                }
-            }
         }
-
-
-
     }
     
     //获取用户昵称

@@ -14,10 +14,10 @@ enum RequestMethod: String {
     case post = "POST"
 }
 
-struct OTOResponseModel: Codable {
+struct OTOResponseModel<T: Codable>: Codable {
     let respMsg: String?
     let respCode: Int
-    let datas: String?
+    let datas: T?
 }
 
 struct OTOResponseDataModel: Codable {
@@ -44,10 +44,11 @@ enum OTORequest {
     case SendVerifiedCode(phoneNumber: String)
     case checkCodeOrLogin(phoneNumber: String, code: String)
     case Register(phoneNumber: String,nickName: String)
-    case InsertDoodle(address: String, cityCode: Int?, data: String, deleted:Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String)
+    case insertShare(address: String, cityCode: Int?, data: String, deleted:Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String)
     case QueryDoodle(isSelf: Bool, latitude: Double, longitude: Double, page: Int?, radius: Double?, size: Int?)
     case UpdateDoodle(cityCode: Int?, data: String, districtCode: Int?, latitude: Double, longitude: Double, provinceCode: Int?, id: Int)
     case userInfo
+    case fetchNearbyShareList(latitude: Double, userId: Int?, longitude: Double, radius: Double?)
 }
 
 extension OTORequest {
@@ -93,8 +94,8 @@ extension OTORequest {
                     
                 ])
             
-     
-        case .InsertDoodle(let address, let cityCode, let data, let deleted, let districtCode, let imagePath, let latitude, let longitude, let provinceCode, let title):
+        //发布分享
+        case .insertShare(let address, let cityCode, let data, let deleted, let districtCode, let imagePath, let latitude, let longitude, let provinceCode, let title):
             var param: [String: Any] = [
                 "address": address,
                // "cityCode": cityCode as Any,
@@ -125,6 +126,25 @@ extension OTORequest {
                 param: param
             )
             
+        //查询附近分享列表
+        case .fetchNearbyShareList(let latitude, let userId, let longitude, let radius):
+            var param: [String: Any] = [
+                "latitude": latitude,
+                "longitude": longitude
+            ]
+            if let userId = userId {
+                param["userId"] = userId
+            }
+            if let radius = radius{
+                param["radius"] = radius
+            }
+            return .init(
+                path: "/api/guan/list",
+                method: .post,
+                param: param
+            )
+        
+        //获取用户信息
         case .userInfo :
             return .init(
                 path: "/api/guan/user/info",
@@ -174,6 +194,7 @@ extension OTORequest {
                 method: .post,
                 param: param
             )
+        
         }
     }
 }

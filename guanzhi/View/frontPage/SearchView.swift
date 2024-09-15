@@ -103,6 +103,19 @@ struct SearchView<AppStateModel: AppState>: View {
             }
         }
     
+    func getImageUrl(from annotation: ResponsedShare) -> URL? {
+        let imagePaths = annotation.imagePath.components(separatedBy: ",")
+        let baseURL = "https://onettoo.com/" // 请替换为您的实际服务器地址
+        if let firstImagePath = imagePaths.first {
+            let imageUrlString = baseURL + firstImagePath
+            if let encodedUrlString = imageUrlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let url = URL(string: encodedUrlString) {
+                return url
+            }
+        }
+        return nil
+    }
+    
     var body: some View {
         
         ToastRootView {
@@ -141,23 +154,39 @@ struct SearchView<AppStateModel: AppState>: View {
                                 Annotation("", coordinate: result.location, anchor: .bottom) {
                                     Button{
                                         //定位图标
+                                        
                                     }label: { }
                                 .buttonStyle(IconStylePosition(isAnimating: $locationAnimating))
                                 }
                             }
                         } //测试
                         
+                        ForEach(appState.responsedNearbyShareList?.records ?? [], id: \.id) { annotation in
+                            let coordinate = CLLocationCoordinate2D(latitude: annotation.latitude, longitude: annotation.longitude)
                             
-                        Annotation("", coordinate: .testLocation1, anchor: .bottom) {
-                            ZStack {
-                                
-                                Button{
-                                    //Seee位置，需要添加是否已经定位的状态 isLocated
-                                }label: { }
-                            .buttonStyle(SeeePositionStyle(isEnabled: true))
-                                
+                            let imageUrl = getImageUrl(from: annotation)
+                            
+                            Annotation("", coordinate: coordinate, anchor: .bottom) {
+                                MapAnnotationView(annotation: annotation, imageUrl: imageUrl)
                             }
                         }
+                        
+//                        ForEach(appState.responsedNearbyShareList?.records ?? [], id: \.id) { annotation in
+//                            let coordinate = CLLocationCoordinate2D(latitude: annotation.latitude, longitude: annotation.longitude)
+//                            
+//                            Annotation("", coordinate: coordinate, anchor: .bottom) {
+//                                ZStack {
+//                                    Button {
+//                                        // 处理点击事件，例如展示详情或执行其他操作
+//                                    } label: {
+//                                        // 自定义按钮样式和显示内容
+//                                    }
+//                                    .buttonStyle(SeeePositionStyle(isEnabled: true))
+//                                }
+//                            }
+//                        }
+                        
+                        
                         UserAnnotation()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -253,9 +282,15 @@ struct SearchView<AppStateModel: AppState>: View {
 //                                        isShowSearchView = false
 //                                        isShowLogInView = true
 //                                        isShowCameraView = true
-                                        appState.isShowingCameraView = true
-                                        appState.isShowingSearchView = false
-                                        print("appState.isShowingCameraView")
+//                                        appState.isShowingCameraView = true
+//                                        appState.isShowingSearchView = false
+//                                        print("appState.isShowingCameraView")
+                                        
+                                        //logout()
+//                                        OTOLoginStatusManager.shared.logout()
+                                        
+                                        appState.fetchNearbyShareList(latitude: locatedPosition?.latitude ?? 0.0, longitude: locatedPosition?.longitude ?? 0.0, radius: 20)
+                                        print(appState.responsedNearbyShareList?.records ?? "获取Annotation数据失败") // 检查是否成功获取数据
                                         
                                     }label: {
                                         Image("icon-notification")
@@ -328,10 +363,11 @@ struct SearchView<AppStateModel: AppState>: View {
 //                        <#code#>
 //                    }
                     
-                    //根据登录状态决定是否显示登录页面
+//                    根据登录状态决定是否显示登录页面
 //                    if !OTOLoginStatusManager.shared.isLoggedIn {
 //                        LogInView(userlogin: userlogin)
 //                    }
+                    
 //                    .sheet(isPresented: $appState.isShowingCameraView) {
 //                        CameraViewWrapper(appState: appState)
 //                            .ignoresSafeArea() // 让视图覆盖整个屏幕区域
@@ -534,5 +570,21 @@ struct CameraViewWrapper<AppStateModel: AppState>: View {
             appState.isShowingSearchView = true // 在滑动关闭视图时也能更新变量
             appState.isShowingCameraView = false
                     }
+    }
+}
+
+struct MapAnnotationView: View {
+    let annotation: ResponsedShare
+    let imageUrl: URL?
+
+    var body: some View {
+        ZStack {
+            Button {
+                // 处理点击事件，例如展示详情或执行其他操作
+            } label: {
+                // 自定义按钮样式和显示内容
+            }
+            .buttonStyle(SeeePositionStyle(isEnabled: true, imageUrl: imageUrl))
+        }
     }
 }

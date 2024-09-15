@@ -557,34 +557,89 @@ struct AvatarStyle_l: ButtonStyle {
 }
 
 struct SeeePositionStyle: ButtonStyle {
-
+    
     var isEnabled: Bool
+    var imageUrl: URL? // 新增属性，用于传递图片的 URL
 
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
         ZStack(alignment: .center) {
             Image("icon-position")
                 .frame(width: 24, height: 33)
-//                .offset(CGSize(width: 0, height: 32.0))
                 .offset(y: 32)
-            Image("例子")
-                .resizable()
-                .scaledToFill()
-                .clipShape(Circle())
-                .frame(width: 64, height: 64)
-                .overlay(Circle().stroke(Color.black, lineWidth: 4))
+            
+            if let imageUrl = imageUrl {
+                AsyncImage(url: imageUrl) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .clipShape(Circle())
+                            .frame(width: 64, height: 64)
+                            .overlay(Circle().stroke(Color.black, lineWidth: 4))
+                    case .failure:
+                        Image("占位图")
+                            .resizable()
+                            .scaledToFill()
+                            .clipShape(Circle())
+                            .frame(width: 64, height: 64)
+                            .overlay(Circle().stroke(Color.black, lineWidth: 4))
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+            } else {
+                Image("占位图")
+                    .resizable()
+                    .scaledToFill()
+                    .clipShape(Circle())
+                    .frame(width: 64, height: 64)
+                    .overlay(Circle().stroke(Color.black, lineWidth: 4))
+            }
         }
         .frame(height: 82)
-        .compositingGroup() // 将所有视图作为一个整体进行组合
+        .compositingGroup()
         .offset(y: -7)
         .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
-//        .border(Color.black)
         .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
         .grayscale(isEnabled ? 0 : 1)
         .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
-        .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
+        .opacity(isEnabled ? 1 : 0.5)
     }
 }
+
+//struct SeeePositionStyle: ButtonStyle {
+//
+//    var isEnabled: Bool
+//
+//    func makeBody(configuration: Self.Configuration) -> some View {
+//        configuration.label
+//        ZStack(alignment: .center) {
+//            Image("icon-position")
+//                .frame(width: 24, height: 33)
+////                .offset(CGSize(width: 0, height: 32.0))
+//                .offset(y: 32)
+//            Image("例子")
+//                .resizable()
+//                .scaledToFill()
+//                .clipShape(Circle())
+//                .frame(width: 64, height: 64)
+//                .overlay(Circle().stroke(Color.black, lineWidth: 4))
+//        }
+//        .frame(height: 82)
+//        .compositingGroup() // 将所有视图作为一个整体进行组合
+//        .offset(y: -7)
+//        .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
+////        .border(Color.black)
+//        .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
+//        .grayscale(isEnabled ? 0 : 1)
+//        .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+//        .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
+//    }
+//}
 
 struct IconStylePosition: ButtonStyle {
 

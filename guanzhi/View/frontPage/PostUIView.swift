@@ -48,7 +48,7 @@ struct PostUIView<AppStateModel: AppState>: View {
                                         print(uploadResponse)  // 打印上传响应的内容
                                     print(uploadResponse.datas)
                                     if let imagePath = uploadResponse.datas{
-                                        shareInsert(address: appState.resultLocationName, cityCode: 0, data: thinking, deleted: 0, districtCode: 0, imagePath: imagePath, latitude: 0, longitude: 0, provinceCode: 0, title: "")
+//                                        shareInsert(address: appState.resultLocationName, cityCode: 0, data: thinking, deleted: 0, districtCode: 0, imagePath: imagePath, latitude: 0, longitude: 0, provinceCode: 0, title: "")
                                         self.presentationMode.wrappedValue.dismiss()  //关闭当前视图
                                         print("发布结果")
                                     }
@@ -135,32 +135,32 @@ struct PostUIView<AppStateModel: AppState>: View {
         }
     }
     
-    func shareInsert(address: String, cityCode: Int?, data: String, deleted:Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String){
-        DispatchQueue.main.async {
-            Task {
-                guard let data = try? await OTONetwork.request(.InsertDoodle(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title)) else {
-                    return
-                }
-                print(data)
-                do {
-                    let decoder = JSONDecoder()
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-                        if response.respCode == 0 {
-                            print("发布分享成功")
-                            print(response.respMsg)
-                            
-                        }
-                        
-                        //self.noticeText = response.respMsg ?? ""
-                        
-                    }
-                } catch {
-                    print("Error decoding JSON: \(error)")
-                }
-            }
-        }
-    }
+//    func shareInsert(address: String, cityCode: Int?, data: String, deleted:Int?, districtCode: Int?, imagePath: String, latitude: Double, longitude: Double, provinceCode: Int?, title: String){
+//        DispatchQueue.main.async {
+//            Task {
+//                guard let data = try? await OTONetwork.request(.insertShare(address: address, cityCode: cityCode, data: data, deleted: deleted, districtCode: districtCode, imagePath: imagePath, latitude: latitude, longitude: longitude, provinceCode: provinceCode, title: title)) else {
+//                    return
+//                }
+//                print(data)
+//                do {
+//                    let decoder = JSONDecoder()
+//                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
+//                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+//                        if response.respCode == 0 {
+//                            print("发布分享成功")
+//                            print(response.respMsg)
+//                            
+//                        }
+//                        
+//                        //self.noticeText = response.respMsg ?? ""
+//                        
+//                    }
+//                } catch {
+//                    print("Error decoding JSON: \(error)")
+//                }
+//            }
+//        }
+//    }
     
     func requestForImage(_ image: UIImage, completion: @escaping (Result<Data, Error>) -> Void) {
         

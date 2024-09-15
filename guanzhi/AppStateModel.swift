@@ -28,8 +28,11 @@ protocol AppState: AnyObject {
     var isPushedGuanzhi: Bool { get set }
     var resultLocationName: String { get set }
     var resultLocation: CLLocationCoordinate2D { get set }
+    var responsedNearbyShareList: ResponsedNearbyShareList?  { get set }
     func showingCameraToggle()
-//    func create() async -> AppStateModel
+    func updateNearbyShareList(from newData: ResponsedNearbyShareList)
+    func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?)
+    
     
 }
 
@@ -50,24 +53,103 @@ class AppStateModel: AppState {
     var isPushedGuanzhi: Bool = false
     var resultLocationName: String = ""
     var resultLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
-//    var isShowingSettingsView: Bool = false
+    var responsedNearbyShareList: ResponsedNearbyShareList? = nil
+    func showingCameraToggle() {
+        isShowingCameraView.toggle()
+    }
     
-//    private var _isShowingCameraView: Bool = false
-//    var isShowingCameraView: Bool {
-//        get { return _isShowingCameraView }
-//        set { _isShowingCameraView = newValue }
-//    }
+    // 存储数据的方法
+    func updateNearbyShareList(from newData: ResponsedNearbyShareList) {
+        print("Updating with data: \(newData)")
+        self.responsedNearbyShareList = newData
+    }
     
-//    private var _isShowingSearchView: Bool = false
-//    var isShowingSearchView: Bool {
-//        get { return _isShowingSearchView }
-//        set { _isShowingSearchView = newValue }
-//    }
+    /*OTOLoginStatusManager.shared.getUserID()*/
+    
+    func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?) {
+        let userId = 11
 
-        func showingCameraToggle() {
-            isShowingCameraView.toggle()
+        Task {
+            do {
+                let data = try await OTONetwork.request(.fetchNearbyShareList(latitude: latitude, userId: userId, longitude: longitude, radius: radius))
+                print("收到响应数据")
+
+                let decoder = JSONDecoder()
+                // 使用新的模型类型进行解码
+                let response = try decoder.decode(OTOResponseModel<ResponsedNearbyShareList>.self, from: data)
+                print("成功解码响应：\(response)")
+
+                if let nearbyShareList = response.datas {
+                    self.responsedNearbyShareList = nearbyShareList
+                    print("解码后的数据：\(nearbyShareList)")
+                }else {
+                    print("未能解码 datas 字段")
+                }
+            } catch {
+                print("获取或解码数据时出错：\(error)")
+            }
         }
+    }
     
-    // 可以根据需求添加更多的显示开关变量
     
+//    func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?) {
+//        let userId = 11
+//
+//        Task {
+//            guard let responseData = try? await OTONetwork.request(.fetchNearbyShareList(latitude: latitude, userId: userId, longitude: longitude, radius: radius)) else { return }
+//            print("Response data received: \(responseData)")
+//            
+//            do {
+//                let decoder = JSONDecoder()
+//                if let jsonData = try? JSONSerialization.data(withJSONObject: responseData, options: []) {
+//                    let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
+//                    print("Response decoded successfully: \(response)")
+//                    
+//                    // 判断 datas 类型
+//                    if let datasDict = response.datas?.value as? [String: Any],
+//                       let records = datasDict["records"] as? [[String: Any]] {
+//                        responsedNearbyShareListDict = records
+//                    } else if let datasString = response.datas?.value as? String {
+//                        print("Datas as string: \(datasString)")
+//                    }
+//                }
+//            } catch {
+//                print("Error decoding response: \(error)")
+//            }
+//        }
+//    }
+    
+    
+}
+
+
+//服务器返回的Share模型
+struct ResponsedShare: Codable {
+    let id: Int
+    let createDate: Int
+    let userId: Int
+    let data: String
+    let longitude: Double      // 修改为 Double 类型
+    let latitude: Double       // 修改为 Double 类型
+    let provinceCode: String?  // 可选类型
+    let cityCode: String?      // 可选类型
+    let districtCode: String?  // 可选类型
+    let address: String
+    let imagePath: String
+    let title: String
+    let deleted: Int
+}
+
+//服务器返回的附近Share列表模型
+struct ResponsedNearbyShareList: Codable {
+    let records: [ResponsedShare]
+    let total: Int
+    let size: Int
+    let current: Int
+    let orders: [String]
+    let optimizeCountSql: Bool
+    let searchCount: Bool
+    let countId: String?      // 修改为可选类型
+    let maxLimit: Int?        // 修改为可选类型
+    let pages: Int
 }
