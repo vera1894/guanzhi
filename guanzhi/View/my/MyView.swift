@@ -8,8 +8,9 @@
 import SwiftUI
 import Combine
 
-struct MyView<AppStateModel: AppState>: View {
-    @State var appState: AppStateModel
+struct MyView/*<AppStateModel: AppState>*/: View {
+//    @State var appState: AppStateModel
+    @Bindable var appState: AppStateModel
     @State private var isShowSettingView: Bool = false
     @Environment(\.presentationMode) var presentationMode
 //    @Binding var isSheetPresented: Bool

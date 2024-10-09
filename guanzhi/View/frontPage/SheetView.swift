@@ -8,10 +8,11 @@
 import SwiftUI
 import MapKit
 
-struct SheetView<AppStateModel: AppState>: View {
+struct SheetView/*<AppStateModel: AppState>*/: View {
 //    @Environment(AppStateModel.self) var appState
-    @State var appState: AppStateModel
-    
+//    @State var appState: AppStateModel
+//    @Environment(AppStateModel.self) var appState
+    @Bindable var appState: AppStateModel
     @State private var search: String = ""
     @State private var locationService = LocationService(completer: .init())
     @Binding var searchResults: [SearchResult]
@@ -22,7 +23,7 @@ struct SheetView<AppStateModel: AppState>: View {
     let placeholder = "🔍想瞧瞧哪里？"
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
     @Binding var selectedLocation: SearchResult?
-    @Binding var position: MapCameraPosition
+    @Binding var position: CustomMapCameraPosition
 //    @Binding var isShowSearchView: Bool
 //    @Binding var isShowResultCard: Bool
 //    @Binding var isShowMarker: Bool
@@ -30,7 +31,7 @@ struct SheetView<AppStateModel: AppState>: View {
     @Binding var currentSearchTask: Task<Void, Never>?  // 添加任务管理
     
     var body: some View {
-        
+//        @Bindable var appState = appState
         VStack {
             // 1 搜索栏
             HStack(spacing: 8) {
@@ -184,13 +185,15 @@ struct SheetView<AppStateModel: AppState>: View {
                         position = .region(MKCoordinateRegion(center: singleLocation.location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
                         appState.isShowingShowMarker = true
                         appState.isShowingSearchView = false
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-//                        search = ""
                         currentDetent = .height(60)
                         appState.isShowingResultCardView = true
-                        print([SearchResult].self)  //测试
                     }
+//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+////                        search = ""
+////                        currentDetent = .height(60)
+////                        appState.isShowingResultCardView = true
+//                        print([SearchResult].self)  //测试
+//                    }
                 }
             }
         }
@@ -202,3 +205,94 @@ struct SheetView<AppStateModel: AppState>: View {
 //#Preview {
 //    SheetView()
 //}
+
+
+struct SearchCompletions: Identifiable {
+    let id = UUID()
+    let title: String
+    let subTitle: String
+    var url: URL?
+}
+
+@Observable
+class LocationService: NSObject, MKLocalSearchCompleterDelegate {
+    private let completer: MKLocalSearchCompleter
+    
+    var completions = [SearchCompletions]()
+    
+    init(completer: MKLocalSearchCompleter) {
+        self.completer = completer
+        super.init()
+        self.completer.delegate = self
+    }
+    
+    func update(queryFragment: String) {
+        completer.resultTypes = .pointOfInterest
+        completer.queryFragment = queryFragment
+    }
+    
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        completions = completer.results.map { completion in
+            // Get the private _mapItem property
+            let mapItem = completion.value(forKey: "_mapItem") as? MKMapItem
+            
+            return .init(
+                title: completion.title,
+                subTitle: completion.subtitle,
+                url: mapItem?.url
+            )}
+    }
+    
+    func search(with query: String, coordinate: CLLocationCoordinate2D? = nil) async throws -> [SearchResult] {
+        completions.removeAll()
+        let mapKitRequest = MKLocalSearch.Request()
+        mapKitRequest.naturalLanguageQuery = query
+        mapKitRequest.resultTypes = .pointOfInterest
+        if let coordinate {
+            mapKitRequest.region = .init(.init(origin: .init(coordinate), size: .init(width: 1, height: 1)))
+        }
+        
+        let search = MKLocalSearch(request: mapKitRequest)
+        
+        let response = try await search.start()
+        print([SearchResult].self)  //测试
+        
+        return response.mapItems.compactMap { mapItem in
+            guard let location = mapItem.placemark.location?.coordinate else { return nil }
+            
+            return .init(location: location)
+        }
+    }
+}
+
+//===================================
+struct SearchResult: Identifiable, Hashable {
+    let id = UUID()
+    let location: CLLocationCoordinate2D
+    
+    static func == (lhs: SearchResult, rhs: SearchResult) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+extension CLLocationCoordinate2D {
+    static var defaultLocation: CLLocationCoordinate2D{
+        return .init(latitude: 39.9042, longitude: 116.4074)
+    }
+    static var testLocation1: CLLocationCoordinate2D{
+        return .init(latitude: 39.92, longitude: 116.39)
+    }
+    static var testLocation2: CLLocationCoordinate2D{
+        return .init(latitude: 39.93, longitude: 116.40)
+    }
+}
+
+extension MKCoordinateRegion{
+    static var defaultRegion:MKCoordinateRegion{
+        return .init(center: .defaultLocation, latitudinalMeters: 1000, longitudinalMeters: 1000)
+    }
+}

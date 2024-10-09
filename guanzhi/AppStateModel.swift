@@ -11,6 +11,17 @@ import Combine
 import MapKit
 import Photos
 
+private struct AppStateKey: EnvironmentKey {
+    static var defaultValue = AppStateModel()
+}
+
+extension EnvironmentValues {
+    var appState: AppStateModel {
+        get { self[AppStateKey.self] }
+        set { self[AppStateKey.self] = newValue }
+    }
+}
+
 //@MainActor
 protocol AppState: AnyObject {
     
@@ -32,7 +43,6 @@ protocol AppState: AnyObject {
     func showingCameraToggle()
     func updateNearbyShareList(from newData: ResponsedNearbyShareList)
     func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?)
-    
     
 }
 
@@ -91,49 +101,20 @@ class AppStateModel: AppState {
         }
     }
     
-    
-//    func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?) {
-//        let userId = 11
-//
-//        Task {
-//            guard let responseData = try? await OTONetwork.request(.fetchNearbyShareList(latitude: latitude, userId: userId, longitude: longitude, radius: radius)) else { return }
-//            print("Response data received: \(responseData)")
-//            
-//            do {
-//                let decoder = JSONDecoder()
-//                if let jsonData = try? JSONSerialization.data(withJSONObject: responseData, options: []) {
-//                    let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-//                    print("Response decoded successfully: \(response)")
-//                    
-//                    // 判断 datas 类型
-//                    if let datasDict = response.datas?.value as? [String: Any],
-//                       let records = datasDict["records"] as? [[String: Any]] {
-//                        responsedNearbyShareListDict = records
-//                    } else if let datasString = response.datas?.value as? String {
-//                        print("Datas as string: \(datasString)")
-//                    }
-//                }
-//            } catch {
-//                print("Error decoding response: \(error)")
-//            }
-//        }
-//    }
-    
-    
 }
 
 
 //服务器返回的Share模型
-struct ResponsedShare: Codable {
+struct ResponsedShare: Codable, Equatable {
     let id: Int
     let createDate: Int
     let userId: Int
     let data: String
-    let longitude: Double      // 修改为 Double 类型
-    let latitude: Double       // 修改为 Double 类型
-    let provinceCode: String?  // 可选类型
-    let cityCode: String?      // 可选类型
-    let districtCode: String?  // 可选类型
+    let longitude: Double
+    let latitude: Double
+    let provinceCode: StringOrInt?  // 修改为 StringOrInt?
+    let cityCode: StringOrInt?      // 修改为 StringOrInt?
+    let districtCode: StringOrInt?  // 修改为 StringOrInt?
     let address: String
     let imagePath: String
     let title: String
@@ -141,7 +122,7 @@ struct ResponsedShare: Codable {
 }
 
 //服务器返回的附近Share列表模型
-struct ResponsedNearbyShareList: Codable {
+struct ResponsedNearbyShareList: Codable, Equatable {
     let records: [ResponsedShare]
     let total: Int
     let size: Int
@@ -149,7 +130,54 @@ struct ResponsedNearbyShareList: Codable {
     let orders: [String]
     let optimizeCountSql: Bool
     let searchCount: Bool
-    let countId: String?      // 修改为可选类型
-    let maxLimit: Int?        // 修改为可选类型
+    let countId: StringOrInt?      // 修改为 StringOrInt?
+    let maxLimit: Int?             // 修改为 Int?
     let pages: Int
+}
+
+
+enum StringOrInt: Codable, Equatable {
+    case string(String)
+    case int(Int)
+    case double(Double)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self) {
+            self = .string(str)
+            return
+        }
+        if let int = try? container.decode(Int.self) {
+            self = .int(int)
+            return
+        }
+        if let double = try? container.decode(Double.self) {
+            self = .double(double)
+            return
+        }
+        throw DecodingError.typeMismatch(StringOrInt.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Expected String, Int, or Double"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let str):
+            try container.encode(str)
+        case .int(let int):
+            try container.encode(int)
+        case .double(let double):
+            try container.encode(double)
+        }
+    }
+
+    var stringValue: String? {
+        switch self {
+        case .string(let str):
+            return str
+        case .int(let int):
+            return String(int)
+        case .double(let double):
+            return String(double)
+        }
+    }
 }

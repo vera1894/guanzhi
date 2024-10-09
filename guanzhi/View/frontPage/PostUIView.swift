@@ -9,8 +9,9 @@ import SwiftUI
 import Foundation
 import Alamofire
 
-struct PostUIView<AppStateModel: AppState>: View {
-    @State var appState: AppStateModel
+struct PostUIView/*<AppStateModel: AppState>*/: View {
+//    @State var appState: AppStateModel
+    @Bindable var appState: AppStateModel
     var image: UIImage? = UIImage(named: "IMG-1")
     @State private var thinking: String = ""
 //    @Binding var cardName : String

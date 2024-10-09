@@ -1,0 +1,27 @@
+<svg width="56" height="58" viewBox="0 0 56 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_4066_3135)">
+<g clip-path="url(#clip0_4066_3135)">
+<g clip-path="url(#clip1_4066_3135)">
+<path d="M27 0C12.088 0 0 12.088 0 27C0 41.912 12.088 54 27 54C41.912 54 54 41.912 54 27C54 12.088 41.912 0 27 0ZM39.091 14.909C41.581 17.399 42.581 19.695 42.581 19.695L34.305 27.97L34.21 11.514C34.211 11.513 36.602 12.419 39.091 14.909ZM27 9.9C30.522 9.9 32.852 10.816 32.852 10.816V22.52L21.149 10.951C21.149 10.951 23.479 9.9 27 9.9ZM14.909 14.909C17.4 12.419 19.695 11.419 19.695 11.419L27.97 19.694L11.515 19.788C11.514 19.789 12.419 17.399 14.909 14.909ZM9.9 27C9.9 23.479 10.817 21.149 10.817 21.149H22.52L10.95 32.851C10.95 32.851 9.9 30.521 9.9 27ZM14.909 39.091C12.419 36.601 11.419 34.305 11.419 34.305L19.695 26.03L19.79 42.486C19.789 42.486 17.399 41.581 14.909 39.091ZM27 44.1C23.478 44.1 21.148 43.184 21.148 43.184V31.48L32.851 43.05C32.852 43.05 30.522 44.1 27 44.1ZM39.091 39.091C36.601 41.581 34.305 42.581 34.305 42.581L26.03 34.305L42.486 34.21C42.487 34.211 41.581 36.601 39.091 39.091ZM43.183 32.851H31.48L43.05 21.148C43.05 21.148 44.1 23.478 44.1 26.999C44.1 30.521 43.183 32.851 43.183 32.851Z" fill="#28C445"/>
+</g>
+</g>
+<rect x="2" y="2" width="50" height="50" rx="25" stroke="black" stroke-width="4" shape-rendering="crispEdges"/>
+</g>
+<defs>
+<filter id="filter0_d_4066_3135" x="0" y="0" width="56" height="58" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="2" dy="4"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.156863 0 0 0 0 0.768627 0 0 0 0 0.270588 0 0 0 1 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_4066_3135"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_4066_3135" result="shape"/>
+</filter>
+<clipPath id="clip0_4066_3135">
+<rect width="54" height="54" rx="27" fill="white"/>
+</clipPath>
+<clipPath id="clip1_4066_3135">
+<rect width="54" height="54" fill="white"/>
+</clipPath>
+</defs>
+</svg>

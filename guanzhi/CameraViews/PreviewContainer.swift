@@ -22,7 +22,6 @@ let movieAspectRatio = AspectRatio(width: 9.0, height: 16.0)
 struct PreviewContainer<Content: View, CameraModel: Camera>: View {
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
     @State var camera: CameraModel
     
     // State values for transition effects. 过渡效果的状态值。

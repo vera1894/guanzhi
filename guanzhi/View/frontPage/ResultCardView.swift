@@ -1,5 +1,5 @@
 //
-//  CardView.swift
+//  ResultCardView.swift
 //  guanzhi
 //
 //  Created by Vera on 2024/2/29.
@@ -8,8 +8,9 @@
 import SwiftUI
 import MapKit
 
-struct ResultCardView<AppStateModel: AppState>: View {
-    @State var appState: AppStateModel
+struct ResultCardView/*<AppStateModel: AppState>*/: View {
+    @Bindable var appState: AppStateModel
+//    @State var appState: AppStateModel
 //    @Binding var name : String
 //    @Binding var isShowResultCard: Bool
 //    @Binding var isShowSearchView: Bool
@@ -94,7 +95,7 @@ struct ResultCardView<AppStateModel: AppState>: View {
         .padding(.top, 20)
         .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onDisappear {appState.isShowingSearchView = true}// 在滑动关闭视图时也能更新变量
+//        .onDisappear {appState.isShowingSearchView = true}// 在滑动关闭视图时也能更新变量
         .presentationDetents(resultCardDetents, selection: $resultCardCurrentDetent) // 绑定 BottomSheet 的状态
         .presentationCornerRadius(20)
         .presentationBackground(.regularMaterial)
