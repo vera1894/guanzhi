@@ -10,15 +10,14 @@ import SwiftUI
 import MapKit
 
 // MARK: - CustomMapView
-struct CustomMapView/*<AppStateModel: AppState>*/: UIViewRepresentable {
-//    @State var appState: AppStateModel
+struct CustomMapView: UIViewRepresentable {
     @Bindable var appState: AppStateModel
-    @Binding var position: CustomMapCameraPosition
     @Binding var region: MKCoordinateRegion
     @Binding var selectedAnnotation: CustomAnnotation?
     @Binding var locationAnimating: Bool
     @Binding var annotations: [CustomAnnotation]
     var onRegionChange: ((MKCoordinateRegion) -> Void)?
+    var mapView = MKMapView()
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -33,47 +32,72 @@ struct CustomMapView/*<AppStateModel: AppState>*/: UIViewRepresentable {
         mapView.isPitchEnabled = true
         mapView.pointOfInterestFilter = .includingAll
         mapView.mapType = .standard
-        
-        // 设置初始位置
-        updateMapCamera(mapView)
-        
+
+        // 设置初始区域
+        mapView.setRegion(region, animated: false)
+
         return mapView
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        // 更新地图相机位置
-        updateMapCamera(mapView)
+        if mapView.region.center.latitude != region.center.latitude ||
+            mapView.region.center.longitude != region.center.longitude ||
+            mapView.region.span.latitudeDelta != region.span.latitudeDelta ||
+            mapView.region.span.longitudeDelta != region.span.longitudeDelta {
+
+            context.coordinator.isRegionChangeFromUserInteraction = false  // 标识程序更新
+            mapView.setRegion(region, animated: true)
+        }
 
         // 更新标注
         mapView.removeAnnotations(mapView.annotations)
         mapView.addAnnotations(annotations)
     }
     
-    func updateMapCamera(_ mapView: MKMapView) {
-            switch position {
-            case .automatic:
-                break
-            case .region(let region):
-                mapView.setRegion(region, animated: true)
-            }
-        }
 }
 
 // MARK: - Coordinator
 extension CustomMapView {
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: CustomMapView
+        var isRegionChangeFromUserInteraction = false
         
         init(_ parent: CustomMapView) {
-            self.parent = parent
+                self.parent = parent
+                super.init()
+                self.setupGestureRecognizers()
+            }
+        
+        func setupGestureRecognizers() {
+            for gestureRecognizer in parent.mapView.gestureRecognizers ?? [] {
+                gestureRecognizer.addTarget(self, action: #selector(handleMapGesture))
+            }
+        }
+        
+        @objc func handleMapGesture() {
+            isRegionChangeFromUserInteraction = true
         }
         
         // 监听地图区域变化
+        func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
+                // 检测是否是用户交互导致的区域变化
+                if mapView.isUserInteraction {
+                    isRegionChangeFromUserInteraction = true
+                }
+            }
+        
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            parent.region = mapView.region
-            parent.position = .region(mapView.region)
-            parent.onRegionChange?(mapView.region)
-        }
+                if isRegionChangeFromUserInteraction {
+                    // 用户手动操作导致的区域变化
+                    isRegionChangeFromUserInteraction = false
+
+                    // 更新 ViewModel 中的 region
+                    parent.region = mapView.region
+                    parent.onRegionChange?(mapView.region)
+                } else {
+                    // 程序触发的区域变化，不需要更新 ViewModel 的 region
+                }
+            }
         
         // 自定义标注视图
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
@@ -165,5 +189,10 @@ extension MKCoordinateRegion: @retroactive Equatable {
                lhs.center.longitude == rhs.center.longitude &&
                lhs.span.latitudeDelta == rhs.span.latitudeDelta &&
                lhs.span.longitudeDelta == rhs.span.longitudeDelta
+    }
+}
+extension MKMapView {
+    var isUserInteraction: Bool {
+        return self.gestureRecognizers?.contains(where: { $0.state == .began || $0.state == .changed || $0.state == .ended }) ?? false
     }
 }

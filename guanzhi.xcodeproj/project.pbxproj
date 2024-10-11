@@ -84,6 +84,7 @@
 		FFD24BEB2C58B85700BCE228 /* LookAroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */; };
 		FFF669272CA93EEA005FDB86 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF669262CA93EEA005FDB86 /* SearchViewModel.swift */; };
 		FFF669292CAA3BF4005FDB86 /* CameraViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF669282CAA3BF4005FDB86 /* CameraViewWrapper.swift */; };
+		FFF6692B2CB6292D005FDB86 /* MapOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF6692A2CB6292D005FDB86 /* MapOverlayView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -167,6 +168,7 @@
 		FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookAroundView.swift; sourceTree = "<group>"; };
 		FFF669262CA93EEA005FDB86 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
 		FFF669282CAA3BF4005FDB86 /* CameraViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewWrapper.swift; sourceTree = "<group>"; };
+		FFF6692A2CB6292D005FDB86 /* MapOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapOverlayView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +206,7 @@
 				FFF669282CAA3BF4005FDB86 /* CameraViewWrapper.swift */,
 				FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */,
 				FFBC43842CA25CB800042D18 /* CustomMapView.swift */,
+				FFF6692A2CB6292D005FDB86 /* MapOverlayView.swift */,
 				D17042BF2B542346005683D2 /* SearchView.swift */,
 				D13FFDCA2B90CA9A007E1970 /* SheetView.swift */,
 				D13FFDCC2B90CAD0007E1970 /* ResultCardView.swift */,
@@ -612,6 +615,7 @@
 				D1093C322B6A819A008553A3 /* postView.swift in Sources */,
 				D13FFDD22B9DFA0F007E1970 /* ShareDetailView.swift in Sources */,
 				FF6BC4F22C7C18CC00423660 /* FoundationExtensions.swift in Sources */,
+				FFF6692B2CB6292D005FDB86 /* MapOverlayView.swift in Sources */,
 				FFAC90602C78848300FA7374 /* CaptureService.swift in Sources */,
 				D13FFDDA2BAB3808007E1970 /* NetworkService.swift in Sources */,
 				FF6BC4DC2C7C187200423660 /* DataTypes.swift in Sources */,

@@ -48,7 +48,8 @@ enum OTORequest {
     case QueryDoodle(isSelf: Bool, latitude: Double, longitude: Double, page: Int?, radius: Double?, size: Int?)
     case UpdateDoodle(cityCode: Int?, data: String, districtCode: Int?, latitude: Double, longitude: Double, provinceCode: Int?, id: Int)
     case userInfo
-    case fetchNearbyShareList(latitude: Double, userId: Int?, longitude: Double, radius: Double?)
+    case fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?, size: Int?)
+    case fetchUserShareList(latitude: Double, userId: Int?, longitude: Double, radius: Double?)
 }
 
 extension OTORequest {
@@ -127,7 +128,25 @@ extension OTORequest {
             )
             
         //查询附近分享列表
-        case .fetchNearbyShareList(let latitude, let userId, let longitude, let radius):
+        case .fetchNearbyShareList(let latitude, let longitude, let radius, let size):
+            var param: [String: Any] = [
+                "latitude": latitude,
+                "longitude": longitude
+            ]
+            if let radius = radius{
+                param["radius"] = radius
+            }
+            if let size = size {
+                param["size"] = size
+            }
+            return .init(
+                path: "/api/guan/list",
+                method: .post,
+                param: param
+            )
+            
+        //查询个人分享列表
+        case .fetchUserShareList(let latitude, let userId, let longitude, let radius):
             var param: [String: Any] = [
                 "latitude": latitude,
                 "longitude": longitude

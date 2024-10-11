@@ -11,7 +11,8 @@ struct ShareDetailView/*<AppStateModel: AppState>*/: View {
 //    @State var appState: AppStateModel
 //    @Bindable var appState: AppStateModel
     @Environment(\.appState) var appState
-    @Bindable var searchViewModel: SearchViewModel
+//    @Bindable var searchViewModel: SearchViewModel
+    @ObservedObject var searchViewModel: SearchViewModel
     @State private var isShowShareDetailsCard: Bool = true // 控制卡片的显示与隐藏
     @State private var isFullScreen: Bool = false // 控制卡片的当前状态（部分或全屏）
     @State private var dragOffset: CGFloat = 0 // 记录拖动过程中的偏移量

@@ -8,12 +8,8 @@
 import SwiftUI
 import MapKit
 
-struct ResultCardView/*<AppStateModel: AppState>*/: View {
+struct ResultCardView: View {
     @Bindable var appState: AppStateModel
-//    @State var appState: AppStateModel
-//    @Binding var name : String
-//    @Binding var isShowResultCard: Bool
-//    @Binding var isShowSearchView: Bool
     @Binding var sesrchViewHight: PresentationDetent
     @State private var isInputMessage: Bool = false
     @State private var resultCardDetents: Set<PresentationDetent> = [.height(140), .large]
@@ -22,7 +18,6 @@ struct ResultCardView/*<AppStateModel: AppState>*/: View {
     @State private var textFieldInputText: String = ""
     @Binding var searchResults: [SearchResult]
     @Binding var selectedLocation: SearchResult?
-//    @Binding var isShowMarker: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15, content: {

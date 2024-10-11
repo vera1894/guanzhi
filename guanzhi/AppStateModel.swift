@@ -40,9 +40,6 @@ protocol AppState: AnyObject {
     var resultLocationName: String { get set }
     var resultLocation: CLLocationCoordinate2D { get set }
     var responsedNearbyShareList: ResponsedNearbyShareList?  { get set }
-    func showingCameraToggle()
-    func updateNearbyShareList(from newData: ResponsedNearbyShareList)
-    func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?)
     
 }
 
@@ -64,42 +61,6 @@ class AppStateModel: AppState {
     var resultLocationName: String = ""
     var resultLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
     var responsedNearbyShareList: ResponsedNearbyShareList? = nil
-    func showingCameraToggle() {
-        isShowingCameraView.toggle()
-    }
-    
-    // 存储数据的方法
-    func updateNearbyShareList(from newData: ResponsedNearbyShareList) {
-        print("Updating with data: \(newData)")
-        self.responsedNearbyShareList = newData
-    }
-    
-    /*OTOLoginStatusManager.shared.getUserID()*/
-    
-    func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?) {
-        let userId = 11
-
-        Task {
-            do {
-                let data = try await OTONetwork.request(.fetchNearbyShareList(latitude: latitude, userId: userId, longitude: longitude, radius: radius))
-                print("收到响应数据")
-
-                let decoder = JSONDecoder()
-                // 使用新的模型类型进行解码
-                let response = try decoder.decode(OTOResponseModel<ResponsedNearbyShareList>.self, from: data)
-                print("成功解码响应：\(response)")
-
-                if let nearbyShareList = response.datas {
-                    self.responsedNearbyShareList = nearbyShareList
-                    print("解码后的数据：\(nearbyShareList)")
-                }else {
-                    print("未能解码 datas 字段")
-                }
-            } catch {
-                print("获取或解码数据时出错：\(error)")
-            }
-        }
-    }
     
 }
 
@@ -123,8 +84,8 @@ struct ResponsedShare: Codable, Equatable {
 
 //服务器返回的附近Share列表模型
 struct ResponsedNearbyShareList: Codable, Equatable {
-    let records: [ResponsedShare]
-    let total: Int
+    var records: [ResponsedShare]
+    var total: Int
     let size: Int
     let current: Int
     let orders: [String]
@@ -133,6 +94,20 @@ struct ResponsedNearbyShareList: Codable, Equatable {
     let countId: StringOrInt?      // 修改为 StringOrInt?
     let maxLimit: Int?             // 修改为 Int?
     let pages: Int
+    mutating func merge(with newData: ResponsedNearbyShareList) {
+        // 创建一个 Set 来存储已有的分享 ID，避免重复
+        let existingIds = Set(self.records.map { $0.id })
+        
+        // 过滤掉重复的分享
+        let newRecords = newData.records.filter { !existingIds.contains($0.id) }
+        
+        // 将新的分享添加到已有的记录中
+        self.records.append(contentsOf: newRecords)
+        
+        // 更新其他属性（如需要）
+        self.total += newRecords.count
+        // 根据需要更新其他属性，如 size、pages 等
+    }
 }
 
 
@@ -181,3 +156,22 @@ enum StringOrInt: Codable, Equatable {
         }
     }
 }
+
+////获取附近的分享
+//func fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?) {
+//    let userId = 11 // 示例 /*OTOLoginStatusManager.shared.getUserID()*/
+//
+//    Task {
+//        do {
+//            let data = try await OTONetwork.request(.fetchNearbyShareList(latitude: latitude, userId: userId, longitude: longitude, radius: radius))
+//            let decoder = JSONDecoder()
+//            let response = try decoder.decode(OTOResponseModel<ResponsedNearbyShareList>.self, from: data)
+//
+//            if let nearbyShareList = response.datas {
+//                self.appState?.responsedNearbyShareList = nearbyShareList
+//            }
+//        } catch {
+//            print("获取或解码数据时出错：\(error)")
+//        }
+//    }
+//}

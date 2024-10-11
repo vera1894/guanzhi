@@ -8,43 +8,23 @@
 import SwiftUI
 import MapKit
 
-struct SheetView/*<AppStateModel: AppState>*/: View {
-//    @Environment(AppStateModel.self) var appState
-//    @State var appState: AppStateModel
-//    @Environment(AppStateModel.self) var appState
+struct SheetView: View {
+
     @Bindable var appState: AppStateModel
     @State private var search: String = ""
     @State private var locationService = LocationService(completer: .init())
     @Binding var searchResults: [SearchResult]
-//    @State private var isShowCameraView = false
     @State private var image: UIImage?
-    @State private var isShowPostView = false
-//    @Binding var cardName : String
     let placeholder = "🔍想瞧瞧哪里？"
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
     @Binding var selectedLocation: SearchResult?
     @Binding var position: CustomMapCameraPosition
-//    @Binding var isShowSearchView: Bool
-//    @Binding var isShowResultCard: Bool
-//    @Binding var isShowMarker: Bool
-//    @Binding var isShowCameraView: Bool
     @Binding var currentSearchTask: Task<Void, Never>?  // 添加任务管理
     
     var body: some View {
 //        @Bindable var appState = appState
         VStack {
-            // 1 搜索栏
             HStack(spacing: 8) {
-                // Image(systemName: "magnifyingglass")
-               
-//                    Text(" 🔍")
-//                    TextField("想瞧瞧哪里？", text: $search)
-//                        .autocorrectionDisabled()
-//                        .onSubmit {
-//                            Task {
-//                                searchResults = (try? await locationService.search(with: search)) ?? []
-//                            }
-//                        }
                     
                     RoundedRectangle(cornerRadius: 20)
                         .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
@@ -78,13 +58,8 @@ struct SheetView/*<AppStateModel: AppState>*/: View {
                 if currentDetent != .large { // 根据 BottomSheet 的状态隐藏或显示
                     Button(action: {
                         // 分享地点-胶囊按钮hug
-//                        @Bindable var appState = appState
                         appState.isShowingCameraView = true
                         appState.isShowingSearchView = false
-//                        print(appState.isShowingCameraView)
-//                        isShowCameraView = true
-//                        isShowSearchView = false
-//                        appState.showingCameraToggle()
                     }) {
                         Text("📷 分享地点")
                     }
@@ -110,20 +85,6 @@ struct SheetView/*<AppStateModel: AppState>*/: View {
             .padding(.top, 32)
             .padding(.horizontal)
             .padding(.bottom, 8)
-//            .frame(width: .infinity, height: .infinity)
-//            .sheet(isPresented: $isShowCameraView) {
-////                CameraViewWrapper()
-//                
-////                NavigationStack{
-////                    CameraOldView(image: $image) { image in
-////                        self.image = image
-////                        isShowPostView = true
-////                    }.navigationDestination(isPresented: $isShowPostView) {
-////                        PostUIView(image: self.image,cardName: $cardName)
-////                    }
-////                }
-//                
-//            }
             
             
             Spacer()
@@ -188,12 +149,6 @@ struct SheetView/*<AppStateModel: AppState>*/: View {
                         currentDetent = .height(60)
                         appState.isShowingResultCardView = true
                     }
-//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-////                        search = ""
-////                        currentDetent = .height(60)
-////                        appState.isShowingResultCardView = true
-//                        print([SearchResult].self)  //测试
-//                    }
                 }
             }
         }
