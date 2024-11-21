@@ -13,7 +13,7 @@ struct TextfieldStyles: View {
     
     @State private var text: String = ""
     @FocusState private var isFocused: Bool
-    
+    @State private var variableValue: Double = 0.0
     @State private var phoneNumber: String = ""
     
     var body: some View {
@@ -53,6 +53,24 @@ struct TextfieldStyles: View {
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(20)
                 }
+                
+            Image(systemName: "timelapse", variableValue: variableValue)
+                .resizable()
+                .scaledToFill()
+                .background(Color("color-primary"))
+                .clipShape(Circle())
+                .symbolEffect(.variableColor.iterative.dimInactiveLayers.reversing)
+                .frame(width: 64, height: 64)
+                .overlay(Circle().stroke(Color.black, lineWidth: 4))
+                .onAppear {
+                    withAnimation(
+                        Animation.linear(duration: 5.0)
+                            .repeatForever(autoreverses: true)
+                    ) {
+                        self.variableValue = 1.0
+                    }
+                }
+//                .symbolEffect(.variableColor.iterative.dimInactiveLayers.reversing, options: .repeat(.continuous))
                 
                 
                     

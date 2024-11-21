@@ -50,6 +50,7 @@ enum OTORequest {
     case userInfo
     case fetchNearbyShareList(latitude: Double, longitude: Double, radius: Double?, size: Int?)
     case fetchUserShareList(latitude: Double, userId: Int?, longitude: Double, radius: Double?)
+    case fetchShareDetail(id: Int64)
 }
 
 extension OTORequest {
@@ -170,7 +171,18 @@ extension OTORequest {
                 method: .post,
                 param: [:]
                 )
+
+        //查询分享详情
+        case .fetchShareDetail(let id):
+            return .init(
+                path: "/api/guan/share/detail",
+                method: .post,
+                param: ["id": id]
+            )
             
+            
+
+        //备用的
         case .QueryDoodle(let isSelf, let latitude, let longitude, let page, let radius, let size):
             var param: [String: Any] = [
                 "isSelf": isSelf,

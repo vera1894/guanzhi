@@ -9,15 +9,18 @@ import SwiftUI
 import MapKit
 
 struct ResultCardView: View {
-    @Bindable var appState: AppStateModel
+//    @Bindable var appState: AppStateModel
+    @Environment(\.appState) var appState
+    @EnvironmentObject var searchViewModel: SearchViewModel
     @Binding var sesrchViewHight: PresentationDetent
     @State private var isInputMessage: Bool = false
     @State private var resultCardDetents: Set<PresentationDetent> = [.height(140), .large]
     @State private var resultCardCurrentDetent: PresentationDetent = .height(140)
     @State private var textFieldPlaceholder: String = "填写求助信息"
     @State private var textFieldInputText: String = ""
-    @Binding var searchResults: [SearchResult]
-    @Binding var selectedLocation: SearchResult?
+    var onClose: (() -> Void)?
+//    @Binding var searchResults: [SearchResult]
+//    @Binding var selectedLocation: SearchResult?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15, content: {
@@ -29,9 +32,12 @@ struct ResultCardView: View {
                 Spacer()
                 
                 Button{
-                    //关闭按钮-圆形
-                    //点击后关闭地点信息栏，显示搜索底栏
+                    //关闭按钮-圆形 //点击后关闭地点信息栏，显示搜索底栏
                     print("Close Button Clicked in ResultCardView")
+                    searchViewModel.searchResults.removeAll()
+                    searchViewModel.selectedLocation = nil
+                    onClose?()
+                    print([SearchResult].self)  //测试
                     withAnimation(.spring()) {
                         appState.isShowingShowMarker = false
                         appState.isShowingSearchView = true
@@ -39,9 +45,10 @@ struct ResultCardView: View {
     //                    isInputMessage = false
                         sesrchViewHight = .height(60)
                     }
-                    searchResults.removeAll()
-                    selectedLocation = nil
-                    print([SearchResult].self)  //测试
+                    // 更新地图标注
+//                    Task {
+//                        await searchViewModel.reloadAnnotations()
+//                    }
                 }label: {
                     Image("icon-close")
                 }
@@ -61,7 +68,6 @@ struct ResultCardView: View {
                                 // 帮他（紫色）-胶囊按钮fill
                         isInputMessage = true
                         resultCardCurrentDetent = .large
-                        
                             }) {
                                 Text("🥺 求一下这里最新的照片或视频")
                             }
@@ -77,7 +83,7 @@ struct ResultCardView: View {
                         appState.isShowingResultCardView = false
                         isInputMessage = false
                         sesrchViewHight = .height(60)
-                        searchResults.removeAll()
+                        searchViewModel.searchResults.removeAll()
                             }) {
                                 Text("发布求助")
                             }
@@ -101,5 +107,7 @@ struct ResultCardView: View {
 }
 
 #Preview {
-    ResultCardView(appState: AppStateModel(), sesrchViewHight: .constant(.height(60)), searchResults: .constant( [SearchResult]()), selectedLocation: .constant(nil))
+    ResultCardView(sesrchViewHight: .constant(.height(60)))
+        .environment(\.appState, AppStateModel())
+        .environmentObject(SearchViewModel())
 }

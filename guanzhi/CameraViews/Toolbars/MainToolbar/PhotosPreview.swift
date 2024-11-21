@@ -17,22 +17,8 @@ struct PhotosPreview<CameraModel: Camera, AppStateModel: AppState>: PlatformView
     
     @State var camera: CameraModel
     @State var appState: AppStateModel
-//    @Environment(AppStateModel.self) var appState
-    
-//    @State private var mediasGroup: [MediaItemProtocol] = []
-    
-//    @State private var selectedIndex: Int? = nil
-//    @State private var showingFullPreview = false
-    
-//    @State private var selectedPhoto: String? = nil
-//    @State private var isSelected = [false, false, false, false] // 初始状态，所有按钮均未选中
-//    let photoNames = ["例子", "例子", "例子", ""] // 示例照片名称，空字符串表示没有照片
-//    @State private var buttonColors: [Color] = []
-//    init() {
-//        _buttonColors = State(initialValue: PhotoButton.availableColors.shuffled().prefix(4).map { $0 })
-//    }
 
-    private func generateThumbnail(from movie: Movie) -> UIImage? {
+    private func generateThumbnail(from movie: Movie) -> UIImage? { //用途是从给定的视频 (Movie 对象) 中生成缩略图（即一帧静态图像）
         let asset = AVAsset(url: movie.url)
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
@@ -79,28 +65,6 @@ struct PhotosPreview<CameraModel: Camera, AppStateModel: AppState>: PlatformView
                     .disabled(index >= camera.capturedMedia.count || appState.isReadyToPost) // 禁用没有媒体的按钮
                 }
                 
-                
-                
-    //            Button("删除") {
-    //                // 删除选中的媒体
-    //                if let selectedIndex = camera.selectedMedia.firstIndex(of: true) {
-    //                    camera.capturedMedia.remove(at: selectedIndex)
-    //                    camera.selectedMedia[selectedIndex] = false
-    //                    
-    //                    // 如果有剩余的媒体，将其向前移动
-    //                    if selectedIndex < camera.capturedMedia.count {
-    //                        camera.selectedMedia[selectedIndex] = true
-    //                    }
-    //                    
-    //                    if selectedIndex > 0 {
-    //                        if selectedIndex == camera.capturedMedia.count {
-    //                            camera.selectedMedia[selectedIndex-1] = true
-    //                        }
-    //                    }
-    //                    
-    //                }
-    //            }
-                
             }
             .padding()
             
@@ -109,12 +73,6 @@ struct PhotosPreview<CameraModel: Camera, AppStateModel: AppState>: PlatformView
                 
                 if appState.isReadyToPost == false {
                     if camera.selectedMedia.firstIndex(of: true) != nil {
-    //                    Button("清除") {
-    //                        // 清除所有选中状态
-    //                        for i in camera.selectedMedia.indices {
-    //                            camera.selectedMedia[i] = false
-    //                        }
-    //                    }
                         Button{
                             //返回按钮-圆形
                             for i in camera.selectedMedia.indices {
@@ -137,9 +95,7 @@ struct PhotosPreview<CameraModel: Camera, AppStateModel: AppState>: PlatformView
                         .buttonStyle(ButtonStyle_m())
                     }
                 }
-                
-                
-                
+                  
             }
             .padding()
             

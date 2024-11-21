@@ -9,20 +9,22 @@ import SwiftUI
 import MapKit
 
 struct SheetView: View {
-
-    @Bindable var appState: AppStateModel
+    @Environment(\.appState) var appState
+    @EnvironmentObject var searchViewModel: SearchViewModel
     @State private var search: String = ""
     @State private var locationService = LocationService(completer: .init())
-    @Binding var searchResults: [SearchResult]
+//    @Binding var searchResults: [SearchResult]
     @State private var image: UIImage?
     let placeholder = "🔍想瞧瞧哪里？"
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
-    @Binding var selectedLocation: SearchResult?
-    @Binding var position: CustomMapCameraPosition
-    @Binding var currentSearchTask: Task<Void, Never>?  // 添加任务管理
+//    @Binding var selectedLocation: SearchResult?
+//    @Binding var position: CustomMapCameraPosition
+//    @Binding var currentSearchTask: Task<Void, Never>?  // 添加任务管理
+    @State private var currentSearchTask: Task<Void, Never>? = nil // 添加任务管理
+    var onLocationSelected: ((CLLocationCoordinate2D, String) -> Void)?
     
     var body: some View {
-//        @Bindable var appState = appState
+        @Bindable var appState = appState
         VStack {
             HStack(spacing: 8) {
                     
@@ -44,13 +46,13 @@ struct SheetView: View {
                                 .autocorrectionDisabled()
                                 .onTapGesture {
                                     currentDetent = .large
-                                    selectedLocation = nil
-                                    searchResults.removeAll()
+                                    searchViewModel.selectedLocation = nil
+                                    searchViewModel.searchResults.removeAll()
                                 }
                                 .onSubmit {
                                     currentSearchTask?.cancel() // 取消当前任务
                                     currentSearchTask = Task {
-                                        searchResults = (try? await locationService.search(with: search)) ?? []
+                                        searchViewModel.searchResults = (try? await locationService.search(with: search)) ?? []
                                     }
                                 }
                         }
@@ -71,8 +73,8 @@ struct SheetView: View {
                         search = ""
                         UIApplication.shared.endEditing()
                         currentDetent = .height(60)
-                        selectedLocation = nil
-                        searchResults.removeAll()
+                        searchViewModel.selectedLocation = nil
+                        searchViewModel.searchResults.removeAll()
                         
                     }label: {
                         Image("icon-close")
@@ -86,10 +88,8 @@ struct SheetView: View {
             .padding(.horizontal)
             .padding(.bottom, 8)
             
-            
             Spacer()
             
-            // 2
             List {
                 ForEach(locationService.completions) { completion in
                     Button(action: {didTapOnCompletion(completion) }) {
@@ -105,17 +105,12 @@ struct SheetView: View {
                             }
                         }
                     }
-                    // 3
                     .listRowBackground(Color.clear)
                 }
             }
-            // 4
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
         }
-        
-        
-        // 5
         .onChange(of: search) {
             locationService.update(queryFragment: search)
         }
@@ -136,14 +131,13 @@ struct SheetView: View {
         Task {
             // 取消当前任务
             currentSearchTask?.cancel()
-                // 启动新任务
+            // 启动新任务
             currentSearchTask = Task {
                 if let singleLocation = try? await locationService.search(with: "\(completion.title) \(completion.subTitle)").first {
-                    searchResults = [singleLocation]
-                    selectedLocation = singleLocation
-                    print("Selected Location in SheetView: \(String(describing: selectedLocation))")
-                    withAnimation(Animation.spring()) {
-                        position = .region(MKCoordinateRegion(center: singleLocation.location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
+                    await MainActor.run {
+                        // 调用 onLocationSelected 闭包，将地点坐标和名称传递回 SearchView
+                        onLocationSelected?(singleLocation.location, completion.title)
+                        // 更新 appState 和其他属性
                         appState.isShowingShowMarker = true
                         appState.isShowingSearchView = false
                         currentDetent = .height(60)
@@ -154,12 +148,6 @@ struct SheetView: View {
         }
     }
 }
-
-
-
-//#Preview {
-//    SheetView()
-//}
 
 
 struct SearchCompletions: Identifiable {
@@ -235,6 +223,10 @@ struct SearchResult: Identifiable, Hashable {
 }
 
 extension CLLocationCoordinate2D {
+    public static func == (lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
+            return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
+        }
+    
     static var defaultLocation: CLLocationCoordinate2D{
         return .init(latitude: 39.9042, longitude: 116.4074)
     }

@@ -11,175 +11,218 @@ import MapKit
 struct SearchView: View {
     
     @Namespace var mapScope
+    @Namespace private var animationNamespace
     @ObservedObject var userlogin : UserLoginModel
     @Environment(\.appState) var appState
-    @State var locationManager = LocationManager()
-    @ObservedObject var searchViewModel: SearchViewModel
-    @State private var hasVisitedPage: Bool = UserDefaults.standard.bool(forKey: "HasVisitedPage") //用于检测是否打开app后第一次到此页面
+    @EnvironmentObject var locationManager: LocationManager
+    @Environment(\.modelContext) private var context
+    @EnvironmentObject var searchViewModel: SearchViewModel
     
-    @State private var isShowMyView: Bool = false
-    @State private var isShowLogInView: Bool = false  //临时测试登录页面
     @State private var detents: Set<PresentationDetent> = [.height(60), .large]
     @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
-    @State private var currentSearchTask: Task<Void, Never>? = nil // 添加任务管理
     @State private var image: UIImage?
+
+    @State private var annotations: [MKAnnotation] = []
+    @State private var position: MapCameraPosition = .automatic
+    @State private var locationMarkers: [LocationMarker] = []
+    @State private var mapSize: CGSize = .zero
+    @State private var isAnimating: Bool = false
     
     var body: some View {
         @Bindable var appState = appState
         ToastRootView {
             NavigationStack{
                 ZStack{
-                    CustomMapView(
-                        appState: appState,
-                        region: $searchViewModel.region,
-                        selectedAnnotation: $searchViewModel.selectedAnnotation,
-                        locationAnimating: $searchViewModel.locationAnimating,
-                        annotations: $searchViewModel.annotations,
-                        onRegionChange: searchViewModel.handleMapRegionChange
-                    )
-                    .edgesIgnoringSafeArea(.all)
-                    .mapScope(mapScope)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .mapStyle(.standard(elevation: .realistic))
-                    .animation(.spring(), value: searchViewModel.selectedLocation)
-//                    .onChange(of: searchViewModel.selectedAnnotation) { _ , newAnnotation in
-//                        if let newAnnotation = newAnnotation {
-//                            if newAnnotation.annotationType == .searchResult {
-//                                // 点击了搜索结果的标注，已经在 Coordinator 中处理
-//                            } else if newAnnotation.annotationType == .nearbyShare {
-//                                // 点击了附近分享的标注，可以在这里处理，例如展示详情
-//
-//                            }
-//                        }
-//                    }
-//                    .onChange(of: appState.responsedNearbyShareList) { _ , newValue in
-//                        print("Nearby share list updated")
-//                        searchViewModel.annotations = searchViewModel.getAnnotations()
-//                    }
-//                    .onChange(of: searchViewModel.searchResults) {
-//                        print("Search Results Changed: \(searchViewModel.searchResults)")
-//                        if let firstResult = searchViewModel.searchResults.first {
-//                            DispatchQueue.main.async {
-//                                print("First Search Result Selected: \(firstResult)")
-//                                searchViewModel.selectedLocation = firstResult
-//                                appState.isShowingShowMarker = true
-//                            }
-//                        }
-//                    }
-//                    .onChange(of: appState.isShowingResultCardView) { _ , isShowing in
-//                        print("Is Show Result Card Changed: \(appState.isShowingResultCardView)")
-//                        if !isShowing {
-//                            searchViewModel.selectedLocation = nil
-//                            searchViewModel.searchResults.removeAll()
-//                            appState.isShowingShowMarker = true
-//                            searchViewModel.annotations = searchViewModel.getAnnotations()
-//                            }
-//                    }
-//                    .onChange(of: appState.isShowingShowMarker) { _, _ in
-//                        DispatchQueue.main.async {
-//                            searchViewModel.annotations = searchViewModel.getAnnotations()
-//                            print("Annotations updated due to isShowingShowMarker change")
-//                        }
-//                    }
-                    .overlay(alignment:.bottomTrailing) {
-                        if appState.isShowingSearchView {
-                            MapOverlayView(
-                                isShowMyView: $isShowMyView,
-                                isShowLogInView: $isShowLogInView,
-                                appState: appState,
-                                locationManager: locationManager,
-                                searchViewModel: searchViewModel
-                            )
-                        }
-                    }
-                    
-                    .onAppear{
-                        if hasVisitedPage {
-                            hasVisitedPage = false
-                            UserDefaults.standard.set(false, forKey: "HasVisitedPage")
-                            
-//                            searchViewModel.getUserLocation()
-                            if let location = searchViewModel.locatedPosition { searchViewModel.selectedLocation = SearchResult(location: location)
-                                print("进入界面",searchViewModel.selectedLocation as Any)}
-                            
-                            searchViewModel.getAddressFromLocation(for: searchViewModel.selectedLocation?.location){
-                                address in
-                                if let address = address{
-                                    DispatchQueue.main.async {
-                                        appState.resultLocationName = address
-                                    }
+                    Map(position: $position,interactionModes: .all) {
+                        
+                        if !appState.isShareImageExpanded {
+                            ForEach(searchViewModel.annotations, id: \.id) { annotation in
+                                Annotation(annotation.title ?? "", coordinate: annotation.coordinate) {
+                                    
+                                    MapAnnotationView(
+                                        animationNamespace: animationNamespace,
+                                        annotation: annotation,
+                                        onTap: { uiImage in
+                                            print("点击标注")
+                                            searchViewModel.selectAnnotation(annotation, thumbnailImage: uiImage)
+//                                            if let uiImage = uiImage {
+//                                                searchViewModel.selectedAnnotationImage = uiImage
+//                                            }
+//                                            searchViewModel.isUpdatingAnnotations = true
+//                                            searchViewModel.selectedAnnotation = annotation
+//                                            searchViewModel.selectedAnnotationID = annotation.id
+//                                            if let shareId = Int64(annotation.id) {
+//                                                searchViewModel.loadSourceImage(for: shareId)
+//                                            }
+                                            withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.4)) {
+                                                appState.isShowingSearchView = false
+                                                appState.isShareImageExpanded.toggle()
+                                            }
+                                        }
+                                    )
+                            //        .matchedGeometryEffect(id: "image-\(annotation.id)", in: animationNamespace)
+                                    .environment(appState)
+                                    .environmentObject(searchViewModel)
+                                    .id(annotation.id)
                                 }
                             }
-                            print(searchViewModel.searchResults)
-                            
+                        }
+                        
+                        ForEach(locationMarkers) { marker in
+                                Marker(marker.title ?? "", coordinate: marker.coordinate)
+//                                    .tag(marker)
+                            }
+                        
+                        UserAnnotation()
+                    }
+                    .mapScope(mapScope)
+                    .coordinateSpace(name: "shared")
+                    .disabled(appState.isShareImageExpanded)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .mapStyle(.standard(elevation: .realistic))
+                    .ignoresSafeArea(.all)
+                    .animation(.spring(), value: searchViewModel.selectedLocation)
+                    .onAppear {
+                        if !appState.hasSetInitialRegion {
+                                position = .automatic
+                            } else {
+                                position = .region(searchViewModel.region)
+                            }
+                        locationManager.requestLocation()
+                    }
+                    .onMapCameraChange { context in
+                        let region = context.region
+                        searchViewModel.region = region
+                        // 更新地图上的标注
+                        searchViewModel.scheduleAnnotationUpdate()
+                    }
+                    .onReceive(locationManager.$currentLocation) { location in
+                        if let location = location, !appState.hasSetInitialRegion {
+                            // 使用用户当前位置初始化地图区域
+                            let userRegion = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+                            searchViewModel.region = userRegion
+                            position = .region(userRegion)
+                            appState.hasSetInitialRegion = true
+                            // 获取分享数据
+                            searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
                         }
                     }
-//                    .sheet(isPresented: $appState.isShowingSearchView) {
-//                        // 显示 SheetView
-//                        SheetView(
-//                            appState: appState,
-//                            searchResults: $searchViewModel.searchResults,
-//                            currentDetent: $currentDetent,
-//                            selectedLocation: $searchViewModel.selectedLocation,
-//                            position: $searchViewModel.position,
-//                            currentSearchTask: $currentSearchTask
-//                        )
-//                        .environment(appState)
-//                        .animation(.spring(), value: appState.isShowingSearchView)
-//                    }
-//                    .sheet(isPresented: $appState.isShowingResultCardView) {
-//                        // 显示 ResultCardView
-//                        ResultCardView(
-//                            appState: appState,
-//                            sesrchViewHight: $currentDetent,
-//                            searchResults: $searchViewModel.searchResults,
-//                            selectedLocation: $searchViewModel.selectedLocation
-//                        )
-//                        .animation(.spring(), value: appState.isShowingResultCardView)
-//                        .presentationDragIndicator(.hidden)
-//                        .interactiveDismissDisabled(true)
-//                    }
-//                    .navigationDestination(isPresented: $appState.isShowingCameraView) {
-//                        CameraViewWrapper(appState: appState)
-//                    }
+                    .onChange(of: appState.responsedNearbyShareList) { _ , newValue in
+                        print("Nearby share list updated")
+                        searchViewModel.getAnnotations()
+                    }
+                    
+                    .onChange(of: searchViewModel.searchResults) {
+                        print("Search Results Changed: \(searchViewModel.searchResults)")
+                        if let firstResult = searchViewModel.searchResults.first {
+                            DispatchQueue.main.async {
+                                print("First Search Result Selected: \(firstResult)")
+                                searchViewModel.selectedLocation = firstResult
+                                appState.isShowingShowMarker = true
+                            }
+                        }
+                    }
+                    .onChange(of: appState.isShowingResultCardView) { _ , isShowing in
+                        print("Is Show Result Card Changed: \(appState.isShowingResultCardView)")
+                        if !isShowing {
+                            searchViewModel.selectedLocation = nil
+                            searchViewModel.searchResults.removeAll()
+                            appState.isShowingShowMarker = false
+                            searchViewModel.getAnnotations()
+                            }
+                    }
+                    .onChange(of: appState.isShowingShowMarker) { _, _ in
+                        DispatchQueue.main.async {
+                            searchViewModel.getAnnotations()
+                            print("Annotations updated due to isShowingShowMarker change")
+                        }
+                    }
+                    .overlay(alignment:.bottomTrailing) {
+                        if appState.isShowingSearchView{
+                            MapOverlayView(position: $position)
+                            .environment(appState)
+                            .environmentObject(searchViewModel)
+                            .environmentObject(locationManager)
+                        }
+                    }
+                    .sheet(isPresented: $appState.isShowingSearchView) { // 显示 SheetView
+                        SheetView(
+                            currentDetent: $currentDetent,
+                            onLocationSelected: { coordinate, title in
+//                                // 创建新的 LocationMarker 并添加到 locationMarkers 数组中
+                                let marker = LocationMarker(coordinate: coordinate, title: title)
+                                locationMarkers.append(marker)
+                                // 更新地图位置
+                                position = .region(MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
+                                // 关闭 SheetView
+                                appState.isShowingSearchView = false
+                                // 更新地图区域
+                                searchViewModel.region.center = coordinate
+                            }
+                        )
+                        .environment(appState)
+                        .environmentObject(searchViewModel)
+                        .animation(.spring(), value: appState.isShowingSearchView)
+                    }
+                    .sheet(isPresented: $appState.isShowingResultCardView) {  // 显示 ResultCardView
+                        ResultCardView(
+                            sesrchViewHight: $currentDetent,
+                            onClose: {
+                                // 移除地点标记
+                                locationMarkers.removeAll()
+                                // 更新状态
+                                appState.isShowingShowMarker = false
+                                appState.isShowingSearchView = true
+                                appState.isShowingResultCardView = false
+                                currentDetent = .height(60)
+                            }
+                        )
+                        .environment(appState)
+                        .environmentObject(searchViewModel)
+                        .animation(.spring(), value: appState.isShowingResultCardView)
+                        .presentationDragIndicator(.hidden)
+                        .interactiveDismissDisabled(true)
+                    }
+                    .navigationDestination(isPresented: $appState.isShowingCameraView) {
+                        CameraViewWrapper(appState: appState)
+                    }
                     
 //                    根据登录状态决定是否显示登录页面
-//                    if !OTOLoginStatusManager.shared.isLoggedIn {
-//                        LogInView(userlogin: userlogin)
-//                    }
+                    if !OTOLoginStatusManager.shared.isLoggedIn {
+                        LogInView(userlogin: userlogin)
+                    }
                     
                     //显示分享详情
-                    if let selectedAnnotation = searchViewModel.selectedAnnotation {
-                        ShareDetailView(searchViewModel: searchViewModel)
-                                        }
+                    if appState.isShareImageExpanded {
+                        SimpleCarouselView(searchViewModel: searchViewModel, animationNamespace: animationNamespace)
+//                            .matchedGeometryEffect(id: "image-\(searchViewModel.selectedAnnotationID ?? "")", in: animationNamespace)
+                            .environment(appState)
+                            .environmentObject(searchViewModel)
+                        
+                    }
                     
                 } //ZStack
-                
-            }
+                .toolbar(appState.isShareImageExpanded ? .visible : .hidden, for: .navigationBar)
+            } //NavStack
+            .ignoresSafeArea(.all)
             .onChange(of: appState.isPushedGuanzhi) { oldValue, newValue in
                 showNotification()
             }
-            .onChange(of: locationManager.currentLocation) { _ , newLocation in
-                if let location = newLocation {
-                    let region = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-                    withAnimation(.spring()) {
-                        searchViewModel.region = region
-                    }
-                    searchViewModel.fetchNearbyShareList(latitude: location.latitude, longitude: location.longitude, radius: 20)
-                }
-            }
-            .onChange(of: locationManager.locationErrorDescription) { _ , errorDescription in
-                if let errorDescription = errorDescription {
-                    print("位置错误：\(errorDescription)")
-                    // 可以在这里显示一个错误提示给用户
-                }
-            }
+//            .onChange(of: locationManager.locationErrorDescription) { _ , errorDescription in
+//                if let errorDescription = errorDescription {
+//                    print("位置错误：\(errorDescription)")
+//                    // 可以在这里显示一个错误提示给用户
+//                }
+//            }
             
+        }
+        .onAppear {
+            searchViewModel.setContext(context)
+            searchViewModel.appState = appState
+            searchViewModel.locationManager = locationManager
         }
         .task{
             locationManager.requestLocation()
-            searchViewModel.appState = appState
-            initializePage()
             Toast.shared.present(style: .notificationOfWelcome(
                 title: "🌍世界虽大 吾可观之👀",
                 symbol: " ",
@@ -189,6 +232,7 @@ struct SearchView: View {
                 isAutoClose: true)
             )
         }
+        
     }
     
     
@@ -207,10 +251,25 @@ struct SearchView: View {
             }
     
     func initializePage() {
-        if hasVisitedPage {
-            hasVisitedPage = false
-            UserDefaults.standard.set(false, forKey: "HasVisitedPage")
-//            searchViewModel.initializeLocation()
+        if !appState.hasSetInitialRegion {
+            appState.hasSetInitialRegion = true
+                locationManager.requestLocation()
+            }
+        }
+    
+    func loadImage(url: URL, completion: @escaping (UIImage?) -> Void) {  //检查是否需要
+        let cacheKey = url.absoluteString
+        if let cachedImage = ImageCache.shared.image(forKey: cacheKey) {
+            completion(cachedImage)
+        } else {
+            URLSession.shared.dataTask(with: url) { data, response, error in
+                if let data = data, let downloadedImage = UIImage(data: data) {
+                    ImageCache.shared.setImage(downloadedImage, forKey: cacheKey)
+                    completion(downloadedImage)
+                } else {
+                    completion(nil)
+                }
+            }.resume()
         }
     }
     
@@ -220,12 +279,13 @@ struct SearchView: View {
 
 struct Previews: PreviewProvider {
     static var previews: some View {
-        SearchView(userlogin: UserLoginModel()/*, appState: AppStateModel()*/, locationManager: LocationManager(), searchViewModel: SearchViewModel(/*appState: AppStateModel()*/))
+        SearchView(userlogin: UserLoginModel())
             .environment(\.appState, AppStateModel())
+            .environmentObject(LocationManager())
+            .environmentObject(SearchViewModel())
     }
 }
 //===================================
-
 
 
 //右滑返回
@@ -244,5 +304,11 @@ extension UserDefaults {
     func contains(key: String) -> Bool {
         return self.object(forKey: key) != nil
     }
+}
+
+struct LocationMarker: Identifiable {
+    let id = UUID()
+    let coordinate: CLLocationCoordinate2D
+    let title: String?
 }
 

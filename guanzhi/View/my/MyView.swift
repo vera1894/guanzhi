@@ -8,9 +8,8 @@
 import SwiftUI
 import Combine
 
-struct MyView/*<AppStateModel: AppState>*/: View {
-//    @State var appState: AppStateModel
-    @Bindable var appState: AppStateModel
+struct MyView: View {
+    @Environment(\.appState) var appState
     @State private var isShowSettingView: Bool = false
     @Environment(\.presentationMode) var presentationMode
 //    @Binding var isSheetPresented: Bool
@@ -64,7 +63,7 @@ struct MyView/*<AppStateModel: AppState>*/: View {
             print("按钮点击!!")
             presentationMode.wrappedValue.dismiss()
             appState.isShowingSearchView = true
-                                    
+            appState.isShowMyView = false
         }) {
             Image("icon-back")
         }.buttonStyle(ButtonStyle_m()),
@@ -96,6 +95,7 @@ struct MyView/*<AppStateModel: AppState>*/: View {
 
 struct MyView_Previews: PreviewProvider {
     static var previews: some View {
-        MyView(appState: AppStateModel())
+        MyView()
+            .environment(AppStateModel())
     }
 }

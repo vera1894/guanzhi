@@ -12,46 +12,20 @@ import SwiftUI
 struct guanzhiApp: App {
     @Environment(\.colorScheme) var colorScheme
     @State var appState = AppStateModel()
-
-//    @State private var camera: CameraModel?
+    @StateObject var locationManager = LocationManager()
+    @StateObject var searchViewModel = SearchViewModel()
+    init() {
+            _ = CoordinateConverter.shared
+        }
     
     var body: some Scene {
         WindowGroup {
-//            if let camera = camera {
-//                SearchView(camera: camera, userlogin: UserLoginModel())
-////                CameraView(camera: camera)
-////                    .statusBarHidden(true)
-//                    .task {
-//                        // Start the capture pipeline.
-//                        await camera.start()
-//                    }
-//            } else {
-//                Text("Loading camera...")
-//                    .task {
-//                        self.camera = await CameraModel.create()
-//                    }
-//            }
-//            LogInView(userlogin: OTOLoginStatusManager.shared.userLogin)
-//            MessageView(userlogin: UserLoginModel())
-//            nameView(userlogin: UserLoginModel())
-//            if let appState = appState {
-            SearchView(userlogin: UserLoginModel(), /*appState: appState,*/ searchViewModel: SearchViewModel(/*appState: AppStateModel()*/))
-                .environment(\.appState, AppStateModel())
-//            MainToolbar(camera: PreviewCameraModel(), appState: AppStateModel())
-//                    .task {
-//                        await appState.create()
-//                    }
-//            } else {
-//                Text("Loading")
-//                    .task {
-//                        self.appState = await appState?.create()
-//                    }
-//            }
-            
-//                .environment(appState)
-//            GlobalTest()
-//            MapTestView()
-//            CaptureView()
+            SearchView(userlogin: UserLoginModel())
+//                .environment(\.appState, AppStateModel())
+                .environment(appState)
+                .environmentObject(locationManager)
+                .environmentObject(searchViewModel)
+                .modelContainer(for: [Share.self, MediaFile.self])
 //                .preferredColorScheme(.dark) // 设置为夜间模式
         }
     }

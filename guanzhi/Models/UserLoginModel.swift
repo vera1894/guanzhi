@@ -6,7 +6,7 @@
 //
 
 import Foundation
-//import UIKit
+//import KeychainAccess
 
 fileprivate let loginTokenKey = "loginTokenKey"
 
@@ -62,64 +62,6 @@ class UserLoginModel: ObservableObject {
                 }
             }
         }
-//    func sendCode(phNumber:String){
-//        DispatchQueue.main.async {
-//            Task {
-//                guard let data = try? await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber)) else {
-//                    return
-//                }
-//                print(data)
-//                do {
-//                    let decoder = JSONDecoder()
-//                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-//                        let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-//                        if response.respCode == 0 {
-//                            print("请求成功")
-//                            self.sendStatus = true
-//                        }
-//                        
-//                        self.noticeText = response.respMsg ?? ""
-//                        
-//                    }
-//                } catch {
-//                    print("Error decoding JSON: \(error)")
-//                }
-//            }
-//        }
-//    }
-    
-    //验证代号
-//    func checkUserName(name:String){
-//        print("code:",name)
-//        if !ValidateEnum.codeName(name).isRight{
-//            print(ValidateEnum.codeName(name).isRight)
-//            self.noticeText = "代号由6-20位字母、数字、下划线或减号组合而成"
-//        }else{
-//            DispatchQueue.main.async {
-//                Task{
-//                    guard let data = try? await OTONetwork.request(.checkName(name: name)) else {
-//                        return
-//                    }
-//                    do {
-//                        let decoder = JSONDecoder()
-//                        if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-//                            let response = try decoder.decode(OTOResponseModel.self, from: jsonData)
-//                            if response.respCode == 0{
-//                                self.codePassed = true
-//                                print("代号验证成功")
-//                            }else{
-//                                self.noticeText = response.respMsg ?? ""
-//                            }
-//                        }
-//                    }
-//                    catch {
-//                        print("Error decoding JSON: \(error)")
-//                    }
-//                }
-//            }
-//        }
-//       
-//    }
     
     func regulayExpression(regularExpress: String, validateString: String) -> [String] {
         do {
@@ -148,8 +90,6 @@ class UserLoginModel: ObservableObject {
     
     //验证姓名
     func register(){
-        
-
         let regular = "[\\u4e00-\\u9fa5]"
         let tempNickName = replace(validateStr: self.nickName,regularExpress: regular, contentStr: "aa")
         
@@ -160,36 +100,38 @@ class UserLoginModel: ObservableObject {
                 self.noticeText = "仅支持数字、英文、汉字"
             }else{
                 DispatchQueue.main.async {
-                            Task {
-                                guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone, nickName: self.nickName)) else { return }
-                                print("注册结果", data)
-                                
-                                do {
-                                    let decoder = JSONDecoder()
-                                    let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
-                                    if response.respCode == 0 {
-                                        print("注册成功")
-                                        self.namePassed = true
-                                        if let tokenString = response.datas {
-                                            self.header = "Bearer " + tokenString
-                                            print("注册令牌：", self.header)
-                                        } else {
-                                            print("datas 不是一个字符串")
-                                        }
+                        Task {
+                            guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone, nickName: self.nickName)) else { return }
+                            print("注册结果", data)
+                            
+                            do {
+                                let decoder = JSONDecoder()
+                                let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
+                                if response.respCode == 0 {
+                                    print("注册成功")
+                                    self.namePassed = true
+                                    if let tokenString = response.datas {
+                                        self.header = "Bearer " + tokenString
+                                        print("注册令牌：", self.header)
+                                        OTOLoginStatusManager.shared.login(token: self.header)
+                                        // 获取用户信息，保存用户ID
+                                        self.getUserInfo()
                                     } else {
-                                        self.noticeText = response.respMsg ?? ""
+                                        print("datas 不是一个字符串")
                                     }
-                                } catch {
-                                    print("解析错误: \(error)")
+                                } else {
+                                    self.noticeText = response.respMsg ?? ""
                                 }
+                            } catch {
+                                print("解析错误: \(error)")
                             }
                         }
                     }
+                }
         }
     }
     
     //获取用户昵称
-    
     func getUserInfo(){
         DispatchQueue.main.async {
             Task {
@@ -199,51 +141,26 @@ class UserLoginModel: ObservableObject {
                 print(data)
                 do {
                     let decoder = JSONDecoder()
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-                        let response = try decoder.decode(OTOResponseDataModel.self, from: jsonData)
-                        if response.respCode == 0 {
-                            self.userName = response.datas.nickname ?? "用户"
-                            self.userId = response.datas.id ?? -1
+                    let response = try decoder.decode(OTOResponseModel<dataModel>.self, from: data)
+                    if response.respCode == 0 {
+                        if let datas = response.datas {
+                            self.userName = datas.nickname ?? "用户"
+                            self.userId = datas.id ?? -1
                             print("请求成功")
-                            print(response.datas.nickname as Any)
-                            print("获取userId",self.userId)
+                            print("获取userId", self.userId)
+                            
+                            // 保存用户ID到 OTOLoginStatusManager
+                            OTOLoginStatusManager.shared.setUserID(self.userId)
                         }
-                        
-                        self.noticeText = response.respMsg ?? ""
-                        
                     }
+                    self.noticeText = response.respMsg ?? ""
+                    
                 } catch {
                     print("Error decoding JSON: \(error)")
                 }
             }
         }
     }
-    
-//    func getUserInfo(){
-//        DispatchQueue.main.async {
-//            Task {
-//                guard let data = try? await OTONetwork.request(.userInfo) else {
-//                    return
-//                }
-//                print(data)
-//                do {
-//                    let decoder = JSONDecoder()
-//                    if let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []) {
-//                        let response = try decoder.decode(OTOResponseDataModel.self, from: jsonData)
-//                        if response.respCode == 0 {
-//                            print("请求成功")
-//                            print(response.datas.nickname as Any)
-//                        }
-//                        
-//                        self.noticeText = response.respMsg ?? ""
-//                        
-//                    }
-//                } catch {
-//                    print("Error decoding JSON: \(error)")
-//                }
-//            }
-//        }
-//    }
     
 }
 
@@ -252,11 +169,6 @@ class OTOLoginStatusManager {
     
     private(set) var isLoggedIn: Bool = false
 
-    //一个UserLoginModel类的属性，懒加载的形式来加载
-    lazy var userLogin = UserLoginModel()
-    
-    lazy var vm = MessageinputViewModel()
-
     private init() {
         updateLoginStatus()
     }
@@ -264,8 +176,7 @@ class OTOLoginStatusManager {
     func updateLoginStatus() {
         if let _ = UserDefaults.standard.string(forKey: loginTokenKey) {
             isLoggedIn = true
-            print("isloggein:已登录")
-            print("userdefaults用户存储",UserDefaults.standard.string(forKey: loginTokenKey) as Any )
+            print("isLoggedIn: 已登录")
         } else {
             isLoggedIn = false
         }
@@ -273,6 +184,7 @@ class OTOLoginStatusManager {
 
     func logout() {
         UserDefaults.standard.removeObject(forKey: loginTokenKey)
+        UserDefaults.standard.removeObject(forKey: "userId")  // 移除用户ID
         updateLoginStatus()
     }
 
@@ -290,7 +202,11 @@ class OTOLoginStatusManager {
     }
     
     func getUserID() -> Int {
-            return userLogin.userId
-        }
+        return UserDefaults.standard.integer(forKey: "userId")
+    }
+    
+    func setUserID(_ userId: Int) {
+        UserDefaults.standard.set(userId, forKey: "userId")
+    }
 }
 

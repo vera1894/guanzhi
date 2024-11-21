@@ -31,10 +31,10 @@ struct ButtonStyles: View {
             }label: { }
         .buttonStyle(IconStylePosition(isAnimating: $isLocated))
             
-            Button{
-                //Seee位置，需要添加是否已经定位的状态 isLocated
-            }label: { }
-        .buttonStyle(SeeePositionStyle(isEnabled: true))
+//            Button{
+//                //Seee位置，需要添加是否已经定位的状态 isLocated
+//            }label: { }
+//                .buttonStyle(SeeePositionStyle(isEnabled: true, image: <#Binding<UIImage?>#>))
             
             Button{
                 //播放按钮
@@ -559,45 +559,41 @@ struct AvatarStyle_l: ButtonStyle {
 struct SeeePositionStyle: ButtonStyle {
     
     var isEnabled: Bool
-    var imageUrl: URL? // 新增属性，用于传递图片的 URL
+    var imageUrl: URL?
+    @State private var variableValue: Double = 0.0
+    @Binding var image: UIImage?
 
     func makeBody(configuration: Self.Configuration) -> some View {
-        configuration.label
         ZStack(alignment: .center) {
             Image("icon-position")
                 .frame(width: 24, height: 33)
                 .offset(y: 32)
             
-            if let imageUrl = imageUrl {
-                AsyncImage(url: imageUrl) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .clipShape(Circle())
-                            .frame(width: 64, height: 64)
-                            .overlay(Circle().stroke(Color.black, lineWidth: 4))
-                    case .failure:
-                        Image("占位图")
-                            .resizable()
-                            .scaledToFill()
-                            .clipShape(Circle())
-                            .frame(width: 64, height: 64)
-                            .overlay(Circle().stroke(Color.black, lineWidth: 4))
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
-            } else {
-                Image("占位图")
+            if let uiImage = image {
+                Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
                     .clipShape(Circle())
                     .frame(width: 64, height: 64)
                     .overlay(Circle().stroke(Color.black, lineWidth: 4))
+            } else {
+                // 显示占位图或加载指示器
+                Image(systemName: "timelapse", variableValue: variableValue)
+                    .resizable()
+                    .scaledToFill()
+                    .background(Color("color-primary"))
+                    .clipShape(Circle())
+                    .symbolEffect(.variableColor.iterative.dimInactiveLayers.reversing)
+                    .frame(width: 64, height: 64)
+                    .overlay(Circle().stroke(Color.black, lineWidth: 4))
+                    .onAppear {
+                        withAnimation(
+                            Animation.linear(duration: 5.0)
+                                .repeatForever(autoreverses: true)
+                        ) {
+                            self.variableValue = 1.0
+                        }
+                    }
             }
         }
         .frame(height: 82)
@@ -608,6 +604,7 @@ struct SeeePositionStyle: ButtonStyle {
         .grayscale(isEnabled ? 0 : 1)
         .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
         .opacity(isEnabled ? 1 : 0.5)
+        .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
     }
 }
 
