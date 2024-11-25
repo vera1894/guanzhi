@@ -195,11 +195,6 @@ struct SearchView: View {
                             CameraViewWrapper(appState: appState)
                         }
                         
-    //                    根据登录状态决定是否显示登录页面
-    //                    if !OTOLoginStatusManager.shared.isLoggedIn {
-    //                        LogInView(userlogin: userlogin)
-    //                    }
-                        
                         //显示分享详情
                         if appState.isShareImageExpanded {
                             SimpleCarouselView(searchViewModel: searchViewModel, animationNamespace: animationNamespace)
@@ -236,8 +231,6 @@ struct SearchView: View {
     //                }
     //            }
             }
-            
-            
         }
         .onAppear {
             if searchViewModel.context == nil {

@@ -27,7 +27,8 @@ struct SimpleCarouselView: View {
     var body: some View {
         @Bindable var appState = appState
 
-                ZStack {
+        NavigationStack {
+            ZStack {
 ////                    if let selectedAnnotation = searchViewModel.selectedAnnotation {
 ////                        if let firstMediaItem = searchViewModel.downloadMedia.first,
 ////                           let photo = firstMediaItem as? Photo {
@@ -52,22 +53,22 @@ struct SimpleCarouselView: View {
 //                        // 显示占位符或加载指示器
 //                        ProgressView()
 //                    }
-                    if !searchViewModel.downloadMedia.isEmpty {
-                            // 显示完整的媒体内容
-                        TabView(selection: $selectedIndex) {
-                            ForEach(Array(searchViewModel.downloadMedia.enumerated()), id: \.element.id) { index, itemWrapper in
-                                MediaItemView(mediaItemWrapper: itemWrapper, thumbnailImage: searchViewModel.selectedAnnotationImage)
-                                    .tag(index)
+                if !searchViewModel.downloadMedia.isEmpty {
+                        // 显示完整的媒体内容
+                    TabView(selection: $selectedIndex) {
+                        ForEach(Array(searchViewModel.downloadMedia.enumerated()), id: \.element.id) { index, itemWrapper in
+                            MediaItemView(mediaItemWrapper: itemWrapper, thumbnailImage: searchViewModel.selectedAnnotationImage)
+                                .tag(index)
+                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle())
+                    .ignoresSafeArea()
+                    .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
+                            if selectedIndex >= newCount {
+                                selectedIndex = max(0, newCount - 1)
                             }
                         }
-                        .tabViewStyle(PageTabViewStyle())
-                        .ignoresSafeArea()
-                        .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
-                                if selectedIndex >= newCount {
-                                    selectedIndex = max(0, newCount - 1)
-                                }
-                            }
-                    }
+                }
 //                    else if let thumbnailImage = searchViewModel.selectedAnnotationImage {
 //                            // 显示缩略图
 //                            Image(uiImage: thumbnailImage)
@@ -78,55 +79,59 @@ struct SimpleCarouselView: View {
 //                                    ProcessingView()
 //                                }
 //                        }
-                    else {
-                            // 显示加载指示器
-                        ProcessingView()
-                            .ignoresSafeArea()
-                    }
-                    
+                else {
+                        // 显示加载指示器
+                    ProcessingView()
+                        .ignoresSafeArea()
                 }
-                .toolbar {
-                    if isShowShareDetailsCard {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button{
-                                //返回按钮-圆形
-                                print("关闭分享详情")
-                                searchViewModel.isUpdatingAnnotations = false
-                                appState.isShareImageExpanded = false
-                                searchViewModel.selectedAnnotation = nil
-                                searchViewModel.selectedAnnotationID = nil
-                                searchViewModel.selectedAnnotationImage = nil
-                                appState.isShowingSearchView = true
-                                appState.isShowingShowMarker = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    searchViewModel.cleandownloadMedia()
-                                }
-                            }label: {
-                                Image("icon-back")
-                            }
-                            .buttonStyle(ButtonStyle_m())
-                        }
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button{
-                                //更多按钮-圆形
-                            }label: {
-                                Image("icon-more")
-                            }
-                            .buttonStyle(ButtonStyle_m())
-                        }
-                    }
-                }
-                .ignoresSafeArea(.all)
-            .background(Color.black)
-            .statusBar(hidden: isFullScreen)
-            .onAppear {
-                selectedIndex = 0
+                
             }
-//            .onAppear {
-//                withAnimation(.spring()) {
-//                    appState.isShareImageExpanded = true
-//                }
+            .toolbar {
+                if isShowShareDetailsCard {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button{
+                            //返回按钮-圆形
+                            print("关闭分享详情")
+                            searchViewModel.isUpdatingAnnotations = false
+                            appState.isShareImageExpanded = false
+                            searchViewModel.selectedAnnotation = nil
+                            searchViewModel.selectedAnnotationID = nil
+                            searchViewModel.selectedAnnotationImage = nil
+                            appState.isShowingSearchView = true
+                            appState.isShowingShowMarker = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                searchViewModel.cleandownloadMedia()
+                            }
+                        }label: {
+                            Image("icon-back")
+                        }
+                        .buttonStyle(ButtonStyle_m())
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button{
+                            //更多按钮-圆形
+                        }label: {
+                            Image("icon-more")
+                        }
+                        .buttonStyle(ButtonStyle_m())
+                    }
+                }
+            }
+            .ignoresSafeArea(.all)
+            .background(Color.black)
+            .navigationBarTitleDisplayMode(.inline)
+            .statusBar(hidden: isFullScreen)
+//            .navigationBarHidden(true)
+        } //Nav
+        
+        .onAppear {
+            selectedIndex = 0
+        }
+//        .onAppear {
+//            withAnimation(.spring()) {
+//                appState.isShareImageExpanded = true
 //            }
+//        }
     }
 
 }
