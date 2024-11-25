@@ -332,8 +332,8 @@
 			children = (
 				D1093C2E2B669795008553A3 /* Info.plist */,
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
-				FF3CD1292C78787800AF7086 /* CameraModel.swift */,
 				FF6BC4FB2C7C6A3000423660 /* AppStateModel.swift */,
+				FF3CD1292C78787800AF7086 /* CameraModel.swift */,
 				FF3CD1282C78787800AF7086 /* CameraView.swift */,
 				FF3CD1272C78787800AF7086 /* CaptureService.swift */,
 				D19912002B529285002A711A /* View */,

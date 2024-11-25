@@ -13,6 +13,7 @@ struct MapOverlayView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var searchViewModel: SearchViewModel
     @Binding var position: MapCameraPosition
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
 //    @Bindable var locationManager: LocationManager
 //    @ObservedObject var locationManager: LocationManager
 //    @Bindable var searchViewModel: SearchViewModel
@@ -34,7 +35,8 @@ struct MapOverlayView: View {
                 Button(action: {
                     // 头像-s
                     print(searchViewModel.searchResults)
-                    appState.isShowMyView = true
+//                    appState.isShowMyView = true
+                    navigationCoordinator.path.append(Route.myView)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                         appState.isShowingSearchView = false
                     }
@@ -42,10 +44,10 @@ struct MapOverlayView: View {
                     
                 }
                 .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
-                .navigationDestination(isPresented: $appState.isShowMyView) {
-                    MyView()
-                        .environment(appState)
-                }
+//                .navigationDestination(isPresented: $appState.isShowMyView) {
+//                    MyView()
+//                        .environment(appState)
+//                }
                 
                 Button{
                     //提醒按钮-圆形 //测试登录页面导航问题
@@ -98,4 +100,9 @@ struct MapOverlayView: View {
         .padding(.horizontal, 5)
         .padding(.bottom, 80)
     }
+}
+
+
+class NavigationCoordinator: ObservableObject {
+    @Published var path = NavigationPath()
 }

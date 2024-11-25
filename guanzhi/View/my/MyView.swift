@@ -12,9 +12,11 @@ struct MyView: View {
     @Environment(\.appState) var appState
     @State private var isShowSettingView: Bool = false
     @Environment(\.presentationMode) var presentationMode
-//    @Binding var isSheetPresented: Bool
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @State private var navigationPathCount: Int = 0
     
     var body: some View {
+        @Bindable var appState = appState
         NavigationView {
             VStack{
                 //name
@@ -61,28 +63,40 @@ struct MyView: View {
                     Button(action: {
             // 添加返回按钮点击的操作
             print("按钮点击!!")
-            presentationMode.wrappedValue.dismiss()
-            appState.isShowingSearchView = true
-            appState.isShowMyView = false
+//            presentationMode.wrappedValue.dismiss()
+//            appState.isShowingSearchView = true
+//            appState.isShowMyView = false
+                        navigationCoordinator.path.removeLast()
         }) {
             Image("icon-back")
         }.buttonStyle(ButtonStyle_m()),
             
             trailing:
-                                Button(action: {
-            // 添加按钮点击的操作
-            isShowSettingView = true
+                Button(action: {
+        // 添加按钮点击的操作
+//                appState.isShowSettingView = true
+                    navigationCoordinator.path.append(Route.settingView)
+                    print(navigationCoordinator.path)
+//                    appState.isShowingSearchView = false
         }) {
             Image(systemName: "gear") // 设置图标
-        }.navigationDestination(isPresented: $isShowSettingView) {
-            SettingView()
-        })
+        }
+//                .navigationDestination(isPresented: $appState.isShowSettingView) {
+//            SettingView()
+//            
+//        }
+        )
+        
 //        .frame(height: 30)
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            navigationPathCount = navigationCoordinator.path.count
+        }
         .onDisappear {
-            if isShowSettingView != true{
-                appState.isShowingSearchView = true // 在滑动关闭视图时也能更新变量
-            }
+            if navigationCoordinator.path.count < navigationPathCount {
+                    // 导航路径长度减少，说明返回到了上一层
+                    appState.isShowingSearchView = true
+                }
         }
 //        .navigationBarItems(
 //        )

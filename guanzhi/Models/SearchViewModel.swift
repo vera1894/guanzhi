@@ -22,8 +22,21 @@ class SearchViewModel: ObservableObject {
     @Published var appState: AppStateModel?
     var locationManager: LocationManager?
     var context: ModelContext!
-    func setContext(_ context: ModelContext) { // 设置模型上下文，用于与数据库交互
-            self.context = context
+
+        // 初始化方法不需要修改
+
+        // 将需要依赖 context 的初始化操作放在单独的方法中
+        func initializeData() {
+            // 确保 context 已经被设置
+            guard context != nil else {
+                print("Context is nil in initializeData")
+                return
+            }
+            // 执行依赖于 context 的初始化操作
+            if let location = locationManager?.currentLocation {
+                fetchAllShares(latitude: location.latitude, longitude: location.longitude)
+                getAnnotations()
+            }
         }
     @Published var region: MKCoordinateRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 0, longitude: 0),

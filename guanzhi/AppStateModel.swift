@@ -32,6 +32,7 @@ protocol AppState: AnyObject {
     var isShowingShareDetailView: Bool { get set }
     var isShowingShowMarker: Bool { get set }
     var isShowMyView: Bool { get set }
+    var isShowSettingView: Bool { get set }
     var isShowLogInView: Bool { get set }
     var isReadyToPost: Bool { get set }
     var isLoading: Bool { get set }
@@ -58,6 +59,7 @@ class AppStateModel: AppState {
     var isShowingShareDetailView: Bool = false
     var isShowingShowMarker: Bool = false
     var isShowMyView: Bool = false
+    var isShowSettingView: Bool = false
     var isShowLogInView: Bool = false
     var isReadyToPost: Bool = false
     var isLoading: Bool = false
@@ -73,6 +75,11 @@ class AppStateModel: AppState {
     var responsedNearbyShareList: ResponsedNearbyShareList? = nil
     var hasSetInitialRegion: Bool = false
     
+}
+
+enum Route: Hashable { //用于页面导航
+    case myView
+    case settingView
 }
 
 
