@@ -1,5 +1,5 @@
 {
-  "originHash" : "4be87737060e9590f344fecdaf1a44249ba7f9484a4c852a43f54b9e289cfb6b",
+  "originHash" : "88dfeaed86ebb1209d0e1d67cdbcd78aff7c2b51dbcbd3870c4456a0dcdaa5c0",
   "pins" : [
     {
       "identity" : "clustermap",
@@ -8,6 +8,24 @@
       "state" : {
         "revision" : "f3e60a742e6d3c149ce5d0c7424f373ef1b38140",
         "version" : "2.1.1"
+      }
+    },
+    {
+      "identity" : "swiftui-introspect",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/siteline/SwiftUI-Introspect",
+      "state" : {
+        "revision" : "807f73ce09a9b9723f12385e592b4e0aaebd3336",
+        "version" : "1.3.0"
+      }
+    },
+    {
+      "identity" : "swiftui-navigation-transitions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/davdroman/swiftui-navigation-transitions",
+      "state" : {
+        "revision" : "76ae9c621422a1f38c30a07c8b7636994b669484",
+        "version" : "0.14.0"
       }
     }
   ],

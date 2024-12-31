@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 import UIKit
-
+import Alamofire
 
 enum OTONetworkError: Error {
     case badURL
@@ -57,6 +57,14 @@ struct OTONetwork {
             return data
         } catch {
             throw error
+        }
+    }
+}
+
+extension Data {
+    mutating func appendString(_ string: String) {
+        if let data = string.data(using: .utf8) {
+            append(data)
         }
     }
 }

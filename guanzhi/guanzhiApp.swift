@@ -14,19 +14,27 @@ struct guanzhiApp: App {
     @State var appState = AppStateModel()
     @StateObject var locationManager = LocationManager()
     @StateObject var searchViewModel = SearchViewModel()
+    @StateObject var toastManager = ToastManager()
     init() {
             _ = CoordinateConverter.shared
         }
     
     var body: some Scene {
         WindowGroup {
-            SearchView(userlogin: UserLoginModel())
-//                .environment(\.appState, AppStateModel())
-                .environment(appState)
-                .environmentObject(locationManager)
-                .environmentObject(searchViewModel)
-                .modelContainer(for: [Share.self, MediaFile.self])
-//                .preferredColorScheme(.dark) // 设置为夜间模式
+            ZStack{
+                SearchView(userlogin: UserLoginModel())
+    //                .environment(\.appState, AppStateModel())
+                    .environment(appState)
+                    .environmentObject(locationManager)
+                    .environmentObject(searchViewModel)
+                    .modelContainer(for: [Share.self, MediaFile.self])
+    //                .preferredColorScheme(.dark) // 设置为夜间模式
+                
+                // 顶层：GlobalToastContainerView
+                GlobalToastContainerView()
+            }
+            .environmentObject(toastManager)
+            .ignoresSafeArea()
         }
     }
 }

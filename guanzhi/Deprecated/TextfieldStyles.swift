@@ -72,7 +72,6 @@ struct TextfieldStyles: View {
                 }
 //                .symbolEffect(.variableColor.iterative.dimInactiveLayers.reversing, options: .repeat(.continuous))
                 
-                
                     
             }
             .onAppear { // 用于确保应用启动时文本字段获得焦点（可选）
@@ -100,15 +99,6 @@ struct TextFieldStyle_capsuleFill: TextFieldStyle { //弹性文字输入框样�
             .frame(height: 40)
     }
 }
-
-extension UIApplication {  //收起键盘的方法
-    func endEditing() {
-        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-}
-
-
-
 
 struct PhoneNumberField: UIViewRepresentable { //手机号输入框
     @Binding var text: String

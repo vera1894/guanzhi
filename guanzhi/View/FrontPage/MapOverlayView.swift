@@ -103,6 +103,3 @@ struct MapOverlayView: View {
 }
 
 
-class NavigationCoordinator: ObservableObject {
-    @Published var path = NavigationPath()
-}

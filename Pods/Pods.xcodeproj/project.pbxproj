@@ -58,6 +58,7 @@
 		F4DD0AD58DDD5641BDEAEA6CF44FF0ED /* Protected.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0934D2433B5CAE21301E4EC517D18E36 /* Protected.swift */; };
 		F7E576E007A81E0EFD2E0849CB17878D /* WebSocketRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786E57F4F2DA1575D23FC22FE0A43E59 /* WebSocketRequest.swift */; };
 		FCE62086E1AB54A4F61EBCDBA15C1510 /* EventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1F840BAE73398E724FBC181C8526FF /* EventMonitor.swift */; };
+		FF58E72F2CFE92C200CC139B /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = FF58E72E2CFE92C200CC139B /* SwiftUIIntrospect */; };
 		FF5DAF2D2CC1F9F400BB4803 /* ClusterMap in Frameworks */ = {isa = PBXBuildFile; productRef = FF5DAF2C2CC1F9F400BB4803 /* ClusterMap */; };
 		FF5DAF2F2CC1F9F400BB4803 /* ClusterMapSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = FF5DAF2E2CC1F9F400BB4803 /* ClusterMapSwiftUI */; };
 /* End PBXBuildFile section */
@@ -163,6 +164,7 @@
 				FF5DAF2D2CC1F9F400BB4803 /* ClusterMap in Frameworks */,
 				FF5DAF2F2CC1F9F400BB4803 /* ClusterMapSwiftUI in Frameworks */,
 				58000B864C8C98CA846CE7327463AAA5 /* Foundation.framework in Frameworks */,
+				FF58E72F2CFE92C200CC139B /* SwiftUIIntrospect in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,6 +423,7 @@
 			mainGroup = CF1408CF629C7361332E53B88F7BD30C;
 			packageReferences = (
 				FF5DAF2B2CC1F9F400BB4803 /* XCRemoteSwiftPackageReference "ClusterMap" */,
+				FF58E72D2CFE92C200CC139B /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 			);
 			productRefGroup = BFB6933CF71F3C60C692B3DFDB0FDEF6 /* Products */;
 			projectDirPath = "";
@@ -893,6 +896,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		FF58E72D2CFE92C200CC139B /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/siteline/SwiftUI-Introspect";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
 		FF5DAF2B2CC1F9F400BB4803 /* XCRemoteSwiftPackageReference "ClusterMap" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/vospennikov/ClusterMap";
@@ -904,6 +915,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		FF58E72E2CFE92C200CC139B /* SwiftUIIntrospect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FF58E72D2CFE92C200CC139B /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */;
+			productName = SwiftUIIntrospect;
+		};
 		FF5DAF2C2CC1F9F400BB4803 /* ClusterMap */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FF5DAF2B2CC1F9F400BB4803 /* XCRemoteSwiftPackageReference "ClusterMap" */;

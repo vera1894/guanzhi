@@ -19,8 +19,6 @@ struct ResultCardView: View {
     @State private var textFieldPlaceholder: String = "填写求助信息"
     @State private var textFieldInputText: String = ""
     var onClose: (() -> Void)?
-//    @Binding var searchResults: [SearchResult]
-//    @Binding var selectedLocation: SearchResult?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15, content: {

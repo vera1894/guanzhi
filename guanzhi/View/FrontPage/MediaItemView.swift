@@ -22,6 +22,7 @@ struct MediaItemView: View {
                 if photo.data.isEmpty {
                     // 数据为空，显示加载指示器
                     ProcessingView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let uiImage = UIImage(data: photo.data) {
                     if photo.livePhotoMovieURL != nil {
                         // 动态照片
@@ -29,7 +30,7 @@ struct MediaItemView: View {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .onTapGesture {
+                                .onLongPressGesture {
                                     isPlayingLivePhoto.toggle()
                                 }
                             if let livePhoto = mediaItemWrapper.livePhoto, isPlayingLivePhoto {
@@ -49,6 +50,7 @@ struct MediaItemView: View {
                         }
                     } else {
                         // 静态照片
+//                        Image("测试长图")
                         Image(uiImage: uiImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -75,6 +77,7 @@ struct MediaItemView: View {
 //                    }
 //            } else {
                 ProcessingView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 //            }
         }
     }

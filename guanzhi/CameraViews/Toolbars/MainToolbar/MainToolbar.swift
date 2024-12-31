@@ -146,19 +146,20 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                         uploadImages(photos) { result in
                                             switch result {
                                             case .success(let imagePath):
-                                                // 注意这里将 combinedImagePaths 改为 imagePath
+                                                // 所有文件上传成功，调用分享发布方法
                                                 shareInsert(
                                                     address: locatedPositionName,
                                                     cityCode: nil,
                                                     data: appState.postText,
                                                     deleted: nil,
                                                     districtCode: nil,
-                                                    imagePath: imagePath,  // 使用成功回调中的 imagePath
+                                                    imagePath: imagePath,
                                                     latitude: locatedPosition?.latitude ?? 0.0,
                                                     longitude: locatedPosition?.longitude ?? 0.0,
                                                     provinceCode: nil,
                                                     title: "标题"
                                                 )
+                                                // 更新状态
                                                 appState.isReadyToPost = false
                                                 appState.isShowingCameraView = false
                                                 appState.isShowingSearchView = true
@@ -167,6 +168,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                                     appState.isLoading = false
                                                 }
                                             case .failure(let error):
+                                                // 上传失败，已在前面的代码中处理，无需在这里重复处理
                                                 print("Failed to upload images: \(error)")
                                             }
                                         }
@@ -241,6 +243,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 //        .font(.system(size: 24))
 //        .padding([.leading, .trailing])
     }
+    
     // 根据设备尺寸类别确定工具栏的宽度。
     var width: CGFloat? { isRegularSize ? 250 : nil }
     // 设置工具栏的固定高度。
@@ -306,7 +309,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             }
 
             let photo = sortedPhotos[uploadIndex]
-            let uniqueFileName = generateUniqueFileName()  // 使用自定义的命名方式
+            let uniqueFileName = generateUniqueFileName()
 
             // 如果这是第一个媒体文件，记录其前缀
             if uploadIndex == 0 {
@@ -314,11 +317,18 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             }
 
             let dispatchGroup = DispatchGroup()
+            var uploadError: Error?
 
             // 上传静态图片
             dispatchGroup.enter()
-            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") {
-                dispatchGroup.leave()
+            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") { result in
+                switch result {
+                case .success(_):
+                    dispatchGroup.leave()
+                case .failure(let error):
+                    uploadError = error
+                    dispatchGroup.leave()
+                }
             }
 
             // 如果存在 Live Photo 视频，单独上传
@@ -328,9 +338,14 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                     do {
                         let videoData = try Data(contentsOf: livePhotoURL)
                         dispatchGroup.enter()
-                        // 修改文件名中的“video”为“livephoto”
-                        uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") {
-                            dispatchGroup.leave()
+                        uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") { result in
+                            switch result {
+                            case .success(_):
+                                dispatchGroup.leave()
+                            case .failure(let error):
+                                uploadError = error
+                                dispatchGroup.leave()
+                            }
                         }
                     } catch {
                         print("Failed to read live photo video data: \(error)")
@@ -343,36 +358,71 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             }
 
             dispatchGroup.notify(queue: .main) {
-                // 当前 Photo 对象的所有文件上传完成
-                uploadIndex += 1
-                uploadNextPhoto()
+                if let error = uploadError {
+                    // 上传失败，终止上传过程并通知用户
+                    print("Upload failed with error: \(error.localizedDescription)")
+                    appState.isLoading = false
+                    showErrorToUser(message: "上传失败：\(error.localizedDescription)")
+                    completion(.failure(error))
+                } else {
+                    // 当前 Photo 对象的所有文件上传完成，继续下一个
+                    uploadIndex += 1
+                    uploadNextPhoto()
+                }
             }
         }
 
+        func showErrorToUser(message: String) {
+            DispatchQueue.main.async {
+                appState.errorMessage = message
+                appState.showErrorAlert = true
+            }
+        }
+        
+        let maxRetryCount = 3
+        
         // 修改后的 uploadFile 方法，添加 completion 参数
-        func uploadFile(data: Data, fileName: String, mimeType: String, completion: @escaping () -> Void) {
+        func uploadFile(data: Data, fileName: String, mimeType: String, retryCount: Int = 0, completion: @escaping (Result<String, Error>) -> Void) {
             let formData = MultipartFormData()
             formData.append(data, withName: "multipartFile", fileName: fileName, mimeType: mimeType)
             
             print("Starting upload for \(fileName)...")
 
-            AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers).responseDecodable(of: UploadResponse.self) { response in
-                switch response.result {
-                case .success(let uploadResponse):
-                    print("Response JSON: \(uploadResponse)")
-
-                    if let imagePath = uploadResponse.datas {
-                        imagePaths.append(imagePath)
-                        print("Uploaded \(fileName): \(imagePath)")
-                    } else {
-                        print("No image path returned in response")
+            AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers)
+                .uploadProgress { progress in
+                    // 可选：更新上传进度
+                    DispatchQueue.main.async {
+                        // 更新全局的上传进度，如果需要的话
+                        appState.uploadProgress = progress.fractionCompleted
                     }
-                    completion()
-                case .failure(let error):
-                    print("Failed to upload \(fileName): \(error)")
-                    completion()
                 }
-            }
+                .responseDecodable(of: UploadResponse.self) { response in
+                    switch response.result {
+                    case .success(let uploadResponse):
+                        print("Response JSON: \(uploadResponse)")
+
+                        if let imagePath = uploadResponse.datas {
+                            imagePaths.append(imagePath)
+                            print("Uploaded \(fileName): \(imagePath)")
+                            completion(.success(imagePath))
+                        } else {
+                            print("No image path returned in response")
+                            let error = NSError(domain: "UploadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned in response"])
+                            completion(.failure(error))
+                        }
+                    case .failure(let error):
+                        if retryCount < maxRetryCount {
+                            print("Retrying upload for \(fileName), attempt \(retryCount + 1)")
+                            // 等待一段时间后重试
+                            DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+                                uploadFile(data: data, fileName: fileName, mimeType: mimeType, retryCount: retryCount + 1, completion: completion)
+                            }
+                        } else {
+                            print("Failed to upload \(fileName) after \(maxRetryCount) attempts")
+                            completion(.failure(error))
+                        }
+                    }
+                }
         }
 
         // 生成并上传缩略图的方法

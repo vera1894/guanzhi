@@ -58,6 +58,7 @@ class SearchViewModel: ObservableObject {
     @Published var isUpdatingAnnotations: Bool = false
     @Published var selectedShare: Share?
     @Published var selectedShareMediaFiles: [MediaFile] = []
+    @Published var annotationSortOption: AnnotationSortOption = .createDateDescending
 
     // MARK: - Functions - 分享标注列表与标注用于地图
 
@@ -634,8 +635,11 @@ class SearchViewModel: ObservableObject {
         // 获取当前地图区域
         let currentRegion = self.region
         // 获取可视区域内的分享
-        let sharesInRegion = getSharesInRegion(currentRegion)
+        var sharesInRegion = getSharesInRegion(currentRegion)
         print("Number of shares in region: \(sharesInRegion.count)")
+        
+        // 对 sharesInRegion 进行排序
+        sortShares(&sharesInRegion)
         var newAnnotations: [CustomAnnotation] = []
 
         for share in sharesInRegion {
@@ -663,6 +667,20 @@ class SearchViewModel: ObservableObject {
             print("Added annotation for share ID: \(share.id) at coordinates: (\(share.latitude), \(share.longitude))")
         }
         annotations = newAnnotations
+    }
+    
+    
+    private func sortShares(_ shares: inout [Share]) {
+        switch annotationSortOption {
+        case .createDateDescending:
+            shares.sort { $0.createDate > $1.createDate }
+        case .createDateAscending:
+            shares.sort { $0.createDate < $1.createDate }
+//        case .likesDescending:
+//            shares.sort { ($0.likes ?? 0) > ($1.likes ?? 0) }  // 假设将来有 likes 属性
+        case .custom(let comparison):
+            shares.sort(by: comparison)
+        }
     }
     
     //获取分享的缩略图 URL
@@ -861,9 +879,9 @@ class SearchViewModel: ObservableObject {
                     // 等待所有任务完成
                     try await group.waitForAll()
                 }
-                // 确保 mediaFile.localURL 已经更新
-                if let mediaItem = createMediaItem(from: mediaItemWrapper) {
-                    DispatchQueue.main.async {
+                // 在主线程上创建媒体项并更新 UI
+                await MainActor.run {
+                    if let mediaItem = createMediaItem(from: mediaItemWrapper) {
                         mediaItemWrapper.mediaItem = mediaItem
                     }
                 }
@@ -897,11 +915,11 @@ class SearchViewModel: ObservableObject {
                 }
             }
             
-            // 立即更新媒体文件的 localURL 和 fileSize
-            mediaFile.localURL = localURL
-            mediaFile.fileSize = Int64(data.count)
-            // 保存上下文，确保更新持久化
-            try await MainActor.run {
+            // 在主线程上更新 mediaFile 对象
+            await MainActor.run {
+                mediaFile.localURL = localURL
+                mediaFile.fileSize = Int64(data.count)
+                // 保存上下文
                 do {
                     try self.context.save()
                     print("媒体文件下载并保存成功：\(localURL.path)")
@@ -969,63 +987,9 @@ class SearchViewModel: ObservableObject {
         }
         return mediaItems
     }
-//    func parseMediaFiles(_ mediaFiles: [MediaFile]) -> [MediaItemWrapper] {
-//        // 按照客户端标记（时间戳和随机数）分组
-//        var mediaGroups: [String: [MediaFile]] = [:]
-//        for mediaFile in mediaFiles {
-//            let prefix = mediaFile.prefix
-//            if mediaGroups[prefix] != nil {
-//                mediaGroups[prefix]?.append(mediaFile)
-//            } else {
-//                mediaGroups[prefix] = [mediaFile]
-//            }
-//        }
-//        var mediaItems: [MediaItemWrapper] = []
-//        // 按照时间戳排序
-//        let sortedKeys = mediaGroups.keys.sorted { key1, key2 in
-//            guard let timestamp1 = mediaGroups[key1]?.first?.timestamp,
-//                  let timestamp2 = mediaGroups[key2]?.first?.timestamp else {
-//                return false
-//            }
-//            return timestamp1 < timestamp2
-//        }
-//        for key in sortedKeys {
-//            if let group = mediaGroups[key] {
-//                // 判断媒体类型
-//                let hasPhoto = group.contains { $0.type == .photo }
-//                let hasVideo = group.contains { $0.type == .video || $0.type == .livePhoto }
-//                if hasPhoto && hasVideo {
-//                    // 动态照片（Live Photo）
-//                    if let photoFile = group.first(where: { $0.type == .photo }),
-//                       let videoFile = group.first(where: { $0.type == .video || $0.type == .livePhoto }) {
-//                        // 创建占位的 MediaItemWrapper，mediaItem 先为 nil
-//                        let mediaItemWrapper = MediaItemWrapper(nil)
-//                        // 将 photoFile 和 videoFile 关联到 mediaItemWrapper
-//                        mediaItemWrapper.photoFile = photoFile
-//                        mediaItemWrapper.videoFile = videoFile
-//                        mediaItems.append(mediaItemWrapper)
-//                    }
-//                } else if hasPhoto {
-//                    // 静态照片
-//                    if let photoFile = group.first(where: { $0.type == .photo }) {
-//                        let mediaItemWrapper = MediaItemWrapper(nil)
-//                        mediaItemWrapper.photoFile = photoFile
-//                        mediaItems.append(mediaItemWrapper)
-//                    }
-//                } else if hasVideo {
-//                    // 视频
-//                    if let videoFile = group.first(where: { $0.type == .video }) {
-//                        let mediaItemWrapper = MediaItemWrapper(nil)
-//                        mediaItemWrapper.videoFile = videoFile
-//                        mediaItems.append(mediaItemWrapper)
-//                    }
-//                }
-//            }
-//        }
-//        return mediaItems
-//    }
 
     // 创建媒体项，返回 MediaItemProtocol
+    @MainActor
     func createMediaItem(from mediaItemWrapper: MediaItemWrapper) -> MediaItemProtocol? {
         if let photoFile = mediaItemWrapper.photoFile, photoFile.type != .thumbnail, let photoLocalURL = photoFile.localURL {
             print("创建媒体项，照片文件已下载，本地 URL：\(photoLocalURL)")
@@ -1101,105 +1065,34 @@ class SearchViewModel: ObservableObject {
         }
     }
     
-//    func prepareInitialMedia(with image: UIImage) {  //检查是否需要
-//        cleandownloadMedia()
-//        // 将初始图片封装为 MediaItemProtocol
-//        let initialPhoto = Photo(data: image.pngData() ?? Data(), isProxy: false, livePhotoMovieURL: nil)
-//        let mediaItemWrapper = MediaItemWrapper(initialPhoto)
-//        self.downloadMedia = [mediaItemWrapper]
-//    }
-    
-//    func downloadAndParseMedia(from paths: [String], completion: @escaping (Result<[MediaItemWrapper], Error>) -> Void) { //检查是否需要
-//        let baseURL = URL(string: "https://onettoo.com")!
-//        var mediaFiles: [String: (photo: Data?, video: URL?)] = [:]
-//        let group = DispatchGroup()
-//        var downloadErrors: [Error] = []
-//
-//        for path in paths {
-//            let url = baseURL.appendingPathComponent(path)
-//            let fileName = (path as NSString).lastPathComponent
-//            let components = fileName.split(separator: "_")
-//
-//            // 提取前缀
-//            let prefix: String
-//            if components.count >= 4 {
-//                prefix = components[0...2].joined(separator: "_")
-//            } else {
-//                let nameComponents = fileName.components(separatedBy: "-")
-//                prefix = nameComponents[0]
-//            }
-//
-//            group.enter()
-//            let task = URLSession.shared.dataTask(with: url) { data, response, error in
-//                defer {
-//                    group.leave()
-//                }
-//                if let error = error {
-//                    downloadErrors.append(error)
-//                    return
-//                }
-//                guard let data = data else {
-//                    return
-//                }
-//
-//                if fileName.hasSuffix(".mov") {
-//                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-//                    do {
-//                        try data.write(to: tempURL)
-//                        if mediaFiles[prefix] != nil {
-//                            mediaFiles[prefix]?.video = tempURL
-//                        } else {
-//                            mediaFiles[prefix] = (photo: nil, video: tempURL)
-//                        }
-//                    } catch {
-//                        downloadErrors.append(error)
-//                    }
-//                } else if fileName.hasSuffix(".jpg") || fileName.hasSuffix(".jpeg") || fileName.hasSuffix(".png") {
-//                    if mediaFiles[prefix] != nil {
-//                        mediaFiles[prefix]?.photo = data
-//                    } else {
-//                        mediaFiles[prefix] = (photo: data, video: nil)
-//                    }
-//                }
-//            }
-//            task.resume()
-//        }
-//
-//        group.notify(queue: .main) {
-//            if !downloadErrors.isEmpty {
-//                completion(.failure(downloadErrors[0]))
-//                return
-//            }
-//
-//            var mediaItems: [MediaItemWrapper] = []
-//                for (_, media) in mediaFiles {
-//                    if let photoData = media.photo {
-//                        if let videoURL = media.video {
-//                            let livePhoto = Photo(data: photoData, isProxy: false, livePhotoMovieURL: videoURL)
-//                            let mediaItemWrapper = MediaItemWrapper(livePhoto)
-//                            mediaItems.append(mediaItemWrapper)
-//                        } else {
-//                            let staticPhoto = Photo(data: photoData, isProxy: false, livePhotoMovieURL: nil)
-//                            let mediaItemWrapper = MediaItemWrapper(staticPhoto)
-//                            mediaItems.append(mediaItemWrapper)
-//                        }
-//                    } else if let videoURL = media.video {
-//                        let movie = Movie(url: videoURL)
-//                        let mediaItemWrapper = MediaItemWrapper(movie)
-//                        mediaItems.append(mediaItemWrapper)
-//                    }
-//                }
-//
-//                self.downloadMedia = mediaItems
-//                completion(.success(mediaItems))
-//        }
-//    }
-    
     // 清理下载的媒体数据
     func cleandownloadMedia() {
         self.downloadMedia.removeAll()
     }
     
+    // 将时间戳转换为实际时间
+    func formattedDate(from timestamp: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .medium
+        formatter.locale = Locale(identifier: "zh_CN") // 设置为中文格式
+        formatter.timeZone = TimeZone.current // 显式指定当前设备时区
+        
+        // 转换输入的时间为 UTC 时间
+        let utcTimestamp = timestamp.addingTimeInterval(+8 * 3600) // 减去 +8 小时，转换为 UTC 时间
+        
+        // 返回根据设备当前时区格式化后的时间字符串
+        return formatter.string(from: utcTimestamp)
+    }
+    
+}
+
+//不同地点标注排序方式的枚举
+enum AnnotationSortOption {
+    case createDateDescending  // 按创建时间降序排列（最新的在最顶层）
+    case createDateAscending   // 按创建时间升序排列
+//    case likesDescending       // 按点赞数量降序排列（未来扩展）
+    case custom((Share, Share) -> Bool)  // 自定义排序闭包
 }
 
 // 扩展 MKCoordinateRegion，添加包含另一个区域的判断方法
@@ -1408,6 +1301,7 @@ class MediaItemWrapper: Identifiable, ObservableObject {
         self.mediaItem = mediaItem
     }
 
+    @MainActor
     func generateLivePhoto() {
         guard let photo = self.mediaItem as? Photo,
               let livePhotoMovieURL = photo.livePhotoMovieURL else {

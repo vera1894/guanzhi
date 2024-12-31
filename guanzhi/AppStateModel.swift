@@ -47,7 +47,10 @@ protocol AppState: AnyObject {
     var resultLocation: CLLocationCoordinate2D { get set }
     var responsedNearbyShareList: ResponsedNearbyShareList?  { get set }
     var hasSetInitialRegion: Bool { get set }
-    
+    var errorMessage: String { get set }
+    var showErrorAlert: Bool { get set }
+    var uploadProgress: Double { get set }
+    var useOverlayMode: Bool { get set }
 }
 
 @Observable 
@@ -74,12 +77,63 @@ class AppStateModel: AppState {
     var resultLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
     var responsedNearbyShareList: ResponsedNearbyShareList? = nil
     var hasSetInitialRegion: Bool = false
-    
+    var uploadProgress: Double = 0.0
+    var errorMessage: String = ""
+    var showErrorAlert: Bool = false
+    var useOverlayMode: Bool = true
 }
 
-enum Route: Hashable { //用于页面导航
+
+enum Route: Hashable, Codable { //用于页面导航
     case myView
     case settingView
+    case shareDetailView(annotationID: String)
+    
+    // 定义用于编码和解码的键
+        enum CodingKeys: String, CodingKey {
+            case type
+            case annotationID
+        }
+        
+        // 定义一个类型枚举，用于区分不同的 case
+        enum RouteType: String, Codable {
+            case myView
+            case settingView
+            case shareDetailView
+        }
+        
+        // 实现 Encodable 协议
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            switch self {
+            case .myView:
+                try container.encode(RouteType.myView, forKey: .type)
+            case .settingView:
+                try container.encode(RouteType.settingView, forKey: .type)
+            case .shareDetailView(let annotationID):
+                try container.encode(RouteType.shareDetailView, forKey: .type)
+                try container.encode(annotationID, forKey: .annotationID)
+            }
+        }
+        
+        // 实现 Decodable 协议
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let type = try container.decode(RouteType.self, forKey: .type)
+            switch type {
+            case .myView:
+                self = .myView
+            case .settingView:
+                self = .settingView
+            case .shareDetailView:
+                let annotationID = try container.decode(String.self, forKey: .annotationID)
+                self = .shareDetailView(annotationID: annotationID)
+            }
+        }
+}
+
+class NavigationCoordinator: ObservableObject {
+    @Published var path = NavigationPath()
 }
 
 

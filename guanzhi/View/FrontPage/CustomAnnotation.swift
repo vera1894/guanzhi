@@ -78,7 +78,7 @@ struct MapAnnotationView: View {
                     .clipShape(Circle())
                     .frame(width: 64, height: 64)
                     .overlay(Circle().stroke(Color.black, lineWidth: 4))
-//                    .matchedGeometryEffect(id: annotation.id, in: animationNamespace, isSource: true)
+                    .matchedGeometryEffect(id: "sharedElement\(annotation.id)", in: animationNamespace, isSource: true)
             } else {
                 // 显示占位图或加载指示器
                 Image(systemName: "timelapse", variableValue: variableValue)

@@ -10,6 +10,7 @@ import MapKit
 
 struct SearchView: View {
     
+    let useOverlay = true // true: 使用overlay, false: 使用navigationDestination 显示分享详情
     @Namespace var mapScope
     @Namespace private var animationNamespace
     @ObservedObject var userlogin : UserLoginModel
@@ -19,6 +20,7 @@ struct SearchView: View {
     @EnvironmentObject var searchViewModel: SearchViewModel
 //    @StateObject var searchViewModel = SearchViewModel()
     @StateObject var navigationCoordinator = NavigationCoordinator()
+    @EnvironmentObject var toastManager: ToastManager
     
     @State private var detents: Set<PresentationDetent> = [.height(60), .large]
     @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
@@ -33,7 +35,7 @@ struct SearchView: View {
     var body: some View {
         @Bindable var appState = appState
         
-        ToastRootView {
+        /*ToastRootView*/ ZStack {
             if !OTOLoginStatusManager.shared.isLoggedIn {
                 // 显示登录页面
                 LogInView(userlogin: userlogin)
@@ -41,45 +43,35 @@ struct SearchView: View {
                 NavigationStack(path: $navigationCoordinator.path) {
                     ZStack{
                         Map(position: $position,interactionModes: .all) {
-                            
                             if !appState.isShareImageExpanded {
                                 ForEach(searchViewModel.annotations, id: \.id) { annotation in
                                     Annotation(annotation.title ?? "", coordinate: annotation.coordinate) {
-                                        
                                         MapAnnotationView(
                                             animationNamespace: animationNamespace,
                                             annotation: annotation,
                                             onTap: { uiImage in
                                                 print("点击标注")
                                                 searchViewModel.selectAnnotation(annotation, thumbnailImage: uiImage)
-    //                                            if let uiImage = uiImage {
-    //                                                searchViewModel.selectedAnnotationImage = uiImage
-    //                                            }
-    //                                            searchViewModel.isUpdatingAnnotations = true
-    //                                            searchViewModel.selectedAnnotation = annotation
-    //                                            searchViewModel.selectedAnnotationID = annotation.id
-    //                                            if let shareId = Int64(annotation.id) {
-    //                                                searchViewModel.loadSourceImage(for: shareId)
-    //                                            }
                                                 withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.4)) {
-                                                    appState.isShowingSearchView = false
-                                                    appState.isShareImageExpanded.toggle()
-                                                }
+                                                        appState.isShowingSearchView = false
+                                                    if appState.useOverlayMode {
+                                                            appState.isShareImageExpanded.toggle()  // 启用overlay模式
+                                                        } else {
+                                                            navigationCoordinator.path.append(Route.shareDetailView(annotationID: annotation.id)) // 导航模式
+                                                        }
+                                                    }
                                             }
                                         )
-                                //        .matchedGeometryEffect(id: "image-\(annotation.id)", in: animationNamespace)
+//                                        .matchedGeometryEffect(id: "sharedElement\(annotation.id)", in: animationNamespace)
                                         .environment(appState)
                                         .environmentObject(searchViewModel)
                                         .id(annotation.id)
                                     }
                                 }
                             }
-                            
                             ForEach(locationMarkers) { marker in
                                     Marker(marker.title ?? "", coordinate: marker.coordinate)
-    //                                    .tag(marker)
                                 }
-                            
                             UserAnnotation()
                         }
                         .mapScope(mapScope)
@@ -197,27 +189,33 @@ struct SearchView: View {
                         
                         //显示分享详情
                         if appState.isShareImageExpanded {
-                            SimpleCarouselView(searchViewModel: searchViewModel, animationNamespace: animationNamespace)
-    //                            .matchedGeometryEffect(id: "image-\(searchViewModel.selectedAnnotationID ?? "")", in: animationNamespace)
+                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: searchViewModel.selectedAnnotationID ?? "")
                                 .environment(appState)
                                 .environmentObject(searchViewModel)
-                            
+                                .transition(.move(edge: .bottom))
                         }
                         
                     } //ZStack
                     .navigationDestination(for: Route.self) { route in
-                                            switch route {
-                                            case .myView:
-                                                MyView()
-                                                    .environment(appState)
-                                                    .environmentObject(navigationCoordinator)
-                                            case .settingView:
-                                                SettingView()
-                                                    .environment(appState)
-                                                    .environmentObject(navigationCoordinator)
-                                            }
-                                        }
-                    .toolbar(appState.isShareImageExpanded ? .visible : .hidden, for: .navigationBar)
+                        switch route {
+                        case .myView:
+                            MyView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                        case .settingView:
+                            SettingView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                        case .shareDetailView(let annotationID):
+                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: annotationID)
+                                .environment(appState)
+                                .environmentObject(searchViewModel)
+                                .environmentObject(navigationCoordinator)
+                                .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace)
+                        }
+                    }
+//                    .toolbar(appState.isShareImageExpanded ? .visible : .hidden, for: .navigationBar)
+                    .toolbar(.hidden, for: .navigationBar)
                 } //NavStack
                 .environmentObject(navigationCoordinator)
                 .ignoresSafeArea(.all)
@@ -230,8 +228,8 @@ struct SearchView: View {
     //                    // 可以在这里显示一个错误提示给用户
     //                }
     //            }
-            }
-        }
+            } //else
+        } //ToastRootView
         .onAppear {
             if searchViewModel.context == nil {
                 searchViewModel.context = context
@@ -240,17 +238,18 @@ struct SearchView: View {
                 searchViewModel.initializeData()
             }
         }
-//        .disabled(!OTOLoginStatusManager.shared.isLoggedIn)
+//        .disabled(appState.isShareImageExpanded)
         .task{
             locationManager.requestLocation()
-            Toast.shared.present(style: .notificationOfWelcome(
+            let newItem = ToastItem(style: .notificationOfWelcome(
                 title: "🌍世界虽大 吾可观之👀",
-                symbol: " ",
+                symbol: "",
                 tint: Color("color-primary"),
                 isUserInteractionEnabled: true,
                 timing: .medium,
-                isAutoClose: true)
-            )
+                isAutoClose: true
+            ))
+            toastManager.show(newItem)
         }
         
     }
@@ -259,16 +258,18 @@ struct SearchView: View {
     // MARK: - Functions
     
     private func showNotification() {
-            if appState.isPushedGuanzhi {
-                Toast.shared.present(style: .notificationOnly(
-                    title: "🌍 发布成功",
-                    symbol: "",
-                    tint: Color("color-primary"),
-                    isUserInteractionEnabled: true,
-                    timing: .short,
-                    isAutoClose: true))
-                }
-            }
+        if appState.isPushedGuanzhi {
+            let newItem = ToastItem(style: .notificationOnly(
+                title: "🌍 发布成功",
+                symbol: "",
+                tint: Color("color-primary"),
+                isUserInteractionEnabled: true,
+                timing: .short,
+                isAutoClose: true
+            ))
+            toastManager.show(newItem)
+        }
+    }
     
     func initializePage() {
         if !appState.hasSetInitialRegion {
@@ -303,6 +304,7 @@ struct Previews: PreviewProvider {
             .environment(\.appState, AppStateModel())
             .environmentObject(LocationManager())
             .environmentObject(SearchViewModel())
+            .environmentObject(ToastManager())
     }
 }
 //===================================
