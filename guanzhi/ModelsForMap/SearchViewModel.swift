@@ -1,4 +1,3 @@
-
 //
 //  SearchViewModel.swift
 //  guanzhi
@@ -22,22 +21,16 @@ class SearchViewModel: ObservableObject {
     @Published var appState: AppStateModel?
     var locationManager: LocationManager?
     var context: ModelContext!
-
-        // 初始化方法不需要修改
-
-        // 将需要依赖 context 的初始化操作放在单独的方法中
-        func initializeData() {
-            // 确保 context 已经被设置
-            guard context != nil else {
-                print("Context is nil in initializeData")
-                return
-            }
-            // 执行依赖于 context 的初始化操作
-            if let location = locationManager?.currentLocation {
-                fetchAllShares(latitude: location.latitude, longitude: location.longitude)
-                getAnnotations()
-            }
+    func initializeData() {
+        guard context != nil else {
+            print("Context is nil in initializeData")
+            return
         }
+        if let location = locationManager?.currentLocation {
+            fetchAllShares(latitude: location.latitude, longitude: location.longitude)
+            getAnnotations()
+        }
+    }
     @Published var region: MKCoordinateRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
@@ -59,6 +52,7 @@ class SearchViewModel: ObservableObject {
     @Published var selectedShare: Share?
     @Published var selectedShareMediaFiles: [MediaFile] = []
     @Published var annotationSortOption: AnnotationSortOption = .createDateDescending
+    @Published var isShareDetailOverlayShown: Bool = false
 
     // MARK: - Functions - 分享标注列表与标注用于地图
 
@@ -91,27 +85,29 @@ class SearchViewModel: ObservableObject {
     
     //获取所有分享数据列表
     func fetchAllShares(latitude: Double, longitude: Double) {
-        // 异步请求附近的分享列表
         Task {
             do {
-                let data = try await OTONetwork.request(.fetchNearbyShareList(latitude: latitude, longitude: longitude, radius: 10, size: -1)) //radius目前无作用但需要为正数，size: -1代表获取所有列表数据，在数据量较小的初期使用
-                if let responseString = String(data: data, encoding: .utf8) {
-//                    print("服务器返回数据: \(responseString)")
-                }
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(OTOResponseModel<ResponsedNearbyShareList>.self, from: data)
-
-                if let newNearbyShareList = response.datas {
-                    print("解析后的数据记录数: \(newNearbyShareList.records.count)")
-                    // 解析并存储分享数据到数据库
-                    await saveSharesToDatabase(shares: newNearbyShareList.records)
-                    // 在保存数据后，更新地图上的标注
-                    self.getAnnotations()
-                } else {
-                    print("服务器返回的数据为空或解析失败")
-                }
+                print("🌍 SearchViewModel: 开始获取附近分享数据...")
+                print("📍 坐标: latitude=\(latitude), longitude=\(longitude)")
+                
+                let shareList = try await ShareService.shared.fetchNearbyShares(
+                    latitude: latitude,
+                    longitude: longitude,
+                    radius: 1000, //获取范围
+                    size: -1
+                )
+                
+                print("✅ SearchViewModel: 成功获取 \(shareList.count) 条分享数据")
+                
+                // 跟原逻辑一样，把它存进 SwiftData
+                await saveSharesToDatabase(shares: shareList)
+                // 保存完再 getAnnotations() 或其他操作
+                self.getAnnotations()
             } catch {
-                print("Error fetching or decoding data: \(error)")
+                print("❌ SearchViewModel: 获取分享数据失败")
+                print("❌ 错误类型: \(type(of: error))")
+                print("❌ 错误信息: \(error.localizedDescription)")
+                print("❌ 错误详情: \(error)")
             }
         }
     }
@@ -842,17 +838,11 @@ class SearchViewModel: ObservableObject {
     func fetchShareDetailFromServer(shareId: Int64) {
         Task {
             do {
-                // 发起网络请求
-                let data = try await OTONetwork.request(.fetchShareDetail(id: shareId))
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(OTOResponseModel<ResponsedShare>.self, from: data)
-
-                if let shareData = response.datas {
-                    // 保存到数据库
-                    await saveSharesToDatabase(shares: [shareData])
-                    // 重新加载分享详情
-                    loadShareDetail(for: shareId)
-                }
+                let detail = try await ShareService.shared.fetchShareDetail(shareId: shareId)
+                // 把这个 detail 做 SwiftData 持久化
+                await saveSharesToDatabase(shares: [detail])
+                // 然后重新加载
+                loadShareDetail(for: shareId)
             } catch {
                 print("Error fetching share detail: \(error)")
             }
@@ -1121,9 +1111,9 @@ struct ResponsedShare: Codable, Equatable {
     let data: String
     let longitude: Double
     let latitude: Double
-    let provinceCode: StringOrInt?  // 修改为 StringOrInt?
-    let cityCode: StringOrInt?      // 修改为 StringOrInt?
-    let districtCode: StringOrInt?  // 修改为 StringOrInt?
+    let provinceCode: StringOrInt?
+    let cityCode: StringOrInt?
+    let districtCode: StringOrInt?
     let address: String
     let imagePath: String
     let title: String
@@ -1139,8 +1129,8 @@ struct ResponsedNearbyShareList: Codable, Equatable {
     let orders: [String]
     let optimizeCountSql: Bool
     let searchCount: Bool
-    let countId: StringOrInt?      // 修改为 StringOrInt?
-    let maxLimit: Int?             // 修改为 Int?
+    let countId: StringOrInt?
+    let maxLimit: Int?
     let pages: Int
     mutating func merge(with newData: ResponsedNearbyShareList) {
         // 创建一个 Set 来存储已有的分享标识符，避免重复

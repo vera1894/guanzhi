@@ -14,13 +14,20 @@ struct MapOverlayView: View {
     @EnvironmentObject var searchViewModel: SearchViewModel
     @Binding var position: MapCameraPosition
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
-//    @Bindable var locationManager: LocationManager
-//    @ObservedObject var locationManager: LocationManager
-//    @Bindable var searchViewModel: SearchViewModel
-//    @ObservedObject var searchViewModel: SearchViewModel
+    @EnvironmentObject var userProfileManager: UserProfileManager
     
     var body: some View {
         @Bindable var appState = appState
+        
+        // 提前计算头像图片，避免在 ButtonStyle 中进行异步操作
+        let avatarImage: Image = {
+            if let uiImage = userProfileManager.avatarImage {
+                return Image(uiImage: uiImage)
+            } else {
+                return Image("例子")
+            }
+        }()
+        
         VStack(spacing: 32) {
             VStack {
                 MapPitchToggle(scope: mapScope)
@@ -31,49 +38,32 @@ struct MapOverlayView: View {
             
             Spacer()
             
+//            ZoomSliderView(position: $position)
+            
             VStack(spacing: 16) {
                 Button(action: {
-                    // 头像-s
-                    print(searchViewModel.searchResults)
-//                    appState.isShowMyView = true
                     navigationCoordinator.path.append(Route.myView)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                         appState.isShowingSearchView = false
                     }
                 }) {
-                    
+                    // 使用与 MyView 相同的头像逻辑
                 }
-                .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
-//                .navigationDestination(isPresented: $appState.isShowMyView) {
-//                    MyView()
-//                        .environment(appState)
-//                }
+                .buttonStyle(AvatarStyle_s(
+                    isEnabled: true,
+                    profileImage: avatarImage,
+                    borderThickness: 4
+                ))
                 
-                Button{
-                    //提醒按钮-圆形 //测试登录页面导航问题
-                    //isShowSearchView = false
-                    //isShowLogInView = true
-                    //isShowCameraView = true
-                    //appState.isShowingCameraView = true
-                    //appState.isShowingSearchView = false
-                    //print("appState.isShowingCameraView")
-                    
-                    //logout()
-                    //OTOLoginStatusManager.shared.logout()
-                    
-//                    searchViewModel.fetchNearbyShareList(
-//                        latitude: searchViewModel.locatedPosition?.latitude ?? 0.0,
-//                        longitude: searchViewModel.locatedPosition?.longitude ?? 0.0,
-//                        radius: 20)
-//                    print(appState.responsedNearbyShareList?.records ?? "获取Annotation数据失败") // 检查是否成功获取数据
-                    
-                }label: {
-                    Image("icon-notification")
-                }
-                .buttonStyle(ButtonStyle_m())
-                .navigationDestination(isPresented: $appState.isShowLogInView) {
-                    LogInView(userlogin: UserLoginModel())
-                }
+//                Button{ //暂时隐藏
+//                    //提醒按钮-圆形 //测试登录页面导航问题
+//                }label: {
+//                    Image("icon-notification")
+//                }
+//                .buttonStyle(ButtonStyle_m())
+//                .navigationDestination(isPresented: $appState.isShowLogInView) {
+//                    LogInView(userlogin: UserLoginModel())
+//                }
                 
                 Button{
                     //定位按钮-圆形
@@ -98,8 +88,29 @@ struct MapOverlayView: View {
             }
         }
         .padding(.horizontal, 5)
-        .padding(.bottom, 80)
+        .padding(.bottom, 120)
+        .onAppear {
+            // 尝试加载缓存的头像
+            userProfileManager.loadCachedAvatar()
+        }
     }
 }
 
 
+#Preview {
+    MapOverlayView(
+        position: .constant(
+            .region(
+                MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: 39.9, longitude: 116.4),
+                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                )
+            )
+        )
+    )
+    .environment(\.appState, AppStateModel())
+    .environmentObject(LocationManager())
+    .environmentObject(SearchViewModel())
+    .environmentObject(NavigationCoordinator())
+    .environmentObject(UserProfileManager())
+}

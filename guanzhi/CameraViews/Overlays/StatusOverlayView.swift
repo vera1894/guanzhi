@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A view that presents a status message over the camera user interface.
@@ -61,6 +61,7 @@ struct StatusOverlayView: View {
 	}
 }
 
+#if DEBUG
 #Preview("Interrupted") {
     // 创建状态为 .interrupted 未授权 的 CameraView 预览。
     CameraView(camera: PreviewCameraModel(status: .interrupted), appState: AppStateModel())
@@ -75,3 +76,4 @@ struct StatusOverlayView: View {
     // 创建状态为 .unauthorized 中断 的 CameraView 预览。
     CameraView(camera: PreviewCameraModel(status: .unauthorized), appState: AppStateModel())
 }
+#endif

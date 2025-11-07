@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A view that presents a video preview of the captured content.
@@ -103,7 +103,8 @@ struct DefaultPreviewSource: PreviewSource {
     }
 }
 
-
+#if DEBUG
 #Preview {
     CameraView(camera: PreviewCameraModel(), appState: AppStateModel())
 }
+#endif

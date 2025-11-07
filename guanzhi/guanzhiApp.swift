@@ -15,6 +15,10 @@ struct guanzhiApp: App {
     @StateObject var locationManager = LocationManager()
     @StateObject var searchViewModel = SearchViewModel()
     @StateObject var toastManager = ToastManager()
+    @StateObject var userProfileManager = UserProfileManager()
+    @Namespace private var globalAnimationNamespace
+    @StateObject var navigationCoordinator = NavigationCoordinator()
+
     init() {
             _ = CoordinateConverter.shared
         }
@@ -22,15 +26,58 @@ struct guanzhiApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack{
-                SearchView(userlogin: UserLoginModel())
-    //                .environment(\.appState, AppStateModel())
-                    .environment(appState)
-                    .environmentObject(locationManager)
-                    .environmentObject(searchViewModel)
-                    .modelContainer(for: [Share.self, MediaFile.self])
-    //                .preferredColorScheme(.dark) // 设置为夜间模式
+                //主页面
+                NavigationStack(path: $navigationCoordinator.path) {
+                    SearchView(
+                        animationNamespace: globalAnimationNamespace,
+                        userlogin: UserLoginModel()
+                    )
+                    .navigationDestination(for: Route.self) { route in
+                        switch route {
+                        case .myView:
+                            MyView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                                .environmentObject(searchViewModel)
+                        case .othersView(let userId):
+                           OthersView(userId: userId)
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                                .environmentObject(searchViewModel)
+                        case .settingView:
+                            SettingView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                        case .editProfileView:
+                            EditProfileView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                        case .shareDetailView(let annotationID):
+                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: globalAnimationNamespace, annotationID: annotationID)
+                                .environment(appState)
+                                .environmentObject(searchViewModel)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+//                                .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: globalAnimationNamespace)
+                        case .accountManagementView:
+                            AccountManagementView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                        }
+                    }
+                }
+                .environment(appState)
+                .environmentObject(locationManager)
+                .environmentObject(searchViewModel)
+                .environmentObject(userProfileManager)
+                .environmentObject(navigationCoordinator)
+                .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self])
                 
-                // 顶层：GlobalToastContainerView
                 GlobalToastContainerView()
             }
             .environmentObject(toastManager)

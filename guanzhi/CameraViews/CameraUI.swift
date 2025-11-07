@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A view that presents the main camera user interface.
@@ -101,6 +101,8 @@ struct CameraUI<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     }
 }
 
+#if DEBUG
 #Preview {
     CameraUI(camera: PreviewCameraModel(), appState: AppStateModel(), swipeDirection: .constant(.left))
 }
+#endif

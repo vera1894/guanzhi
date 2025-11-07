@@ -63,6 +63,8 @@ struct ButtonStyles: View {
             }) { }
             .buttonStyle(AvatarStyle_m(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
             
+            AvatarView_m(isEnabled: true, profileImage: Image("例子"), borderThickness: 4)
+            
             Button(action: {
                 // 头像-l
             }) { }
@@ -112,6 +114,13 @@ struct ButtonStyles: View {
                 Image("icon-notification")
             }
             .buttonStyle(ButtonStyle_m())
+            
+            Button{
+                //缩放滑块-圆形
+            }label: {
+                Image("icon-slider")
+            }
+            .buttonStyle(ButtonStyle_s())
             
         }
         
@@ -293,6 +302,28 @@ struct ButtonStyles: View {
     }
 }
 
+struct ButtonStyle_s: ButtonStyle {
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .frame(width: 24, height: 24)
+            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
+            .brightness(configuration.isPressed ? -0.2 : 0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct ButtonView_s: View {
+    var body: some View {
+        Image("icon-slider") // 或者使用你需要的图片名称
+            .resizable()
+            .frame(width: 24, height: 24)
+            .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+            .brightness(0)      // 保持默认亮度
+            .scaleEffect(1.0)   // 保持默认大小
+    }
+}
+
 struct ButtonStyle_m: ButtonStyle {
 
     func makeBody(configuration: Self.Configuration) -> some View {
@@ -469,7 +500,7 @@ struct AvatarStyle_s: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
         ZStack(alignment: .center) {
-            Image("icon-avatar")  // 边框层，稍微放大以显示边框
+            Image("avatar")  // 边框层，稍微放大以显示边框
                 .resizable()
                 .scaledToFit()
                 .frame(width: 32 - 2, height: 32 - 2)
@@ -480,7 +511,7 @@ struct AvatarStyle_s: ButtonStyle {
                 .scaledToFit()
                 .frame(width: 32 - borderThickness - 2, height: 32 - borderThickness - 2 )
                 .mask(
-                    Image("icon-avatar")
+                    Image("avatar")
                         .resizable()
                         .scaledToFit()
                 )
@@ -501,7 +532,7 @@ struct AvatarStyle_m: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
         ZStack(alignment: .center) {
-            Image("icon-avatar")  // 边框层，稍微放大以显示边框
+            Image("avatar")  // 边框层，稍微放大以显示边框
                 .resizable()
                 .scaledToFit()
                 .frame(width: 40 - 2, height: 40 - 2)
@@ -512,7 +543,7 @@ struct AvatarStyle_m: ButtonStyle {
                 .scaledToFit()
                 .frame(width: 40 - borderThickness - 2, height: 40 - borderThickness - 2 )
                 .mask(
-                    Image("icon-avatar")
+                    Image("avatar")
                         .resizable()
                         .scaledToFit()
                 )
@@ -521,6 +552,38 @@ struct AvatarStyle_m: ButtonStyle {
             .grayscale(isEnabled ? 0 : 1)
             .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
             .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
+    }
+}
+
+struct AvatarView_m: View {
+    var isEnabled: Bool
+    var profileImage: Image
+    var borderThickness: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .center) {
+            // 边框层（使用底层头像图形）
+            Image("avatar")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 40 - 2, height: 40 - 2)
+                .foregroundColor(.black)
+            // 头像图像层，使用遮罩将其切成相同的形状
+            profileImage
+                .resizable()
+                .scaledToFit()
+                .frame(width: 40 - borderThickness - 2, height: 40 - borderThickness - 2)
+                .mask(
+                    Image("avatar")
+                        .resizable()
+                        .scaledToFit()
+                )
+        }
+        // 这里去掉了点击时的亮度变化、缩放效果
+        .brightness(0)
+        .grayscale(isEnabled ? 0 : 1)
+        .scaleEffect(1.0)
+        .opacity(isEnabled ? 1 : 0.5)
     }
 }
 
@@ -533,7 +596,7 @@ struct AvatarStyle_l: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
         ZStack(alignment: .center) {
-            Image("icon-avatar")  // 边框层，稍微放大以显示边框
+            Image("avatar")  // 边框层，稍微放大以显示边框
                 .resizable()
                 .scaledToFit()
                 .frame(width: 54 - 2, height: 54 - 2)
@@ -544,7 +607,7 @@ struct AvatarStyle_l: ButtonStyle {
                 .scaledToFit()
                 .frame(width: 54 - borderThickness - 2, height: 54 - borderThickness - 2 )
                 .mask(
-                    Image("icon-avatar")
+                    Image("avatar")
                         .resizable()
                         .scaledToFit()
                 )

@@ -14,6 +14,7 @@ struct MediaItemView: View {
     @ObservedObject var mediaItemWrapper: MediaItemWrapper
     var thumbnailImage: UIImage?
     @State private var isPlayingLivePhoto: Bool = false // 控制 Live Photo 的播放
+    @State private var longPressStarted: Bool = false // 添加状态跟踪
 
     var body: some View {
         
@@ -30,9 +31,29 @@ struct MediaItemView: View {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .onLongPressGesture {
-                                    isPlayingLivePhoto.toggle()
-                                }
+                                .onLongPressGesture(
+                                    minimumDuration: 0.8,  // 设置最小长按时间为0.8秒
+                                    maximumDistance: 50,   // 允许的最大移动距离
+                                    pressing: { isPressing in
+                                        // 这个闭包在按下和松开时都会调用
+                                        if isPressing && !longPressStarted {
+                                            // 开始长按
+                                            longPressStarted = true
+                                            // 延迟0.8秒后执行动作
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                                if longPressStarted {
+                                                    isPlayingLivePhoto.toggle()
+                                                }
+                                            }
+                                        } else if !isPressing {
+                                            // 松开手指
+                                            longPressStarted = false
+                                        }
+                                    },
+                                    perform: {
+                                        // 这个闭包在长按成功时调用（可以留空或添加额外逻辑）
+                                    }
+                                )
                             if let livePhoto = mediaItemWrapper.livePhoto, isPlayingLivePhoto {
                                 LivePhotoView(livePhoto: livePhoto)
 //                                    .aspectRatio(contentMode: .fit)
@@ -43,6 +64,16 @@ struct MediaItemView: View {
                                         }
                                     }
                             }
+                            VStack{
+                                HStack{
+                                    LiveBadgeOnPhoto()
+                                        .padding(.horizontal)
+                                    Spacer()
+                                }
+                                .padding(.top, 60)
+                                Spacer()
+                            }
+                            
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .onAppear {

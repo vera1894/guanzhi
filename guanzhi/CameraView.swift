@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 The main user interface for the sample app.
@@ -120,9 +120,11 @@ struct CameraView<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     }
 }
 
+#if DEBUG
 #Preview {
     CameraView(camera: PreviewCameraModel(), appState: AppStateModel())
 }
+#endif
 
 // 定义滑动方向的枚举
 enum SwipeDirection {

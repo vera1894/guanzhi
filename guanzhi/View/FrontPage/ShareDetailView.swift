@@ -37,7 +37,7 @@ struct ShareDetailView: View {
                         }
                     }
                     .tabViewStyle(PageTabViewStyle())
-                    .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
+//                    .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
                     .ignoresSafeArea(.all)
                     .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
                         if selectedIndex >= newCount {
@@ -69,7 +69,7 @@ struct ShareDetailView: View {
                         if dragDistance > threshold {
                             // 根据模式决定退出方式
                             if appState.useOverlayMode {
-                                appState.isShareImageExpanded = false
+                                /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
                             } else {
                                 navigationCoordinator.path.removeLast()
                             }
@@ -106,7 +106,7 @@ struct ShareDetailView: View {
                                 let threshold: CGFloat = 120
                                 if dragDistance > threshold {
                                     if appState.useOverlayMode {
-                                        appState.isShareImageExpanded = false
+                                        /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
                                     } else {
                                         navigationCoordinator.path.removeLast()
                                     }
@@ -122,6 +122,7 @@ struct ShareDetailView: View {
             .ignoresSafeArea()
             .zIndex(3)
         }
+        .navigationBarBackButtonHidden(true)
         .overlay(// 顶部操作栏（仅当isShowShareDetailsCard为true时显示）
             Group {
                 if isShowShareDetailsCard {
@@ -129,7 +130,7 @@ struct ShareDetailView: View {
                         HStack {
                             Button {
                                 if appState.useOverlayMode {
-                                    appState.isShareImageExpanded = false
+                                    /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
                                 } else {
                                     navigationCoordinator.path.removeLast()
                                 }
@@ -158,7 +159,7 @@ struct ShareDetailView: View {
             },
             alignment: .top
         )
-        .overlay(// 底部详情卡片和评论输入区
+        .overlay(
             ZStack {
                 if isShowShareDetailsCard {
                     ShareDetailsCardView(
@@ -224,13 +225,13 @@ struct ShareDetailView: View {
                     )
                     .ignoresSafeArea()
 
-                    CommentContentView(isTieTieEnabled: $isTieTieEnabled)
-                        .zIndex(2)
-                        .ignoresSafeArea()
+//                    CommentContentView(isTieTieEnabled: $isTieTieEnabled)  //评论区 需要等待后端增加功能  收藏、点赞、评论、分享
+//                        .zIndex(2)
+//                        .ignoresSafeArea()
                 }
 
             }
-        )
+        ) // 底部详情卡片和评论输入区
         .background(Color.black.ignoresSafeArea())
         .onAppear {
             selectedIndex = 0
@@ -239,12 +240,16 @@ struct ShareDetailView: View {
             }
         }
         .onDisappear {
-            searchViewModel.isUpdatingAnnotations = false
-            searchViewModel.selectedAnnotation = nil
-            searchViewModel.selectedAnnotationID = nil
-            searchViewModel.selectedAnnotationImage = nil
-            appState.isShowingSearchView = true
-            appState.isShowingShowMarker = true
+            if navigationCoordinator.path.isEmpty {
+                withAnimation(.easeInOut) {
+                    appState.isShowingSearchView = true
+                    appState.isShowingShowMarker = true
+                }
+                searchViewModel.isUpdatingAnnotations = false
+                searchViewModel.selectedAnnotation = nil
+                searchViewModel.selectedAnnotationID = nil
+                searchViewModel.selectedAnnotationImage = nil
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 searchViewModel.cleandownloadMedia()
             }

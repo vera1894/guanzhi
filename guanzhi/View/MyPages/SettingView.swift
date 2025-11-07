@@ -11,14 +11,20 @@ struct SettingView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @State private var isLoggingout = false
-
+    @State private var showAgreement = false
+    
     var items = [
         "账号与绑定",
-        "隐私政策",
+        "用户协议与隐私政策",
         "清理缓存",
         "退出登录",
         "系统版本"
     ]
+
+    // 添加一个计算属性来获取版本信息
+    private var versionInfo: String {
+        return AppVersionManager.fullVersionInfo
+    }
 
     var body: some View {
         List {
@@ -26,17 +32,24 @@ struct SettingView: View {
                 HStack {
                     Text(item)
                     Spacer()
-                    Button(action: {
-                        // 添加按钮点击的操作
-                        handleAction(for: item)
-                    }) {
-                        Image(systemName: "chevron.right")
-                            .imageScale(.small) // 设置箭头图标
+                    
+                    // 为系统版本项显示版本信息
+                    if item == "系统版本" {
+                        Text(versionInfo)
+                            .foregroundColor(.gray)
+                            .font(.footnote)
+                    } else {
+                        Button(action: {
+                            handleAction(for: item)
+                        }) {
+                            Image(systemName: "chevron.right")
+                                .imageScale(.small)
+                        }
                     }
                 }
             }
         }
-        .listStyle(PlainListStyle())
+//        .listStyle(PlainListStyle())
         .navigationBarTitle("设置", displayMode: .inline)
         .navigationBarItems(
             leading:
@@ -64,23 +77,64 @@ struct SettingView: View {
         }, message: {
             Text("要退出登录吗？")
         })
+        .sheet(isPresented: $showAgreement) {
+            UserAgreementView()
+        }
     }
 
     // 根据不同的列表项执行操作
     func handleAction(for item: String) {
         switch item {
         case "账号与绑定":
-            print("账号与绑定功能触发")
-        case "隐私政策":
-            print("打开隐私政策")
+            navigationCoordinator.path.append(Route.accountManagementView)
+        case "用户协议与隐私政策":
+            showAgreement = true  // 显示用户协议 sheet
         case "清理缓存":
             print("清理缓存中...")
         case "退出登录":
             isLoggingout.toggle()
         case "系统版本":
-            print("当前系统版本为 iOS 17.0")
+            // 不需要特别的操作，因为版本信息已经显示在列表中
+            break
         default:
             break
+        }
+    }
+}
+
+// 新增的用户协议视图
+struct UserAgreementView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var agreementText = ""
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(agreementText)
+                        .padding()
+                }
+            }
+            .navigationBarTitle("用户协议与隐私政策", displayMode: .inline)
+            .navigationBarItems(
+                trailing:
+                    Button{
+                        //关闭按钮-圆形
+                        dismiss()
+                    }label: {
+                        Image("icon-close")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+            )
+            .onAppear {
+                // 加载协议文本
+                if let path = Bundle.main.path(forResource: "UserAgreement", ofType: "txt"),
+                   let content = try? String(contentsOfFile: path, encoding: .utf8) {
+                    agreementText = content
+                } else {
+                    agreementText = "无法加载用户协议内容"
+                }
+            }
         }
     }
 }

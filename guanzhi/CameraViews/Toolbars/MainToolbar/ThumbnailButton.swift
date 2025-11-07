@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A view that displays a thumbnail of the last captured media.
@@ -40,6 +40,8 @@ struct ThumbnailButton<CameraModel: Camera>: View {
     }
 }
 
+#if DEBUG
 #Preview("Photo") {
     ThumbnailButton(camera: PreviewCameraModel(captureMode: .photo))
 }
+#endif

@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A view that displays an appropriate capture button for the selected capture mode.
@@ -45,6 +45,7 @@ struct CaptureButton<CameraModel: Camera, AppStateModel: AppState>: View {
     }
 }
 
+#if DEBUG
 #Preview("Photo") {
     CaptureButton(camera: PreviewCameraModel(captureMode: .photo), appState: AppStateModel())
 }
@@ -52,6 +53,7 @@ struct CaptureButton<CameraModel: Camera, AppStateModel: AppState>: View {
 #Preview("Video") {
     CaptureButton(camera: PreviewCameraModel(captureMode: .video), appState: AppStateModel())
 }
+#endif
 
 /// 拍照按钮的视图结构。
 private struct PhotoCaptureButton: View {

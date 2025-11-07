@@ -1,5 +1,5 @@
 //
-//  ResultCardView.swift
+//  HelpCardView.swift
 //  guanzhi
 //
 //  Created by 晨光 訾 on 2024/7/17.
@@ -75,8 +75,9 @@ struct HelpCardView: View {
                 .buttonStyle(ButtonStyle_capsuleFillSecondary(isEnabled: true))
         }
         .padding()
-        // 3 工作表视图有两种可能的尺寸：小尺寸（200 点高）和大尺寸（默认尺寸）
-        .presentationDetents([.height(400), .large])
+        // iOS 26 适配：使用 Constants.sheetExpandedFraction 替代 .large 确保填满屏幕
+        .presentationDetents([.height(400), .fraction(Constants.sheetExpandedFraction)])
+        .presentationCornerRadius(Constants.sheetCornerRadius)
     }
 }
 

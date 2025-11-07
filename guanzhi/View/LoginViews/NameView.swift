@@ -14,6 +14,7 @@ struct nameView: View {
     @State var next =  false
     
     @ObservedObject var userlogin : UserLoginModel
+    @Namespace private var fallbackNamespace
     @Environment(\.presentationMode) var presentationMode
     @State private var showNotice = false
     @State private var isLoading = false
@@ -83,7 +84,7 @@ struct nameView: View {
                             .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: userlogin.nickName.count != 0))
                             .disabled(!(userlogin.nickName.count != 0))
                             .navigationDestination(isPresented: $next) {
-                                SearchView(userlogin: UserLoginModel()/*, appState: AppStateModel()*//*, locationManager: LocationManager(), searchViewModel: SearchViewModel(/*appState: AppStateModel()*/)*/)
+                                SearchView(animationNamespace: fallbackNamespace, userlogin: UserLoginModel())
                                     .environment(\.appState, AppStateModel())
                                     .environmentObject(LocationManager())
                                     .environmentObject(SearchViewModel())

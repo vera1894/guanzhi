@@ -10,20 +10,22 @@ import MapKit
 
 struct SearchView: View {
     
-    let useOverlay = true // true: 使用overlay, false: 使用navigationDestination 显示分享详情
+    let useOverlay = false // true: 使用overlay, false: 使用navigationDestination 显示分享详情
+    var animationNamespace: Namespace.ID
     @Namespace var mapScope
-    @Namespace private var animationNamespace
+//    @Namespace private var animationNamespace
     @ObservedObject var userlogin : UserLoginModel
     @Environment(\.appState) var appState
     @EnvironmentObject var locationManager: LocationManager
     @Environment(\.modelContext) private var context
     @EnvironmentObject var searchViewModel: SearchViewModel
-//    @StateObject var searchViewModel = SearchViewModel()
-    @StateObject var navigationCoordinator = NavigationCoordinator()
     @EnvironmentObject var toastManager: ToastManager
+    @EnvironmentObject var userProfileManager: UserProfileManager
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+//    @StateObject var navigationCoordinator = NavigationCoordinator()
     
-    @State private var detents: Set<PresentationDetent> = [.height(60), .large]
-    @State private var currentDetent: PresentationDetent = .height(60) // 用于跟踪当前 SheetView 的高度
+    @State private var detents: Set<PresentationDetent> = [.height(Constants.sheetCollapsedHeight), .fraction(Constants.sheetExpandedFraction)]
+    @State private var currentDetent: PresentationDetent = .height(Constants.sheetCollapsedHeight) // 用于跟踪当前 SheetView 的高度
     @State private var image: UIImage?
 
     @State private var annotations: [MKAnnotation] = []
@@ -40,12 +42,12 @@ struct SearchView: View {
                 // 显示登录页面
                 LogInView(userlogin: userlogin)
             } else {
-                NavigationStack(path: $navigationCoordinator.path) {
+//                NavigationStack(path: $navigationCoordinator.path) {
                     ZStack{
                         Map(position: $position,interactionModes: .all) {
-                            if !appState.isShareImageExpanded {
+                            if !searchViewModel.isShareDetailOverlayShown/*appState.isShareImageExpanded*/ {
                                 ForEach(searchViewModel.annotations, id: \.id) { annotation in
-                                    Annotation(annotation.title ?? "", coordinate: annotation.coordinate) {
+                                    Annotation("", coordinate: annotation.coordinate, anchor: .bottom) {
                                         MapAnnotationView(
                                             animationNamespace: animationNamespace,
                                             annotation: annotation,
@@ -55,10 +57,11 @@ struct SearchView: View {
                                                 withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.4)) {
                                                         appState.isShowingSearchView = false
                                                     if appState.useOverlayMode {
-                                                            appState.isShareImageExpanded.toggle()  // 启用overlay模式
-                                                        } else {
-                                                            navigationCoordinator.path.append(Route.shareDetailView(annotationID: annotation.id)) // 导航模式
-                                                        }
+                                                        /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = true  // 启用overlay模式
+                                                        print("searchViewModel.isShareDetailOverlayShown 为 \(searchViewModel.isShareDetailOverlayShown)")
+                                                    } else {
+                                                        navigationCoordinator.path.append(Route.shareDetailView(annotationID: annotation.id)) // 导航模式
+                                                    }
                                                     }
                                             }
                                         )
@@ -67,16 +70,23 @@ struct SearchView: View {
                                         .environmentObject(searchViewModel)
                                         .id(annotation.id)
                                     }
+                                    
                                 }
                             }
                             ForEach(locationMarkers) { marker in
                                     Marker(marker.title ?? "", coordinate: marker.coordinate)
                                 }
                             UserAnnotation()
+                            
+//                            MainMapContent(
+//                                    searchViewModel: searchViewModel,
+//                                    locationMarkers: locationMarkers,
+//                                    animationNamespace: animationNamespace
+//                                )
                         }
                         .mapScope(mapScope)
                         .coordinateSpace(name: "shared")
-                        .disabled(appState.isShareImageExpanded)
+                        .disabled(/*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .mapStyle(.standard(elevation: .realistic))
                         .ignoresSafeArea(.all)
@@ -143,7 +153,9 @@ struct SearchView: View {
                                 .environmentObject(searchViewModel)
                                 .environmentObject(locationManager)
                                 .environmentObject(navigationCoordinator)
+                                .transition(.move(edge: .trailing))
                             }
+
                         }
                         .sheet(isPresented: $appState.isShowingSearchView) { // 显示 SheetView
                             SheetView(
@@ -160,9 +172,17 @@ struct SearchView: View {
                                     searchViewModel.region.center = coordinate
                                 }
                             )
+                            // iOS 26 修复：移除 .id(UUID()) 以保持视图状态和 presentationDetents
                             .environment(appState)
                             .environmentObject(searchViewModel)
-                            .animation(.spring(), value: appState.isShowingSearchView)
+                            .presentationDetents([.height(Constants.sheetCollapsedHeight), .fraction(Constants.sheetExpandedFraction)], selection: $currentDetent)
+                            .presentationDragIndicator(.hidden)
+                            .presentationCornerRadius(Constants.sheetCornerRadius)
+                            .presentationBackground(.regularMaterial)
+                            .presentationBackgroundInteraction(.enabled)
+                            .presentationContentInteraction(.scrolls)
+                            .interactiveDismissDisabled()
+                            .presentationCompactAdaptation(.none)
                         }
                         .sheet(isPresented: $appState.isShowingResultCardView) {  // 显示 ResultCardView
                             ResultCardView(
@@ -174,7 +194,7 @@ struct SearchView: View {
                                     appState.isShowingShowMarker = false
                                     appState.isShowingSearchView = true
                                     appState.isShowingResultCardView = false
-                                    currentDetent = .height(60)
+                                    currentDetent = .height(Constants.sheetCollapsedHeight)
                                 }
                             )
                             .environment(appState)
@@ -187,36 +207,38 @@ struct SearchView: View {
                             CameraViewWrapper(appState: appState)
                         }
                         
-                        //显示分享详情
-                        if appState.isShareImageExpanded {
-                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: searchViewModel.selectedAnnotationID ?? "")
-                                .environment(appState)
-                                .environmentObject(searchViewModel)
-                                .transition(.move(edge: .bottom))
-                        }
+//                        //显示分享详情
+//                        if appState.isShareImageExpanded {
+//                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: searchViewModel.selectedAnnotationID ?? "")
+//                                .environment(appState)
+//                                .environmentObject(searchViewModel)
+//                                .transition(.move(edge: .bottom))
+//                        }
                         
                     } //ZStack
-                    .navigationDestination(for: Route.self) { route in
-                        switch route {
-                        case .myView:
-                            MyView()
-                                .environment(appState)
-                                .environmentObject(navigationCoordinator)
-                        case .settingView:
-                            SettingView()
-                                .environment(appState)
-                                .environmentObject(navigationCoordinator)
-                        case .shareDetailView(let annotationID):
-                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: annotationID)
-                                .environment(appState)
-                                .environmentObject(searchViewModel)
-                                .environmentObject(navigationCoordinator)
-                                .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace)
-                        }
-                    }
+//                    .navigationDestination(for: Route.self) { route in
+//                        switch route {
+//                        case .myView:
+//                            MyView()
+//                                .environment(appState)
+//                                .environmentObject(navigationCoordinator)
+//                                .environmentObject(userProfileManager)
+//                                .environmentObject(searchViewModel)
+//                        case .settingView:
+//                            SettingView()
+//                                .environment(appState)
+//                                .environmentObject(navigationCoordinator)
+//                        case .shareDetailView(let annotationID):
+//                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: annotationID)
+//                                .environment(appState)
+//                                .environmentObject(searchViewModel)
+//                                .environmentObject(navigationCoordinator)
+//                                .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace)
+//                        }
+//                    }
 //                    .toolbar(appState.isShareImageExpanded ? .visible : .hidden, for: .navigationBar)
                     .toolbar(.hidden, for: .navigationBar)
-                } //NavStack
+//                } //NavStack
                 .environmentObject(navigationCoordinator)
                 .ignoresSafeArea(.all)
                 .onChange(of: appState.isPushedGuanzhi) { oldValue, newValue in
@@ -237,19 +259,39 @@ struct SearchView: View {
                 searchViewModel.locationManager = locationManager
                 searchViewModel.initializeData()
             }
+            if userProfileManager.context == nil {
+                    userProfileManager.context = context
+                }
+
+            // 初始化用户信息和头像
+            let myUserId = OTOLoginStatusManager.shared.getUserID()
+            Task {
+                do {
+                    try await userProfileManager.fetchUserFullInfo(userId: myUserId)
+                    // 确保在主线程初始化头像
+                    await MainActor.run {
+                        userProfileManager.initializeAvatar()
+                    }
+                } catch {
+                    print("在 SearchView 里拉取本机用户信息报错：\(error)")
+                }
+            }
         }
 //        .disabled(appState.isShareImageExpanded)
         .task{
             locationManager.requestLocation()
-            let newItem = ToastItem(style: .notificationOfWelcome(
-                title: "🌍世界虽大 吾可观之👀",
-                symbol: "",
-                tint: Color("color-primary"),
-                isUserInteractionEnabled: true,
-                timing: .medium,
-                isAutoClose: true
-            ))
-            toastManager.show(newItem)
+            if !appState.didShowWelcomeToast {
+                appState.didShowWelcomeToast = true
+                let newItem = ToastItem(style: .notificationOfWelcome(
+                    title: "🌍世界虽大 吾可观之👀",
+                    symbol: "",
+                    tint: Color("color-primary"),
+                    isUserInteractionEnabled: true,
+                    timing: .medium,
+                    isAutoClose: true
+                ))
+                toastManager.show(newItem)
+            }
         }
         
     }
@@ -298,39 +340,27 @@ struct SearchView: View {
 
 //===================================
 
-struct Previews: PreviewProvider {
+struct SearchView_Previews: PreviewProvider {
+    @Namespace static var animationNamespace
+    
     static var previews: some View {
-        SearchView(userlogin: UserLoginModel())
+        // 通过调用 login(token:) 方法来模拟登录状态
+        OTOLoginStatusManager.shared.login(token: "test_token")
+        
+        return SearchView(animationNamespace: animationNamespace, userlogin: UserLoginModel())
             .environment(\.appState, AppStateModel())
             .environmentObject(LocationManager())
             .environmentObject(SearchViewModel())
             .environmentObject(ToastManager())
+            .environmentObject(UserProfileManager())
+            .environmentObject(NavigationCoordinator())
     }
 }
+
 //===================================
 
 
-//右滑返回
-extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
-    override open func viewDidLoad() {
-        super.viewDidLoad()
-        interactivePopGestureRecognizer?.delegate = self
-    }
-    
-    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        return viewControllers.count > 1
-    }
-}
 
-extension UserDefaults {
-    func contains(key: String) -> Bool {
-        return self.object(forKey: key) != nil
-    }
-}
 
-struct LocationMarker: Identifiable {
-    let id = UUID()
-    let coordinate: CLLocationCoordinate2D
-    let title: String?
-}
+
 

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="北京好鲜达科技有限公司 - 专注于农业与旅行服务的数字化平台">
+  <title>北京好鲜达科技有限公司</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1 class="company-name">北京好鲜达科技有限公司</h1>
+      <p class="company-subtitle">农业与旅行服务数字化平台</p>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="content">
+      <!-- 提示信息 -->
+      <div id="alert-message" class="alert hidden"></div>
+
+      <!-- 未登录：登录表单 -->
+      <div id="login-section">
+        <h2 class="form-title" id="form-title">账户登录</h2>
+        <p class="form-subtitle" id="form-subtitle">请使用手机号登录，与观之 App 账户互通</p>
+
+        <!-- 手机号输入 -->
+        <div id="phone-step">
+          <div class="form-group">
+            <label class="form-label" for="phone">手机号</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              class="form-input" 
+              placeholder="请输入11位手机号"
+              maxlength="11"
+              inputmode="numeric"
+              autocomplete="tel"
+            >
+          </div>
+          <button id="send-code-btn" class="btn btn-primary">发送验证码</button>
+        </div>
+
+        <!-- 验证码输入 -->
+        <div id="code-step" class="hidden">
+          <div class="form-group">
+            <label class="form-label" for="phone-display">手机号</label>
+            <input 
+              type="text" 
+              id="phone-display" 
+              class="form-input" 
+              readonly
+            >
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="code">验证码</label>
+            <div class="input-group">
+              <input 
+                type="text" 
+                id="code" 
+                class="form-input" 
+                placeholder="请输入验证码"
+                maxlength="6"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+              >
+              <button id="resend-code-btn" class="btn btn-secondary">重新发送</button>
+            </div>
+          </div>
+          <button id="verify-code-btn" class="btn btn-primary">登录</button>
+          <button id="back-to-phone-btn" class="btn btn-ghost">返回</button>
+        </div>
+
+        <!-- 注册表单 -->
+        <div id="register-step" class="hidden">
+          <div class="form-group">
+            <label class="form-label" for="nickname">昵称</label>
+            <input 
+              type="text" 
+              id="nickname" 
+              class="form-input" 
+              placeholder="请输入昵称（支持中英文数字）"
+              maxlength="32"
+            >
+          </div>
+          <button id="register-btn" class="btn btn-primary">完成注册</button>
+          <button id="back-to-code-btn" class="btn btn-ghost">返回</button>
+        </div>
+      </div>
+
+      <!-- 已登录：业务咨询 -->
+      <div id="logged-in-section" class="hidden">
+        <div class="welcome-section">
+          <div class="welcome-name" id="welcome-text">您好！</div>
+        </div>
+
+        <div class="business-card">
+          <h3>业务咨询</h3>
+          <p>
+            我们致力于为农业生产者和旅行服务商提供专业的数字化解决方案。
+            通过创新技术连接田园与远方，助力农旅融合发展。
+            无论您是在寻找智慧农业管理系统，还是需要旅游目的地运营支持，
+            我们都期待与您携手，共创美好未来。
+          </p>
+          <a href="mailto:captainzi@qq.com" class="email-link">📧 captainzi@qq.com</a>
+        </div>
+
+        <button id="logout-btn" class="btn btn-ghost">退出登录</button>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+      <p>© 2025 北京好鲜达科技有限公司 · <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">京ICP备2024054180号</a></p>
+    </div>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
+

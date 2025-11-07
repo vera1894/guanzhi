@@ -26,36 +26,58 @@ struct OTONetwork {
             print("请求参数: \(req.request.param)")
 
             guard let url = URL(string: "\(Constants.BASE_HOST)\(req.request.path)") else {
-                print("无效的 URL")
+                print("❌ 无效的 URL")
                 throw OTONetworkError.badURL
             }
+            print("完整 URL: \(url.absoluteString)")
+            
             var request = URLRequest(url: url)
             request.httpMethod = req.request.method.rawValue
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
             if OTOLoginStatusManager.shared.isLoggedIn, let token = OTOLoginStatusManager.shared.getToken() {
                 request.setValue(token, forHTTPHeaderField: "Authorization")
-                print(token)
+                print("🔑 Authorization Token: \(token)")
+            } else {
+                print("⚠️ 未登录或没有 Token")
             }
+            
             request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
 
+            print("📤 发送请求中...")
             let (data, response) = try await URLSession.shared.data(for: request)
 
             if let httpResponse = response as? HTTPURLResponse {
-                print("HTTP 状态码: \(httpResponse.statusCode)")
+                print("📥 HTTP 状态码: \(httpResponse.statusCode)")
+                print("📥 响应头: \(httpResponse.allHeaderFields)")
+                
                 if httpResponse.statusCode != 200 {
-                    if let errorResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let errorMsg = errorResponse["error"] as? String {
-                        throw OTONetworkError.customError(errorMsg)
+                    print("❌ 服务器返回非 200 状态码")
+                    if let errorResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        print("❌ 错误响应: \(errorResponse)")
+                        if let errorMsg = errorResponse["error"] as? String {
+                            throw OTONetworkError.customError(errorMsg)
+                        }
+                        // 也检查 respMsg 字段
+                        if let respMsg = errorResponse["respMsg"] as? String {
+                            throw OTONetworkError.customError(respMsg)
+                        }
                     }
                     throw OTONetworkError.badRequest
                 }
             }
 
             if let responseString = String(data: data, encoding: .utf8) {
-                print("返回数据: \(responseString)")  // 返回数据在控制台的显示
+                print("✅ 返回数据: \(responseString)")
             }
+            print("=============请求结束=============\n")
             return data
+        } catch let error as OTONetworkError {
+            print("❌ OTONetworkError: \(error)")
+            throw error
         } catch {
+            print("❌ 网络请求异常: \(error.localizedDescription)")
+            print("❌ 错误详情: \(error)")
             throw error
         }
     }

@@ -21,9 +21,30 @@ struct LiveBadge: View {
     }
 }
 
+struct LiveBadgeOnPhoto: View {
+    var body: some View {
+        Group {
+            HStack{
+                Image(systemName: "livephoto")
+                Text("实况 ")
+            }
+            .padding(3)
+            .foregroundColor(.black.opacity(0.8))
+            .font(.subheadline.bold())
+        }
+        .background(Color("color-primary").opacity(0.8))
+        .clipShape(.buttonBorder)
+    }
+}
+
 #Preview {
     LiveBadge()
         .padding()
         .background(.black)
 }
 
+#Preview {
+    LiveBadgeOnPhoto()
+        .padding()
+        .background(.black)
+}

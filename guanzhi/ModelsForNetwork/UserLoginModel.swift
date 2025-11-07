@@ -12,6 +12,12 @@ fileprivate let loginTokenKey = "loginTokenKey"
 
 struct EmptyData: Codable {}
 
+extension UserDefaults {
+    func contains(key: String) -> Bool {
+        return self.object(forKey: key) != nil
+    }
+}
+
 class UserLoginModel: ObservableObject {
     @Published var phone: String = ""{
         didSet{
@@ -43,21 +49,29 @@ class UserLoginModel: ObservableObject {
     func sendCode(phNumber: String) {
             DispatchQueue.main.async {
                 Task {
-                    guard let data = try? await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber)) else {
-                        return
-                    }
-                    print(data)
+                    print("📱 开始发送验证码到: \(phNumber)")
                     do {
+                        let data = try await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber))
+                        print("📱 成功接收发送验证码响应")
+                        
                         let decoder = JSONDecoder()
                         let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
                         
+                        print("📱 respCode: \(response.respCode)")
+                        print("📱 respMsg: \(response.respMsg ?? "无消息")")
+                        
                         if response.respCode == 0 {
-                            print("请求成功")
+                            print("✅ 验证码发送成功")
                             self.sendStatus = true
+                        } else {
+                            print("❌ 验证码发送失败")
                         }
                         self.noticeText = response.respMsg ?? ""
                     } catch {
-                        print("Error decoding JSON: \(error)")
+                        print("❌ 发送验证码失败")
+                        print("❌ 错误类型: \(type(of: error))")
+                        print("❌ 错误信息: \(error.localizedDescription)")
+                        print("❌ 错误详情: \(error)")
                     }
                 }
             }
@@ -101,29 +115,38 @@ class UserLoginModel: ObservableObject {
             }else{
                 DispatchQueue.main.async {
                         Task {
-                            guard let data = try? await OTONetwork.request(.Register(phoneNumber: self.phone, nickName: self.nickName)) else { return }
-                            print("注册结果", data)
-                            
+                            print("📝 开始注册，手机号: \(self.phone), 昵称: \(self.nickName)")
                             do {
+                                let data = try await OTONetwork.request(.Register(phoneNumber: self.phone, nickName: self.nickName))
+                                print("📝 成功接收注册响应")
+                                
                                 let decoder = JSONDecoder()
                                 let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
+                                
+                                print("📝 respCode: \(response.respCode)")
+                                print("📝 respMsg: \(response.respMsg ?? "无消息")")
+                                
                                 if response.respCode == 0 {
-                                    print("注册成功")
+                                    print("✅ 注册成功")
                                     self.namePassed = true
                                     if let tokenString = response.datas {
                                         self.header = "Bearer " + tokenString
-                                        print("注册令牌：", self.header)
+                                        print("🔑 注册令牌：\(self.header)")
                                         OTOLoginStatusManager.shared.login(token: self.header)
                                         // 获取用户信息，保存用户ID
                                         self.getUserInfo()
                                     } else {
-                                        print("datas 不是一个字符串")
+                                        print("⚠️ datas 不是一个字符串或为 nil")
                                     }
                                 } else {
+                                    print("❌ 注册失败，respCode: \(response.respCode)")
                                     self.noticeText = response.respMsg ?? ""
                                 }
                             } catch {
-                                print("解析错误: \(error)")
+                                print("❌ 注册失败")
+                                print("❌ 错误类型: \(type(of: error))")
+                                print("❌ 错误信息: \(error.localizedDescription)")
+                                print("❌ 错误详情: \(error)")
                             }
                         }
                     }
@@ -135,28 +158,40 @@ class UserLoginModel: ObservableObject {
     func getUserInfo(){
         DispatchQueue.main.async {
             Task {
-                guard let data = try? await OTONetwork.request(.userInfo) else {
-                    return
-                }
-                print(data)
+                print("👤 开始获取用户信息...")
                 do {
+                    let data = try await OTONetwork.request(.userInfo)
+                    print("👤 成功接收用户信息数据")
+                    
                     let decoder = JSONDecoder()
                     let response = try decoder.decode(OTOResponseModel<dataModel>.self, from: data)
+                    
+                    print("👤 respCode: \(response.respCode)")
+                    print("👤 respMsg: \(response.respMsg ?? "无消息")")
+                    
                     if response.respCode == 0 {
                         if let datas = response.datas {
                             self.userName = datas.nickname ?? "用户"
                             self.userId = datas.id ?? -1
-                            print("请求成功")
-                            print("获取userId", self.userId)
+                            print("✅ 请求成功")
+                            print("✅ 用户昵称: \(self.userName)")
+                            print("✅ 用户ID: \(self.userId)")
                             
                             // 保存用户ID到 OTOLoginStatusManager
                             OTOLoginStatusManager.shared.setUserID(self.userId)
+                        } else {
+                            print("⚠️ datas 为 nil")
                         }
+                    } else {
+                        print("❌ 请求失败，respCode: \(response.respCode)")
                     }
                     self.noticeText = response.respMsg ?? ""
                     
                 } catch {
-                    print("Error decoding JSON: \(error)")
+                    print("❌ 获取用户信息失败")
+                    print("❌ 错误类型: \(type(of: error))")
+                    print("❌ 错误信息: \(error.localizedDescription)")
+                    print("❌ 错误详情: \(error)")
                 }
             }
         }
@@ -174,22 +209,27 @@ class OTOLoginStatusManager {
     }
 
     func updateLoginStatus() {
-        if let _ = UserDefaults.standard.string(forKey: loginTokenKey) {
+        if let token = UserDefaults.standard.string(forKey: loginTokenKey) {
             isLoggedIn = true
-            print("isLoggedIn: 已登录")
+            print("✅ OTOLoginStatusManager: 已登录")
+            print("🔑 当前 Token: \(token)")
         } else {
             isLoggedIn = false
+            print("⚠️ OTOLoginStatusManager: 未登录，没有找到 Token")
         }
     }
 
     func logout() {
         UserDefaults.standard.removeObject(forKey: loginTokenKey)
         UserDefaults.standard.removeObject(forKey: "userId")  // 移除用户ID
+        print("👋 OTOLoginStatusManager: 已登出")
         updateLoginStatus()
     }
 
     func login(token: String) {
         UserDefaults.standard.set(token, forKey: loginTokenKey)
+        print("✅ OTOLoginStatusManager: 保存 Token 成功")
+        print("🔑 Token: \(token)")
         updateLoginStatus()
     }
     
@@ -198,15 +238,24 @@ class OTOLoginStatusManager {
     }
 
     func getToken() -> String? {
-        return UserDefaults.standard.string(forKey: loginTokenKey)
+        let token = UserDefaults.standard.string(forKey: loginTokenKey)
+        if let token = token {
+            print("🔑 OTOLoginStatusManager: 获取 Token: \(token)")
+        } else {
+            print("⚠️ OTOLoginStatusManager: Token 不存在")
+        }
+        return token
     }
     
     func getUserID() -> Int {
-        return UserDefaults.standard.integer(forKey: "userId")
+        let userId = UserDefaults.standard.integer(forKey: "userId")
+        print("👤 OTOLoginStatusManager: 获取 UserID: \(userId)")
+        return userId
     }
     
     func setUserID(_ userId: Int) {
         UserDefaults.standard.set(userId, forKey: "userId")
+        print("✅ OTOLoginStatusManager: 保存 UserID: \(userId)")
     }
 }
 

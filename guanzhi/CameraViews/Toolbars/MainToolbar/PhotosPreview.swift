@@ -139,8 +139,9 @@ struct CapturedThumbnailButton: ButtonStyle {
     }
 }
 
-
+#if DEBUG
 #Preview {
     PhotosPreview(camera: PreviewCameraModel(), appState: AppStateModel())
 }
+#endif
 

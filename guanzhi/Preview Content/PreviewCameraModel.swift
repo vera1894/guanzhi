@@ -1,5 +1,6 @@
+#if DEBUG
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A Camera implementation to use when working with SwiftUI previews.
@@ -159,3 +160,4 @@ class PreviewCameraModel: Camera {
         }
     }
 }
+#endif

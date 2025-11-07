@@ -81,3 +81,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     
 }
+
+
+struct LocationMarker: Identifiable {
+    let id = UUID()
+    let coordinate: CLLocationCoordinate2D
+    let title: String?
+}

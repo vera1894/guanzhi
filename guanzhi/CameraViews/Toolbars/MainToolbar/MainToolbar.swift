@@ -1,5 +1,5 @@
 /*
-See the LICENSE.txt file for this sample’s licensing information.
+See the LICENSE.txt file for this sample's licensing information.
 
 Abstract:
 A view that displays controls to capture, switch cameras, and view the last captured media item.
@@ -110,7 +110,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 }
                 Spacer()
                 
-                if appState.isReadyToPost == true { //改改改改改改改改改改改改
+                if appState.isReadyToPost == true { //改改改改改改改改改改改改改
                     VStack(spacing: 16) {
                         HStack {
                             Text("📍" + (isLocationAvailable ? locatedPositionName : "地点获取中..."))
@@ -582,9 +582,11 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     
 }
 
+#if DEBUG
 #Preview {
     Group {
         MainToolbar(camera: PreviewCameraModel(), appState: AppStateModel())
             .background(Color.blue)
     }
 }
+#endif

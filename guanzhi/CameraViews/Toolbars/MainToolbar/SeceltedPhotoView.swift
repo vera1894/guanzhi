@@ -110,8 +110,10 @@ struct LivePhotoView: UIViewRepresentable {
     }
 }
 
+#if DEBUG
 #Preview {
     Group {
         SeceltedPhotoView(camera: PreviewCameraModel(), appState: AppStateModel())
     }
 }
+#endif

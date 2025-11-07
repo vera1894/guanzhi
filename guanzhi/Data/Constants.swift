@@ -11,7 +11,7 @@ import SwiftUI
 struct Constants{
     static let spacingSpacingXs: CGFloat = 8
     static let spacingSpacingM: CGFloat = 16
-    static let iconSizeXl: CGFloat = 64
+    static let iconSizeXl: CGFloat = 80
     static let iconSizeL: CGFloat = 40
     static let iconSizeS: CGFloat = 24
     static let spacingSpacing0: CGFloat = 0
@@ -21,6 +21,11 @@ struct Constants{
     static let heightHeightL: CGFloat = 54
     static let heightHeightM: CGFloat = 40
     static let cornerRCornerRM: CGFloat = 20
+    
+    // Sheet 相关常量
+    static let sheetCollapsedHeight: CGFloat = 72  // Sheet 折叠时的高度
+    static let sheetExpandedFraction: CGFloat = 0.95  // Sheet 展开时占屏幕的比例
+    static let sheetCornerRadius: CGFloat = 40  // Sheet 的圆角半径
     
     static let mainPrimaryWhite: Color = .white
     static let strokeStrokeBlack: Color = .black

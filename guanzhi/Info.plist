@@ -9,6 +9,12 @@
 		<string>en</string>
 		<string>zh_CN</string>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>iosamap</string>
+		<string>baidumap</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -18,11 +24,5 @@
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<true/>
 	</dict>
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>comgooglemaps</string>
-        <string>iosamap</string>
-        <string>baidumap</string>
-    </array>
 </dict>
 </plist>

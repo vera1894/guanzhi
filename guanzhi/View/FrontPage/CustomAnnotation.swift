@@ -52,7 +52,7 @@ struct MapAnnotationView: View {
     @State private var variableValue: Double = 0.0
     @State private var isPressed: Bool = false
     var isExpanded: Bool {
-            (annotation.id == searchViewModel.selectedAnnotationID) && appState.isShareImageExpanded
+            (annotation.id == searchViewModel.selectedAnnotationID) && /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown
         }
 //    @StateObject private var viewModel: MapAnnotationViewModel
     var onTap: (UIImage?) -> Void
@@ -65,7 +65,7 @@ struct MapAnnotationView: View {
     
     var body: some View {
         ZStack(alignment: .center) {
-            if !appState.isShareImageExpanded {
+            if !searchViewModel.isShareDetailOverlayShown/*appState.isShareImageExpanded*/ {
                 Image("icon-position")
                     .frame(width: 24, height: 33)
                     .offset(y: 32)
@@ -78,7 +78,7 @@ struct MapAnnotationView: View {
                     .clipShape(Circle())
                     .frame(width: 64, height: 64)
                     .overlay(Circle().stroke(Color.black, lineWidth: 4))
-                    .matchedGeometryEffect(id: "sharedElement\(annotation.id)", in: animationNamespace, isSource: true)
+//                    .matchedGeometryEffect(id: "sharedElement\(annotation.id)", in: animationNamespace, isSource: true)
             } else {
                 // 显示占位图或加载指示器
                 Image(systemName: "timelapse", variableValue: variableValue)
@@ -187,30 +187,27 @@ struct OffsetKey: PreferenceKey {
 
 
 
-
-
-
-struct SharedImageView: View {
-    let image: UIImage
-    let isExpanded: Bool
-    let animationNamespace: Namespace.ID
-    let id: String
-
-    var body: some View {
-        
-        Image(uiImage: image)
-            .resizable()
-            .aspectRatio(contentMode: isExpanded ? .fit : .fill)
-            .clipShape(isExpanded ? AnyShape(Rectangle()) : AnyShape(Circle()))
-            .ignoresSafeArea(.all)
-            .frame(width: isExpanded ? UIScreen.main.bounds.width : 64,
-                   height: isExpanded ? UIScreen.main.bounds.height : 64)
-            .overlay(
-                Circle().stroke(Color.black.opacity(isExpanded ? 0 : 1), lineWidth: isExpanded ? 0 : 4)
-            )
-//            .matchedGeometryEffect(id: "image-\(id)", in: animationNamespace, anchor: .center, isSource: true)
-            .onAppear {
-                print("SharedImageView matchedGeometryEffect id: image-\(id), namespace: \(animationNamespace)")
-            }
-    }
-}
+//struct SharedImageView: View {
+//    let image: UIImage
+//    let isExpanded: Bool
+//    let animationNamespace: Namespace.ID
+//    let id: String
+//
+//    var body: some View {
+//        
+//        Image(uiImage: image)
+//            .resizable()
+//            .aspectRatio(contentMode: isExpanded ? .fit : .fill)
+//            .clipShape(isExpanded ? AnyShape(Rectangle()) : AnyShape(Circle()))
+//            .ignoresSafeArea(.all)
+//            .frame(width: isExpanded ? UIScreen.main.bounds.width : 64,
+//                   height: isExpanded ? UIScreen.main.bounds.height : 64)
+//            .overlay(
+//                Circle().stroke(Color.black.opacity(isExpanded ? 0 : 1), lineWidth: isExpanded ? 0 : 4)
+//            )
+////            .matchedGeometryEffect(id: "image-\(id)", in: animationNamespace, anchor: .center, isSource: true)
+//            .onAppear {
+//                print("SharedImageView matchedGeometryEffect id: image-\(id), namespace: \(animationNamespace)")
+//            }
+//    }
+//}

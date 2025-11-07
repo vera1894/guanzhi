@@ -79,6 +79,8 @@ private struct MediaDeleteButton: View {
     }
 }
 
+#if DEBUG
 #Preview {
     DeleteButton(camera: PreviewCameraModel())
 }
+#endif

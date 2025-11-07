@@ -51,6 +51,7 @@ protocol AppState: AnyObject {
     var showErrorAlert: Bool { get set }
     var uploadProgress: Double { get set }
     var useOverlayMode: Bool { get set }
+    var didShowWelcomeToast: Bool { get set }
 }
 
 @Observable 
@@ -80,56 +81,78 @@ class AppStateModel: AppState {
     var uploadProgress: Double = 0.0
     var errorMessage: String = ""
     var showErrorAlert: Bool = false
-    var useOverlayMode: Bool = true
+    var useOverlayMode: Bool = false
+    var didShowWelcomeToast: Bool = false
 }
 
 
 enum Route: Hashable, Codable { //用于页面导航
     case myView
+    case othersView(userId: Int)
     case settingView
     case shareDetailView(annotationID: String)
+    case editProfileView
+    case accountManagementView  // 添加新的路由选项
     
     // 定义用于编码和解码的键
-        enum CodingKeys: String, CodingKey {
-            case type
-            case annotationID
+    enum CodingKeys: String, CodingKey {
+        case type
+        case annotationID
+        case userId
+    }
+    
+    // 定义一个类型枚举，用于区分不同的 case
+    enum RouteType: String, Codable {
+        case myView
+        case othersView
+        case settingView
+        case shareDetailView
+        case editProfileView
+        case accountManagementView  // 添加新的类型
+    }
+    
+    // 实现 Encodable 协议
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .myView:
+            try container.encode(RouteType.myView, forKey: .type)
+        case .othersView(let userId):
+            try container.encode(RouteType.othersView, forKey: .type)
+            try container.encode(userId, forKey: .userId)
+        case .settingView:
+            try container.encode(RouteType.settingView, forKey: .type)
+        case .shareDetailView(let annotationID):
+            try container.encode(RouteType.shareDetailView, forKey: .type)
+            try container.encode(annotationID, forKey: .annotationID)
+        case .editProfileView:
+            try container.encode(RouteType.editProfileView, forKey: .type)
+        case .accountManagementView:  // 添加新的 case
+            try container.encode(RouteType.accountManagementView, forKey: .type)
         }
-        
-        // 定义一个类型枚举，用于区分不同的 case
-        enum RouteType: String, Codable {
-            case myView
-            case settingView
-            case shareDetailView
+    }
+    
+    // 实现 Decodable 协议
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(RouteType.self, forKey: .type)
+        switch type {
+        case .myView:
+            self = .myView
+        case .othersView:
+            let userId = try container.decode(Int.self, forKey: .userId)
+            self = .othersView(userId: userId)
+        case .settingView:
+            self = .settingView
+        case .shareDetailView:
+            let annotationID = try container.decode(String.self, forKey: .annotationID)
+            self = .shareDetailView(annotationID: annotationID)
+        case .editProfileView:
+            self = .editProfileView
+        case .accountManagementView:  // 添加新的 case
+            self = .accountManagementView
         }
-        
-        // 实现 Encodable 协议
-        func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            switch self {
-            case .myView:
-                try container.encode(RouteType.myView, forKey: .type)
-            case .settingView:
-                try container.encode(RouteType.settingView, forKey: .type)
-            case .shareDetailView(let annotationID):
-                try container.encode(RouteType.shareDetailView, forKey: .type)
-                try container.encode(annotationID, forKey: .annotationID)
-            }
-        }
-        
-        // 实现 Decodable 协议
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            let type = try container.decode(RouteType.self, forKey: .type)
-            switch type {
-            case .myView:
-                self = .myView
-            case .settingView:
-                self = .settingView
-            case .shareDetailView:
-                let annotationID = try container.decode(String.self, forKey: .annotationID)
-                self = .shareDetailView(annotationID: annotationID)
-            }
-        }
+    }
 }
 
 class NavigationCoordinator: ObservableObject {

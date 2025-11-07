@@ -10,10 +10,9 @@ import SwiftUI
 //验证验证码，未注册需要注册
 struct MessageView: View {
     
-//    @FocusState private var fieldFocus: Int?
     @State private var next =  false
     @ObservedObject var userlogin : UserLoginModel
-  //  @ObservedObject var vm : MessageinputViewModel
+    @Namespace private var fallbackNamespace
     
     @State private var timeRemaining = 10
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -35,7 +34,7 @@ struct MessageView: View {
         if userlogin.loginState == 0{
             //登陆成功
             return AnyView(
-                SearchView(userlogin: UserLoginModel()/*, appState: AppStateModel()*//*, locationManager: LocationManager(), searchViewModel: SearchViewModel(/*appState: AppStateModel()*/)*/)
+                SearchView(animationNamespace: fallbackNamespace, userlogin: UserLoginModel())
                     .environment(\.appState, AppStateModel())
                     .environmentObject(LocationManager())
                     .environmentObject(SearchViewModel())
@@ -106,11 +105,6 @@ struct MessageView: View {
                     
                 OTPTextField(numberOfFields: 4, enterSMSCode: $enterSMSCode, isComplete: $isComplete)
                     .frame(height: 54)
-    //                inputView(vm: vm)
-                   // TextField("", text: $input).keyboardType(.numberPad) //临时结局方式
-    //                PhoneNumberTextField(phoneNumber: $input,placeholder: "请输入验证码")
-    //                    .frame(height: 54)
-    //                    .padding(.horizontal,Constants.spacingSpacingM)
                    
                     Button {
                         userlogin.sendCode(phNumber:userlogin.phone)
