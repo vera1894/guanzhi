@@ -49,15 +49,30 @@ struct EditProfileView: View {
         }
 //        .listStyle(.plain)
         .navigationBarTitle("编辑资料", displayMode: .inline)
-        .navigationBarItems(
-            leading: Button(action: {
-                // 返回上一层
-                navigationCoordinator.path.removeLast()
-            }) {
-                Image("icon-back")
+        .toolbar {
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        // 返回上一层
+                        navigationCoordinator.path.removeLast()
+                    }) {
+                        Image("icon-back")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        // 返回上一层
+                        navigationCoordinator.path.removeLast()
+                    }) {
+                        Image("icon-back")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
             }
-            .buttonStyle(ButtonStyle_m())
-        )
+        }
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $isShowEditNameView) {
             EditNameView()

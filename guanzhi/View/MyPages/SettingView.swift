@@ -51,15 +51,30 @@ struct SettingView: View {
         }
 //        .listStyle(PlainListStyle())
         .navigationBarTitle("设置", displayMode: .inline)
-        .navigationBarItems(
-            leading:
-                Button(action: {
-                    // 返回上一层
-                    navigationCoordinator.path.removeLast()
-                }) {
-                    Image("icon-back")
-                }.buttonStyle(ButtonStyle_m())
-        )
+        .toolbar {
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        // 返回上一层
+                        navigationCoordinator.path.removeLast()
+                    }) {
+                        Image("icon-back")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        // 返回上一层
+                        navigationCoordinator.path.removeLast()
+                    }) {
+                        Image("icon-back")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+            }
+        }
         .navigationBarBackButtonHidden(true)
         .alert("提醒", isPresented: $isLoggingout, actions: {
             Button {
@@ -116,16 +131,30 @@ struct UserAgreementView: View {
                 }
             }
             .navigationBarTitle("用户协议与隐私政策", displayMode: .inline)
-            .navigationBarItems(
-                trailing:
-                    Button{
-                        //关闭按钮-圆形
-                        dismiss()
-                    }label: {
-                        Image("icon-close")
+            .toolbar {
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            //关闭按钮-圆形
+                            dismiss()
+                        } label: {
+                            Image("icon-close")
+                        }
+                        .buttonStyle(ButtonStyle_m())
                     }
-                    .buttonStyle(ButtonStyle_m())
-            )
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            //关闭按钮-圆形
+                            dismiss()
+                        } label: {
+                            Image("icon-close")
+                        }
+                        .buttonStyle(ButtonStyle_m())
+                    }
+                }
+            }
             .onAppear {
                 // 加载协议文本
                 if let path = Bundle.main.path(forResource: "UserAgreement", ofType: "txt"),

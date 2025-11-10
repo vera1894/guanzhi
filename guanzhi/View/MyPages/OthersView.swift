@@ -78,26 +78,53 @@ struct OthersView: View {
             
         }
         .navigationBarTitle(userProfileManager.otherUserProfile?.nickname ?? "未知用户", displayMode: .inline)
-        .navigationBarItems(
-            leading: AnyView(
-                Button(action: {
-                    // 返回上一层
-                    print("返回按钮点击")
-                    navigationCoordinator.path.removeLast()
-                }) {
-                    Image("icon-back")
-                }.buttonStyle(ButtonStyle_m())
-            ),
-
-            trailing: AnyView(
-                Button{ //设置按钮-圆形 导航到 SettingView
-                    navigationCoordinator.path.append(Route.settingView)
-                }label: {
-                    Image("icon-setting")
+        .toolbar {
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        // 返回上一层
+                        print("返回按钮点击")
+                        navigationCoordinator.path.removeLast()
+                    }) {
+                        Image("icon-back")
+                    }
+                    .buttonStyle(ButtonStyle_m())
                 }
-                .buttonStyle(ButtonStyle_m())
-            )
-        )
+                .sharedBackgroundVisibility(.hidden)
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        //设置按钮-圆形 导航到 SettingView
+                        navigationCoordinator.path.append(Route.settingView)
+                    } label: {
+                        Image("icon-setting")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        // 返回上一层
+                        print("返回按钮点击")
+                        navigationCoordinator.path.removeLast()
+                    }) {
+                        Image("icon-back")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        //设置按钮-圆形 导航到 SettingView
+                        navigationCoordinator.path.append(Route.settingView)
+                    } label: {
+                        Image("icon-setting")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+            }
+        }
         .navigationBarBackButtonHidden(true)
         .onAppear {
             navigationPathCount = navigationCoordinator.path.count

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(./initialize_context.sh:*)",
+      "Bash(./update_context.sh:*)",
+      "Bash(plutil:*)",
+      "Bash(cat:*)",
+      "WebSearch",
+      "WebFetch(domain:www.macrumors.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.zignuts.com)"
+    ],
+    "deny": []
+  }
+}

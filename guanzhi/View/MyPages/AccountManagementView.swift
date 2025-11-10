@@ -43,14 +43,28 @@ struct AccountManagementView: View {
                 }
             }
             .navigationBarTitle("账号与绑定", displayMode: .inline)
-            .navigationBarItems(
-                leading: Button(action: {
-                    navigationCoordinator.path.removeLast()
-                }) {
-                    Image("icon-back")
+            .toolbar {
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            navigationCoordinator.path.removeLast()
+                        }) {
+                            Image("icon-back")
+                        }
+                        .buttonStyle(ButtonStyle_m())
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            navigationCoordinator.path.removeLast()
+                        }) {
+                            Image("icon-back")
+                        }
+                        .buttonStyle(ButtonStyle_m())
+                    }
                 }
-                .buttonStyle(ButtonStyle_m())
-            )
+            }
             .navigationBarBackButtonHidden(true)
         .alert("更换绑定的手机号？", isPresented: $showPhoneAlert) {
             Button("取消", role: .cancel) { }
@@ -173,11 +187,22 @@ struct ChangePhoneNumberView: View {
                 }
             }
             .padding(.bottom, 20)
-            .navigationBarItems(
-                leading: Button("取消") {
-                    dismiss()
+            .toolbar {
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("取消") {
+                            dismiss()
+                        }
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("取消") {
+                            dismiss()
+                        }
+                    }
                 }
-            )
+            }
             .onReceive(timer) { _ in
                 if timeRemaining > 0 {
                     timeRemaining -= 1
