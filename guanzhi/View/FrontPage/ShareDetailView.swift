@@ -26,33 +26,38 @@ struct ShareDetailView: View {
 
     var body: some View {
         @Bindable var appState = appState
-        ZStack {
-            // 主内容区域：媒体展示（TabView或ProcessingView）
-            Group {
-                if !searchViewModel.downloadMedia.isEmpty {
-                    TabView(selection: $selectedIndex) {
-                        ForEach(Array(searchViewModel.downloadMedia.enumerated()), id: \.element.id) { index, itemWrapper in
-                            MediaItemView(mediaItemWrapper: itemWrapper, thumbnailImage: searchViewModel.selectedAnnotationImage)
-                                .tag(index)
+        GeometryReader { fullScreenGeometry in
+            ZStack {
+                // 主内容区域：媒体展示（TabView或ProcessingView）
+                // 使用固定布局，不受安全区域影响
+                Color.clear
+                    .frame(width: fullScreenGeometry.size.width, height: fullScreenGeometry.size.height)
+                    .overlay(
+                        Group {
+                            if !searchViewModel.downloadMedia.isEmpty {
+                                TabView(selection: $selectedIndex) {
+                                    ForEach(Array(searchViewModel.downloadMedia.enumerated()), id: \.element.id) { index, itemWrapper in
+                                        MediaItemView(mediaItemWrapper: itemWrapper, thumbnailImage: searchViewModel.selectedAnnotationImage)
+                                            .tag(index)
+                                    }
+                                }
+                                .tabViewStyle(PageTabViewStyle())
+                                .ignoresSafeArea()
+    //                            .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
+                                .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
+                                    if selectedIndex >= newCount {
+                                        selectedIndex = max(0, newCount - 1)
+                                    }
+                                }
+                            } else {
+                                // 显示加载指示器
+                                ProcessingView()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
                         }
-                    }
-                    .tabViewStyle(PageTabViewStyle())
-//                    .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
-                    .ignoresSafeArea(.all)
-                    .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
-                        if selectedIndex >= newCount {
-                            selectedIndex = max(0, newCount - 1)
-                        }
-                    }
-                } else {
-                    // 显示加载指示器
-                    ProcessingView()
-                        .ignoresSafeArea(.all)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .ignoresSafeArea(.all)
-            .opacity(viewOpacity)
+                        .frame(width: fullScreenGeometry.size.width, height: fullScreenGeometry.size.height)
+                    )
+                    .opacity(viewOpacity)
             // 下拉退出手势
             .gesture(
                 DragGesture()
@@ -82,9 +87,7 @@ struct ShareDetailView: View {
             )
             // 点击切换顶部和底部内容显隐
             .onTapGesture {
-                withAnimation {
-                    isShowShareDetailsCard.toggle()
-                }
+                isShowShareDetailsCard.toggle()
             }
 
             // 左边缘滑动退出区域
@@ -121,116 +124,108 @@ struct ShareDetailView: View {
             }
             .ignoresSafeArea()
             .zIndex(3)
+            }
         }
+        .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
-        .overlay(// 顶部操作栏（仅当isShowShareDetailsCard为true时显示）
-            Group {
-                if isShowShareDetailsCard {
-                    VStack {
-                        HStack {
-                            Button {
-                                if appState.useOverlayMode {
-                                    /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
-                                } else {
-                                    navigationCoordinator.path.removeLast()
-                                }
-                            } label: {
-                                Image("icon-back")
+        .overlay(// 顶部操作栏（始终存在，通过 opacity 控制可见性）
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    HStack {
+                        Button {
+                            if appState.useOverlayMode {
+                                /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
+                            } else {
+                                navigationCoordinator.path.removeLast()
                             }
-                            .buttonStyle(ButtonStyle_m())
-
-                            Spacer()
-
-                            Button {
-                                // 更多按钮逻辑
-                            } label: {
-                                Image("icon-more")
-                            }
-                            .buttonStyle(ButtonStyle_m())
+                        } label: {
+                            Image("icon-back")
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 60)
+                        .buttonStyle(ButtonStyle_m())
 
                         Spacer()
+
+                        Button {
+                            // 更多按钮逻辑
+                        } label: {
+                            Image("icon-more")
+                        }
+                        .buttonStyle(ButtonStyle_m())
                     }
-                    .ignoresSafeArea()
-                    .transition(.move(edge: .top))
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+
+                    Spacer()
                 }
-            },
+            }
+            .opacity(isShowShareDetailsCard ? 1 : 0)
+            .allowsHitTesting(isShowShareDetailsCard),
             alignment: .top
         )
         .overlay(
-            ZStack {
-                if isShowShareDetailsCard {
-                    ShareDetailsCardView(
-                        isFullScreen: $isFullScreen,
-                        isAtTop: $isAtTop,
-                        dragOffset: $dragOffset,
-                        cardDragIsActive: $cardDragIsActive
-                    )
-                    .environmentObject(searchViewModel)
-                    .transition(.move(edge: .bottom)) // 从底部移动过渡
-                    .zIndex(1)
-                    .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-                    .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 4 / 5 + dragOffset)
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                let translation = value.translation.height
-                                if !isFullScreen {
-                                    // 只处理「上拉」
-                                    if translation < 0 {
-                                        dragOffset = translation
-                                    }
+            ShareDetailsCardView(
+                isFullScreen: $isFullScreen,
+                isAtTop: $isAtTop,
+                dragOffset: $dragOffset,
+                cardDragIsActive: $cardDragIsActive
+            )
+            .environmentObject(searchViewModel)
+            .zIndex(1)
+            .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 4 / 5 + dragOffset)
+            .opacity(isShowShareDetailsCard ? 1 : 0)
+            .allowsHitTesting(isShowShareDetailsCard)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let translation = value.translation.height
+                        if !isFullScreen {
+                            // 只处理「上拉」
+                            if translation < 0 {
+                                dragOffset = translation
+                            }
+                        }
+                    }
+                    .onEnded { value in
+                        let translation = value.translation.height
+                        withAnimation(.easeInOut) {
+                            if !isFullScreen {
+                                // 上拉阈值
+                                if translation < -150 {
+                                    isFullScreen = true
                                 }
                             }
-                            .onEnded { value in
-                                let translation = value.translation.height
-                                withAnimation(.easeInOut) {
-                                    if !isFullScreen {
-                                        // 上拉阈值
-                                        if translation < -150 {
-                                            isFullScreen = true
-                                        }
-                                    }
-                                    dragOffset = 0
-                                }
-                            },
-                        isEnabled: !isFullScreen/* || (isFullScreen && isAtTop)*/
-                    )
-                    .simultaneousGesture (
-                        DragGesture()
-                            .onChanged { value in
-                                let translation = value.translation.height
-                                if (isFullScreen && isAtTop) {
-                                    if translation > 0 {
-                                        cardDragIsActive = false
-                                        dragOffset = translation
-                                    }
+                            dragOffset = 0
+                        }
+                    },
+                isEnabled: !isFullScreen && isShowShareDetailsCard
+            )
+            .simultaneousGesture (
+                DragGesture()
+                    .onChanged { value in
+                        let translation = value.translation.height
+                        if (isFullScreen && isAtTop) {
+                            if translation > 0 {
+                                cardDragIsActive = false
+                                dragOffset = translation
+                            }
+                        }
+                    }
+                    .onEnded { value in
+                        let translation = value.translation.height
+                        withAnimation(.easeInOut) {
+                            if (isFullScreen && isAtTop) {
+                                if translation > 150 {
+                                    isFullScreen = false
                                 }
                             }
-                            .onEnded { value in
-                                let translation = value.translation.height
-                                withAnimation(.easeInOut) {
-                                    if (isFullScreen && isAtTop) {
-                                        if translation > 150 {
-                                            isFullScreen = false
-                                        }
-                                    }
-                                    dragOffset = 0
-                                    cardDragIsActive = true
-                                }
-                            },
-                        isEnabled: (isFullScreen && isAtTop)
-                    )
-                    .ignoresSafeArea()
-
-//                    CommentContentView(isTieTieEnabled: $isTieTieEnabled)  //评论区 需要等待后端增加功能  收藏、点赞、评论、分享
-//                        .zIndex(2)
-//                        .ignoresSafeArea()
-                }
-
-            }
+                            dragOffset = 0
+                            cardDragIsActive = true
+                        }
+                    },
+                isEnabled: (isFullScreen && isAtTop) && isShowShareDetailsCard
+            )
+            .ignoresSafeArea()
         ) // 底部详情卡片和评论输入区
         .background(Color.black.ignoresSafeArea())
         .onAppear {

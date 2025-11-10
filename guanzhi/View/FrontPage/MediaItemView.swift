@@ -31,6 +31,17 @@ struct MediaItemView: View {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
+                                .overlay(
+                                    VStack{
+                                        HStack{
+                                            LiveBadgeOnPhoto()
+                                                .padding(.horizontal)
+                                            Spacer()
+                                        }
+                                        .padding(.top, 60)
+                                        Spacer()
+                                    }
+                                )
                                 .onLongPressGesture(
                                     minimumDuration: 0.8,  // 设置最小长按时间为0.8秒
                                     maximumDistance: 50,   // 允许的最大移动距离
@@ -64,16 +75,6 @@ struct MediaItemView: View {
                                         }
                                     }
                             }
-                            VStack{
-                                HStack{
-                                    LiveBadgeOnPhoto()
-                                        .padding(.horizontal)
-                                    Spacer()
-                                }
-                                .padding(.top, 60)
-                                Spacer()
-                            }
-                            
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .onAppear {
