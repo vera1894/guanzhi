@@ -44,8 +44,6 @@ struct ShareDetailView: View {
     var annotationID: String
     @State private var viewOpacity: Double = 1.0
     @State var cardDragIsActive = true
-    @State private var showActionSheet: Bool = false // 控制底部弹窗显示
-    @State private var showDeleteAlert: Bool = false // 控制删除确认弹窗显示
     @State private var isDeleting: Bool = false // 是否正在删除
 
     // 判断是否是自己的分享
@@ -53,6 +51,15 @@ struct ShareDetailView: View {
         guard let share = searchViewModel.selectedShare else { return false }
         let currentUserId = OTOLoginStatusManager.shared.getUserID()
         return Int64(currentUserId) == share.userId
+    }
+
+    // 统一的弹窗状态：仅需要自定义遮罩的弹窗
+    // 注意：iOS 18/26 中，alert、UIAlertController 都自带系统 dimming
+    private var anyModalOn: Bool {
+        searchViewModel.shareDeletedMessage != nil
+        // ❌ 不包含更多操作弹窗（UIAlertController 自带系统 dimming）
+        // ❌ 不包含删除确认弹窗（UIAlertController 自带系统 dimming）
+        // ❌ 不包含查看路线弹窗（UIAlertController 自带系统 dimming）
     }
 
     var body: some View {
@@ -179,7 +186,7 @@ struct ShareDetailView: View {
                         Spacer()
 
                         Button {
-                            showActionSheet = true
+                            showMoreActionsSheet()
                         } label: {
                             Image("icon-more")
                         }
@@ -283,37 +290,10 @@ struct ShareDetailView: View {
             }
         }
         .overlay(
-            DialogOverlay(isPresented: showActionSheet || showDeleteAlert || searchViewModel.shareDeletedMessage != nil || searchViewModel.showNavigationSheet)
-                .animation(.easeInOut(duration: 0.4), value: showActionSheet)
-                .animation(.easeInOut(duration: 0.4), value: showDeleteAlert)
-                .animation(.easeInOut(duration: 0.4), value: searchViewModel.shareDeletedMessage != nil)
-                .animation(.easeInOut(duration: 0.4), value: searchViewModel.showNavigationSheet)
+            DialogOverlay(isPresented: anyModalOn)
+                .zIndex(9999)  // 确保遮罩在最上层，避免层级冲突
+                .animation(.easeInOut(duration: 0.25), value: anyModalOn)
         )
-        .confirmationDialog("", isPresented: $showActionSheet, titleVisibility: .hidden) {
-            Button("分享") {
-                // TODO: 实现分享功能
-            }
-
-            if isMyShare {
-                Button("删除", role: .destructive) {
-                    showDeleteAlert = true
-                }
-            } else {
-                Button("举报", role: .destructive) {
-                    // TODO: 实现举报功能
-                }
-            }
-
-            Button("取消", role: .cancel) { }
-        }
-        .alert("确认删除", isPresented: $showDeleteAlert) {
-            Button("取消", role: .cancel) { }
-            Button("删除", role: .destructive) {
-                deleteShare()
-            }
-        } message: {
-            Text("确定要删除这条分享吗？删除后将无法恢复。")
-        }
         .alert("提示", isPresented: Binding(
             get: { searchViewModel.shareDeletedMessage != nil },
             set: { if !$0 { searchViewModel.shareDeletedMessage = nil } }
@@ -336,6 +316,123 @@ struct ShareDetailView: View {
         isFullScreen = false
         dragOffset = 0
         isAtTop = true
+    }
+
+    func showMoreActionsSheet() {
+        // 捕获需要的上下文
+        let viewModel = searchViewModel
+        let appState = appState
+        let navigationCoordinator = navigationCoordinator
+
+        let alert = UIAlertController(title: "更多操作", message: nil, preferredStyle: .actionSheet)
+
+        // 分享按钮
+        alert.addAction(UIAlertAction(title: "分享", style: .default) { _ in
+            // TODO: 实现分享功能
+        })
+
+        // 删除或举报按钮
+        if isMyShare {
+            alert.addAction(UIAlertAction(title: "删除", style: .destructive) { _ in
+                // 延迟显示确认弹窗，等待 actionSheet dismiss 完成
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    Self.showDeleteConfirmation(
+                        viewModel: viewModel,
+                        appState: appState,
+                        navigationCoordinator: navigationCoordinator
+                    )
+                }
+            })
+        } else {
+            alert.addAction(UIAlertAction(title: "举报", style: .destructive) { _ in
+                // TODO: 实现举报功能
+            })
+        }
+
+        // 取消按钮
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in })
+
+        // 展示弹窗
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+        }
+    }
+
+    // 显示删除确认弹窗的静态函数
+    private static func showDeleteConfirmation(
+        viewModel: SearchViewModel,
+        appState: AppStateModel,
+        navigationCoordinator: NavigationCoordinator
+    ) {
+        let alert = UIAlertController(
+            title: "确认删除",
+            message: "确定要删除这条分享吗？删除后将无法恢复。",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in })
+
+        alert.addAction(UIAlertAction(title: "删除", style: .destructive) { _ in
+            Task {
+                await Self.performDelete(
+                    viewModel: viewModel,
+                    appState: appState,
+                    navigationCoordinator: navigationCoordinator
+                )
+            }
+        })
+
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+        }
+    }
+
+    // 执行删除操作的静态函数
+    private static func performDelete(
+        viewModel: SearchViewModel,
+        appState: AppStateModel,
+        navigationCoordinator: NavigationCoordinator
+    ) async {
+        guard let share = viewModel.selectedShare else { return }
+
+        // 立即清空正在加载的媒体数据
+        viewModel.cleandownloadMedia()
+
+        do {
+            // 调用删除 API
+            try await ShareService.shared.deleteShare(shareId: Int(share.id))
+
+            // 删除成功后，在主线程执行 UI 操作
+            await MainActor.run {
+                let shareId = share.id
+
+                // 1. 从本地 SwiftData 删除分享和相关媒体文件
+                viewModel.deleteShare(shareId: shareId)
+
+                // 2. 从地图标注列表中移除该分享
+                if let index = viewModel.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
+                    viewModel.annotations.remove(at: index)
+                }
+
+                // 3. 清理选中的分享
+                viewModel.selectedAnnotation = nil
+                viewModel.selectedAnnotationID = nil
+                viewModel.selectedShare = nil
+
+                // 4. 退出详情页面
+                if appState.useOverlayMode {
+                    viewModel.isShareDetailOverlayShown = false
+                } else {
+                    navigationCoordinator.path.removeLast()
+                }
+            }
+        } catch {
+            // 删除失败，显示错误
+            await MainActor.run {
+                print("删除分享失败: \(error.localizedDescription)")
+                // TODO: 可以在这里显示一个错误提示
+            }
+        }
     }
 
     func deleteShare() {

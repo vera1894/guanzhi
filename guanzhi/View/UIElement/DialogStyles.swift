@@ -37,7 +37,7 @@ public struct DialogOverlay: View {
                     .opacity(DialogOverlayConfig.overlayOpacity)
                     .ignoresSafeArea()
                     .transition(.opacity)
-                    .animation(.easeInOut(duration: DialogOverlayConfig.animationDuration), value: isPresented)
+                    .allowsHitTesting(true)
             }
         }
     }

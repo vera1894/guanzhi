@@ -255,8 +255,10 @@ struct ShareDetailsCardView: View {
     }
     
     func openNavigationApp(destination: CLLocationCoordinate2D) {
-        // 通知ViewModel弹窗即将显示（用于DialogOverlay）
-        searchViewModel.showNavigationSheet = true
+        // 先设置状态，让遮罩出现（使用 withAnimation 统一动画节拍）
+        withAnimation {
+            searchViewModel.showNavigationSheet = true
+        }
 
         // 创建坐标转换器
         let converter = CoordinateConverter.shared
@@ -286,7 +288,9 @@ struct ShareDetailsCardView: View {
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
                 }
-                searchViewModel?.showNavigationSheet = false
+                withAnimation {
+                    searchViewModel?.showNavigationSheet = false
+                }
             })
         }
 
@@ -298,7 +302,9 @@ struct ShareDetailsCardView: View {
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
                 }
-                searchViewModel?.showNavigationSheet = false
+                withAnimation {
+                    searchViewModel?.showNavigationSheet = false
+                }
             })
         }
 
@@ -309,7 +315,9 @@ struct ShareDetailsCardView: View {
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
                 }
-                searchViewModel?.showNavigationSheet = false
+                withAnimation {
+                    searchViewModel?.showNavigationSheet = false
+                }
             })
         }
 
@@ -319,16 +327,22 @@ struct ShareDetailsCardView: View {
             if let url = URL(string: urlString) {
                 UIApplication.shared.open(url)
             }
-            searchViewModel?.showNavigationSheet = false
+            withAnimation {
+                searchViewModel?.showNavigationSheet = false
+            }
         })
 
         // 取消按钮
         alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak searchViewModel] _ in
-            searchViewModel?.showNavigationSheet = false
+            withAnimation {
+                searchViewModel?.showNavigationSheet = false
+            }
         })
 
-        // 展示弹窗
-        UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+        // 让一轮 runloop，避免与遮罩动画抢占
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+        }
     }
     
     private func isAuthorMyself(_ userId: Int64) -> Bool {
