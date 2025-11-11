@@ -95,10 +95,10 @@ final class ShareService {
     /// 获取某个分享的详情
     func fetchShareDetail(shareId: Int64) async throws -> ResponsedShare {
         let data = try await OTONetwork.request(.fetchShareDetail(id: shareId))
-        
+
         let decoder = JSONDecoder()
         let response = try decoder.decode(OTOResponseModel<ResponsedShare>.self, from: data)
-        
+
         guard response.respCode == 0 else {
             throw NSError(
                 domain: "ShareService",
@@ -113,7 +113,23 @@ final class ShareService {
                 userInfo: [NSLocalizedDescriptionKey: "datas 为空"]
             )
         }
-        
+
         return detailData
+    }
+
+    /// 删除分享
+    func deleteShare(shareId: Int) async throws {
+        let data = try await OTONetwork.request(.deleteShare(id: shareId))
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
+
+        guard response.respCode == 0 else {
+            throw NSError(
+                domain: "ShareService",
+                code: response.respCode,
+                userInfo: [NSLocalizedDescriptionKey: response.respMsg ?? "删除失败"]
+            )
+        }
     }
 }

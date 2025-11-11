@@ -11,7 +11,11 @@
       "WebSearch",
       "WebFetch(domain:www.macrumors.com)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:www.zignuts.com)"
+      "WebFetch(domain:www.zignuts.com)",
+      "Bash(xcodebuild:*)",
+      "Bash(awk:*)",
+      "Bash(python3:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

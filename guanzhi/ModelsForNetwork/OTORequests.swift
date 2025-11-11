@@ -82,6 +82,7 @@ enum OTORequest {
     case updateUserNickname(newNickname: String)
     case updateUserPlatform(newPlatform: String)
     case updateUserPhoto(newPhoto: String)
+    case deleteShare(id: Int)
 }
 
 extension OTORequest {
@@ -253,9 +254,17 @@ extension OTORequest {
                     method: .post,
                     param: ["photo": newPhoto]
                 )
-                
 
-            
+            // 删除分享
+            case .deleteShare(let id):
+                return .init(
+                    path: "/api/guan/share/del",
+                    method: .post,
+                    param: ["id": id]
+                )
+
+
+
             //备用的
             case .QueryDoodle(let isSelf, let latitude, let longitude, let page, let radius, let size):
                 var param: [String: Any] = [

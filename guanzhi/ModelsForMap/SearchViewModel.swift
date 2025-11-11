@@ -53,6 +53,8 @@ class SearchViewModel: ObservableObject {
     @Published var selectedShareMediaFiles: [MediaFile] = []
     @Published var annotationSortOption: AnnotationSortOption = .createDateDescending
     @Published var isShareDetailOverlayShown: Bool = false
+    @Published var shareDeletedMessage: String? = nil // 分享已删除的提示消息
+    @Published var showNavigationSheet: Bool = false // 导航应用选择弹窗状态
 
     // MARK: - Functions - 分享标注列表与标注用于地图
 
@@ -808,6 +810,21 @@ class SearchViewModel: ObservableObject {
             sortBy: []
         )
         if let share = try? context.fetch(fetchDescriptor).first {
+            // 检查分享是否已被删除
+            if share.deleted {
+                // 分享已被删除，显示提示
+                self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
+
+                // 从本地删除该分享
+                self.deleteShare(shareId: shareId)
+
+                // 从地图标注列表中移除
+                if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
+                    self.annotations.remove(at: index)
+                }
+                return
+            }
+
             self.selectedShare = share
             self.selectedAnnotation = annotations.first { $0.id == "\(shareId)" }
             // 获取媒体文件
@@ -815,16 +832,16 @@ class SearchViewModel: ObservableObject {
                 predicate: #Predicate { $0.shareId == shareId },
                 sortBy: [SortDescriptor(\MediaFile.timestamp, order: .forward)]
             )
-            
+
             if let mediaFiles = try? context.fetch(mediaFetchDescriptor) {
                 // 解析媒体文件，创建 MediaItemWrapper 数组
                 let mediaItems = parseMediaFiles(mediaFiles)
-                
+
                 // 更新 self.downloadMedia
                 DispatchQueue.main.async {
                     self.downloadMedia = mediaItems
                 }
-                
+
                 // 下载媒体文件并更新对应的 MediaItemWrapper
                 downloadMediaFiles(mediaItems: mediaItems)
             }
@@ -839,6 +856,25 @@ class SearchViewModel: ObservableObject {
         Task {
             do {
                 let detail = try await ShareService.shared.fetchShareDetail(shareId: shareId)
+
+                // 检查分享是否已被删除
+                if detail.deleted == 1 {
+                    // 分享已被删除
+                    await MainActor.run {
+                        // 从本地删除该分享
+                        self.deleteShare(shareId: shareId)
+
+                        // 从地图标注列表中移除
+                        if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
+                            self.annotations.remove(at: index)
+                        }
+
+                        // 设置标志，通知 UI 显示提示
+                        self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
+                    }
+                    return
+                }
+
                 // 把这个 detail 做 SwiftData 持久化
                 await saveSharesToDatabase(shares: [detail])
                 // 然后重新加载
@@ -871,6 +907,14 @@ class SearchViewModel: ObservableObject {
                 }
                 // 在主线程上创建媒体项并更新 UI
                 await MainActor.run {
+                    // 检查 mediaFile 是否还存在（可能已被删除）
+                    let isDeleted = (mediaItemWrapper.photoFile?.isDeleted ?? false) ||
+                                   (mediaItemWrapper.videoFile?.isDeleted ?? false)
+                    guard !isDeleted else {
+                        print("媒体文件已被删除，跳过创建媒体项")
+                        return
+                    }
+
                     if let mediaItem = createMediaItem(from: mediaItemWrapper) {
                         mediaItemWrapper.mediaItem = mediaItem
                     }
@@ -907,6 +951,12 @@ class SearchViewModel: ObservableObject {
             
             // 在主线程上更新 mediaFile 对象
             await MainActor.run {
+                // 检查 mediaFile 是否还在 context 中（可能已被删除）
+                guard !mediaFile.isDeleted else {
+                    print("媒体文件已被删除，跳过保存")
+                    return
+                }
+
                 mediaFile.localURL = localURL
                 mediaFile.fileSize = Int64(data.count)
                 // 保存上下文

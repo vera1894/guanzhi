@@ -255,17 +255,20 @@ struct ShareDetailsCardView: View {
     }
     
     func openNavigationApp(destination: CLLocationCoordinate2D) {
+        // 通知ViewModel弹窗即将显示（用于DialogOverlay）
+        searchViewModel.showNavigationSheet = true
+
         // 创建坐标转换器
         let converter = CoordinateConverter.shared
-        
+
         // 获取正确的坐标
         // 首先判断是否在中国境内
         let isInChina = !converter.isOutOfChina(destination)
-        
+
         // 导入的坐标可能是WGS-84，需要转换为适合各个地图的格式
         let wgs84Coordinate = destination // 假设传入的是WGS-84坐标
         let gcj02Coordinate: CLLocationCoordinate2D
-        
+
         if isInChina {
             // 在中国境内需要转换
             gcj02Coordinate = converter.wgs84ToGcj02(wgs84Coordinate) // 转为火星坐标系
@@ -273,57 +276,56 @@ struct ShareDetailsCardView: View {
             // 国外坐标不需要转换
             gcj02Coordinate = wgs84Coordinate
         }
-        
+
         let alert = UIAlertController(title: "选择导航应用", message: nil, preferredStyle: .actionSheet)
 
         // 高德地图选项 - 使用GCJ-02坐标系
         if UIApplication.shared.canOpenURL(URL(string: "iosamap://")!) {
-            alert.addAction(UIAlertAction(title: "高德地图", style: .default) { _ in
+            alert.addAction(UIAlertAction(title: "高德地图", style: .default) { [weak searchViewModel] _ in
                 let urlString = "iosamap://path?sourceApplication=观之&dlat=\(gcj02Coordinate.latitude)&dlon=\(gcj02Coordinate.longitude)&dev=0&t=0"
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
                 }
+                searchViewModel?.showNavigationSheet = false
             })
         }
 
         // 百度地图选项 - 由于没有直接转换为BD-09的方法，我们使用GCJ-02坐标
         // 百度地图会自动处理GCJ-02到BD-09的转换
         if UIApplication.shared.canOpenURL(URL(string: "baidumap://")!) {
-            alert.addAction(UIAlertAction(title: "百度地图", style: .default) { _ in
+            alert.addAction(UIAlertAction(title: "百度地图", style: .default) { [weak searchViewModel] _ in
                 let urlString = "baidumap://map/direction?destination=latlng:\(gcj02Coordinate.latitude),\(gcj02Coordinate.longitude)|name:观之位置&mode=driving&src=观之"
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
                 }
+                searchViewModel?.showNavigationSheet = false
             })
         }
 
         // Google Maps 选项 - 使用WGS-84坐标系
         if UIApplication.shared.canOpenURL(URL(string: "comgooglemaps://")!) {
-            alert.addAction(UIAlertAction(title: "Google Maps", style: .default) { _ in
+            alert.addAction(UIAlertAction(title: "Google Maps", style: .default) { [weak searchViewModel] _ in
                 let urlString = "comgooglemaps://?daddr=\(wgs84Coordinate.latitude),\(wgs84Coordinate.longitude)&directionsmode=driving"
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
                 }
+                searchViewModel?.showNavigationSheet = false
             })
         }
 
         // Apple Maps 选项 - 使用WGS-84坐标系
-        alert.addAction(UIAlertAction(title: "Apple 地图", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: "Apple 地图", style: .default) { [weak searchViewModel] _ in
             let urlString = "http://maps.apple.com/?daddr=\(wgs84Coordinate.latitude),\(wgs84Coordinate.longitude)"
             if let url = URL(string: urlString) {
                 UIApplication.shared.open(url)
             }
+            searchViewModel?.showNavigationSheet = false
         })
 
         // 取消按钮
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel, handler: nil))
-
-        // 在 iPad 上设置弹窗呈现样式为底部弹出
-        if let popoverController = alert.popoverPresentationController {
-            popoverController.sourceView = UIApplication.shared.windows.first?.rootViewController?.view
-            popoverController.sourceRect = CGRect(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height, width: 0, height: 0)
-            popoverController.permittedArrowDirections = []
-        }
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak searchViewModel] _ in
+            searchViewModel?.showNavigationSheet = false
+        })
 
         // 展示弹窗
         UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)

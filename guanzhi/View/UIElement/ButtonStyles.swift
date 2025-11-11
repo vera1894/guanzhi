@@ -630,6 +630,21 @@ extension View {  //定义一个 View 扩展来实现单个角的圆角
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape( RoundedCorner(radius: radius, corners: corners) )
     }
+
+    /// 为弹窗添加统一的变暗背景遮罩
+    /// - Parameter isPresented: 弹窗是否显示
+    /// - Returns: 应用了遮罩效果的视图
+    ///
+    /// 使用示例：
+    /// ```swift
+    /// .confirmationDialog("标题", isPresented: $showDialog) {
+    ///     Button("选项1") { }
+    /// }
+    /// .dialogOverlay(isPresented: showDialog)
+    /// ```
+    func dialogOverlay(isPresented: Bool) -> some View {
+        self.modifier(DialogOverlayModifier(isPresented: isPresented))
+    }
 }
 struct RoundedCorner: Shape {  //定义一个 View 扩展来实现单个角的圆角
     var radius: CGFloat = .infinity
