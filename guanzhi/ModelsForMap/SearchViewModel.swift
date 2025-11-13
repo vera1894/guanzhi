@@ -635,22 +635,42 @@ class SearchViewModel: ObservableObject {
         // 获取可视区域内的分享
         var sharesInRegion = getSharesInRegion(currentRegion)
         print("Number of shares in region: \(sharesInRegion.count)")
-        
+
         // 对 sharesInRegion 进行排序
         sortShares(&sharesInRegion)
         var newAnnotations: [CustomAnnotation] = []
 
+        // 【关键修改】判断用户当前位置是否在中国，决定坐标转换策略
+        // 目的：让标注坐标系与 MapKit 底图坐标系保持一致，避免跨境查看时的偏移
+        let userInChina: Bool
+        if let userLocation = locationManager?.currentLocation {
+            // 如果用户位置可用，判断用户是否在中国
+            userInChina = !CoordinateConverter.shared.isOutOfChina(userLocation)
+        } else {
+            // 如果用户位置不可用，使用地图中心点判断
+            // 这样当用户浏览地图时，坐标系会根据地图中心动态切换
+            let mapCenter = CLLocationCoordinate2D(
+                latitude: currentRegion.center.latitude,
+                longitude: currentRegion.center.longitude
+            )
+            userInChina = !CoordinateConverter.shared.isOutOfChina(mapCenter)
+        }
+
         for share in sharesInRegion {
             let wgsCoordinate = CLLocationCoordinate2D(latitude: share.latitude, longitude: share.longitude)
             var displayCoordinate = wgsCoordinate
-            // 判断分享的位置是否在中国大陆境内
-            if CoordinateConverter.shared.isOutOfChina(wgsCoordinate) {
-                // 不在中国境内，直接使用 WGS-84 坐标
-                displayCoordinate = wgsCoordinate
-            } else {
-                // 在中国境内，进行坐标系转换
+
+            // 【新逻辑】根据用户所在位置决定是否转换坐标
+            // - 用户在中国：所有坐标转换为 GCJ-02（匹配高德地图底图）
+            // - 用户在境外：所有坐标保持 WGS-84（匹配 Apple Maps 底图）
+            if userInChina {
+                // 用户在中国，转换所有坐标为 GCJ-02
                 displayCoordinate = CoordinateConverter.shared.wgs84ToGcj02(wgsCoordinate)
+            } else {
+                // 用户在境外，保持所有坐标为 WGS-84
+                displayCoordinate = wgsCoordinate
             }
+
             let thumbnailURL = getThumbnailURL(for: share)
             let annotation = CustomAnnotation(
                 id: "\(share.id)",
