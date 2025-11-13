@@ -15,7 +15,9 @@
       "Bash(xcodebuild:*)",
       "Bash(awk:*)",
       "Bash(python3:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(find:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }

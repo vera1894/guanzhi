@@ -104,9 +104,12 @@ struct LivePhotoView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: PHLivePhotoView, context: Context) {
-        uiView.livePhoto = livePhoto
-        uiView.startPlayback(with: .full)  // 确保更新时播放
-        print("LivePhotoView updateUIView: started playback")
+        // 只在 livePhoto 实际改变时才更新和播放
+        if uiView.livePhoto != livePhoto {
+            uiView.livePhoto = livePhoto
+            uiView.startPlayback(with: .full)
+            print("LivePhotoView updateUIView: started playback")
+        }
     }
 }
 

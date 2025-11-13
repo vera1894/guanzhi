@@ -67,8 +67,7 @@ struct MediaItemView: View {
                                 )
                             if let livePhoto = mediaItemWrapper.livePhoto, isPlayingLivePhoto {
                                 LivePhotoView(livePhoto: livePhoto)
-//                                    .aspectRatio(contentMode: .fit)
-                                    .aspectRatio((mediaItemWrapper.imageSize?.width ?? 1) / (mediaItemWrapper.imageSize?.height ?? 1), contentMode: .fit)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     .onAppear {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                                             isPlayingLivePhoto = false // 自动停止播放
