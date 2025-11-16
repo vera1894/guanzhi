@@ -66,7 +66,7 @@ struct MediaItemView: View {
                                     }
                                 )
                             if let livePhoto = mediaItemWrapper.livePhoto, isPlayingLivePhoto {
-                                LivePhotoView(livePhoto: livePhoto)
+                                LivePhotoView(livePhoto: livePhoto, imageSize: uiImage.size)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     .onAppear {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {

@@ -29,7 +29,7 @@ struct LiveBadgeOnPhoto: View {
                 Text("实况 ")
             }
             .padding(3)
-            .foregroundColor(.black.opacity(0.8))
+            .foregroundColor(Color("text-deepgray").opacity(0.8))
             .font(.subheadline.bold())
         }
         .background(Color(.systemBackground))

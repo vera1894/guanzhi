@@ -93,22 +93,48 @@ struct SeceltedPhotoView<CameraModel: Camera, AppStateModel: AppState>: Platform
 
 struct LivePhotoView: UIViewRepresentable {
     var livePhoto: PHLivePhoto
+    var imageSize: CGSize? = nil
 
     func makeUIView(context: Context) -> PHLivePhotoView {
         let livePhotoView = PHLivePhotoView()
-        livePhotoView.contentMode = .scaleAspectFit  // 确保按比例显示
+        configureView(livePhotoView)
         livePhotoView.livePhoto = livePhoto
         livePhotoView.startPlayback(with: .full)
-        print("LivePhotoView makeUIView: started playback")
         return livePhotoView
     }
 
     func updateUIView(_ uiView: PHLivePhotoView, context: Context) {
+        // 彻底重置视图状态，防止视图复用时的状态污染
+        configureView(uiView)
+
         // 只在 livePhoto 实际改变时才更新和播放
         if uiView.livePhoto != livePhoto {
             uiView.livePhoto = livePhoto
             uiView.startPlayback(with: .full)
-            print("LivePhotoView updateUIView: started playback")
+        }
+    }
+
+    private func configureView(_ view: PHLivePhotoView) {
+        // 调试日志：检查视图状态是否异常
+        #if DEBUG
+        let transformScale = sqrt(view.transform.a * view.transform.a + view.transform.c * view.transform.c)
+        if transformScale != 1.0 {
+            print("⚠️ LivePhotoView 检测到异常 transform scale: \(transformScale)")
+        }
+        #endif
+
+        // 重置所有可能影响布局的属性
+        view.contentMode = .scaleAspectFit
+        view.clipsToBounds = true
+
+        // 重置 transform，防止缩放状态被保留
+        view.transform = .identity
+        view.layer.transform = CATransform3DIdentity
+
+        // 如果有图片尺寸信息，设置内部约束
+        if let size = imageSize {
+            // 移除所有现有约束
+            view.constraints.forEach { view.removeConstraint($0) }
         }
     }
 }
