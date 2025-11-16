@@ -503,13 +503,13 @@ struct AvatarStyle_s: ButtonStyle {
             Image("avatar")  // 边框层，稍微放大以显示边框
                 .resizable()
                 .scaledToFit()
-                .frame(width: 48 - 2, height: 48 - 2)
+                .frame(width: 42 - 2, height: 42 - 2)
                 .foregroundColor(.black)
                 .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
             profileImage  // 头像图像层
                 .resizable()
                 .scaledToFit()
-                .frame(width: 48 - borderThickness - 2, height: 48 - borderThickness - 2 )
+                .frame(width: 42 - borderThickness - 2, height: 42 - borderThickness - 2 )
                 .mask(
                     Image("avatar")
                         .resizable()

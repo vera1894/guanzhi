@@ -38,7 +38,7 @@ struct MediaItemView: View {
                                                 .padding(.horizontal)
                                             Spacer()
                                         }
-                                        .padding(.top, 60)
+                                        .padding(.top, 20)
                                         Spacer()
                                     }
                                 )

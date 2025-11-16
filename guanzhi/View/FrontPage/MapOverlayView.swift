@@ -28,7 +28,7 @@ struct MapOverlayView: View {
             }
         }()
         
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // 现有的自定义按钮
             Button(action: {
                 navigationCoordinator.path.append(Route.myView)
@@ -80,49 +80,49 @@ struct MapOverlayView: View {
 //            .buttonStyle(ButtonStyle_m())
             
             // ✅ 官方 MapKit 控件（绑定到同一个 mapScope，会与地图联动）
-            VStack(spacing: 12) {
-                MapUserLocationButton(scope: mapScope)  // 定位按钮：回到用户位置
-                    .mapControlVisibility(.automatic)
-                    .symbolVariant (.circle)
-                    .labelStyle(.automatic)
-                    .controlSize(.small)
-                    .cornerRadius(24)
-                    .tint(Color("color-primary"))
-                    .symbolRenderingMode(.hierarchical)
-                    .labelStyle(.iconOnly)
-                    .background(.white, in: Circle())
-                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
-                    .font(. system(size: 12))
-                    .foregroundColor(Color.black)
-
-                MapCompass(scope: mapScope)             // 指南针：随地图旋转，点击复位正北
-                    .mapControlVisibility(.visible)
-                    .symbolVariant (.fill)
-                    .labelStyle(.iconOnly)
-                    .foregroundColor(Color.black)
-                    .controlSize(.small)
-                    .tint(Color("color-primary"))
-                    .background(.ultraThinMaterial, in: Circle())
-                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
-                    .font(. system(size: 8))
-
-                MapPitchToggle(scope: mapScope)         // 3D 按钮：切换平面/3D 视角
-                    .mapControlVisibility(.visible)
-                    .symbolVariant (.fill)
-                    .labelStyle(.iconOnly)
-                    .foregroundColor(Color.black)
-                    .controlSize(.small)
-                    .tint(Color("color-primary"))
-                    .background(.white, in: Circle())
-                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
-                    .font(. system(size: 8))
-            }
-
-//            Spacer()
-
             
+            MapUserLocationButton(scope: mapScope)  // 定位按钮：回到用户位置
+                .mapControlVisibility(.automatic)
+                .symbolVariant (.circle)
+                .labelStyle(.automatic)
+                .controlSize(.small)
+                .cornerRadius(24)
+                .tint(Color.black)
+                .symbolRenderingMode(.hierarchical)
+                .labelStyle(.iconOnly)
+                .background(.white, in: Circle())
+                .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                .font(. system(size: 12))
+                .foregroundColor(Color.black)
+                .scaleEffect(0.9)
+
+            MapCompass(scope: mapScope)             // 指南针：随地图旋转，点击复位正北
+                .mapControlVisibility(.visible)
+                .symbolVariant (.fill)
+                .labelStyle(.iconOnly)
+                .foregroundColor(Color.black)
+                .controlSize(.small)
+                .tint(Color.black)
+                .background(.ultraThinMaterial, in: Circle())
+                .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                .font(.system(size: 8))
+                .scaleEffect(0.9)
+
+            MapPitchToggle(scope: mapScope)         // 3D 按钮：切换平面/3D 视角
+                .mapControlVisibility(.visible)
+                .symbolVariant (.fill)
+                .labelStyle(.iconOnly)
+                .foregroundColor(Color.black)
+                .controlSize(.small)
+                .tint(Color.black)
+                .background(.white, in: Circle())
+                .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                .font(.system(size: 8))
+                .scaleEffect(0.9)
+            
+
         }
-        .padding(.horizontal, 5)
+        .padding(.horizontal, 12)
         .padding(.bottom, 120)
         .onAppear {
             // 尝试加载缓存的头像

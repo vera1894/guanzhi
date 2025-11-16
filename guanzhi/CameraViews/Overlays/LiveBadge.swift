@@ -32,7 +32,7 @@ struct LiveBadgeOnPhoto: View {
             .foregroundColor(.black.opacity(0.8))
             .font(.subheadline.bold())
         }
-        .background(Color("color-primary").opacity(0.8))
+        .background(Color(.systemBackground))
         .clipShape(.buttonBorder)
     }
 }
