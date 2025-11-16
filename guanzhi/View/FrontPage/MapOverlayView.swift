@@ -8,17 +8,17 @@ import SwiftUI
 import MapKit
 
 struct MapOverlayView: View {
-    @Namespace var mapScope
+    let mapScope: Namespace.ID  // ✅ 接收与 Map 相同的 scope，用于绑定 MapKit 控件
+    @Binding var position: MapCameraPosition
     @Environment(\.appState) var appState
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var searchViewModel: SearchViewModel
-    @Binding var position: MapCameraPosition
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var userProfileManager: UserProfileManager
-    
+
     var body: some View {
         @Bindable var appState = appState
-        
+
         // 提前计算头像图片，避免在 ButtonStyle 中进行异步操作
         let avatarImage: Image = {
             if let uiImage = userProfileManager.avatarImage {
@@ -28,64 +28,99 @@ struct MapOverlayView: View {
             }
         }()
         
-        VStack(spacing: 32) {
-            VStack {
-                MapPitchToggle(scope: mapScope)
-            }
-            .mapControlVisibility(.visible)
-            .buttonBorderShape(.circle)
-            .padding(.top, 60)
-            
-            Spacer()
-            
-//            ZoomSliderView(position: $position)
-            
-            VStack(spacing: 16) {
-                Button(action: {
-                    navigationCoordinator.path.append(Route.myView)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                        appState.isShowingSearchView = false
-                    }
-                }) {
-                    // 使用与 MyView 相同的头像逻辑
+        VStack(spacing: 16) {
+            // 现有的自定义按钮
+            Button(action: {
+                navigationCoordinator.path.append(Route.myView)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                    appState.isShowingSearchView = false
                 }
-                .buttonStyle(AvatarStyle_s(
-                    isEnabled: true,
-                    profileImage: avatarImage,
-                    borderThickness: 4
-                ))
-                
-//                Button{ //暂时隐藏
-//                    //提醒按钮-圆形 //测试登录页面导航问题
-//                }label: {
-//                    Image("icon-notification")
-//                }
-//                .buttonStyle(ButtonStyle_m())
-//                .navigationDestination(isPresented: $appState.isShowLogInView) {
-//                    LogInView(userlogin: UserLoginModel())
-//                }
-                
-                Button{
-                    //定位按钮-圆形
-                    print("定位按钮被点击")
-                    if let location = locationManager.currentLocation {
-                        let newRegion = MKCoordinateRegion(
-                            center: location,
-                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                        )
-                        withAnimation(.spring()) {
-                            position = .region(newRegion)
-                        }
-                        searchViewModel.region = newRegion
-//                        searchViewModel.fetchNearbyShareList(latitude: location.latitude, longitude: location.longitude, radius: 20)
-                    } else {
-                        print("尚未获取到定位")
-                    }
-                }label: {
-                    Image("icon-location")
-                }
-                .buttonStyle(ButtonStyle_m())
+            }) {
+                // 使用与 MyView 相同的头像逻辑
             }
+            .buttonStyle(AvatarStyle_s(
+                isEnabled: true,
+                profileImage: avatarImage,
+                borderThickness: 4
+            ))
+            
+//            Button {
+//                print("定位按钮被点击")
+//
+//                withAnimation(.spring()) {
+//                    position = .userLocation(
+//                        followsHeading: false,
+//                        fallback: .automatic    // 定位不可用/未授权时的兜底
+//                    )
+//                }
+//                // ✅ 不要在这里再手动写 searchViewModel.region
+//            } label: {
+//                Image("icon-location")
+//            }
+//            .buttonStyle(ButtonStyle_m())
+
+//            Button{
+//                //定位按钮-圆形
+//                print("定位按钮被点击")
+//                if let location = locationManager.currentLocation {
+//                    let newRegion = MKCoordinateRegion(
+//                        center: location,
+//                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+//                    )
+//                    withAnimation(.spring()) {
+//                        position = .region(newRegion)
+//                    }
+//                    searchViewModel.region = newRegion
+//                } else {
+//                    print("尚未获取到定位")
+//                }
+//            }label: {
+//                Image("icon-location")
+//            }
+//            .buttonStyle(ButtonStyle_m())
+            
+            // ✅ 官方 MapKit 控件（绑定到同一个 mapScope，会与地图联动）
+            VStack(spacing: 12) {
+                MapUserLocationButton(scope: mapScope)  // 定位按钮：回到用户位置
+                    .mapControlVisibility(.automatic)
+                    .symbolVariant (.circle)
+                    .labelStyle(.automatic)
+                    .controlSize(.small)
+                    .cornerRadius(24)
+                    .tint(Color("color-primary"))
+                    .symbolRenderingMode(.hierarchical)
+                    .labelStyle(.iconOnly)
+                    .background(.white, in: Circle())
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                    .font(. system(size: 12))
+                    .foregroundColor(Color.black)
+
+                MapCompass(scope: mapScope)             // 指南针：随地图旋转，点击复位正北
+                    .mapControlVisibility(.visible)
+                    .symbolVariant (.fill)
+                    .labelStyle(.iconOnly)
+                    .foregroundColor(Color.black)
+                    .controlSize(.small)
+                    .tint(Color("color-primary"))
+                    .background(.ultraThinMaterial, in: Circle())
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                    .font(. system(size: 8))
+
+                MapPitchToggle(scope: mapScope)         // 3D 按钮：切换平面/3D 视角
+                    .mapControlVisibility(.visible)
+                    .symbolVariant (.fill)
+                    .labelStyle(.iconOnly)
+                    .foregroundColor(Color.black)
+                    .controlSize(.small)
+                    .tint(Color("color-primary"))
+                    .background(.white, in: Circle())
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                    .font(. system(size: 8))
+            }
+
+//            Spacer()
+
+            
         }
         .padding(.horizontal, 5)
         .padding(.bottom, 120)
@@ -97,20 +132,25 @@ struct MapOverlayView: View {
 }
 
 
-#Preview {
-    MapOverlayView(
-        position: .constant(
-            .region(
-                MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: 39.9, longitude: 116.4),
-                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+struct MapOverlayView_Previews: PreviewProvider {
+    @Namespace static var previewMapScope
+
+    static var previews: some View {
+        MapOverlayView(
+            mapScope: previewMapScope,
+            position: .constant(
+                .region(
+                    MKCoordinateRegion(
+                        center: CLLocationCoordinate2D(latitude: 39.9, longitude: 116.4),
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    )
                 )
             )
         )
-    )
-    .environment(\.appState, AppStateModel())
-    .environmentObject(LocationManager())
-    .environmentObject(SearchViewModel())
-    .environmentObject(NavigationCoordinator())
-    .environmentObject(UserProfileManager())
+        .environment(\.appState, AppStateModel())
+        .environmentObject(LocationManager())
+        .environmentObject(SearchViewModel())
+        .environmentObject(NavigationCoordinator())
+        .environmentObject(UserProfileManager())
+    }
 }

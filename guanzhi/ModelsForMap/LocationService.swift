@@ -209,18 +209,20 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func requestLocation() {
-//        locationManager.requestWhenInUseAuthorization()
-//        locationManager.requestLocation()
+        // ✅ 修复：允许按需请求位置更新
+        locationManager.requestLocation()
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
             print("Received location updates: \(locations)")
             if let location = locations.last?.coordinate {
                 DispatchQueue.main.async {
+                    // ✅ 修复：每次都更新位置，确保 requestLocation() 能获取最新坐标
+                    self.currentLocation = location
+
+                    // 只在首次自动定位时停止持续更新（避免耗电）
                     if !self.locationSet {
-                        self.currentLocation = location
-                        self.locationSet = true // 标记已设置位置
-                        // 如果不需要持续更新位置，可以在这里停止位置更新
+                        self.locationSet = true
                         self.locationManager.stopUpdatingLocation()
                     }
                 }

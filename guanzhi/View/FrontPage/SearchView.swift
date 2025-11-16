@@ -33,10 +33,50 @@ struct SearchView: View {
     @State private var locationMarkers: [LocationMarker] = []
     @State private var mapSize: CGSize = .zero
     @State private var isAnimating: Bool = false
-    
+    @State private var didPrime3D = false  // ✅ 追踪是否已激活 3D 按钮
+    @State private var lastCamera: MapCamera?  // ✅ 保存最近的相机状态
+
+    /// 激活 3D 按钮：轻抬 pitch 到 1° 再回到 0°
+    /// 等效于用户双指上托一次，但视觉上保持 2D
+    private func prime3DButton() {
+        // 取当前相机（没有就用当前区域中心）
+        let base = lastCamera ?? MapCamera(
+            centerCoordinate: searchViewModel.region.center,
+            distance: 3000,
+            heading: 0,
+            pitch: 0
+        )
+
+        // 轻抬到 1°（触发 3D 能力）
+        withAnimation(.easeInOut(duration: 0.2)) {
+            position = .camera(
+                MapCamera(
+                    centerCoordinate: base.centerCoordinate,
+                    distance: base.distance,
+                    heading: base.heading,
+                    pitch: max(1, base.pitch)
+                )
+            )
+        }
+
+        // 立刻回到 0°，保持 2D 外观（但按钮已激活）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                position = .camera(
+                    MapCamera(
+                        centerCoordinate: base.centerCoordinate,
+                        distance: base.distance,
+                        heading: base.heading,
+                        pitch: 0
+                    )
+                )
+            }
+        }
+    }
+
     var body: some View {
         @Bindable var appState = appState
-        
+
         /*ToastRootView*/ ZStack {
             if !OTOLoginStatusManager.shared.isLoggedIn {
                 // 显示登录页面
@@ -44,7 +84,10 @@ struct SearchView: View {
             } else {
 //                NavigationStack(path: $navigationCoordinator.path) {
                     ZStack{
-                        Map(position: $position,interactionModes: .all) {
+                        // 地图层
+                        Map(position: $position,
+                            interactionModes: [.pan, .zoom, .rotate, .pitch],  // ✅ 明确包含 .pitch，确保 3D 控件可用
+                            scope: mapScope) {
                             if !searchViewModel.isShareDetailOverlayShown/*appState.isShareImageExpanded*/ {
                                 ForEach(searchViewModel.annotations, id: \.id) { annotation in
                                     Annotation("", coordinate: annotation.coordinate, anchor: .bottom) {
@@ -70,21 +113,27 @@ struct SearchView: View {
                                         .environmentObject(searchViewModel)
                                         .id(annotation.id)
                                     }
-                                    
+
                                 }
                             }
                             ForEach(locationMarkers) { marker in
                                     Marker(marker.title ?? "", coordinate: marker.coordinate)
                                 }
                             UserAnnotation()
-                            
+
 //                            MainMapContent(
 //                                    searchViewModel: searchViewModel,
 //                                    locationMarkers: locationMarkers,
 //                                    animationNamespace: animationNamespace
 //                                )
                         }
-                        .mapScope(mapScope)
+//                        .mapControlVisibility(.visible)  // 🧪 验证用：显示系统控件
+//                        .mapControls {
+//                            MapCompass(scope: mapScope)
+//                            MapUserLocationButton(scope: mapScope)
+//                            MapPitchToggle(scope: mapScope)
+//                            MapScaleView(scope: mapScope)
+//                        }
                         .coordinateSpace(name: "shared")
                         .disabled(/*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -93,26 +142,38 @@ struct SearchView: View {
                         .animation(.spring(), value: searchViewModel.selectedLocation)
                         .onAppear {
                             if !appState.hasSetInitialRegion {
-                                    position = .automatic
-                                } else {
-                                    position = .region(searchViewModel.region)
-                                }
+                                position = .automatic
+                            } else {
+                                position = .region(searchViewModel.region)
+                            }
                             locationManager.requestLocation()
                         }
-                        .onMapCameraChange { context in
+                        .onMapCameraChange(frequency: .continuous) { context in
+                            print("🧭 heading=\(context.camera.heading), pitch=\(context.camera.pitch)")
+                            lastCamera = context.camera  // ✅ 保存相机状态
                             let region = context.region
                             searchViewModel.region = region
                             // 更新地图上的标注
                             searchViewModel.scheduleAnnotationUpdate()
                         }
+                        .task {
+                            // ✅ 只在 App 启动时激活一次 3D 按钮
+                            guard !didPrime3D else { return }
+                            didPrime3D = true
+
+                            // 等待地图初始化完成
+                            try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 秒
+
+                            // 执行激活
+                            prime3DButton()
+                        }
                         .onReceive(locationManager.$currentLocation) { location in
                             if let location = location, !appState.hasSetInitialRegion {
-                                // 使用用户当前位置初始化地图区域
-                                let userRegion = MKCoordinateRegion(center: location, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-                                searchViewModel.region = userRegion
-                                position = .region(userRegion)
+                                // ✅ 使用 .userLocation() 自动居中到用户位置（由 MapKit 处理居中逻辑）
+                                position = .userLocation(followsHeading: false, fallback: .automatic)
                                 appState.hasSetInitialRegion = true
-                                // 获取分享数据
+
+                                // ✅ region 会由 onMapCameraChange 自动更新，这里只需获取分享数据
                                 searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
                             }
                         }
@@ -148,11 +209,12 @@ struct SearchView: View {
                         }
                         .overlay(alignment:.bottomTrailing) {
                             if appState.isShowingSearchView{
-                                MapOverlayView(position: $position)
+                                MapOverlayView(mapScope: mapScope, position: $position)  // ✅ 传递 mapScope
                                 .environment(appState)
                                 .environmentObject(searchViewModel)
                                 .environmentObject(locationManager)
                                 .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
                                 .transition(.move(edge: .trailing))
                             }
 
@@ -206,16 +268,9 @@ struct SearchView: View {
                         .navigationDestination(isPresented: $appState.isShowingCameraView) {
                             CameraViewWrapper(appState: appState)
                         }
-                        
-//                        //显示分享详情
-//                        if appState.isShareImageExpanded {
-//                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: animationNamespace, annotationID: searchViewModel.selectedAnnotationID ?? "")
-//                                .environment(appState)
-//                                .environmentObject(searchViewModel)
-//                                .transition(.move(edge: .bottom))
-//                        }
-                        
+
                     } //ZStack
+                    .mapScope(mapScope)  // ✅ 添加环境注入，确保 overlay 中的控件也能访问 scope
 //                    .navigationDestination(for: Route.self) { route in
 //                        switch route {
 //                        case .myView:

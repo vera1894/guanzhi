@@ -17,7 +17,8 @@
       "Bash(python3:*)",
       "Bash(git checkout:*)",
       "Bash(find:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(xcrun simctl:*)"
     ],
     "deny": []
   }
