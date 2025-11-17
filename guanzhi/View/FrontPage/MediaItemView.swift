@@ -16,13 +16,14 @@ struct MediaItemView: View {
     var currentIndex: Int? = nil  // 当前项的索引
     var selectedIndex: Int? = nil  // 当前选中的索引
     @State private var isPlayingLivePhoto: Bool = false // 控制 Live Photo 的播放
-    @State private var longPressStarted: Bool = false // 添加状态跟踪
-    @State private var didAutoStart: Bool = false  // 防止 onAppear 重复触发
+    @State private var isLongPressActive: Bool = false // 长按手势是否正在进行
+    @State private var longPressWorkItem: DispatchWorkItem? = nil
+    @State private var didTriggerLongPressPlayback: Bool = false
 
     // 判断当前项是否被选中
     private var isCurrentlySelected: Bool {
         guard let current = currentIndex, let selected = selectedIndex else {
-            return true  // 如果没有提供索引信息，默认为选中状态（向后兼容）
+            return false
         }
         return current == selected
     }
@@ -59,33 +60,46 @@ struct MediaItemView: View {
                                 }
                             )
                             .onLongPressGesture(
-                                minimumDuration: 0.8,  // 设置最小长按时间为0.8秒
-                                maximumDistance: 50,   // 允许的最大移动距离
+                                minimumDuration: 0.8,
+                                maximumDistance: 50,
                                 pressing: { isPressing in
-                                    // 只有 LivePhoto 才响应长按
                                     guard photo.livePhotoMovieURL != nil else { return }
 
-                                    // 这个闭包在按下和松开时都会调用
-                                    if isPressing && !longPressStarted {
-                                        // 开始长按
-                                        longPressStarted = true
-                                        // 延迟0.8秒后执行动作
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                                            if longPressStarted {
-                                                #if DEBUG
-                                                print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按手势触发 toggle")
-                                                #endif
-                                                isPlayingLivePhoto.toggle()
-                                            }
+                                    if isPressing {
+                                        // 已经在执行长按，避免重复调度
+                                        guard !isLongPressActive else { return }
+                                        isLongPressActive = true
+
+                                        // 取消上一次的调度任务
+                                        longPressWorkItem?.cancel()
+
+                                        let workItem = DispatchWorkItem { [currentIndex] in
+                                            guard isLongPressActive else { return }
+                                            #if DEBUG
+                                            print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按触发重新播放")
+                                            #endif
+                                            didTriggerLongPressPlayback = true
+                                            mediaItemWrapper.currentPlayToken = UUID()
+                                            isPlayingLivePhoto = true
                                         }
-                                    } else if !isPressing {
-                                        // 松开手指
-                                        longPressStarted = false
+
+                                        longPressWorkItem = workItem
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: workItem)
+                                    } else {
+                                        isLongPressActive = false
+                                        longPressWorkItem?.cancel()
+                                        longPressWorkItem = nil
+
+                                        if didTriggerLongPressPlayback {
+                                            // 松开手指后停止播放，下次可再次触发
+                                            isPlayingLivePhoto = false
+                                            mediaItemWrapper.currentPlayToken = nil
+                                            mediaItemWrapper.handledPlayToken = nil
+                                            didTriggerLongPressPlayback = false
+                                        }
                                     }
                                 },
-                                perform: {
-                                    // 这个闭包在长按成功时调用（可以留空或添加额外逻辑）
-                                }
+                                perform: {}
                             )
 
                         // ✅ LivePhotoView 始终存在于视图树中，避免节点重建导致 Coordinator 重置
@@ -94,7 +108,17 @@ struct MediaItemView: View {
                         LivePhotoView(
                             livePhoto: photo.livePhotoMovieURL != nil ? mediaItemWrapper.livePhoto : nil,
                             shouldPlay: isPlayingLivePhoto,
-                            isSelected: isCurrentlySelected
+                            isSelected: isCurrentlySelected,
+                            playToken: mediaItemWrapper.currentPlayToken,
+                            handledPlayToken: mediaItemWrapper.handledPlayToken,
+                            onPlaybackStarted: { token in
+                                mediaItemWrapper.handledPlayToken = token
+                            },
+                            onPlaybackFinished: {
+                                isPlayingLivePhoto = false
+                                mediaItemWrapper.currentPlayToken = nil
+                                mediaItemWrapper.handledPlayToken = nil
+                            }
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(isPlayingLivePhoto ? 1 : 0)
@@ -103,29 +127,36 @@ struct MediaItemView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .onAppear {
                         #if DEBUG
-                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - ZStack.onAppear, isSelected: \(isCurrentlySelected), didAutoStart: \(didAutoStart)")
+                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - ZStack.onAppear, isSelected: \(isCurrentlySelected), hasAutoPlayed: \(mediaItemWrapper.hasAutoPlayedForSelection)")
                         #endif
-                        // 只有当前选中的页面且是 LivePhoto 才自动播放，且只自动开始一次
-                        if isCurrentlySelected && !didAutoStart && photo.livePhotoMovieURL != nil {
+                        if isCurrentlySelected,
+                           photo.livePhotoMovieURL != nil,
+                           mediaItemWrapper.hasAutoPlayedForSelection == false {
                             #if DEBUG
                             print("▶️ MediaItemView[\(currentIndex ?? -1)] - 设置 isPlayingLivePhoto = true（首次自动播放）")
                             #endif
+                            mediaItemWrapper.currentPlayToken = UUID()
                             isPlayingLivePhoto = true
-                            didAutoStart = true
+                            mediaItemWrapper.hasAutoPlayedForSelection = true
                         }
                     }
                     .onChange(of: isCurrentlySelected) { oldValue, newValue in
                         #if DEBUG
                         print("🔀 MediaItemView[\(currentIndex ?? -1)] - isCurrentlySelected 变化: \(oldValue) -> \(newValue)")
                         #endif
-                        // 当页面从未选中变为选中时，且是 LivePhoto，自动播放
-                        if newValue && !oldValue && photo.livePhotoMovieURL != nil {
+                        if newValue,
+                           photo.livePhotoMovieURL != nil,
+                           mediaItemWrapper.hasAutoPlayedForSelection == false {
+                            mediaItemWrapper.currentPlayToken = UUID()
                             isPlayingLivePhoto = true
+                            mediaItemWrapper.hasAutoPlayedForSelection = true
                         }
 
-                        // 当页面取消选中时，重置自动开始标志，允许下次选中时再次自动播放
                         if !newValue {
-                            didAutoStart = false
+                            isPlayingLivePhoto = false
+                            mediaItemWrapper.hasAutoPlayedForSelection = false
+                            mediaItemWrapper.currentPlayToken = nil
+                            mediaItemWrapper.handledPlayToken = nil
                         }
                     }
                     .onChange(of: isPlayingLivePhoto) { oldValue, newValue in

@@ -57,6 +57,9 @@ class SearchViewModel: ObservableObject {
     @Published var shareDeletedMessage: String? = nil // 分享已删除的提示消息
     @Published var showNavigationSheet: Bool = false // 导航应用选择弹窗状态
 
+    // ✅ MediaItemWrapper 缓存，key 为 "shareId-prefix"，用于复用已有的 wrapper，避免重复创建导致视图重建
+    private var mediaItemWrapperCache: [String: MediaItemWrapper] = [:]
+
     // MARK: - Functions - 分享标注列表与标注用于地图
 
     // 根据坐标获取地址（备用，目前未使用）
@@ -1054,11 +1057,32 @@ class SearchViewModel: ObservableObject {
                 let hasVideo = group.contains { $0.type == .video }
                 let hasLivePhotoVideo = group.contains { $0.type == .livePhoto }
 
+                // ✅ 获取 shareId 和 prefix 用于缓存 key
+                guard let firstFile = group.first else { continue }
+                let shareId = firstFile.shareId
+                let prefix = firstFile.prefix
+                let cacheKey = "\(shareId)-\(prefix)"
+
                 if hasPhoto && (hasVideo || hasLivePhotoVideo) {
                     // 动态照片（Live Photo）
                     if let photoFile = group.first(where: { $0.type == .photo }),
                        let videoFile = group.first(where: { $0.type == .video || $0.type == .livePhoto }) {
-                        let mediaItemWrapper = MediaItemWrapper(nil)
+
+                        // ✅ 尝试从缓存中获取，如果不存在则创建新的
+                        let mediaItemWrapper: MediaItemWrapper
+                        if let cachedWrapper = mediaItemWrapperCache[cacheKey] {
+                            mediaItemWrapper = cachedWrapper
+                            #if DEBUG
+                            print("♻️ 复用 MediaItemWrapper: \(cacheKey)")
+                            #endif
+                        } else {
+                            mediaItemWrapper = MediaItemWrapper(nil)
+                            mediaItemWrapperCache[cacheKey] = mediaItemWrapper
+                            #if DEBUG
+                            print("🆕 创建新 MediaItemWrapper: \(cacheKey)")
+                            #endif
+                        }
+
                         mediaItemWrapper.photoFile = photoFile
                         mediaItemWrapper.videoFile = videoFile
                         mediaItems.append(mediaItemWrapper)
@@ -1066,14 +1090,44 @@ class SearchViewModel: ObservableObject {
                 } else if hasPhoto {
                     // 静态照片
                     if let photoFile = group.first(where: { $0.type == .photo }) {
-                        let mediaItemWrapper = MediaItemWrapper(nil)
+
+                        // ✅ 尝试从缓存中获取，如果不存在则创建新的
+                        let mediaItemWrapper: MediaItemWrapper
+                        if let cachedWrapper = mediaItemWrapperCache[cacheKey] {
+                            mediaItemWrapper = cachedWrapper
+                            #if DEBUG
+                            print("♻️ 复用 MediaItemWrapper: \(cacheKey)")
+                            #endif
+                        } else {
+                            mediaItemWrapper = MediaItemWrapper(nil)
+                            mediaItemWrapperCache[cacheKey] = mediaItemWrapper
+                            #if DEBUG
+                            print("🆕 创建新 MediaItemWrapper: \(cacheKey)")
+                            #endif
+                        }
+
                         mediaItemWrapper.photoFile = photoFile
                         mediaItems.append(mediaItemWrapper)
                     }
                 } else if hasVideo && !hasPhoto {
                     // 视频（排除 livePhoto 类型）
                     if let videoFile = group.first(where: { $0.type == .video }) {
-                        let mediaItemWrapper = MediaItemWrapper(nil)
+
+                        // ✅ 尝试从缓存中获取，如果不存在则创建新的
+                        let mediaItemWrapper: MediaItemWrapper
+                        if let cachedWrapper = mediaItemWrapperCache[cacheKey] {
+                            mediaItemWrapper = cachedWrapper
+                            #if DEBUG
+                            print("♻️ 复用 MediaItemWrapper: \(cacheKey)")
+                            #endif
+                        } else {
+                            mediaItemWrapper = MediaItemWrapper(nil)
+                            mediaItemWrapperCache[cacheKey] = mediaItemWrapper
+                            #if DEBUG
+                            print("🆕 创建新 MediaItemWrapper: \(cacheKey)")
+                            #endif
+                        }
+
                         mediaItemWrapper.videoFile = videoFile
                         mediaItems.append(mediaItemWrapper)
                     }
@@ -1158,12 +1212,31 @@ class SearchViewModel: ObservableObject {
                 context.delete(mediaFile)
             }
             try? context.save()
+
+            // ✅ 清理该分享对应的 MediaItemWrapper 缓存
+            clearMediaItemWrapperCache(for: shareId)
         }
     }
     
     // 清理下载的媒体数据
     func cleandownloadMedia() {
         self.downloadMedia.removeAll()
+        // ✅ 清理所有 MediaItemWrapper 缓存
+        mediaItemWrapperCache.removeAll()
+        #if DEBUG
+        print("🧹 清理所有 MediaItemWrapper 缓存")
+        #endif
+    }
+
+    // ✅ 清理指定分享的 MediaItemWrapper 缓存
+    private func clearMediaItemWrapperCache(for shareId: Int64) {
+        let keysToRemove = mediaItemWrapperCache.keys.filter { $0.hasPrefix("\(shareId)-") }
+        for key in keysToRemove {
+            mediaItemWrapperCache.removeValue(forKey: key)
+            #if DEBUG
+            print("🧹 清理 MediaItemWrapper 缓存: \(key)")
+            #endif
+        }
     }
     
     // 将时间戳转换为实际时间
@@ -1392,6 +1465,11 @@ class MediaItemWrapper: Identifiable, ObservableObject {
     var videoFile: MediaFile?
     @Published var livePhoto: PHLivePhoto?
     @Published var imageSize: CGSize?
+    @Published var currentPlayToken: UUID?
+    @Published var handledPlayToken: UUID?
+    private var hasAssignedFinalLivePhoto = false
+    private var isGeneratingLivePhoto = false
+    var hasAutoPlayedForSelection: Bool = false
 
     init(_ mediaItem: MediaItemProtocol?) {
         self.mediaItem = mediaItem
@@ -1403,6 +1481,16 @@ class MediaItemWrapper: Identifiable, ObservableObject {
               let livePhotoMovieURL = photo.livePhotoMovieURL else {
             return
         }
+
+        // 避免重复生成同一份 Live Photo
+        guard !isGeneratingLivePhoto else {
+            #if DEBUG
+            print("⏭️ 已在生成 LivePhoto，跳过重复请求")
+            #endif
+            return
+        }
+        isGeneratingLivePhoto = true
+        hasAssignedFinalLivePhoto = false
 
         if let image = UIImage(data: photo.data) {
                     self.imageSize = image.size
@@ -1428,7 +1516,6 @@ class MediaItemWrapper: Identifiable, ObservableObject {
 
         // 生成 PHLivePhoto 对象
         PHLivePhoto.request(withResourceFileURLs: [tempPhotoURL, livePhotoMovieURL], placeholderImage: nil, targetSize: .zero, contentMode: .aspectFit) { livePhoto, info in
-            // ✅ 只接受最终版本的 LivePhoto，过滤掉降级/预览版本
             let isDegraded = (info[PHLivePhotoInfoIsDegradedKey] as? Bool) ?? false
 
             #if DEBUG
@@ -1440,25 +1527,42 @@ class MediaItemWrapper: Identifiable, ObservableObject {
             #endif
 
             DispatchQueue.main.async {
-                if let livePhoto = livePhoto {
-                    // ✅ 只接受非降级版本（最终完整版本）
+                defer {
                     if !isDegraded {
-                        self.livePhoto = livePhoto
-                        #if DEBUG
-                        print("✅ 设置最终 LivePhoto: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
-                        #endif
-                    } else {
-                        #if DEBUG
-                        print("⏭️ 跳过降级版本 LivePhoto")
-                        #endif
+                        self.isGeneratingLivePhoto = false
                     }
-                } else {
+                }
+
+                guard let livePhoto = livePhoto else {
                     if let error = info[PHLivePhotoInfoErrorKey] as? NSError {
                         print("生成 Live Photo 失败，错误：\(error)")
+                    } else if (info[PHLivePhotoInfoCancelledKey] as? NSNumber)?.boolValue == true {
+                        print("生成 Live Photo 被取消")
                     } else {
                         print("生成 Live Photo 失败，未知错误")
                     }
+                    return
                 }
+
+                guard !isDegraded else {
+                    #if DEBUG
+                    print("⏭️ 跳过降级版本 LivePhoto")
+                    #endif
+                    return
+                }
+
+                guard !self.hasAssignedFinalLivePhoto else {
+                    #if DEBUG
+                    print("⏭️ 已有最终 LivePhoto，忽略多余回调")
+                    #endif
+                    return
+                }
+
+                self.hasAssignedFinalLivePhoto = true
+                self.livePhoto = livePhoto
+                #if DEBUG
+                print("✅ 设置最终 LivePhoto: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
+                #endif
             }
         }
         

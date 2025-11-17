@@ -99,63 +99,47 @@ struct LivePhotoView: UIViewRepresentable {
     let livePhoto: PHLivePhoto?     // 可为 nil
     let shouldPlay: Bool            // 由父层控制（如 isPlayingLivePhoto）
     let isSelected: Bool            // 当前 cell 是否选中（防"传染式播放"）
+    let playToken: UUID?            // 每次播放的唯一标识
+    let handledPlayToken: UUID?     // 已处理的播放标识（持久化）
+    let onPlaybackStarted: ((UUID) -> Void)?
+    let onPlaybackFinished: (() -> Void)?
+
+    init(livePhoto: PHLivePhoto?,
+         shouldPlay: Bool,
+         isSelected: Bool,
+         playToken: UUID? = nil,
+         handledPlayToken: UUID? = nil,
+         onPlaybackStarted: ((UUID) -> Void)? = nil,
+         onPlaybackFinished: (() -> Void)? = nil) {
+        self.livePhoto = livePhoto
+        self.shouldPlay = shouldPlay
+        self.isSelected = isSelected
+        self.playToken = playToken
+        self.handledPlayToken = handledPlayToken
+        self.onPlaybackStarted = onPlaybackStarted
+        self.onPlaybackFinished = onPlaybackFinished
+    }
 
     // Coordinator 用于追踪播放会话，防止重复播放
     final class Coordinator: NSObject, PHLivePhotoViewDelegate {
         weak var view: PHLivePhotoView?
 
-        // —— 会话 & 状态 ——
-        var wantPlay       = false                 // shouldPlay && isSelected
-        var hasPlayedOnce  = false                 // 本次会话是否已播过 .full
         var isPlayingFull  = false
+        var currentPlayToken: UUID?
+        var onPlaybackStarted: ((UUID) -> Void)?
+        var onPlaybackFinished: (() -> Void)?
 
-        // —— 预热控制（只响应"当前 livePhoto"的 hint）——
-        weak var hintLivePhotoRef: PHLivePhoto?    // 最近一次 start .hint 时绑定的对象
-        var isPreheating   = false
-        var prepared       = false
-
-        // 仅当"当前 livePhoto 的 hint 结束"才认为预热完成 → 触发 full 一次
         func livePhotoView(_ livePhotoView: PHLivePhotoView,
                            didEndPlaybackWith style: PHLivePhotoViewPlaybackStyle) {
             #if DEBUG
             print("⏹️ LivePhotoView Delegate - didEnd playback with style: \(style == .full ? "full" : "hint")")
             #endif
 
-            if style == .hint {
-                // 只接受当前 livePhoto 的 hint 回调；旧 hint（换素材前发起的）一律忽略
-                guard let current = hintLivePhotoRef,
-                      current === livePhotoView.livePhoto else {
-                    #if DEBUG
-                    print("⏭️ LivePhotoView - 忽略旧 livePhoto 的 hint 回调")
-                    #endif
-                    return
-                }
-
-                prepared = true
-                isPreheating = false
-
-                #if DEBUG
-                print("✅ LivePhotoView - 预热完成，prepared = true, wantPlay = \(wantPlay), hasPlayedOnce = \(hasPlayedOnce)")
-                #endif
-
-                guard wantPlay, !hasPlayedOnce else {
-                    #if DEBUG
-                    print("⏭️ LivePhotoView - 预热完成但不播放（wantPlay=\(wantPlay), hasPlayedOnce=\(hasPlayedOnce)）")
-                    #endif
-                    return
-                }
-
-                livePhotoView.isMuted = false
-                livePhotoView.startPlayback(with: .full)
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                isPlayingFull = true
-                hasPlayedOnce = true
-
-                #if DEBUG
-                print("🎬 LivePhotoView - 预热后自动播放 .full（有声音+震动）")
-                #endif
-            } else if style == .full {
+            if style == .full {
                 isPlayingFull = false
+                livePhotoView.alpha = 0
+                currentPlayToken = nil
+                onPlaybackFinished?()
                 #if DEBUG
                 print("✅ LivePhotoView - .full 播放完成")
                 #endif
@@ -167,6 +151,10 @@ struct LivePhotoView: UIViewRepresentable {
             #if DEBUG
             print("🎬 LivePhotoView Delegate - willBegin playback with style: \(style == .full ? "full" : "hint")")
             #endif
+
+            if style == .full {
+                livePhotoView.alpha = 1
+            }
         }
     }
 
@@ -180,6 +168,7 @@ struct LivePhotoView: UIViewRepresentable {
         context.coordinator.view = v
         v.clipsToBounds = true
         v.contentMode = .scaleAspectFit
+        v.alpha = 0
 
         #if DEBUG
         if let livePhoto = livePhoto {
@@ -194,12 +183,16 @@ struct LivePhotoView: UIViewRepresentable {
 
     func updateUIView(_ v: PHLivePhotoView, context: Context) {
         // 1) 更新"是否允许播放"的会话门
-        let wantPlay = (shouldPlay && isSelected)
-        context.coordinator.wantPlay = wantPlay
+        context.coordinator.onPlaybackStarted = onPlaybackStarted
+        context.coordinator.onPlaybackFinished = onPlaybackFinished
+        if context.coordinator.currentPlayToken == nil,
+           let handledPlayToken = handledPlayToken {
+            context.coordinator.currentPlayToken = handledPlayToken
+        }
 
         #if DEBUG
         let livePhotoAddr = livePhoto.map { Unmanaged.passUnretained($0).toOpaque() }
-        print("🔄 LivePhotoView updateUIView - isSelected: \(isSelected), shouldPlay: \(shouldPlay), wantPlay: \(wantPlay), prepared: \(context.coordinator.prepared), hasPlayedOnce: \(context.coordinator.hasPlayedOnce), LivePhoto: \(livePhotoAddr?.debugDescription ?? "nil")")
+        print("🔄 LivePhotoView updateUIView - isSelected: \(isSelected), shouldPlay: \(shouldPlay), playToken: \(playToken?.uuidString ?? "nil"), handled: \(handledPlayToken?.uuidString ?? "nil"), LivePhoto: \(livePhotoAddr?.debugDescription ?? "nil")")
         #endif
 
         // 重置视图状态，防止复用污染
@@ -208,15 +201,12 @@ struct LivePhotoView: UIViewRepresentable {
         v.transform = .identity
         v.layer.transform = CATransform3DIdentity
 
-        // 2) livePhoto 变化：先停掉可能在跑的旧 hint/full，再绑定新素材
+        // 2) livePhoto 变化：先停掉可能在跑的播放，再绑定新素材
         if v.livePhoto !== livePhoto {
-            v.stopPlayback() // 🔴 关键：取消旧 hint，避免旧回调再触发 full
+            v.stopPlayback()
             v.livePhoto = livePhoto
-
-            // 重置预热状态；会话计数不在这里清（只在会话结束清）
-            context.coordinator.prepared      = false
-            context.coordinator.isPreheating  = false
-            // ⚠️ 不在这里更新 hintLivePhotoRef，等开始 hint 时再更新
+            context.coordinator.currentPlayToken = handledPlayToken
+            context.coordinator.isPlayingFull = false
 
             #if DEBUG
             if let livePhoto = livePhoto {
@@ -227,53 +217,37 @@ struct LivePhotoView: UIViewRepresentable {
             #endif
         }
 
-        // 3) 需要播放且素材已到，但尚未预热 → 发起一次 .hint（静音）
-        if livePhoto != nil,
-           wantPlay,
-           !context.coordinator.prepared,
-           !context.coordinator.isPreheating,
-           !context.coordinator.hasPlayedOnce {
-            context.coordinator.isPreheating = true
-            context.coordinator.hintLivePhotoRef = livePhoto  // ✅ 在开始 hint 时才更新
-            v.isMuted = true
-            DispatchQueue.main.async { [weak v] in
-                v?.startPlayback(with: .hint)
-                #if DEBUG
-                print("🔇 LivePhotoView - 开始 .hint 预热（静音）")
-                #endif
-            }
-        }
-
-        // 4) 预热已完成且会话开始 → 立即播放（解决长按失效问题）
-        if wantPlay,
-           context.coordinator.prepared,
-           !context.coordinator.hasPlayedOnce,
-           !context.coordinator.isPlayingFull {
-            v.isMuted = false
-            v.startPlayback(with: .full)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        // 3) 需要播放且已有素材 → 根据 playToken 判断是否为新的播放请求
+        if let token = playToken,
+           livePhoto != nil,
+           shouldPlay,
+           isSelected,
+           context.coordinator.currentPlayToken != token {
+            context.coordinator.currentPlayToken = token
             context.coordinator.isPlayingFull = true
-            context.coordinator.hasPlayedOnce = true
+            v.isMuted = false
+            v.alpha = 1
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            context.coordinator.onPlaybackStarted?(token)
 
-            #if DEBUG
-            print("🎬 LivePhotoView - 预热完成，立即播放 .full（有声音+震动）")
-            #endif
-        }
-
-        // 5) 会话结束（手指松开/切走等导致不想播）：停止 full，清会话计数
-        if !wantPlay {
-            if context.coordinator.isPlayingFull {
-                v.stopPlayback()
+            DispatchQueue.main.async { [weak v] in
+                v?.startPlayback(with: .full)
                 #if DEBUG
-                print("⏹️ LivePhotoView - 停止播放")
+                print("🎬 LivePhotoView - 直接播放 .full（无预热）")
                 #endif
             }
+        }
+
+        // 4) 会话结束（手指松开/切走等导致不想播）：停止 full，清会话计数
+        if (!shouldPlay || !isSelected), context.coordinator.isPlayingFull {
+            v.stopPlayback()
             context.coordinator.isPlayingFull = false
-            context.coordinator.hasPlayedOnce = false
-            // prepared 保留：再进入会更快，但不会自动 full，仍需 wantPlay 触发
+            context.coordinator.currentPlayToken = nil
+            v.alpha = 0
+            context.coordinator.onPlaybackFinished?()
 
             #if DEBUG
-            print("🔚 LivePhotoView - 会话结束，重置 hasPlayedOnce")
+            print("🔚 LivePhotoView - 会话结束，停止播放并清空 token")
             #endif
         }
     }
