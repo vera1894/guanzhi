@@ -92,25 +92,92 @@ struct SeceltedPhotoView<CameraModel: Camera, AppStateModel: AppState>: Platform
 }
 
 struct LivePhotoView: UIViewRepresentable {
-    var livePhoto: PHLivePhoto
+    var livePhoto: PHLivePhoto?  // ✅ 改为可选，支持异步加载
     var imageSize: CGSize? = nil
+    var shouldPlay: Bool = false
+    var isSelected: Bool = true  // ✅ 新增：当前 cell 是否选中（默认 true 向后兼容）
+
+    // Coordinator 用于追踪播放会话，防止重复播放
+    class Coordinator {
+        var lastLivePhoto: PHLivePhoto?
+        var lastShouldPlay: Bool = false
+        var hasPlayedInSession: Bool = false  // 只在一次播放会话内标记
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
 
     func makeUIView(context: Context) -> PHLivePhotoView {
         let livePhotoView = PHLivePhotoView()
         configureView(livePhotoView)
         livePhotoView.livePhoto = livePhoto
-        livePhotoView.startPlayback(with: .full)
+
+        #if DEBUG
+        if let livePhoto = livePhoto {
+            print("🎬 LivePhotoView makeUIView - isSelected: \(isSelected), shouldPlay: \(shouldPlay), LivePhoto: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
+        } else {
+            print("🎬 LivePhotoView makeUIView - isSelected: \(isSelected), shouldPlay: \(shouldPlay), LivePhoto: nil")
+        }
+        #endif
+
         return livePhotoView
     }
 
     func updateUIView(_ uiView: PHLivePhotoView, context: Context) {
+        #if DEBUG
+        let livePhotoAddr = livePhoto.map { Unmanaged.passUnretained($0).toOpaque() }
+        print("🔄 LivePhotoView updateUIView 开始 - isSelected: \(isSelected), shouldPlay: \(shouldPlay), lastShouldPlay: \(context.coordinator.lastShouldPlay), hasPlayed: \(context.coordinator.hasPlayedInSession), LivePhoto: \(livePhotoAddr?.debugDescription ?? "nil")")
+        #endif
+
         // 彻底重置视图状态，防止视图复用时的状态污染
         configureView(uiView)
 
-        // 只在 livePhoto 实际改变时才更新和播放
-        if uiView.livePhoto != livePhoto {
+        // 1) livePhoto 变化时：只更新素材，不重置"会话内已播"标记
+        if context.coordinator.lastLivePhoto !== livePhoto {
+            context.coordinator.lastLivePhoto = livePhoto
             uiView.livePhoto = livePhoto
+            #if DEBUG
+            if let livePhoto = livePhoto {
+                print("🔄 LivePhotoView - LivePhoto 对象变化: \(Unmanaged.passUnretained(livePhoto).toOpaque())，但不重置播放状态")
+            } else {
+                print("🔄 LivePhotoView - LivePhoto 对象变为 nil")
+            }
+            #endif
+            // ⚠️ 不在这里重置 hasPlayedInSession，否则会导致重复播放
+        }
+
+        // 2) ✅ 三重门：仅在"会话开始 + 选中项 + 素材就绪"时播放
+        let justBecamePlaying = (!context.coordinator.lastShouldPlay && shouldPlay)
+        context.coordinator.lastShouldPlay = shouldPlay
+
+        if justBecamePlaying && isSelected && !context.coordinator.hasPlayedInSession && livePhoto != nil {
             uiView.startPlayback(with: .full)
+            context.coordinator.hasPlayedInSession = true
+
+            #if DEBUG
+            if let livePhoto = livePhoto {
+                print("🎬 LivePhotoView - 开始播放 (唯一震动触发点) - isSelected: \(isSelected), LivePhoto: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
+            }
+            #endif
+        } else if justBecamePlaying && !isSelected {
+            #if DEBUG
+            print("⏭️ LivePhotoView - 跳过播放（非选中项）, isSelected: \(isSelected)")
+            #endif
+        } else if justBecamePlaying {
+            #if DEBUG
+            print("⏭️ LivePhotoView - 跳过播放（其他原因）, isSelected: \(isSelected), hasPlayed: \(context.coordinator.hasPlayedInSession), livePhoto: \(livePhoto != nil)")
+            #endif
+        }
+
+        // 3) 结束会话：当 shouldPlay 变回 false 时，允许下次再播
+        if !shouldPlay && context.coordinator.hasPlayedInSession {
+            uiView.stopPlayback()
+            context.coordinator.hasPlayedInSession = false
+
+            #if DEBUG
+            print("⏹️ LivePhotoView - 停止播放，结束会话")
+            #endif
         }
     }
 

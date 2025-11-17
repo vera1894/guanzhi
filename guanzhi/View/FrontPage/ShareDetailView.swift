@@ -76,14 +76,27 @@ struct ShareDetailView: View {
                             if !searchViewModel.downloadMedia.isEmpty {
                                 TabView(selection: $selectedIndex) {
                                     ForEach(Array(searchViewModel.downloadMedia.enumerated()), id: \.element.id) { index, itemWrapper in
-                                        MediaItemView(mediaItemWrapper: itemWrapper, thumbnailImage: searchViewModel.selectedAnnotationImage)
-                                            .tag(index)
+                                        MediaItemView(
+                                            mediaItemWrapper: itemWrapper,
+                                            thumbnailImage: searchViewModel.selectedAnnotationImage,
+                                            currentIndex: index,
+                                            selectedIndex: selectedIndex
+                                        )
+                                        .tag(index)
                                     }
                                 }
                                 .tabViewStyle(PageTabViewStyle())
                                 .ignoresSafeArea()
     //                            .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
+                                .onChange(of: selectedIndex) { oldValue, newValue in
+                                    #if DEBUG
+                                    print("📑 ShareDetailView - selectedIndex 变化: \(oldValue) -> \(newValue)")
+                                    #endif
+                                }
                                 .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
+                                    #if DEBUG
+                                    print("📊 ShareDetailView - downloadMedia.count 变化: \(oldCount) -> \(newCount)")
+                                    #endif
                                     if selectedIndex >= newCount {
                                         selectedIndex = max(0, newCount - 1)
                                     }
@@ -269,6 +282,9 @@ struct ShareDetailView: View {
         ) // 底部详情卡片和评论输入区
         .background(Color.black.ignoresSafeArea())
         .onAppear {
+            #if DEBUG
+            print("🏠 ShareDetailView.onAppear - 开始加载分享详情")
+            #endif
             selectedIndex = 0
             if let shareId = Int64(annotationID) {
                 searchViewModel.loadShareDetail(for: shareId)
