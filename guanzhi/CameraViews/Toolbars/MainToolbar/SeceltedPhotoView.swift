@@ -203,14 +203,21 @@ struct LivePhotoView: UIViewRepresentable {
 
         // 2) livePhoto 变化：先停掉可能在跑的播放，再绑定新素材
         if v.livePhoto !== livePhoto {
-            v.stopPlayback()
+            // ✅ 只有在确实正在播放时才停止
+            if context.coordinator.isPlayingFull {
+                v.stopPlayback()
+                #if DEBUG
+                print("🔄 LivePhotoView - 停止旧的播放")
+                #endif
+            }
+
             v.livePhoto = livePhoto
             context.coordinator.currentPlayToken = handledPlayToken
             context.coordinator.isPlayingFull = false
 
             #if DEBUG
             if let livePhoto = livePhoto {
-                print("🔄 LivePhotoView - LivePhoto 对象变化: \(Unmanaged.passUnretained(livePhoto).toOpaque())，停止旧播放")
+                print("🔄 LivePhotoView - LivePhoto 对象变化: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
             } else {
                 print("🔄 LivePhotoView - LivePhoto 对象变为 nil")
             }
@@ -227,13 +234,34 @@ struct LivePhotoView: UIViewRepresentable {
             context.coordinator.isPlayingFull = true
             v.isMuted = false
             v.alpha = 1
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            context.coordinator.onPlaybackStarted?(token)
 
+            #if DEBUG
+            print("🎬 LivePhotoView - 准备播放，token: \(token)")
+            #endif
+
+            // ✅ 震动反馈在 Task 中执行，避免阻塞
+            Task {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
+
+            // ✅ 先通知开始播放（在 Task 中避免 publishing 警告）
+            Task { @MainActor in
+                context.coordinator.onPlaybackStarted?(token)
+            }
+
+            // ✅ 立即播放：不延迟，依赖 PHLivePhotoView 的内部缓存
+            // TabView 的预加载会在延迟期间干扰播放，必须立即执行
             DispatchQueue.main.async { [weak v] in
-                v?.startPlayback(with: .full)
+                guard let v = v, v.livePhoto != nil else {
+                    #if DEBUG
+                    print("⚠️ LivePhotoView - 播放取消（LivePhoto 不存在）")
+                    #endif
+                    return
+                }
+
+                v.startPlayback(with: .full)
                 #if DEBUG
-                print("🎬 LivePhotoView - 直接播放 .full（无预热）")
+                print("🎬 LivePhotoView - 开始播放 .full")
                 #endif
             }
         }

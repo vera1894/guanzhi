@@ -75,6 +75,13 @@ struct MediaItemView: View {
 
                                         let workItem = DispatchWorkItem { [currentIndex] in
                                             guard isLongPressActive else { return }
+                                            // ✅ 检查 LivePhoto 是否已准备好
+                                            guard mediaItemWrapper.livePhoto != nil else {
+                                                #if DEBUG
+                                                print("⚠️ MediaItemView[\(currentIndex ?? -1)] - 长按触发但 LivePhoto 未准备好，取消播放")
+                                                #endif
+                                                return
+                                            }
                                             #if DEBUG
                                             print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按触发重新播放")
                                             #endif
@@ -102,9 +109,8 @@ struct MediaItemView: View {
                                 perform: {}
                             )
 
-                        // ✅ LivePhotoView 始终存在于视图树中，避免节点重建导致 Coordinator 重置
-                        // 通过 livePhoto 参数控制：livePhotoMovieURL 为 nil 时传入 nil，LivePhotoView 不会播放
-                        // 不使用 .id() - 让 SwiftUI 使用默认 identity，避免因 id 变化导致重建
+                        // ✅ LivePhotoView 必须有稳定的 identity，避免在 TabView 中被复用或混淆
+                        // 使用 mediaItemWrapper.id 作为唯一标识，确保每个 MediaItemView 有独立的 LivePhotoView 实例
                         LivePhotoView(
                             livePhoto: photo.livePhotoMovieURL != nil ? mediaItemWrapper.livePhoto : nil,
                             shouldPlay: isPlayingLivePhoto,
@@ -112,14 +118,21 @@ struct MediaItemView: View {
                             playToken: mediaItemWrapper.currentPlayToken,
                             handledPlayToken: mediaItemWrapper.handledPlayToken,
                             onPlaybackStarted: { token in
-                                mediaItemWrapper.handledPlayToken = token
+                                // ✅ 使用 Task 避免在视图更新期间修改 @Published 属性
+                                Task { @MainActor in
+                                    mediaItemWrapper.handledPlayToken = token
+                                }
                             },
                             onPlaybackFinished: {
-                                isPlayingLivePhoto = false
-                                mediaItemWrapper.currentPlayToken = nil
-                                mediaItemWrapper.handledPlayToken = nil
+                                // ✅ 使用 Task 避免在视图更新期间修改 @Published 属性
+                                Task { @MainActor in
+                                    isPlayingLivePhoto = false
+                                    mediaItemWrapper.currentPlayToken = nil
+                                    mediaItemWrapper.handledPlayToken = nil
+                                }
                             }
                         )
+                        .id("LivePhotoView-\(mediaItemWrapper.id)")  // ✅ 关键修复：确保每个 MediaItemWrapper 有唯一的 LivePhotoView 实例
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(isPlayingLivePhoto ? 1 : 0)
                         .allowsHitTesting(false)
@@ -127,36 +140,92 @@ struct MediaItemView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .onAppear {
                         #if DEBUG
-                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - ZStack.onAppear, isSelected: \(isCurrentlySelected), hasAutoPlayed: \(mediaItemWrapper.hasAutoPlayedForSelection)")
+                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - ZStack.onAppear, isSelected: \(isCurrentlySelected), hasAutoPlayed: \(mediaItemWrapper.hasAutoPlayedForSelection), livePhoto: \(mediaItemWrapper.livePhoto != nil ? "已准备" : "未准备")")
                         #endif
+                        // 只有在 LivePhoto 已经准备好的情况下才播放，使用短延迟给 PHLivePhotoView 准备资源的时间
                         if isCurrentlySelected,
                            photo.livePhotoMovieURL != nil,
+                           mediaItemWrapper.livePhoto != nil,  // ✅ 检查 LivePhoto 是否已准备好
                            mediaItemWrapper.hasAutoPlayedForSelection == false {
                             #if DEBUG
-                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - 设置 isPlayingLivePhoto = true（首次自动播放）")
+                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - LivePhoto 已准备，延迟 100ms 后自动播放（给视图时间准备资源）")
                             #endif
-                            mediaItemWrapper.currentPlayToken = UUID()
-                            isPlayingLivePhoto = true
-                            mediaItemWrapper.hasAutoPlayedForSelection = true
+                            // ✅ 使用 100ms 短延迟，给 PHLivePhotoView 时间准备内部资源，但不会长到让 TabView 干扰
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak mediaItemWrapper] in
+                                guard let mediaItemWrapper = mediaItemWrapper,
+                                      !mediaItemWrapper.hasAutoPlayedForSelection else { return }
+                                mediaItemWrapper.currentPlayToken = UUID()
+                                isPlayingLivePhoto = true
+                                mediaItemWrapper.hasAutoPlayedForSelection = true
+                            }
+                        } else if isCurrentlySelected,
+                                  photo.livePhotoMovieURL != nil,
+                                  mediaItemWrapper.livePhoto == nil {
+                            #if DEBUG
+                            print("⏳ MediaItemView[\(currentIndex ?? -1)] - LivePhoto 未准备好，等待生成完成")
+                            #endif
                         }
                     }
                     .onChange(of: isCurrentlySelected) { oldValue, newValue in
                         #if DEBUG
-                        print("🔀 MediaItemView[\(currentIndex ?? -1)] - isCurrentlySelected 变化: \(oldValue) -> \(newValue)")
+                        print("🔀 MediaItemView[\(currentIndex ?? -1)] - isCurrentlySelected 变化: \(oldValue) -> \(newValue), livePhoto: \(mediaItemWrapper.livePhoto != nil ? "已准备" : "未准备")")
                         #endif
+                        // 切换到当前照片：使用短延迟给 PHLivePhotoView 准备资源的时间
                         if newValue,
                            photo.livePhotoMovieURL != nil,
+                           mediaItemWrapper.livePhoto != nil,  // ✅ 检查 LivePhoto 是否已准备好
                            mediaItemWrapper.hasAutoPlayedForSelection == false {
-                            mediaItemWrapper.currentPlayToken = UUID()
-                            isPlayingLivePhoto = true
-                            mediaItemWrapper.hasAutoPlayedForSelection = true
+                            #if DEBUG
+                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - 切换到当前照片，LivePhoto 已准备，延迟 100ms 后播放")
+                            #endif
+                            // ✅ 使用 100ms 短延迟
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak mediaItemWrapper] in
+                                guard let mediaItemWrapper = mediaItemWrapper,
+                                      !mediaItemWrapper.hasAutoPlayedForSelection else { return }
+                                mediaItemWrapper.currentPlayToken = UUID()
+                                isPlayingLivePhoto = true
+                                mediaItemWrapper.hasAutoPlayedForSelection = true
+                            }
+                        } else if newValue,
+                                  photo.livePhotoMovieURL != nil,
+                                  mediaItemWrapper.livePhoto == nil {
+                            #if DEBUG
+                            print("⏳ MediaItemView[\(currentIndex ?? -1)] - 切换到当前照片，LivePhoto 未准备好，等待生成完成")
+                            #endif
                         }
 
+                        // 切换走：停止播放并重置标志
                         if !newValue {
                             isPlayingLivePhoto = false
                             mediaItemWrapper.hasAutoPlayedForSelection = false
                             mediaItemWrapper.currentPlayToken = nil
                             mediaItemWrapper.handledPlayToken = nil
+                        }
+                    }
+                    .onChange(of: mediaItemWrapper.livePhoto) { oldValue, newValue in
+                        #if DEBUG
+                        print("📸 MediaItemView[\(currentIndex ?? -1)] - livePhoto 变化: \(oldValue != nil ? "有" : "无") -> \(newValue != nil ? "有" : "无"), isSelected: \(isCurrentlySelected), hasAutoPlayed: \(mediaItemWrapper.hasAutoPlayedForSelection)")
+                        #endif
+
+                        // ✅ 核心逻辑：当 LivePhoto 从 nil 变为非 nil，且满足自动播放条件时，延迟触发播放
+                        if oldValue == nil,
+                           newValue != nil,
+                           isCurrentlySelected,
+                           photo.livePhotoMovieURL != nil,
+                           !mediaItemWrapper.hasAutoPlayedForSelection,
+                           !didTriggerLongPressPlayback {  // 不干扰长按播放
+                            #if DEBUG
+                            print("✅ MediaItemView[\(currentIndex ?? -1)] - LivePhoto 准备完成，延迟 100ms 后触发自动播放")
+                            #endif
+                            // ✅ 使用 100ms 短延迟，给 PHLivePhotoView 时间准备内部资源
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak mediaItemWrapper] in
+                                guard let mediaItemWrapper = mediaItemWrapper,
+                                      !mediaItemWrapper.hasAutoPlayedForSelection,
+                                      !didTriggerLongPressPlayback else { return }
+                                mediaItemWrapper.currentPlayToken = UUID()
+                                isPlayingLivePhoto = true
+                                mediaItemWrapper.hasAutoPlayedForSelection = true
+                            }
                         }
                     }
                     .onChange(of: isPlayingLivePhoto) { oldValue, newValue in
