@@ -53,6 +53,7 @@ class SearchViewModel: ObservableObject {
     @Published var selectedShareMediaFiles: [MediaFile] = []
     @Published var annotationSortOption: AnnotationSortOption = .createDateDescending
     @Published var isShareDetailOverlayShown: Bool = false
+    private var currentLoadingShareId: Int64? = nil  // 正在加载的分享 ID，防止重复加载
     @Published var shareDeletedMessage: String? = nil // 分享已删除的提示消息
     @Published var showNavigationSheet: Bool = false // 导航应用选择弹窗状态
 
@@ -823,7 +824,17 @@ class SearchViewModel: ObservableObject {
     
     //加载分享详情
     func loadShareDetail(for shareId: Int64) {
+        // ✅ 防止重复加载同一个分享
+        if currentLoadingShareId == shareId {
+            #if DEBUG
+            print("⏭️ 分享 \(shareId) 正在加载中，跳过重复请求")
+            #endif
+            return
+        }
+
+        currentLoadingShareId = shareId
         print("加载分享详情，分享 ID：\(shareId)")
+
         // 从数据库中获取分享
         let fetchDescriptor = FetchDescriptor<Share>(
             predicate: #Predicate { $0.id == shareId },
@@ -842,6 +853,9 @@ class SearchViewModel: ObservableObject {
                 if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
                     self.annotations.remove(at: index)
                 }
+
+                // 清除加载状态
+                currentLoadingShareId = nil
                 return
             }
 
@@ -860,13 +874,18 @@ class SearchViewModel: ObservableObject {
                 // 更新 self.downloadMedia
                 DispatchQueue.main.async {
                     self.downloadMedia = mediaItems
+                    // ✅ 加载完成，清除状态（在主线程）
+                    self.currentLoadingShareId = nil
                 }
 
                 // 下载媒体文件并更新对应的 MediaItemWrapper
                 downloadMediaFiles(mediaItems: mediaItems)
+            } else {
+                // 没有媒体文件，也要清除加载状态
+                currentLoadingShareId = nil
             }
         } else {
-            // 如果本地没有，向服务器请求详情
+            // 如果本地没有，向服务器请求详情（异步，不阻塞）
             fetchShareDetailFromServer(shareId: shareId)
         }
     }
@@ -891,16 +910,30 @@ class SearchViewModel: ObservableObject {
 
                         // 设置标志，通知 UI 显示提示
                         self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
+
+                        // ✅ 清除加载状态
+                        self.currentLoadingShareId = nil
                     }
                     return
                 }
 
                 // 把这个 detail 做 SwiftData 持久化
                 await saveSharesToDatabase(shares: [detail])
-                // 然后重新加载
+
+                // ✅ 清除加载状态，允许重新加载（此时数据已在本地数据库）
+                await MainActor.run {
+                    self.currentLoadingShareId = nil
+                }
+
+                // 然后重新加载（从本地数据库加载）
                 loadShareDetail(for: shareId)
             } catch {
                 print("Error fetching share detail: \(error)")
+
+                // ✅ 出错时也要清除加载状态
+                Task { @MainActor in
+                    self.currentLoadingShareId = nil
+                }
             }
         }
     }
@@ -964,8 +997,11 @@ class SearchViewModel: ObservableObject {
             } else if mediaFile.type == .video {
                 let asset = AVAsset(url: localURL)
                 if let track = asset.tracks(withMediaType: .video).first {
-                    let size = track.naturalSize.applying(track.preferredTransform)
-                    print("下载的视频尺寸：\(size)")
+                    let t = track.preferredTransform
+                    let oriented = track.naturalSize.applying(t)
+                    let width = abs(oriented.width)
+                    let height = abs(oriented.height)
+                    print("下载的视频尺寸：(\(width), \(height))")
                 }
             }
             
@@ -1371,11 +1407,14 @@ class MediaItemWrapper: Identifiable, ObservableObject {
         if let image = UIImage(data: photo.data) {
                     self.imageSize = image.size
                 }
-        // 获取视频尺寸
+        // 获取视频尺寸（应用旋转矩阵并取绝对值）
         let asset = AVAsset(url: livePhotoMovieURL)
         if let track = asset.tracks(withMediaType: .video).first {
-            let size = track.naturalSize.applying(track.preferredTransform)
-            print("视频尺寸: \(size)")
+            let t = track.preferredTransform
+            let oriented = track.naturalSize.applying(t)
+            let width = abs(oriented.width)
+            let height = abs(oriented.height)
+            print("视频尺寸: (\(width), \(height))")
         }
         
         // 将照片数据保存到临时文件
@@ -1389,9 +1428,30 @@ class MediaItemWrapper: Identifiable, ObservableObject {
 
         // 生成 PHLivePhoto 对象
         PHLivePhoto.request(withResourceFileURLs: [tempPhotoURL, livePhotoMovieURL], placeholderImage: nil, targetSize: .zero, contentMode: .aspectFit) { livePhoto, info in
+            // ✅ 只接受最终版本的 LivePhoto，过滤掉降级/预览版本
+            let isDegraded = (info[PHLivePhotoInfoIsDegradedKey] as? Bool) ?? false
+
+            #if DEBUG
+            if let livePhoto = livePhoto {
+                print("📸 PHLivePhoto.request 回调 - isDegraded: \(isDegraded), LivePhoto: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
+            } else {
+                print("📸 PHLivePhoto.request 回调 - isDegraded: \(isDegraded), LivePhoto: nil")
+            }
+            #endif
+
             DispatchQueue.main.async {
                 if let livePhoto = livePhoto {
-                    self.livePhoto = livePhoto
+                    // ✅ 只接受非降级版本（最终完整版本）
+                    if !isDegraded {
+                        self.livePhoto = livePhoto
+                        #if DEBUG
+                        print("✅ 设置最终 LivePhoto: \(Unmanaged.passUnretained(livePhoto).toOpaque())")
+                        #endif
+                    } else {
+                        #if DEBUG
+                        print("⏭️ 跳过降级版本 LivePhoto")
+                        #endif
+                    }
                 } else {
                     if let error = info[PHLivePhotoInfoErrorKey] as? NSError {
                         print("生成 Live Photo 失败，错误：\(error)")

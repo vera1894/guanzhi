@@ -39,123 +39,99 @@ struct MediaItemView: View {
                     ProcessingView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let uiImage = UIImage(data: photo.data) {
-                    if photo.livePhotoMovieURL != nil {
-                        // 动态照片
-                        ZStack {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .overlay(
-                                    VStack{
-                                        HStack{
-                                            LiveBadgeOnPhoto()
-                                                .padding(.horizontal)
-                                            Spacer()
-                                        }
-                                        .padding(.top, 20)
-                                        Spacer()
-                                    }
-                                )
-                                .onLongPressGesture(
-                                    minimumDuration: 0.8,  // 设置最小长按时间为0.8秒
-                                    maximumDistance: 50,   // 允许的最大移动距离
-                                    pressing: { isPressing in
-                                        // 这个闭包在按下和松开时都会调用
-                                        if isPressing && !longPressStarted {
-                                            // 开始长按
-                                            longPressStarted = true
-                                            // 延迟0.8秒后执行动作
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                                                if longPressStarted {
-                                                    #if DEBUG
-                                                    print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按手势触发 toggle")
-                                                    #endif
-                                                    isPlayingLivePhoto.toggle()
-                                                }
-                                            }
-                                        } else if !isPressing {
-                                            // 松开手指
-                                            longPressStarted = false
-                                        }
-                                    },
-                                    perform: {
-                                        // 这个闭包在长按成功时调用（可以留空或添加额外逻辑）
-                                    }
-                                )
-                            // ✅ LivePhotoView 永远存在于视图树中，避免节点重建导致 Coordinator 重置
-                            // livePhoto 可为 nil（异步加载），shouldPlay 控制播放，isSelected 确保只有选中项才播放
-                            // 只有当 livePhotoMovieURL 存在时才渲染，条件稳定不会导致重建
-                            if photo.livePhotoMovieURL != nil {
-                                LivePhotoView(
-                                    livePhoto: mediaItemWrapper.livePhoto,
-                                    imageSize: uiImage.size,
-                                    shouldPlay: isPlayingLivePhoto,
-                                    isSelected: isCurrentlySelected
-                                )
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .opacity(isPlayingLivePhoto ? 1 : 0)
-                                .allowsHitTesting(false)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .onAppear {
-                            #if DEBUG
-                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - ZStack.onAppear, isSelected: \(isCurrentlySelected), didAutoStart: \(didAutoStart)")
-                            #endif
-                            // 只有当前选中的页面才自动播放，且只自动开始一次
-                            if isCurrentlySelected && !didAutoStart {
-                                #if DEBUG
-                                print("▶️ MediaItemView[\(currentIndex ?? -1)] - 设置 isPlayingLivePhoto = true（首次自动播放）")
-                                #endif
-                                isPlayingLivePhoto = true
-                                didAutoStart = true
-
-                                // 1.5秒后自动停止
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                    if isPlayingLivePhoto {
-                                        #if DEBUG
-                                        print("⏹️ MediaItemView[\(currentIndex ?? -1)] - 自动停止播放")
-                                        #endif
-                                        isPlayingLivePhoto = false
-                                    }
-                                }
-                            }
-                        }
-                        .onChange(of: isCurrentlySelected) { oldValue, newValue in
-                            #if DEBUG
-                            print("🔀 MediaItemView[\(currentIndex ?? -1)] - isCurrentlySelected 变化: \(oldValue) -> \(newValue)")
-                            #endif
-                            // 当页面从未选中变为选中时，自动播放 LivePhoto
-                            if newValue && !oldValue {
-                                isPlayingLivePhoto = true
-
-                                // 1.5秒后自动停止
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                    if isPlayingLivePhoto {
-                                        #if DEBUG
-                                        print("⏹️ MediaItemView[\(currentIndex ?? -1)] - 切换后自动停止播放")
-                                        #endif
-                                        isPlayingLivePhoto = false
-                                    }
-                                }
-                            }
-
-                            // 当页面取消选中时，重置自动开始标志，允许下次选中时再次自动播放
-                            if !newValue {
-                                didAutoStart = false
-                            }
-                        }
-                        .onChange(of: isPlayingLivePhoto) { oldValue, newValue in
-                            #if DEBUG
-                            print("🔀 MediaItemView[\(currentIndex ?? -1)] - isPlayingLivePhoto 状态变化: \(oldValue) -> \(newValue)")
-                            #endif
-                        }
-                    } else {
-                        // 静态照片
-//                        Image("测试长图")
+                    // 动态照片或静态照片（统一处理）
+                    ZStack {
                         Image(uiImage: uiImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
+                            .overlay(
+                                VStack{
+                                    HStack{
+                                        // 只有 LivePhoto 才显示 badge
+                                        if photo.livePhotoMovieURL != nil {
+                                            LiveBadgeOnPhoto()
+                                                .padding(.horizontal)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.top, 20)
+                                    Spacer()
+                                }
+                            )
+                            .onLongPressGesture(
+                                minimumDuration: 0.8,  // 设置最小长按时间为0.8秒
+                                maximumDistance: 50,   // 允许的最大移动距离
+                                pressing: { isPressing in
+                                    // 只有 LivePhoto 才响应长按
+                                    guard photo.livePhotoMovieURL != nil else { return }
+
+                                    // 这个闭包在按下和松开时都会调用
+                                    if isPressing && !longPressStarted {
+                                        // 开始长按
+                                        longPressStarted = true
+                                        // 延迟0.8秒后执行动作
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                            if longPressStarted {
+                                                #if DEBUG
+                                                print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按手势触发 toggle")
+                                                #endif
+                                                isPlayingLivePhoto.toggle()
+                                            }
+                                        }
+                                    } else if !isPressing {
+                                        // 松开手指
+                                        longPressStarted = false
+                                    }
+                                },
+                                perform: {
+                                    // 这个闭包在长按成功时调用（可以留空或添加额外逻辑）
+                                }
+                            )
+
+                        // ✅ LivePhotoView 始终存在于视图树中，避免节点重建导致 Coordinator 重置
+                        // 通过 livePhoto 参数控制：livePhotoMovieURL 为 nil 时传入 nil，LivePhotoView 不会播放
+                        // 不使用 .id() - 让 SwiftUI 使用默认 identity，避免因 id 变化导致重建
+                        LivePhotoView(
+                            livePhoto: photo.livePhotoMovieURL != nil ? mediaItemWrapper.livePhoto : nil,
+                            shouldPlay: isPlayingLivePhoto,
+                            isSelected: isCurrentlySelected
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .opacity(isPlayingLivePhoto ? 1 : 0)
+                        .allowsHitTesting(false)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .onAppear {
+                        #if DEBUG
+                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - ZStack.onAppear, isSelected: \(isCurrentlySelected), didAutoStart: \(didAutoStart)")
+                        #endif
+                        // 只有当前选中的页面且是 LivePhoto 才自动播放，且只自动开始一次
+                        if isCurrentlySelected && !didAutoStart && photo.livePhotoMovieURL != nil {
+                            #if DEBUG
+                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - 设置 isPlayingLivePhoto = true（首次自动播放）")
+                            #endif
+                            isPlayingLivePhoto = true
+                            didAutoStart = true
+                        }
+                    }
+                    .onChange(of: isCurrentlySelected) { oldValue, newValue in
+                        #if DEBUG
+                        print("🔀 MediaItemView[\(currentIndex ?? -1)] - isCurrentlySelected 变化: \(oldValue) -> \(newValue)")
+                        #endif
+                        // 当页面从未选中变为选中时，且是 LivePhoto，自动播放
+                        if newValue && !oldValue && photo.livePhotoMovieURL != nil {
+                            isPlayingLivePhoto = true
+                        }
+
+                        // 当页面取消选中时，重置自动开始标志，允许下次选中时再次自动播放
+                        if !newValue {
+                            didAutoStart = false
+                        }
+                    }
+                    .onChange(of: isPlayingLivePhoto) { oldValue, newValue in
+                        #if DEBUG
+                        print("🔀 MediaItemView[\(currentIndex ?? -1)] - isPlayingLivePhoto 状态变化: \(oldValue) -> \(newValue)")
+                        #endif
                     }
                 } else {
                     Text("无法加载图片")
