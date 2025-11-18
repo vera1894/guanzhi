@@ -19,6 +19,7 @@ struct MediaItemView: View {
     @State private var isLongPressActive: Bool = false // 长按手势是否正在进行
     @State private var longPressWorkItem: DispatchWorkItem? = nil
     @State private var didTriggerLongPressPlayback: Bool = false
+    @State private var needsPrewarm: Bool = true // 是否需要预热（首次自动播放时）
 
     // 判断当前项是否被选中
     private var isCurrentlySelected: Bool {
@@ -109,33 +110,36 @@ struct MediaItemView: View {
                                 perform: {}
                             )
 
-                        // ✅ LivePhotoView 必须有稳定的 identity，避免在 TabView 中被复用或混淆
-                        // 使用 mediaItemWrapper.id 作为唯一标识，确保每个 MediaItemView 有独立的 LivePhotoView 实例
-                        LivePhotoView(
-                            livePhoto: photo.livePhotoMovieURL != nil ? mediaItemWrapper.livePhoto : nil,
-                            shouldPlay: isPlayingLivePhoto,
-                            isSelected: isCurrentlySelected,
-                            playToken: mediaItemWrapper.currentPlayToken,
-                            handledPlayToken: mediaItemWrapper.handledPlayToken,
-                            onPlaybackStarted: { token in
-                                // ✅ 使用 Task 避免在视图更新期间修改 @Published 属性
-                                Task { @MainActor in
-                                    mediaItemWrapper.handledPlayToken = token
+                        // ✅ 终极方案：只在被选中时才创建 LivePhotoView，避免 TabView 预加载时的参数混乱
+                        if isCurrentlySelected && photo.livePhotoMovieURL != nil {
+                            LivePhotoView(
+                                livePhoto: mediaItemWrapper.livePhoto,
+                                shouldPlay: isPlayingLivePhoto,
+                                isSelected: isCurrentlySelected,
+                                needsPrewarm: needsPrewarm,
+                                playToken: mediaItemWrapper.currentPlayToken,
+                                handledPlayToken: mediaItemWrapper.handledPlayToken,
+                                onPlaybackStarted: { token in
+                                    // ✅ 使用 Task 避免在视图更新期间修改 @Published 属性
+                                    Task { @MainActor in
+                                        mediaItemWrapper.handledPlayToken = token
+                                        needsPrewarm = false // 预热完成，后续不再需要
+                                    }
+                                },
+                                onPlaybackFinished: {
+                                    // ✅ 使用 Task 避免在视图更新期间修改 @Published 属性
+                                    Task { @MainActor in
+                                        isPlayingLivePhoto = false
+                                        mediaItemWrapper.currentPlayToken = nil
+                                        mediaItemWrapper.handledPlayToken = nil
+                                    }
                                 }
-                            },
-                            onPlaybackFinished: {
-                                // ✅ 使用 Task 避免在视图更新期间修改 @Published 属性
-                                Task { @MainActor in
-                                    isPlayingLivePhoto = false
-                                    mediaItemWrapper.currentPlayToken = nil
-                                    mediaItemWrapper.handledPlayToken = nil
-                                }
-                            }
-                        )
-                        .id("LivePhotoView-\(mediaItemWrapper.id)")  // ✅ 关键修复：确保每个 MediaItemWrapper 有唯一的 LivePhotoView 实例
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .opacity(isPlayingLivePhoto ? 1 : 0)
-                        .allowsHitTesting(false)
+                            )
+                            .id("LivePhotoView-index\(currentIndex ?? -1)-\(mediaItemWrapper.id)")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .opacity(isPlayingLivePhoto ? 1 : 0)
+                            .allowsHitTesting(false)
+                        }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .onAppear {
