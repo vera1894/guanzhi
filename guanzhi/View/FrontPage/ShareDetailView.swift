@@ -8,6 +8,22 @@
 import SwiftUI
 import PhotosUI
 import _AVKit_SwiftUI
+import Combine
+
+// MARK: - PreferenceKey for Player Frame Anchoring
+
+/// PreferenceKey 用于传递当前选中页的播放矩形
+struct PlayerFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        // ✅ 只保留非 .zero 的值（因为多个 MediaItemView 会报告，只有选中的那个是非 .zero）
+        if next != .zero {
+            value = next
+        }
+    }
+}
 
 // MARK: - 全局弹窗遮罩配置（临时放置）
 // TODO: 将文件 DialogStyles.swift 添加到 Xcode 项目后，删除此段代码
@@ -45,6 +61,18 @@ struct ShareDetailView: View {
     @State private var viewOpacity: Double = 1.0
     @State var cardDragIsActive = true
     @State private var isDeleting: Bool = false // 是否正在删除
+    
+    // ✅ 方案B：单实例播放器 Overlay
+    @State private var currentEngine: VideoEngine? = nil // 当前选中页的 VideoEngine
+    @State private var currentCoverVisible: Bool = true // 当前选中页的封面可见性
+    @State private var currentIsPlaying: Bool = false // 当前选中页的播放状态
+
+    // ✅ 双门机制状态
+    @State private var isReadyLayer: Bool = false // 图层是否可显示（isReadyForDisplay）
+    @State private var hasFirstPixel: Bool = false // 是否已渲染首帧像素
+
+    // ✅ 可播监听
+    @State private var mediaItemCancellable: AnyCancellable? = nil // 监听 wrapper 可播状态
 
     // 判断是否是自己的分享
     private var isMyShare: Bool {
@@ -92,6 +120,9 @@ struct ShareDetailView: View {
                                     #if DEBUG
                                     print("📑 ShareDetailView - selectedIndex 变化: \(oldValue) -> \(newValue)")
                                     #endif
+
+                                    // ✅ 方案B：切换全局播放器（会自动启动监听如果需要）
+                                    switchToVideo(at: newValue)
                                 }
                                 .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
                                     #if DEBUG
@@ -110,6 +141,36 @@ struct ShareDetailView: View {
                         .frame(width: fullScreenGeometry.size.width, height: fullScreenGeometry.size.height)
                     )
                     .opacity(viewOpacity)
+                    .onAppear {
+                        #if DEBUG
+                        print("🏠 ShareDetailView.onAppear - 初始化，selectedIndex: \(selectedIndex), 数据数量: \(searchViewModel.downloadMedia.count)")
+                        #endif
+                        
+                        // ✅ 方案B：初始化第一个视频（延迟确保数据就绪）
+                        DispatchQueue.main.async {
+                            if !searchViewModel.downloadMedia.isEmpty {
+                                #if DEBUG
+                                print("🏠 ShareDetailView.onAppear - 延迟触发 switchToVideo(\(selectedIndex))")
+                                #endif
+                                switchToVideo(at: selectedIndex)
+                            }
+                        }
+                    }
+                    .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
+                        #if DEBUG
+                        print("🔄 [Overlay] downloadMedia.count 变化: \(oldCount) -> \(newCount)")
+                        #endif
+                        
+                        // ✅ 当第一次加载数据完成时，触发首张视频播放
+                        if oldCount == 0, newCount > 0, currentEngine == nil {
+                            #if DEBUG
+                            print("🔄 [Overlay] 数据首次加载完成，触发 switchToVideo(0)")
+                            #endif
+                            DispatchQueue.main.async {
+                                switchToVideo(at: selectedIndex)
+                            }
+                        }
+                    }
             // 下拉退出手势
             .gesture(
                 DragGesture()
@@ -179,8 +240,51 @@ struct ShareDetailView: View {
             }
         }
         }
+        .coordinateSpace(name: "PlayerSpace") // ✅ 定义坐标空间，用于锚定 Overlay
         .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
+        // ✅ 方案B：全局单实例 VideoPlayerView Overlay（永远只有一个 AVPlayerLayer）
+        // ✅ 使用 overlayPreferenceValue 读取当前选中页的矩形，并精确锚定 Overlay
+        .overlayPreferenceValue(PlayerFrameKey.self) { playerFrame in
+            #if DEBUG
+            let _ = print("📐 [Overlay] overlayPreferenceValue 收到 playerFrame: \(playerFrame)")
+            #endif
+
+            Group {
+                if let engine = currentEngine,
+                   let player = engine.player,
+                   playerFrame != .zero {
+                    VideoPlayerView(
+                        player: player,
+                        shouldPlay: true,
+                        isSelected: true, // 全局播放器永远为选中态
+                        onReadyForDisplay: {
+                            #if DEBUG
+                            print("📺 [Overlay] 条件1满足：图层可显示")
+                            #endif
+                            // ✅ 条件1：图层可显示
+                            isReadyLayer = true
+                            tryHideCoverForCurrentVideo()
+                        }
+                    )
+                    .id("global-video-player") // ✅ 稳定 ID
+                    .frame(width: playerFrame.width, height: playerFrame.height) // ✅ 精确锚定到选中页的矩形
+                    .position(x: playerFrame.midX, y: playerFrame.midY) // ✅ 精确定位
+                    .transition(.identity) // ✅ 禁止转场动画
+                    .allowsHitTesting(false) // ✅ 视频层不拦截手势
+                    .onAppear {
+                        #if DEBUG
+                        print("📐 [Overlay] 锚定到矩形: \(playerFrame)")
+                        #endif
+                    }
+                    .onChange(of: playerFrame) { oldFrame, newFrame in
+                        #if DEBUG
+                        print("📐 [Overlay] 矩形变化: \(oldFrame) -> \(newFrame)")
+                        #endif
+                    }
+                }
+            }
+        }
         .overlay(// 顶部操作栏（始终存在，通过 opacity 控制可见性）
             GeometryReader { geo in
                 VStack(spacing: 0) {
@@ -499,6 +603,170 @@ struct ShareDetailView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - 方案B：全局播放器切换逻辑
+
+    /// 监听当前 wrapper 的可播状态，当它变为 Movie 时自动播放
+    private func watchPlayableState(of index: Int) {
+        // 取消旧的监听
+        mediaItemCancellable?.cancel()
+        mediaItemCancellable = nil
+
+        guard index >= 0, index < searchViewModel.downloadMedia.count else { return }
+
+        let wrapper = searchViewModel.downloadMedia[index]
+
+        #if DEBUG
+        print("👀 [Overlay] 开始监听 wrapper[\(index)] 的可播状态")
+        #endif
+
+        // ✅ 监听 wrapper.mediaItem 的变化
+        mediaItemCancellable = wrapper.$mediaItem
+            .sink { [self] mediaItem in
+                // 如果变成了 Movie 类型，且还没有播放过，则触发播放
+                if mediaItem is Movie, !wrapper.hasAutoPlayedForSelection {
+                    #if DEBUG
+                    print("🔄 [Overlay] wrapper[\(index)] 可播就绪（变为 Movie），二次触发 switchToVideo")
+                    #endif
+
+                    // 延迟一帧确保状态已同步
+                    DispatchQueue.main.async {
+                        self.switchToVideo(at: index)
+                    }
+                }
+            }
+    }
+
+    /// 切换到指定索引的视频
+    private func switchToVideo(at index: Int) {
+        guard index >= 0, index < searchViewModel.downloadMedia.count else {
+            #if DEBUG
+            print("⚠️ [Overlay] switchToVideo - 索引越界: \(index)")
+            #endif
+            return
+        }
+
+        let wrapper = searchViewModel.downloadMedia[index]
+
+        #if DEBUG
+        print("🔄 [Overlay] switchToVideo - 切换到索引: \(index), wrapper: \(wrapper.id)")
+        #endif
+
+        // ✅ 停止之前的播放器（如果有）
+        currentEngine?.stop()
+
+        // ✅ 重置状态
+        currentCoverVisible = true
+        currentIsPlaying = false
+        isReadyLayer = false // ✅ 重置双门状态
+        hasFirstPixel = false // ✅ 重置双门状态
+
+        // ✅ 检查是否是 Movie 类型
+        guard let movie = wrapper.mediaItem as? Movie else {
+            #if DEBUG
+            print("⚠️ [Overlay] switchToVideo - 不是 Movie 类型，启动监听等待可播")
+            #endif
+            currentEngine = nil
+
+            // ✅ 关键：启动监听，等待 wrapper 变为可播状态
+            watchPlayableState(of: index)
+            return
+        }
+        
+        // ✅ 修复关键：如果 VideoEngine 不存在，现在创建！
+        if wrapper.videoEngine == nil {
+            #if DEBUG
+            print("🎬 [Overlay] switchToVideo - 为选中页创建 VideoEngine")
+            #endif
+            wrapper.videoEngine = VideoEngine()
+        }
+        
+        guard let engine = wrapper.videoEngine else {
+            #if DEBUG
+            print("⚠️ [Overlay] switchToVideo - VideoEngine 创建失败")
+            #endif
+            currentEngine = nil
+            return
+        }
+        
+        // ✅ 设置当前 Engine
+        currentEngine = engine
+        
+        // ✅ 设置首帧渲染回调
+        engine.onFirstFrameRendered = {
+            #if DEBUG
+            print("🎞️ [Overlay] 条件2满足：首帧已渲染")
+            #endif
+            hasFirstPixel = true
+            tryHideCoverForCurrentVideo()
+        }
+        
+        // ✅ 设置播放完成回调
+        engine.onPlaybackFinished = {
+            #if DEBUG
+            print("✅ [Overlay] 视频播放完成，回到静止")
+            #endif
+            currentIsPlaying = false
+            currentCoverVisible = true
+            currentEngine?.stop()
+            
+            // ✅ 通知 MediaItemView 显示封面
+            wrapper.coverShouldShow = true
+        }
+        
+        // ✅ 如果已经播放过，跳过自动播放
+        guard !wrapper.hasAutoPlayedForSelection else {
+            #if DEBUG
+            print("⏭️ [Overlay] switchToVideo - 已经播放过，跳过")
+            #endif
+            return
+        }
+
+        // ✅ 开始播放
+        #if DEBUG
+        print("🎬 [Overlay] switchToVideo - 开始预加载并播放")
+        #endif
+
+        // ✅ 不要提前隐藏封面！等待双门通过后再隐藏
+        // wrapper.coverShouldShow 将在 tryHideCoverForCurrentVideo 中设置
+
+        engine.prepare(url: movie.url) {
+            #if DEBUG
+            print("▶️ [Overlay] 视频准备完成，开始播放（等待两个条件）")
+            #endif
+            engine.playImmediately()
+            wrapper.hasAutoPlayedForSelection = true
+        }
+    }
+    
+    /// 尝试隐藏当前视频的封面（需要两个条件都满足）
+    private func tryHideCoverForCurrentVideo() {
+        guard let engine = currentEngine else { return }
+
+        // ✅ 双门机制：只有两个条件都满足时才隐藏封面
+        guard isReadyLayer && hasFirstPixel else {
+            #if DEBUG
+            print("⏳ [Overlay] 门控未通过 = readyLayer:\(isReadyLayer) pixel:\(hasFirstPixel)")
+            #endif
+            return
+        }
+
+        // ✅ 获取当前选中的 wrapper
+        guard selectedIndex >= 0, selectedIndex < searchViewModel.downloadMedia.count else { return }
+        let wrapper = searchViewModel.downloadMedia[selectedIndex]
+
+        // ✅ 两个条件都满足，隐藏封面
+        withAnimation(.easeOut(duration: 0.12)) {
+            currentCoverVisible = false
+            currentIsPlaying = true
+            // ✅ 关键：在双门通过后才隐藏 MediaItemView 的封面
+            wrapper.coverShouldShow = false
+        }
+
+        #if DEBUG
+        print("✨ [Overlay] 🎯 封面已隐藏（双门通过）")
+        #endif
     }
 
 }

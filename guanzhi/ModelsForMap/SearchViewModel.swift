@@ -14,6 +14,8 @@ import SwiftData
 import AVFoundation
 import Photos
 
+// ✅ 方案切换开关（true = 方案B短视频，false = 方案A LivePhoto）
+fileprivate let USE_VIDEO_PLAYBACK = true
 
 @MainActor
 class SearchViewModel: ObservableObject {
@@ -474,7 +476,7 @@ class SearchViewModel: ObservableObject {
 
                 let mediaType: MediaType
                 switch fileExtension.lowercased() {
-                case "jpg", "jpeg", "png":
+                case "jpg", "jpeg", "png", "heic", "heif":
                     mediaType = .photo
                 case "mov", "mp4":
                     mediaType = .video
@@ -1147,13 +1149,32 @@ class SearchViewModel: ObservableObject {
                 if let videoFile = mediaItemWrapper.videoFile {
                     if let videoLocalURL = videoFile.localURL {
                         print("创建媒体项，视频文件已下载，本地 URL：\(videoLocalURL)")
-                        // 动态照片，确保视频文件已下载
-                        let photo = Photo(data: imageData, isProxy: false, livePhotoMovieURL: videoLocalURL)
-                        mediaItemWrapper.mediaItem = photo
-                        mediaItemWrapper.generateLivePhoto()
-                        return photo
+                        
+                        // ✅ 方案切换：根据开关决定创建类型
+                        if USE_VIDEO_PLAYBACK {
+                            // 方案B：创建 Movie（短视频播放）
+                            print("📹 方案B：将 LivePhoto 作为短视频播放")
+                            let movie = Movie(url: videoLocalURL)
+                            mediaItemWrapper.mediaItem = movie
+                            // 同时保存封面图
+                            mediaItemWrapper.coverImageData = imageData
+                            
+                            // ✅ 修复：不要在这里创建 VideoEngine！
+                            // VideoEngine 应该只在 ShareDetailView.switchToVideo 中为选中页创建
+                            // 这样才能确保永远只有一个 VideoEngine 实例
+                            
+                            return movie
+                        } else {
+                            // 方案A：创建 Photo（LivePhoto 播放）
+                            print("📸 方案A：使用 PHLivePhotoView 播放")
+                            let photo = Photo(data: imageData, isProxy: false, livePhotoMovieURL: videoLocalURL)
+                            mediaItemWrapper.mediaItem = photo
+                            // 传入本地文件URL，避免重新写入临时文件
+                            mediaItemWrapper.generateLivePhoto(localPhotoURL: photoLocalURL)
+                            return photo
+                        }
                     } else {
-                        print("视频文件尚未下载完成，无法创建 Live Photo")
+                        print("视频文件尚未下载完成，无法创建媒体项")
                         // 视频文件尚未下载完成，暂不创建 MediaItem
                         return nil
                     }
@@ -1463,6 +1484,8 @@ class MediaItemWrapper: Identifiable, ObservableObject {
     @Published var mediaItem: MediaItemProtocol?
     var photoFile: MediaFile?
     var videoFile: MediaFile?
+    
+    // 方案A：LivePhoto 相关
     @Published var livePhoto: PHLivePhoto?
     @Published var imageSize: CGSize?
     @Published var currentPlayToken: UUID?
@@ -1470,13 +1493,20 @@ class MediaItemWrapper: Identifiable, ObservableObject {
     private var hasAssignedFinalLivePhoto = false
     private var isGeneratingLivePhoto = false
     var hasAutoPlayedForSelection: Bool = false
+    
+    // 方案B：短视频播放相关
+    @Published var coverImageData: Data?  // 封面图数据
+    @Published var videoEngine: VideoEngine?  // 视频播放引擎
+    @Published var coverShouldShow: Bool = true  // 封面是否应该显示（由 ShareDetailView 控制）
 
     init(_ mediaItem: MediaItemProtocol?) {
         self.mediaItem = mediaItem
     }
 
     @MainActor
-    func generateLivePhoto() {
+    /// 生成LivePhoto对象
+    /// - Parameter localPhotoURL: 本地照片文件URL（可选）。如果提供，直接使用；否则创建临时文件
+    func generateLivePhoto(localPhotoURL: URL? = nil) {
         guard let photo = self.mediaItem as? Photo,
               let livePhotoMovieURL = photo.livePhotoMovieURL else {
             return
@@ -1505,17 +1535,45 @@ class MediaItemWrapper: Identifiable, ObservableObject {
             print("视频尺寸: (\(width), \(height))")
         }
         
-        // 将照片数据保存到临时文件
-        let tempPhotoURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
-        do {
-            try photo.data.write(to: tempPhotoURL)
-        } catch {
-            print("无法写入临时照片文件：\(error)")
-            return
+        // ✅ 方案A改进：优先使用本地文件URL，避免重新写入临时文件（可能丢失元数据）
+        let photoURL: URL
+        
+        if let localURL = localPhotoURL {
+            // 直接使用已下载的本地文件（保留元数据）
+            photoURL = localURL
+            #if DEBUG
+            print("✅ generateLivePhoto: 使用本地文件，保留元数据 - \(localURL.path)")
+            
+            // 🔍 调试：检查下载的文件是否包含元数据
+            if let imageData = try? Data(contentsOf: localURL),
+               let imageSource = CGImageSourceCreateWithData(imageData as CFData, nil),
+               let metadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any] {
+                let makerAppleKey = "{MakerApple}"
+                if let makerApple = metadata[makerAppleKey] as? [String: Any],
+                   let assetId = makerApple["17"] as? String {
+                    print("🎉 元数据检查：图片包含 AssetID = \(assetId)")
+                } else {
+                    print("⚠️ 元数据检查：图片缺少 MakerApple/17，可能被服务器处理")
+                }
+            }
+            #endif
+        } else {
+            // 创建临时文件（兼容旧逻辑）
+            let tempPhotoURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
+            do {
+                try photo.data.write(to: tempPhotoURL)
+                photoURL = tempPhotoURL
+                #if DEBUG
+                print("⚠️ generateLivePhoto: 使用临时文件 - \(tempPhotoURL.path)")
+                #endif
+            } catch {
+                print("无法写入临时照片文件：\(error)")
+                return
+            }
         }
 
         // 生成 PHLivePhoto 对象
-        PHLivePhoto.request(withResourceFileURLs: [tempPhotoURL, livePhotoMovieURL], placeholderImage: nil, targetSize: .zero, contentMode: .aspectFit) { livePhoto, info in
+        PHLivePhoto.request(withResourceFileURLs: [photoURL, livePhotoMovieURL], placeholderImage: nil, targetSize: .zero, contentMode: .aspectFit) { livePhoto, info in
             let isDegraded = (info[PHLivePhotoInfoIsDegradedKey] as? Bool) ?? false
 
             #if DEBUG

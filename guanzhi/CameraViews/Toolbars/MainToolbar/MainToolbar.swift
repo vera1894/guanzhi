@@ -318,27 +318,52 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 
             let dispatchGroup = DispatchGroup()
             var uploadError: Error?
-
-            // 上传静态图片
-            dispatchGroup.enter()
-            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") { result in
-                switch result {
-                case .success(_):
-                    dispatchGroup.leave()
-                case .failure(let error):
-                    uploadError = error
-                    dispatchGroup.leave()
-                }
-            }
-
-            // 如果存在 Live Photo 视频，单独上传
-            if let livePhotoURL = photo.livePhotoMovieURL {
-                let fileManager = FileManager.default
-                if fileManager.fileExists(atPath: livePhotoURL.path) {
+            
+            // ✅ 方案A：在上传前为LivePhoto写入配对元数据
+            // 判断是否为LivePhoto
+            let isLivePhoto = photo.livePhotoMovieURL != nil
+            
+            if isLivePhoto, let originalVideoURL = photo.livePhotoMovieURL {
+                // 这是LivePhoto，需要先处理配对元数据
+                #if DEBUG
+                print("🎬 MainToolbar: 检测到LivePhoto，开始写入配对元数据")
+                #endif
+                
+                // ✅ 关键修复：在Task外部enter，确保异步完成后才notify
+                dispatchGroup.enter()
+                
+                Task {
+                    defer {
+                        // 确保无论成功或失败都leave
+                        dispatchGroup.leave()
+                    }
+                    
                     do {
-                        let videoData = try Data(contentsOf: livePhotoURL)
+                        // 创建临时输出路径
+                        let tempDir = FileManager.default.temporaryDirectory
+                        // ✅ 改为HEIC格式（对LivePhoto元数据支持更好）
+                        let pairedImageURL = tempDir.appendingPathComponent("\(UUID().uuidString)_paired.heic")
+                        let pairedVideoURL = tempDir.appendingPathComponent("\(UUID().uuidString)_paired.mov")
+                        
+                        // 调用打包工具写入配对元数据
+                        let assetId = try await LivePhotoPackager.packageLivePhoto(
+                            imageData: photo.data,
+                            videoURL: originalVideoURL,
+                            outputImageURL: pairedImageURL,
+                            outputVideoURL: pairedVideoURL
+                        )
+                        
+                        #if DEBUG
+                        print("✅ MainToolbar: LivePhoto配对元数据写入成功，AssetID: \(assetId)")
+                        #endif
+                        
+                        // 读取处理后的文件数据
+                        let pairedImageData = try Data(contentsOf: pairedImageURL)
+                        let pairedVideoData = try Data(contentsOf: pairedVideoURL)
+                        
+                        // ✅ 上传配对后的图片（HEIC格式）
                         dispatchGroup.enter()
-                        uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") { result in
+                        uploadFile(data: pairedImageData, fileName: "\(uniqueFileName)_photo.heic", mimeType: "image/heic") { result in
                             switch result {
                             case .success(_):
                                 dispatchGroup.leave()
@@ -347,13 +372,68 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                 dispatchGroup.leave()
                             }
                         }
+                        
+                        // 上传配对后的视频
+                        dispatchGroup.enter()
+                        uploadFile(data: pairedVideoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") { result in
+                            switch result {
+                            case .success(_):
+                                dispatchGroup.leave()
+                            case .failure(let error):
+                                uploadError = error
+                                dispatchGroup.leave()
+                            }
+                        }
+                        
+                        // 清理临时文件
+                        try? FileManager.default.removeItem(at: pairedImageURL)
+                        try? FileManager.default.removeItem(at: pairedVideoURL)
+                        
                     } catch {
-                        print("Failed to read live photo video data: \(error)")
-                        completion(.failure(error))
-                        return
+                        print("❌ MainToolbar: LivePhoto配对处理失败: \(error)")
+                        // 失败时回退到原始上传
+                        await MainActor.run {
+                            dispatchGroup.enter()
+                            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") { result in
+                                switch result {
+                                case .success(_):
+                                    dispatchGroup.leave()
+                                case .failure(let error):
+                                    uploadError = error
+                                    dispatchGroup.leave()
+                                }
+                            }
+                            
+                            do {
+                                let videoData = try Data(contentsOf: originalVideoURL)
+                                dispatchGroup.enter()
+                                uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") { result in
+                                    switch result {
+                                    case .success(_):
+                                        dispatchGroup.leave()
+                                    case .failure(let error):
+                                        uploadError = error
+                                        dispatchGroup.leave()
+                                    }
+                                }
+                            } catch {
+                                print("Failed to read live photo video data: \(error)")
+                                uploadError = error
+                            }
+                        }
                     }
-                } else {
-                    print("Live Photo video file does not exist at path: \(livePhotoURL.path)")
+                }
+            } else {
+                // 普通照片，直接上传
+                dispatchGroup.enter()
+                uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") { result in
+                    switch result {
+                    case .success(_):
+                        dispatchGroup.leave()
+                    case .failure(let error):
+                        uploadError = error
+                        dispatchGroup.leave()
+                    }
                 }
             }
 

@@ -94,11 +94,14 @@
 		FF84D7BF2D3E35C10060F060 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7BE2D3E35C10060F060 /* ShareService.swift */; };
 		FF84D7C32D40DE190060F060 /* OtherUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */; };
 		FF84D7C52D45DA5C0060F060 /* OthersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C42D45DA4F0060F060 /* OthersView.swift */; };
+		FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */; };
+		FF87A8DC2ECC4B1D00C92D25 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */; };
 		FF8BC0DD2CCF7388007DE51E /* ShareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8BC0DC2CCF7388007DE51E /* ShareDetailView.swift */; };
 		FF9EB98B2CA29EC4009A133E /* CustomAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */; };
 		FFAC905F2C78848300FA7374 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1282C78787800AF7086 /* CameraView.swift */; };
 		FFAC90602C78848300FA7374 /* CaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1272C78787800AF7086 /* CaptureService.swift */; };
 		FFAC90612C78848300FA7374 /* CameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1292C78787800AF7086 /* CameraModel.swift */; };
+		FFC00A382ECC195F00413F1A /* LivePhotoPackager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */; };
 		FFD24BE92C50E27A00BCE228 /* ProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */; };
 		FFD24BEB2C58B85700BCE228 /* LookAroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */; };
 		FFDDA3802D55B0F00027ED26 /* ZoomSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDDA37F2D55B0F00027ED26 /* ZoomSliderView.swift */; };
@@ -213,8 +216,11 @@
 		FF84D7BE2D3E35C10060F060 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfile.swift; sourceTree = "<group>"; };
 		FF84D7C42D45DA4F0060F060 /* OthersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OthersView.swift; sourceTree = "<group>"; };
+		FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEngine.swift; sourceTree = "<group>"; };
+		FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		FF8BC0DC2CCF7388007DE51E /* ShareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareDetailView.swift; sourceTree = "<group>"; };
 		FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotation.swift; sourceTree = "<group>"; };
+		FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoPackager.swift; sourceTree = "<group>"; };
 		FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
 		FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookAroundView.swift; sourceTree = "<group>"; };
 		FFDDA37F2D55B0F00027ED26 /* ZoomSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomSliderView.swift; sourceTree = "<group>"; };
@@ -300,6 +306,7 @@
 		D13FFDD62BAB377A007E1970 /* ModelsForMap */ = {
 			isa = PBXGroup;
 			children = (
+				FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */,
 				FF84D7BE2D3E35C10060F060 /* ShareService.swift */,
 				FFF669262CA93EEA005FDB86 /* SearchViewModel.swift */,
 				FF4224612CE5C2AF00734C39 /* CoordinateConverter.swift */,
@@ -311,6 +318,7 @@
 		D17042C12B5429EA005683D2 /* UIElement */ = {
 			isa = PBXGroup;
 			children = (
+				FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */,
 				FF7B72EE2B9A04DB0045E866 /* NotificationStyles */,
 				FF7B72E82B99E6640045E866 /* TextfieldStyles */,
 			);
@@ -508,6 +516,7 @@
 		FF5D240B2D2395E700C1D463 /* GeneralFunctions */ = {
 			isa = PBXGroup;
 			children = (
+				FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */,
 				FF4ED5BC2DAA74900017131B /* AppVersionManager.swift */,
 				FF5D24102D23965200C1D463 /* GeneralFunctions.swift */,
 			);
@@ -741,6 +750,7 @@
 				FF6BC4E52C7C189400423660 /* CaptureModeView.swift in Sources */,
 				FF0025902D3754F10056C5C6 /* UserTimelineViewModel.swift in Sources */,
 				D19912022B5292A6002A711A /* MyView.swift in Sources */,
+				FF87A8DC2ECC4B1D00C92D25 /* VideoPlayerView.swift in Sources */,
 				FFDDA3822D5DC6C30027ED26 /* EditProfileView.swift in Sources */,
 				FF769B5B2D6D9C0600321540 /* CustomImagePicker.swift in Sources */,
 				D13FFDD82BAB379A007E1970 /* UserLoginModel.swift in Sources */,
@@ -754,6 +764,7 @@
 				FF5D24132D23C16300C1D463 /* ToastManager.swift in Sources */,
 				FF9EB98B2CA29EC4009A133E /* CustomAnnotation.swift in Sources */,
 				FF5D241B2D2C10E200C1D463 /* LocalUserProfile.swift in Sources */,
+				FFC00A382ECC195F00413F1A /* LivePhotoPackager.swift in Sources */,
 				FF8BC0DD2CCF7388007DE51E /* ShareDetailView.swift in Sources */,
 				FFAC90612C78848300FA7374 /* CameraModel.swift in Sources */,
 				FF6BC4E12C7C188300423660 /* CameraPreview.swift in Sources */,
@@ -784,6 +795,7 @@
 				FF1A50232CA0F5DB00596DBD /* LocationService.swift in Sources */,
 				FF6BC4DB2C7C187200423660 /* MediaLibrary.swift in Sources */,
 				FF6BC4F32C7C18CC00423660 /* ViewExtensions.swift in Sources */,
+				FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 				D13FFDEE2BAF1F26007E1970 /* CapsuleTextField.swift in Sources */,
 				D13FFDF02BAF1F26007E1970 /* OTPTextField.swift in Sources */,

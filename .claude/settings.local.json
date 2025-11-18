@@ -21,7 +21,8 @@
       "Bash(xcrun simctl:*)",
       "Bash(git log:*)",
       "WebFetch(domain:stackoverflow.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(git fetch:*)"
     ],
     "deny": []
   }

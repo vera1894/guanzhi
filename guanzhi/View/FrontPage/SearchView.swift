@@ -149,7 +149,7 @@ struct SearchView: View {
                             locationManager.requestLocation()
                         }
                         .onMapCameraChange(frequency: .continuous) { context in
-                            print("🧭 heading=\(context.camera.heading), pitch=\(context.camera.pitch)")
+//                            print("🧭 heading=\(context.camera.heading), pitch=\(context.camera.pitch)")
                             lastCamera = context.camera  // ✅ 保存相机状态
                             let region = context.region
                             searchViewModel.region = region
