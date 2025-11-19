@@ -90,7 +90,7 @@ struct MediaItemView: View {
                             )
                             .onLongPressGesture(
                                 minimumDuration: 0.8,
-                                maximumDistance: 50,
+                                maximumDistance: 20, // ✅ 限制为 20pt，手指稍微移动就不会触发长按（防止与滑动手势冲突）
                                 pressing: { isPressing in
                                     guard photo.livePhotoMovieURL != nil else { return }
 
@@ -315,39 +315,59 @@ struct MediaItemView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity) // ✅ 填满整个 TabView 页面
                     .onLongPressGesture(
-                        minimumDuration: 0.5, // ✅ 缩短为 0.5 秒，接近系统相册体验
-                        maximumDistance: 50,
+                        minimumDuration: 0.5, // ✅ 保持 0.5 秒
+                        maximumDistance: 20, // ✅ 限制为 20pt，配合延迟检测，手指移动即取消
                         pressing: { isPressing in
                             if isPressing {
-                                // 长按开始：立即播放视频
+                                // 1. 手指按下：不立即播放，而是启动延迟任务
                                 guard !isLongPressActive else { return }
                                 isLongPressActive = true
-                                didTriggerLongPressPlayback = true
-
-                                #if DEBUG
-                                print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按触发视频播放")
-                                #endif
-
-                                // ✅ 隐藏封面，显示视频
-                                mediaItemWrapper.coverShouldShow = false
-
-                                if let engine = mediaItemWrapper.videoEngine {
-                                    engine.prepare(url: movie.url) {
-                                        #if DEBUG
-                                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - 长按播放准备完成，开始播放")
-                                        #endif
-                                        engine.playImmediately()
+                                
+                                // 取消之前的任务（如果有）
+                                longPressWorkItem?.cancel()
+                                
+                                let workItem = DispatchWorkItem { [currentIndex] in
+                                    // 再次检查状态，确保任务执行时仍然是按压状态
+                                    guard isLongPressActive else { return }
+                                    
+                                    // ✅ 真正的播放逻辑：延迟后触发
+                                    didTriggerLongPressPlayback = true
+                                    
+                                    #if DEBUG
+                                    print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按确认（静止0.25s），开始播放")
+                                    #endif
+                                    
+                                    // 隐藏封面，显示视频
+                                    mediaItemWrapper.coverShouldShow = false
+                                    
+                                    if let engine = mediaItemWrapper.videoEngine {
+                                        engine.prepare(url: movie.url) {
+                                            #if DEBUG
+                                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - 长按播放准备完成，开始播放")
+                                            #endif
+                                            engine.playImmediately()
+                                        }
                                     }
                                 }
+                                
+                                longPressWorkItem = workItem
+                                // ✅ 延迟 0.25 秒执行。如果用户是滑动，手指移动会触发 pressing(false) 从而取消此任务
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
+                                
                             } else {
-                                // 长按结束：停止播放，回到静止
+                                // 2. 手指抬起或移动超出范围
                                 isLongPressActive = false
-
+                                
+                                // ✅ 关键：取消未执行的播放任务（如果是滑动，会在这里拦截）
+                                longPressWorkItem?.cancel()
+                                longPressWorkItem = nil
+                                
                                 if didTriggerLongPressPlayback {
+                                    // 如果已经触发了播放，则停止播放
                                     #if DEBUG
                                     print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按结束，停止播放")
                                     #endif
-
+                                    
                                     mediaItemWrapper.coverShouldShow = true
                                     mediaItemWrapper.videoEngine?.stop()
                                     didTriggerLongPressPlayback = false
