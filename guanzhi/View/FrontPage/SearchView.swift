@@ -297,7 +297,20 @@ struct SearchView: View {
                 .environmentObject(navigationCoordinator)
                 .ignoresSafeArea(.all)
                 .onChange(of: appState.isPushedGuanzhi) { oldValue, newValue in
-                    showNotification()
+                    if newValue {
+                        showNotification()
+                        // Refresh map data with a delay to ensure server indexing
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            if let location = locationManager.currentLocation {
+                                print("🔄 SearchView: 刷新分享列表 (延迟1.5秒)")
+                                searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
+                            }
+                        }
+                        // Reset the flag
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            appState.isPushedGuanzhi = false
+                        }
+                    }
                 }
     //            .onChange(of: locationManager.locationErrorDescription) { _ , errorDescription in
     //                if let errorDescription = errorDescription {

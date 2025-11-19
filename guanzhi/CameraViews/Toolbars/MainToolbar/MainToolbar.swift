@@ -310,6 +310,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
 
             let photo = sortedPhotos[uploadIndex]
             let uniqueFileName = generateUniqueFileName()
+            let suffixTimestamp = String(Int(Date().timeIntervalSince1970 * 1000))
 
             // 如果这是第一个媒体文件，记录其前缀
             if uploadIndex == 0 {
@@ -362,8 +363,9 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                         let pairedVideoData = try Data(contentsOf: pairedVideoURL)
                         
                         // ✅ 上传配对后的图片（HEIC格式）
+                        // 使用 SearchViewModel 可解析的格式: prefix_type-timestamp.ext
                         dispatchGroup.enter()
-                        uploadFile(data: pairedImageData, fileName: "\(uniqueFileName)_photo.heic", mimeType: "image/heic") { result in
+                        uploadFile(data: pairedImageData, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).heic", mimeType: "image/heic") { result in
                             switch result {
                             case .success(_):
                                 dispatchGroup.leave()
@@ -375,7 +377,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                         
                         // 上传配对后的视频
                         dispatchGroup.enter()
-                        uploadFile(data: pairedVideoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") { result in
+                        uploadFile(data: pairedVideoData, fileName: "\(uniqueFileName)_livephoto-\(suffixTimestamp).mov", mimeType: "video/quicktime") { result in
                             switch result {
                             case .success(_):
                                 dispatchGroup.leave()
@@ -394,7 +396,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                         // 失败时回退到原始上传
                         await MainActor.run {
                             dispatchGroup.enter()
-                            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") { result in
+                            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg") { result in
                                 switch result {
                                 case .success(_):
                                     dispatchGroup.leave()
@@ -407,7 +409,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                             do {
                                 let videoData = try Data(contentsOf: originalVideoURL)
                                 dispatchGroup.enter()
-                                uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto.mov", mimeType: "video/quicktime") { result in
+                                uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto-\(suffixTimestamp).mov", mimeType: "video/quicktime") { result in
                                     switch result {
                                     case .success(_):
                                         dispatchGroup.leave()
@@ -426,7 +428,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             } else {
                 // 普通照片，直接上传
                 dispatchGroup.enter()
-                uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo.jpg", mimeType: "image/jpeg") { result in
+                uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg") { result in
                     switch result {
                     case .success(_):
                         dispatchGroup.leave()
@@ -530,7 +532,8 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             }
 
             // 上传缩略图
-            let thumbnailFileName = "\(prefix)_thumbnail.jpg"
+            let suffixTimestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+            let thumbnailFileName = "\(prefix)_thumbnail-\(suffixTimestamp).jpg"
             let formData = MultipartFormData()
             formData.append(thumbnailData, withName: "multipartFile", fileName: thumbnailFileName, mimeType: "image/jpeg")
 

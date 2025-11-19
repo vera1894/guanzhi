@@ -190,7 +190,7 @@ class SearchViewModel: ObservableObject {
         share.cityCode = responsedShare.cityCode?.stringValue
         share.districtCode = responsedShare.districtCode?.stringValue
         share.address = responsedShare.address
-        share.imagePaths = responsedShare.imagePath.components(separatedBy: ",")
+        share.imagePaths = responsedShare.imagePath.components(separatedBy: ",").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         share.title = responsedShare.title
         share.deleted = responsedShare.deleted == 1
         // 异步更新媒体文件
@@ -219,10 +219,12 @@ class SearchViewModel: ObservableObject {
         for mediaFile in mediaFilesToDelete { context.delete(mediaFile) }
         // 添加新的媒体文件
         for path in mediaPathsToAdd {
-            if let mediaFile = parseMediaFile(from: path, shareId: share.id) {
-                context.insert(mediaFile)
-            } else {
-                print("无法解析媒体文件路径：\(path)")
+            if !path.trimmingCharacters(in: .whitespaces).isEmpty {
+                if let mediaFile = parseMediaFile(from: path, shareId: share.id) {
+                    context.insert(mediaFile)
+                } else {
+                    print("无法解析媒体文件路径：'\(path)'")
+                }
             }
         }
         // 保存上下文
@@ -240,7 +242,11 @@ class SearchViewModel: ObservableObject {
         var mediaFilesDict: [String: (photo: MediaFile?, video: MediaFile?, thumbnail: MediaFile?)] = [:]
 
         for path in mediaPaths {
-            guard let mediaFile = parseMediaFile(from: path, shareId: share.id) else { continue }
+            guard !path.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
+            guard let mediaFile = parseMediaFile(from: path, shareId: share.id) else {
+                print("无法解析媒体文件路径：'\(path)'")
+                continue
+            }
             let prefix = mediaFile.prefix
             // 检查数据库中是否已存在该媒体文件
             let fullPath = mediaFile.fullPath
@@ -257,7 +263,7 @@ class SearchViewModel: ObservableObject {
                     switch mediaFile.type {
                     case .photo:
                         mediaFilesDict[prefix]?.photo = mediaFile
-                    case .video:
+                    case .video, .livePhoto:
                         mediaFilesDict[prefix]?.video = mediaFile
                     case .thumbnail:
                         mediaFilesDict[prefix]?.thumbnail = mediaFile
@@ -269,7 +275,7 @@ class SearchViewModel: ObservableObject {
                     switch mediaFile.type {
                     case .photo:
                         mediaFilesDict[prefix]?.photo = mediaFile
-                    case .video:
+                    case .video, .livePhoto:
                         mediaFilesDict[prefix]?.video = mediaFile
                     case .thumbnail:
                         mediaFilesDict[prefix]?.thumbnail = mediaFile
@@ -422,17 +428,25 @@ class SearchViewModel: ObservableObject {
                 let prefix = components[0...2].joined(separator: "_") // 提取前缀
                 let typeAndTimestamp = components[3]
                 let typeTimestampComponents = typeAndTimestamp.components(separatedBy: "-")
-                guard typeTimestampComponents.count == 2 else {
+                guard typeTimestampComponents.count >= 2 else {
+                    print("无法解析媒体文件：格式不符 (缺少 -): \(typeAndTimestamp)")
                     return nil
                 }
                 let typeString = typeTimestampComponents[0]
-                let timestampAndExtension = typeTimestampComponents[1].components(separatedBy: ".")
-                guard timestampAndExtension.count == 2 else {
+                
+                // 时间戳通常是第二部分
+                let timestampPart = typeTimestampComponents[1]
+                let timestampString = timestampPart.components(separatedBy: ".").first ?? ""
+                
+                // 使用 NSString 方法提取扩展名，更加可靠
+                let fileExtension = (fileName as NSString).pathExtension
+                guard !fileExtension.isEmpty else {
+                    print("无法解析媒体文件：无法提取扩展名: \(fileName)")
                     return nil
                 }
-                let timestampString = timestampAndExtension[0]
-                let fileExtension = timestampAndExtension[1]
+
                 guard let timestamp = Double(timestampString) else {
+                    print("无法解析媒体文件：无效的时间戳: \(timestampString)")
                     return nil
                 }
 
@@ -447,6 +461,7 @@ class SearchViewModel: ObservableObject {
                 case "thumbnail":
                     mediaType = .thumbnail
                 default:
+                    print("无法解析媒体文件：未知类型: \(typeString)")
                     return nil
                 }
 
@@ -466,11 +481,13 @@ class SearchViewModel: ObservableObject {
                 let prefix = components[0]  // 提取前缀
                 let timestampAndExtension = components[1].components(separatedBy: ".")
                 guard timestampAndExtension.count == 2 else {
+                    print("无法解析媒体文件(格式2)：扩展名格式不符: \(fileName)")
                     return nil
                 }
                 let timestampString = timestampAndExtension[0]
                 let fileExtension = timestampAndExtension[1]
                 guard let timestamp = Double(timestampString) else {
+                    print("无法解析媒体文件(格式2)：无效的时间戳: \(timestampString)")
                     return nil
                 }
 
@@ -481,6 +498,7 @@ class SearchViewModel: ObservableObject {
                 case "mov", "mp4":
                     mediaType = .video
                 default:
+                    print("无法解析媒体文件(格式2)：未知扩展名: \(fileExtension)")
                     return nil
                 }
 
@@ -829,74 +847,83 @@ class SearchViewModel: ObservableObject {
     
     //加载分享详情
     func loadShareDetail(for shareId: Int64) {
-        // ✅ 防止重复加载同一个分享
-        if currentLoadingShareId == shareId {
+        // 尝试加载本地数据
+        let hasLocalData = loadFromLocal(shareId: shareId)
+        
+        // 如果已经在加载中，且没有本地数据（说明是首次完全加载），则跳过
+        // 如果有本地数据，允许再次请求以刷新（静默刷新）
+        if currentLoadingShareId == shareId && !hasLocalData {
             #if DEBUG
             print("⏭️ 分享 \(shareId) 正在加载中，跳过重复请求")
             #endif
             return
         }
 
-        currentLoadingShareId = shareId
-        print("加载分享详情，分享 ID：\(shareId)")
-
-        // 从数据库中获取分享
+        // 如果没有本地数据，标记为加载中（显示 Loading）
+        if !hasLocalData {
+            currentLoadingShareId = shareId
+        }
+        print("加载分享详情，分享 ID：\(shareId) (hasLocalData: \(hasLocalData))")
+        
+        // 无论本地有没有数据，都从服务器拉取最新详情
+        fetchShareDetailFromServer(shareId: shareId, isBackground: hasLocalData)
+    }
+    
+    // 新增：从本地数据库加载数据并更新 UI
+    private func loadFromLocal(shareId: Int64) -> Bool {
         let fetchDescriptor = FetchDescriptor<Share>(
             predicate: #Predicate { $0.id == shareId },
             sortBy: []
         )
-        if let share = try? context.fetch(fetchDescriptor).first {
-            // 检查分享是否已被删除
-            if share.deleted {
-                // 分享已被删除，显示提示
-                self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
-
-                // 从本地删除该分享
-                self.deleteShare(shareId: shareId)
-
-                // 从地图标注列表中移除
-                if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
-                    self.annotations.remove(at: index)
-                }
-
-                // 清除加载状态
-                currentLoadingShareId = nil
-                return
-            }
-
-            self.selectedShare = share
-            self.selectedAnnotation = annotations.first { $0.id == "\(shareId)" }
-            // 获取媒体文件
-            let mediaFetchDescriptor = FetchDescriptor<MediaFile>(
-                predicate: #Predicate { $0.shareId == shareId },
-                sortBy: [SortDescriptor(\MediaFile.timestamp, order: .forward)]
-            )
-
-            if let mediaFiles = try? context.fetch(mediaFetchDescriptor) {
-                // 解析媒体文件，创建 MediaItemWrapper 数组
-                let mediaItems = parseMediaFiles(mediaFiles)
-
-                // 更新 self.downloadMedia
-                DispatchQueue.main.async {
-                    self.downloadMedia = mediaItems
-                    // ✅ 加载完成，清除状态（在主线程）
-                    self.currentLoadingShareId = nil
-                }
-
-                // 下载媒体文件并更新对应的 MediaItemWrapper
-                downloadMediaFiles(mediaItems: mediaItems)
-            } else {
-                // 没有媒体文件，也要清除加载状态
-                currentLoadingShareId = nil
-            }
-        } else {
-            // 如果本地没有，向服务器请求详情（异步，不阻塞）
-            fetchShareDetailFromServer(shareId: shareId)
+        guard let share = try? context.fetch(fetchDescriptor).first else {
+            return false
         }
+        
+        // 检查分享是否已被删除
+        if share.deleted {
+            // 分享已被删除，显示提示
+            self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
+            
+            // 从本地删除该分享
+            self.deleteShare(shareId: shareId)
+            
+            // 从地图标注列表中移除
+            if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
+                self.annotations.remove(at: index)
+            }
+            
+            // 清除加载状态
+            currentLoadingShareId = nil
+            return true // 视为已处理
+        }
+        
+        self.selectedShare = share
+        self.selectedAnnotation = annotations.first { $0.id == "\(shareId)" }
+        // 获取媒体文件
+        let mediaFetchDescriptor = FetchDescriptor<MediaFile>(
+            predicate: #Predicate { $0.shareId == shareId },
+            sortBy: [SortDescriptor(\MediaFile.timestamp, order: .forward)]
+        )
+        
+        if let mediaFiles = try? context.fetch(mediaFetchDescriptor) {
+            // 解析媒体文件，创建 MediaItemWrapper 数组
+            let mediaItems = parseMediaFiles(mediaFiles)
+            
+            // 更新 self.downloadMedia
+            DispatchQueue.main.async {
+                self.downloadMedia = mediaItems
+            }
+            
+            // 下载媒体文件并更新对应的 MediaItemWrapper
+            downloadMediaFiles(mediaItems: mediaItems)
+            return true
+        }
+        
+        return true
     }
     
     //从服务器获取分享详情
-    func fetchShareDetailFromServer(shareId: Int64) {
+    func fetchShareDetailFromServer(shareId: Int64, isBackground: Bool = false) {
         Task {
             do {
                 let detail = try await ShareService.shared.fetchShareDetail(shareId: shareId)
@@ -927,17 +954,20 @@ class SearchViewModel: ObservableObject {
 
                 // ✅ 清除加载状态，允许重新加载（此时数据已在本地数据库）
                 await MainActor.run {
-                    self.currentLoadingShareId = nil
+                    // 重新从本地加载（刷新 UI）
+                    _ = self.loadFromLocal(shareId: shareId)
+                    if !isBackground {
+                        self.currentLoadingShareId = nil
+                    }
                 }
-
-                // 然后重新加载（从本地数据库加载）
-                loadShareDetail(for: shareId)
             } catch {
                 print("Error fetching share detail: \(error)")
 
                 // ✅ 出错时也要清除加载状态
                 Task { @MainActor in
-                    self.currentLoadingShareId = nil
+                    if !isBackground {
+                        self.currentLoadingShareId = nil
+                    }
                 }
             }
         }
