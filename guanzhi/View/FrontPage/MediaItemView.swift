@@ -272,28 +272,17 @@ struct MediaItemView: View {
                 // ✅ 方案B：短视频播放（全局 Overlay）
                 // ✅ MediaItemView 只负责显示封面，播放器由 ShareDetailView 的全局 Overlay 管理
                 if USE_VIDEO_PLAYBACK {
-                    // ✅ 使用封面图尺寸作为统一的 aspectRatio
-                    let posterSize: CGSize = {
-                        if let coverData = mediaItemWrapper.coverImageData,
-                           let coverImage = UIImage(data: coverData) {
-                            return coverImage.size
-                        }
-                        return CGSize(width: 3, height: 4) // 默认 3:4
-                    }()
-                    
                     GeometryReader { geometry in
                         ZStack {
-                            // ✅ 只显示封面图（不再创建 VideoPlayerView）
+                            // ✅ 封面图使用 fit 模式
                             if let coverData = mediaItemWrapper.coverImageData,
                                let coverImage = UIImage(data: coverData) {
                                 Image(uiImage: coverImage)
                                     .resizable()
-                                    .scaledToFill()
-                                    .opacity(mediaItemWrapper.coverShouldShow ? 1 : 0) // ✅ 由 ShareDetailView 控制
-                                    .allowsHitTesting(false)
-                                    .clipped()
+                                    .scaledToFit() // ✅ 使用 fit 模式
+                                    .opacity(mediaItemWrapper.coverShouldShow ? 1 : 0)
                                     .overlay(
-                                        // ✅ 实况图标（只在封面显示时显示）
+                                        // ✅ 实况图标
                                         VStack {
                                             HStack {
                                                 if mediaItemWrapper.coverShouldShow {
@@ -307,62 +296,58 @@ struct MediaItemView: View {
                                         }
                                     )
                             }
+
+                            // ✅ 添加透明交互层，用于接收长按手势
+                            Color.clear
+                                .contentShape(Rectangle())
                         }
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                        // ✅ 使用 preference 报告当前选中页的矩形到 PlayerSpace 坐标空间
+                        // ✅ 直接报告容器矩形（封面和视频都填满容器）
                         .preference(key: PlayerFrameKey.self, value: {
                             let frame = isCurrentlySelected ? geometry.frame(in: .named("PlayerSpace")) : .zero
                             #if DEBUG
                             if isCurrentlySelected {
-                                print("📐 MediaItemView[\(currentIndex ?? -1)] - 报告矩形: \(frame)")
+                                print("📐 MediaItemView[\(currentIndex ?? -1)] - 报告容器矩形: \(frame)")
                             }
                             #endif
                             return frame
                         }())
                     }
-                    .aspectRatio(posterSize, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity) // ✅ 填满整个 TabView 页面
                     .onLongPressGesture(
-                        minimumDuration: 0.8,
+                        minimumDuration: 0.5, // ✅ 缩短为 0.5 秒，接近系统相册体验
                         maximumDistance: 50,
                         pressing: { isPressing in
                             if isPressing {
-                                // 长按开始：通知 ShareDetailView 播放视频
+                                // 长按开始：立即播放视频
                                 guard !isLongPressActive else { return }
                                 isLongPressActive = true
-                                
-                                longPressWorkItem?.cancel()
-                                let workItem = DispatchWorkItem { [currentIndex] in
-                                    guard isLongPressActive else { return }
-                                    
-                                    #if DEBUG
-                                    print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按触发视频播放（将由全局 Overlay 处理）")
-                                    #endif
-                                    
-                                    didTriggerLongPressPlayback = true
-                                    
-                                    // ✅ 重置封面状态
-                                    mediaItemWrapper.coverShouldShow = false
-                                    
-                                    if let engine = mediaItemWrapper.videoEngine {
-                                        engine.prepare(url: movie.url) {
-                                            #if DEBUG
-                                            print("▶️ MediaItemView[\(currentIndex ?? -1)] - 长按播放准备完成，开始播放")
-                                            #endif
-                                            engine.playImmediately()
-                                        }
+                                didTriggerLongPressPlayback = true
+
+                                #if DEBUG
+                                print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按触发视频播放")
+                                #endif
+
+                                // ✅ 隐藏封面，显示视频
+                                mediaItemWrapper.coverShouldShow = false
+
+                                if let engine = mediaItemWrapper.videoEngine {
+                                    engine.prepare(url: movie.url) {
+                                        #if DEBUG
+                                        print("▶️ MediaItemView[\(currentIndex ?? -1)] - 长按播放准备完成，开始播放")
+                                        #endif
+                                        engine.playImmediately()
                                     }
                                 }
-                                
-                                longPressWorkItem = workItem
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: workItem)
                             } else {
                                 // 长按结束：停止播放，回到静止
                                 isLongPressActive = false
-                                longPressWorkItem?.cancel()
-                                longPressWorkItem = nil
-                                
+
                                 if didTriggerLongPressPlayback {
+                                    #if DEBUG
+                                    print("👆 MediaItemView[\(currentIndex ?? -1)] - 长按结束，停止播放")
+                                    #endif
+
                                     mediaItemWrapper.coverShouldShow = true
                                     mediaItemWrapper.videoEngine?.stop()
                                     didTriggerLongPressPlayback = false

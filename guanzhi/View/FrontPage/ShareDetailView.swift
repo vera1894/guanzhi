@@ -74,6 +74,9 @@ struct ShareDetailView: View {
     // ✅ 可播监听
     @State private var mediaItemCancellable: AnyCancellable? = nil // 监听 wrapper 可播状态
 
+    // ✅ 稳定的播放器矩形（防抖，只在滑动结束时更新）
+    @State private var stablePlayerFrame: CGRect = .zero
+
     // 判断是否是自己的分享
     private var isMyShare: Bool {
         guard let share = searchViewModel.selectedShare else { return false }
@@ -114,8 +117,51 @@ struct ShareDetailView: View {
                                     }
                                 }
                                 .tabViewStyle(PageTabViewStyle())
+                                .coordinateSpace(name: "PlayerSpace") // ✅ 将坐标空间定义在 TabView 上
                                 .ignoresSafeArea()
     //                            .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
+                                // ✅ 将 overlayPreferenceValue 应用在 TabView 上，确保坐标空间一致
+                                .overlayPreferenceValue(PlayerFrameKey.self) { playerFrame in
+                                    Group {
+                                        if let engine = currentEngine,
+                                           let player = engine.player,
+                                           playerFrame != .zero {
+                                            let displayFrame = stablePlayerFrame != .zero ? stablePlayerFrame : playerFrame
+
+                                            VideoPlayerView(
+                                                player: player,
+                                                shouldPlay: true,
+                                                isSelected: true,
+                                                onReadyForDisplay: {
+                                                    #if DEBUG
+                                                    print("📺 [Overlay] 条件1满足：图层可显示")
+                                                    #endif
+                                                    isReadyLayer = true
+                                                    tryHideCoverForCurrentVideo()
+                                                }
+                                            )
+                                            .id("global-video-player")
+                                            .frame(width: displayFrame.width, height: displayFrame.height)
+                                            .position(x: displayFrame.midX, y: displayFrame.midY)
+                                            .animation(nil, value: displayFrame)
+                                            .transition(.identity)
+                                            .allowsHitTesting(false)
+                                            .onChange(of: playerFrame) { oldValue, newValue in
+                                                if newValue != .zero && abs(newValue.origin.x) < 10 {
+                                                    #if DEBUG
+                                                    print("📐 [Overlay] 更新 stablePlayerFrame: \(newValue)")
+                                                    #endif
+                                                    stablePlayerFrame = newValue
+                                                }
+                                            }
+                                            .onAppear {
+                                                #if DEBUG
+                                                print("📐 [Overlay] 锚定到显示矩形: \(displayFrame)")
+                                                #endif
+                                            }
+                                        }
+                                    }
+                                }
                                 .onChange(of: selectedIndex) { oldValue, newValue in
                                     #if DEBUG
                                     print("📑 ShareDetailView - selectedIndex 变化: \(oldValue) -> \(newValue)")
@@ -240,51 +286,8 @@ struct ShareDetailView: View {
             }
         }
         }
-        .coordinateSpace(name: "PlayerSpace") // ✅ 定义坐标空间，用于锚定 Overlay
         .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
-        // ✅ 方案B：全局单实例 VideoPlayerView Overlay（永远只有一个 AVPlayerLayer）
-        // ✅ 使用 overlayPreferenceValue 读取当前选中页的矩形，并精确锚定 Overlay
-        .overlayPreferenceValue(PlayerFrameKey.self) { playerFrame in
-            #if DEBUG
-            let _ = print("📐 [Overlay] overlayPreferenceValue 收到 playerFrame: \(playerFrame)")
-            #endif
-
-            Group {
-                if let engine = currentEngine,
-                   let player = engine.player,
-                   playerFrame != .zero {
-                    VideoPlayerView(
-                        player: player,
-                        shouldPlay: true,
-                        isSelected: true, // 全局播放器永远为选中态
-                        onReadyForDisplay: {
-                            #if DEBUG
-                            print("📺 [Overlay] 条件1满足：图层可显示")
-                            #endif
-                            // ✅ 条件1：图层可显示
-                            isReadyLayer = true
-                            tryHideCoverForCurrentVideo()
-                        }
-                    )
-                    .id("global-video-player") // ✅ 稳定 ID
-                    .frame(width: playerFrame.width, height: playerFrame.height) // ✅ 精确锚定到选中页的矩形
-                    .position(x: playerFrame.midX, y: playerFrame.midY) // ✅ 精确定位
-                    .transition(.identity) // ✅ 禁止转场动画
-                    .allowsHitTesting(false) // ✅ 视频层不拦截手势
-                    .onAppear {
-                        #if DEBUG
-                        print("📐 [Overlay] 锚定到矩形: \(playerFrame)")
-                        #endif
-                    }
-                    .onChange(of: playerFrame) { oldFrame, newFrame in
-                        #if DEBUG
-                        print("📐 [Overlay] 矩形变化: \(oldFrame) -> \(newFrame)")
-                        #endif
-                    }
-                }
-            }
-        }
         .overlay(// 顶部操作栏（始终存在，通过 opacity 控制可见性）
             GeometryReader { geo in
                 VStack(spacing: 0) {
@@ -661,6 +664,7 @@ struct ShareDetailView: View {
         currentIsPlaying = false
         isReadyLayer = false // ✅ 重置双门状态
         hasFirstPixel = false // ✅ 重置双门状态
+        stablePlayerFrame = .zero // ✅ 重置稳定矩形，让新视频重新初始化位置
 
         // ✅ 检查是否是 Movie 类型
         guard let movie = wrapper.mediaItem as? Movie else {

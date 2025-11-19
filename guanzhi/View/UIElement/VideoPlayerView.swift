@@ -39,7 +39,7 @@ struct VideoPlayerView: UIViewRepresentable {
         // 更新播放器
         if uiView.player !== player {
             uiView.setPlayer(player)
-            
+
             #if DEBUG
             if let player = player {
                 print("🔄 VideoPlayerView - 播放器对象变化: \(Unmanaged.passUnretained(player).toOpaque())")
@@ -48,9 +48,9 @@ struct VideoPlayerView: UIViewRepresentable {
             }
             #endif
         }
-        
-        // ✅ 确保视图层正确设置（统一使用 resizeAspectFill）
-        uiView.playerLayer.videoGravity = .resizeAspectFill
+
+        // ✅ 确保视图层正确设置（使用 resizeAspect 与封面 fit 模式一致）
+        uiView.playerLayer.videoGravity = .resizeAspect
         uiView.backgroundColor = .clear
         
         // 控制播放/暂停（但不干涉 VideoEngine 的控制）
@@ -106,8 +106,8 @@ struct VideoPlayerView: UIViewRepresentable {
         
     func setPlayer(_ player: AVPlayer?) {
         playerLayer.player = player
-        // ✅ 使用 resizeAspectFill，与封面保持一致的填充策略
-        playerLayer.videoGravity = .resizeAspectFill
+        // ✅ 使用 resizeAspect，与封面 fit 模式保持一致（等比适配不裁切）
+        playerLayer.videoGravity = .resizeAspect
         playerLayer.backgroundColor = UIColor.clear.cgColor
         
         // ✅ 核心修复：禁用 AVPlayerLayer 的隐式动画，防止闪烁
