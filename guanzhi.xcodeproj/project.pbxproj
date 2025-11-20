@@ -96,6 +96,7 @@
 		FF84D7C52D45DA5C0060F060 /* OthersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C42D45DA4F0060F060 /* OthersView.swift */; };
 		FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */; };
 		FF87A8DC2ECC4B1D00C92D25 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */; };
+		FF87A8DE2ECF034B00C92D25 /* 观之接口文档 20251120.md in Resources */ = {isa = PBXBuildFile; fileRef = FF87A8DD2ECF034B00C92D25 /* 观之接口文档 20251120.md */; };
 		FF8BC0DD2CCF7388007DE51E /* ShareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8BC0DC2CCF7388007DE51E /* ShareDetailView.swift */; };
 		FF9EB98B2CA29EC4009A133E /* CustomAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */; };
 		FFA51D8B2ECDF2ED0063A860 /* 地图数据获取优化方案.md in Resources */ = {isa = PBXBuildFile; fileRef = FFA51D8A2ECDF2ED0063A860 /* 地图数据获取优化方案.md */; };
@@ -219,6 +220,7 @@
 		FF84D7C42D45DA4F0060F060 /* OthersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OthersView.swift; sourceTree = "<group>"; };
 		FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEngine.swift; sourceTree = "<group>"; };
 		FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
+		FF87A8DD2ECF034B00C92D25 /* 观之接口文档 20251120.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "观之接口文档 20251120.md"; sourceTree = "<group>"; };
 		FF8BC0DC2CCF7388007DE51E /* ShareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareDetailView.swift; sourceTree = "<group>"; };
 		FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotation.swift; sourceTree = "<group>"; };
 		FFA51D8A2ECDF2ED0063A860 /* 地图数据获取优化方案.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "地图数据获取优化方案.md"; sourceTree = "<group>"; };
@@ -347,6 +349,7 @@
 		D19912032B52931A002A711A /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				FF87A8DD2ECF034B00C92D25 /* 观之接口文档 20251120.md */,
 				FF4ED5BA2DAA6D0C0017131B /* UserAgreement.txt */,
 				FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */,
 				FF5D241A2D2C10E200C1D463 /* LocalUserProfile.swift */,
@@ -649,6 +652,7 @@
 				D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */,
 				FF4224642CE5C2E700734C39 /* GCJ02.json in Resources */,
 				FF4ED5BB2DAA6D0C0017131B /* UserAgreement.txt in Resources */,
+				FF87A8DE2ECF034B00C92D25 /* 观之接口文档 20251120.md in Resources */,
 				FFA51D8B2ECDF2ED0063A860 /* 地图数据获取优化方案.md in Resources */,
 				D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */,
 			);
