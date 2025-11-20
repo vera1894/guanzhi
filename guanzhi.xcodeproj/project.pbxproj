@@ -98,6 +98,7 @@
 		FF87A8DC2ECC4B1D00C92D25 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */; };
 		FF8BC0DD2CCF7388007DE51E /* ShareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8BC0DC2CCF7388007DE51E /* ShareDetailView.swift */; };
 		FF9EB98B2CA29EC4009A133E /* CustomAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */; };
+		FFA51D8B2ECDF2ED0063A860 /* 地图数据获取优化方案.md in Resources */ = {isa = PBXBuildFile; fileRef = FFA51D8A2ECDF2ED0063A860 /* 地图数据获取优化方案.md */; };
 		FFAC905F2C78848300FA7374 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1282C78787800AF7086 /* CameraView.swift */; };
 		FFAC90602C78848300FA7374 /* CaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1272C78787800AF7086 /* CaptureService.swift */; };
 		FFAC90612C78848300FA7374 /* CameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1292C78787800AF7086 /* CameraModel.swift */; };
@@ -220,6 +221,7 @@
 		FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		FF8BC0DC2CCF7388007DE51E /* ShareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareDetailView.swift; sourceTree = "<group>"; };
 		FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotation.swift; sourceTree = "<group>"; };
+		FFA51D8A2ECDF2ED0063A860 /* 地图数据获取优化方案.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "地图数据获取优化方案.md"; sourceTree = "<group>"; };
 		FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoPackager.swift; sourceTree = "<group>"; };
 		FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
 		FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookAroundView.swift; sourceTree = "<group>"; };
@@ -306,6 +308,7 @@
 		D13FFDD62BAB377A007E1970 /* ModelsForMap */ = {
 			isa = PBXGroup;
 			children = (
+				FFA51D8A2ECDF2ED0063A860 /* 地图数据获取优化方案.md */,
 				FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */,
 				FF84D7BE2D3E35C10060F060 /* ShareService.swift */,
 				FFF669262CA93EEA005FDB86 /* SearchViewModel.swift */,
@@ -646,6 +649,7 @@
 				D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */,
 				FF4224642CE5C2E700734C39 /* GCJ02.json in Resources */,
 				FF4ED5BB2DAA6D0C0017131B /* UserAgreement.txt in Resources */,
+				FFA51D8B2ECDF2ED0063A860 /* 地图数据获取优化方案.md in Resources */,
 				D1CE061D2B526931001303F2 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

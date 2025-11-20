@@ -32,7 +32,7 @@ struct RoundedRectangleTextField: View {
                 .overlay {
                     TextField(placeholder, text: $inputText, axis: .vertical)
                         .font(.system(size: 18, weight: .regular, design: .default))
-                        .foregroundColor(.black)
+                        .foregroundColor(Color("color-black"))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .frame(minWidth: 100, maxWidth: .infinity, minHeight: 40, maxHeight: .infinity, alignment: .topLeading)
