@@ -22,7 +22,8 @@
       "Bash(git log:*)",
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:github.com)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(xargs basename:*)"
     ],
     "deny": []
   }
