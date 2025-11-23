@@ -8,6 +8,708 @@
       location = "group:Pods/Pods.xcodeproj">
    </FileRef>
    <Group
+      location = "group:Server"
+      name = "Server">
+      <Group
+         location = "group:onettoo"
+         name = "onettoo">
+         <FileRef
+            location = "group:mvnw.cmd">
+         </FileRef>
+         <FileRef
+            location = "group:pom.xml">
+         </FileRef>
+         <FileRef
+            location = "group:mvnw">
+         </FileRef>
+         <Group
+            location = "group:src"
+            name = "src">
+            <Group
+               location = "group:test"
+               name = "test">
+               <Group
+                  location = "group:java"
+                  name = "java">
+                  <Group
+                     location = "group:com"
+                     name = "com">
+                     <Group
+                        location = "group:cloud"
+                        name = "cloud">
+                        <Group
+                           location = "group:onettoo"
+                           name = "onettoo">
+                           <FileRef
+                              location = "group:OnettooApplicationTests.java">
+                           </FileRef>
+                        </Group>
+                     </Group>
+                  </Group>
+               </Group>
+            </Group>
+            <Group
+               location = "group:main"
+               name = "main">
+               <Group
+                  location = "group:resources"
+                  name = "resources">
+                  <FileRef
+                     location = "group:log4j2.xml">
+                  </FileRef>
+                  <Group
+                     location = "group:mapping"
+                     name = "mapping">
+                     <FileRef
+                        location = "group:GuanzhiMapper.xml">
+                     </FileRef>
+                     <FileRef
+                        location = "group:UserMapper.xml">
+                     </FileRef>
+                     <FileRef
+                        location = "group:DoodleMapper.xml">
+                     </FileRef>
+                  </Group>
+                  <FileRef
+                     location = "group:bootstrap.yml">
+                  </FileRef>
+                  <FileRef
+                     location = "group:application.yml">
+                  </FileRef>
+                  <FileRef
+                     location = "group:log4jdbc.log4j2.properties">
+                  </FileRef>
+               </Group>
+               <Group
+                  location = "group:java"
+                  name = "java">
+                  <Group
+                     location = "group:com"
+                     name = "com">
+                     <Group
+                        location = "group:cloud"
+                        name = "cloud">
+                        <Group
+                           location = "group:onettoo"
+                           name = "onettoo">
+                           <FileRef
+                              location = "group:OnettooApplication.java">
+                           </FileRef>
+                           <Group
+                              location = "group:common"
+                              name = "common">
+                              <Group
+                                 location = "group:config"
+                                 name = "config">
+                                 <FileRef
+                                    location = "group:MultiDataSourceConfig.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:RedisConfig.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:MultiDataSource.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:SwaggerConfig.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:SchedulingConfig.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ConfigurerAdapter.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:enums"
+                                 name = "enums">
+                                 <FileRef
+                                    location = "group:RequestMethodEnum.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EnumModel.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:annotation"
+                                 name = "annotation">
+                                 <FileRef
+                                    location = "group:AnonymousAccess.java">
+                                 </FileRef>
+                                 <Group
+                                    location = "group:rest"
+                                    name = "rest">
+                                    <FileRef
+                                       location = "group:AnonymousPutMapping.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:AnonymousDeleteMapping.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:AnonymousGetMapping.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:AnonymousPostMapping.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:AnonymousPatchMapping.java">
+                                    </FileRef>
+                                 </Group>
+                              </Group>
+                              <Group
+                                 location = "group:utils"
+                                 name = "utils">
+                                 <FileRef
+                                    location = "group:ThrowableUtil.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:YunPianUtil.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:RedisUtils.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:FileUtil.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:TencentSmsUtil.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:SHA512Utils.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EncryptUtils.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:aspect"
+                                 name = "aspect">
+                                 <FileRef
+                                    location = "group:BlockFrozenUser.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserStatusAspect.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:filter"
+                                 name = "filter">
+                                 <FileRef
+                                    location = "group:RequestFilter.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:jpush"
+                                 name = "jpush">
+                                 <Group
+                                    location = "group:example"
+                                    name = "example">
+                                    <FileRef
+                                       location = "group:PushExample.java">
+                                    </FileRef>
+                                 </Group>
+                                 <Group
+                                    location = "group:api"
+                                    name = "api">
+                                    <Group
+                                       location = "group:push"
+                                       name = "push">
+                                       <FileRef
+                                          location = "group:PushResult.java">
+                                       </FileRef>
+                                       <FileRef
+                                          location = "group:GroupPushResult.java">
+                                       </FileRef>
+                                       <FileRef
+                                          location = "group:CIDResult.java">
+                                       </FileRef>
+                                       <FileRef
+                                          location = "group:GroupPushClient.java">
+                                       </FileRef>
+                                       <FileRef
+                                          location = "group:JPushUtil.java">
+                                       </FileRef>
+                                       <Group
+                                          location = "group:model"
+                                          name = "model">
+                                          <FileRef
+                                             location = "group:Message.java">
+                                          </FileRef>
+                                          <Group
+                                             location = "group:notification"
+                                             name = "notification">
+                                             <FileRef
+                                                location = "group:IosNotification.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:Notification.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:IosAlert.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:PlatformNotification.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:WinphoneNotification.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:InterfaceAdapter.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:AndroidNotification.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:QuickappNotification.java">
+                                             </FileRef>
+                                          </Group>
+                                          <FileRef
+                                             location = "group:EncryptPushPayload.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:SMS.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:Platform.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:PushPayload.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:EncryptKeys.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:Notification3rd.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:PushModel.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:Options.java">
+                                          </FileRef>
+                                          <FileRef
+                                             location = "group:InappMessage.java">
+                                          </FileRef>
+                                          <Group
+                                             location = "group:audience"
+                                             name = "audience">
+                                             <FileRef
+                                                location = "group:AudienceTarget.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:AudienceType.java">
+                                             </FileRef>
+                                             <FileRef
+                                                location = "group:Audience.java">
+                                             </FileRef>
+                                          </Group>
+                                          <FileRef
+                                             location = "group:BatchPushResult.java">
+                                          </FileRef>
+                                       </Group>
+                                       <FileRef
+                                          location = "group:PushClient.java">
+                                       </FileRef>
+                                       <FileRef
+                                          location = "group:package-info.java">
+                                       </FileRef>
+                                    </Group>
+                                    <FileRef
+                                       location = "group:JPushClient.java">
+                                    </FileRef>
+                                 </Group>
+                              </Group>
+                              <Group
+                                 location = "group:exception"
+                                 name = "exception">
+                                 <Group
+                                    location = "group:handler"
+                                    name = "handler">
+                                    <FileRef
+                                       location = "group:GlobalExceptionHandler.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ApiError.java">
+                                    </FileRef>
+                                 </Group>
+                                 <FileRef
+                                    location = "group:RepeatReportException.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:BadRequestException.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:base"
+                                 name = "base">
+                                 <FileRef
+                                    location = "group:RestOut.java">
+                                 </FileRef>
+                              </Group>
+                           </Group>
+                           <Group
+                              location = "group:modules"
+                              name = "modules">
+                              <Group
+                                 location = "group:dto"
+                                 name = "dto">
+                                 <FileRef
+                                    location = "group:VoteDTO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareViewDTO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:TagDTO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UpdateUserStatusDTO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:MarkShareDTO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:CheckinDTO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:CommentDTO.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:tasks"
+                                 name = "tasks">
+                                 <FileRef
+                                    location = "group:FadeScoreTask.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:security"
+                                 name = "security">
+                                 <Group
+                                    location = "group:config"
+                                    name = "config">
+                                    <FileRef
+                                       location = "group:SecurityConfig.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:SecurityProperties.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ConfigBeanConfiguration.java">
+                                    </FileRef>
+                                 </Group>
+                                 <Group
+                                    location = "group:security"
+                                    name = "security">
+                                    <FileRef
+                                       location = "group:TokenConfigurer.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:TokenFilter.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:JwtAuthenticationEntryPoint.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:JwtAccessDeniedHandler.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:SHA521PasswordEncoder.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:TokenProvider.java">
+                                    </FileRef>
+                                 </Group>
+                                 <Group
+                                    location = "group:service"
+                                    name = "service">
+                                    <Group
+                                       location = "group:dto"
+                                       name = "dto">
+                                       <FileRef
+                                          location = "group:JwtUserDTO.java">
+                                       </FileRef>
+                                       <FileRef
+                                          location = "group:OnlineUserDTO.java">
+                                       </FileRef>
+                                    </Group>
+                                    <FileRef
+                                       location = "group:OnlineUserService.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:UserDetailsServiceImpl.java">
+                                    </FileRef>
+                                 </Group>
+                              </Group>
+                              <Group
+                                 location = "group:mapper"
+                                 name = "mapper">
+                                 <FileRef
+                                    location = "group:CommentsMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:TitleUserMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMessageMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiUserMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareTagUserMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareCommentMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:TitleMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareVoteMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:GuanzhiMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserPointsLogMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareViewLogMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleUserFindMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMedalMapper.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareCheckinMapper.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:utils"
+                                 name = "utils">
+                                 <FileRef
+                                    location = "group:SecurityUtils.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:model"
+                                 name = "model">
+                                 <FileRef
+                                    location = "group:ShareTagUserDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMedalDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:TitleDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareViewLogDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleUserFindDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareVoteDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:TitleUserDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:GuanzhiDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:BaseDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareCommentDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMessageDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiUserDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareCheckinDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserPointsLogDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:CommentsDO.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleDO.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:service"
+                                 name = "service">
+                                 <Group
+                                    location = "group:impl"
+                                    name = "impl">
+                                    <FileRef
+                                       location = "group:GuanzhiServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ShareCheckinServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:UserMedalServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ShareVoteServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:UserMessageServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:CommentsServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:UserLevelServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:UserServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ShareCommentServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:UserPointsServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:EmojiServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:DoodleServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ShareViewLogServiceImpl.java">
+                                    </FileRef>
+                                    <FileRef
+                                       location = "group:ShareTagUserServiceImpl.java">
+                                    </FileRef>
+                                 </Group>
+                                 <FileRef
+                                    location = "group:ShareCommentService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareVoteService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:CommentsService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMessageService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:GuanzhiService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserLevelService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareCheckinService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareViewLogService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserPointsService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserMedalService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:ShareTagUserService.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DistanceService.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:query"
+                                 name = "query">
+                                 <FileRef
+                                    location = "group:CommentsQuery.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:GuanzhiQuery.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:BaseQuery.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiQuery.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleQuery.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserQuery.java">
+                                 </FileRef>
+                              </Group>
+                              <Group
+                                 location = "group:rest"
+                                 name = "rest">
+                                 <FileRef
+                                    location = "group:AdminController.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:GuanZhiController.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:DoodleController.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:EmojiController.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:CommentsController.java">
+                                 </FileRef>
+                                 <FileRef
+                                    location = "group:UserController.java">
+                                 </FileRef>
+                              </Group>
+                           </Group>
+                        </Group>
+                     </Group>
+                  </Group>
+               </Group>
+            </Group>
+         </Group>
+      </Group>
+   </Group>
+   <Group
       location = "group:onettooHtml"
       name = "onettooHtml">
       <FileRef
