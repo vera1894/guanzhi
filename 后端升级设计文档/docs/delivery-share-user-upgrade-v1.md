@@ -26,6 +26,10 @@
   - **警告**: 管理员设置，持续15天，期间功能正常但有UI提示。登录时自动检测并解除过期警告。
   - **冻结**: 管理员设置，账号只读，无法进行任何写操作（发帖、评论、投票等），通过AOP切面实现。
 
+### 新增：后台可配置性
+- **动态规则**: 积分获取规则、每日上限、用户等级门槛、奖章名称等核心业务数值，均已从代码中解耦，存入数据库中。
+- **管理接口**: `AdminController` 中提供了一套完整的RESTful API，用于对上述规则进行增、删、改、查，方便未来通过后台网页进行可视化管理。
+
 ---
 
 ## 2. 技术实现概要
@@ -34,6 +38,7 @@
 - **数据库迁移脚本**:
   - `sql/migration-guan-share-upgrade-v1.sql`
   - `sql/migration-add-view-log-v2.sql`
+  - `sql/migration-config-tables-v3.sql` (新增)
 - **主要变更**:
   - `guanzhi` 表: 增加了 `view_user_count`, `agree_count`, `neutral_count`, `checkin_count`, `comment_count`, `fade_score`, `status`, `official_mark` 等字段。
   - `userlist` 表: 增加了 `points_total`, `level_code`, `status`, `warned_until` 字段。
@@ -45,17 +50,21 @@
     - `user_points_log` (积分流水)
     - `user_medal` (用户奖章)
     - `share_view_log` (分享查看记录，为奖章系统补充)
+    - `level_definition` (等级定义配置)
+    - `points_rule` (积分规则配置)
+    - `medal_definition` (奖章定义配置)
 
 ### 核心 Service / Controller 类
 - **核心服务**:
   - `GuanzhiServiceImpl`: 实现了所有分享相关的核心业务逻辑（投票、打卡、评论等）。
-  - `UserPointsServiceImpl`: 实现了积分的增减、每日上限控制（通过Redis）和记录。
-  - `UserLevelServiceImpl`: 实现了用户等级的计算逻辑。
+  - `UserPointsServiceImpl`: (已重构) 实现了积分的增减，其具体分值和每日上限由 `points_rule` 表动态配置。
+  - `UserLevelServiceImpl`: (已重构) 实现了用户等级的计算逻辑，其等级门槛由 `level_definition` 表动态配置。
   - `UserMedalServiceImpl`: 实现了奖章的判断与授予逻辑。
   - `DistanceService`: 提供了统一的地理位置距离计算方法。
+  - `LevelDefinitionService`, `PointsRuleService`, `MedalDefinitionService`: 用于管理新的配置表。
 - **核心控制器**:
   - `GuanZhiController`: 新增了分享互动的相关API端点。
-  - `AdminController`: 新增了用于管理用户状态和分享标记的API端点，需要管理员权限。
+  - `AdminController`: (已扩展) 新增了用于管理等级、积分、奖章定义的CRUD接口，需要管理员权限。
 - **工具类**:
   - `SecurityUtils`: 用于从Spring Security上下文中安全地获取当前登录用户的ID。
   - `RedisUtils`: 扩展了 `incr` 方法，用于实现原子计数。
@@ -79,6 +88,7 @@
     - 在部署新版代码**之前**，请务必按顺序执行以下SQL脚本：
       1. `sql/migration-guan-share-upgrade-v1.sql`
       2. `sql/migration-add-view-log-v2.sql`
+      3. `sql/migration-config-tables-v3.sql` (此脚本包含初始配置数据)
 2.  **配置定时任务**:
     - `FadeScoreTask.java` 中的定时任务cron表达式当前为 `0 */5 * * * ?` (每5分钟)，便于测试。
     - **生产环境**建议修改为每天凌晨执行，例如 `0 0 3 * * ?`。
@@ -92,7 +102,6 @@
 ---
 
 ## 4. 回滚方案
-
 - **数据库**: 本次变更新增了表和字段，没有删除现有数据。如需回滚，旧版代码会忽略这些新表和新字段，不会直接导致启动失败。建议的恢复策略是**暂时不删除**这些新增的结构，待版本稳定后再行清理。
 - **代码**: 直接回退到上一个Git版本即可。
 
@@ -108,3 +117,5 @@
   - 新增了 `GET /api/guan/user/medals?userId={...}` 和 `GET /api/guan/user/my-medals` 接口，用于展示用户的奖章墙。
 - **距离校验**:
   - “打卡”和“评论”接口现在会进行服务器端距离校验，超出200米会返回失败。建议前端在发起请求前也进行一次预校验，以优化用户体验。
+- **后台管理**:
+  - 新增的管理API位于 `AdminController`，可用于构建一个简单的web界面来动态调整系统参数，而无需重新部署后端服务。
