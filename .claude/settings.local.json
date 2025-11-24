@@ -55,7 +55,8 @@
       "Bash(__NEW_LINE__ echo \"=== 12. 获取奖章列表 ===\")",
       "Bash(__NEW_LINE__ echo \"=== 13. 举报分享 ===\")",
       "Bash(__NEW_LINE__ echo \"=== 14. 测试管理员 API (预期失败 - 权限问题) ===\")",
-      "Bash(__NEW_LINE__ echo \"=== 数据库验证 ===\")"
+      "Bash(__NEW_LINE__ echo \"=== 数据库验证 ===\")",
+      "Bash(git -C \"/Users/zaptain/Library/Mobile Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi/Server/onettoo\" status --short)"
     ],
     "deny": []
   }
