@@ -211,3 +211,14 @@
   - 管理端可通过 `GET /api/admin/reports` 查看举报列表，并通过 `POST /api/admin/report/process` 处理举报。
 
 
+
+---
+
+## 验证记录
+
+**2025-11-24**: 管理员权限修复通过本地验证（Claude 测试）
+- JWT Token 正确包含 `auth` claim（如 `ROLE_ADMIN`）
+- Admin 配置 API 读写正常
+- 普通用户被正确拒绝访问 Admin API
+- 配置修改（如积分规则）运行时立即生效
+- Git Tag: `share-user-upgrade-permissions-ok`

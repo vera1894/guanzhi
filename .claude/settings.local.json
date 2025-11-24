@@ -56,7 +56,12 @@
       "Bash(__NEW_LINE__ echo \"=== 13. 举报分享 ===\")",
       "Bash(__NEW_LINE__ echo \"=== 14. 测试管理员 API (预期失败 - 权限问题) ===\")",
       "Bash(__NEW_LINE__ echo \"=== 数据库验证 ===\")",
-      "Bash(git -C \"/Users/zaptain/Library/Mobile Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi/Server/onettoo\" status --short)"
+      "Bash(git -C \"/Users/zaptain/Library/Mobile Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi/Server/onettoo\" status --short)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiI1ZTYwYzJlMjBlZTc0ZjMzOTk5MmRmZDFiNTVkNWUyNyIsImF1dGgiOiJST0xFX0FETUlOIiwidXNlciI6MiwibmFtZSI6IjEzODEwMjY5NjI3Iiwibmlja25hbWUiOiJUZXN0QWRtaW4iLCJwaG9uZSI6IjEzODEwMjY5NjI3Iiwic3ViIjoiMiJ9.cfIGo-00EKb1YqYjcYiauLZ1oPozNxzDM4KsFXXvRPJ1IModMl1kYqotBj7A0Dct7r6GmpMOEd8ngrRQSmyIrw\")",
+      "Bash(__NEW_LINE__ echo \"=== 获取奖章定义 ===\")",
+      "Bash(__NEW_LINE__ echo \"\")",
+      "Bash(__NEW_LINE__ echo \"=== Git 状态 ===\")",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
