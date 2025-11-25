@@ -847,40 +847,38 @@ class SearchViewModel: ObservableObject {
     
     //加载分享详情
     func loadShareDetail(for shareId: Int64) {
-        #if DEBUG
-        if __PreviewGate.enabled {
+        if PreviewHarness.useMock {
             print("🔌 [PreviewHarness] ShareDetail mocked for shareId: \(shareId)")
 
-            // 1. 使用便捷构造器创建一个 mock Share
             let mockShare = Share(
                 id: shareId,
                 createDate: Date(),
-                userId: 11, // Mock user ID
-                data: "这是一个测试分享，用于预览页面布局和样式效果",
+                userId: 11,
+                data: "这是一个用于预览的测试分享，展示了布局和样式效果。",
                 longitude: 121.5,
                 latitude: 31.2,
-                address: "上海市 浦东新区 张江高科技园区",
-                title: "测试分享"
+                provinceCode: "310000",
+                cityCode: "310100",
+                districtCode: "310115",
+                address: "上海市 浦东新区",
+                imagePaths: [],
+                title: "预览标题",
+                deleted: false
             )
-
-            // 2. 创建一个不依赖 UIImage 的 mock MediaItemWrapper
+            
             let wrapper = MediaItemWrapper(nil)
             wrapper.mediaItem = Photo(data: Data(), isProxy: true, livePhotoMovieURL: nil)
 
-            // 3. 在主线程更新UI相关的属性
             DispatchQueue.main.async {
                 self.selectedShare = mockShare
                 self.downloadMedia = [wrapper]
             }
             return
         }
-        #endif
 
         // 尝试加载本地数据
         let hasLocalData = loadFromLocal(shareId: shareId)
         
-        // 如果已经在加载中，且没有本地数据（说明是首次完全加载），则跳过
-        // 如果有本地数据，允许再次请求以刷新（静默刷新）
         if currentLoadingShareId == shareId && !hasLocalData {
             #if DEBUG
             print("⏭️ 分享 \(shareId) 正在加载中，跳过重复请求")

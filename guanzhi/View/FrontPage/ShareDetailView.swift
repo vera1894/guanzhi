@@ -11,18 +11,6 @@ import _AVKit_SwiftUI
 import Combine
 import SwiftData
 
-// MARK: - Preview Mock Switch (DEBUG only)
-#if DEBUG
-/// 打开后：将"未授权"视为"已登录"，并使用伪数据渲染用户信息，隐藏 Unauthorized 报错
-fileprivate let __PreviewMockLoginEnabled: Bool = true
-
-/// 伪用户信息
-fileprivate struct __PreviewMockUser {
-    static let nickname = "测试用户"
-    static let avatarSystemName: String? = nil
-}
-#endif
-
 // MARK: - PreferenceKey for Player Frame Anchoring
 
 /// PreferenceKey 用于传递当前选中页的播放矩形
@@ -417,14 +405,10 @@ struct ShareDetailView: View {
         ) // 底部详情卡片和评论输入区
         .background(Color.black.ignoresSafeArea())
         .onAppear {
-            #if DEBUG
-            if __PreviewGate.enabled {
+            if PreviewHarness.useMock {
                 print("🔌 [PreviewHarness] Overriding login status for preview")
                 OTOLoginStatusManager.shared.__overrideForPreview(userId: 11)
-                // 清空可能存在的错误状态，避免显示旧的错误信息
-                searchViewModel.shareDeletedMessage = nil
             }
-            #endif
 
             #if DEBUG
             print("🏠 ShareDetailView.onAppear - 开始加载分享详情")
