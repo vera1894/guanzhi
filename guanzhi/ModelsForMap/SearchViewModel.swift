@@ -847,25 +847,23 @@ class SearchViewModel: ObservableObject {
     
     //加载分享详情
     func loadShareDetail(for shareId: Int64) {
-        if PreviewHarness.useMock {
+        if PreviewHarness.enabled {
             print("🔌 [PreviewHarness] ShareDetail mocked for shareId: \(shareId)")
-
             let mockShare = Share(
                 id: shareId,
                 createDate: Date(),
                 userId: 11,
-                data: "这是一个用于预览的测试分享，展示了布局和样式效果。",
-                longitude: 121.5,
-                latitude: 31.2,
+                data: "这是一个测试分享，用于预览页面布局和样式效果",
+                longitude: 121.60,
+                latitude: 31.20,
                 provinceCode: "310000",
                 cityCode: "310100",
                 districtCode: "310115",
-                address: "上海市 浦东新区",
+                address: "上海市 浦东新区 张江高科技园区",
                 imagePaths: [],
-                title: "预览标题",
+                title: "测试分享",
                 deleted: false
             )
-            
             let wrapper = MediaItemWrapper(nil)
             wrapper.mediaItem = Photo(data: Data(), isProxy: true, livePhotoMovieURL: nil)
 

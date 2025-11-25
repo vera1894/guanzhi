@@ -405,7 +405,7 @@ struct ShareDetailView: View {
         ) // 底部详情卡片和评论输入区
         .background(Color.black.ignoresSafeArea())
         .onAppear {
-            if PreviewHarness.useMock {
+            if PreviewHarness.enabled {
                 print("🔌 [PreviewHarness] Overriding login status for preview")
                 OTOLoginStatusManager.shared.__overrideForPreview(userId: 11)
             }
@@ -834,22 +834,15 @@ struct UserInfoCapsule: View {
 
     @ViewBuilder
     private func renderOtherUserCapsule() -> some View {
-        #if DEBUG
-        if __PreviewMockLoginEnabled {
-            // 预览模式：直接返回"已登录"的胶囊
+        if PreviewHarness.enabled {
             capsuleContent(
-                nickname: __PreviewMockUser.nickname,
-                iconName: __PreviewMockUser.avatarSystemName,
+                nickname: "测试用户",
+                iconName: "person.crop.circle.fill",
                 onTap: {}
             )
         } else {
-            // 开发模式但未启用Mock：走真实逻辑
             renderOtherUserCapsuleReal()
         }
-        #else
-        // 生产环境：走真实逻辑
-        renderOtherUserCapsuleReal()
-        #endif
     }
 
     @ViewBuilder
@@ -870,26 +863,17 @@ struct UserInfoCapsule: View {
                     }
                 )
             } else {
-                capsuleContent(nickname: "陌生人", iconName: nil, onTap: {})
+                capsuleContent(nickname: "陌生人", iconName: "person.fill.questionmark", onTap: {})
             }
 
-        case .error(let error):
-            let nsError = error as NSError
-            if nsError.code == 401 || nsError.domain.contains("Unauthorized") {
-                capsuleContent(
-                    nickname: "登录已过期",
-                    iconName: "lock.fill",
-                    onTap: {} //
-                )
-            } else {
-                capsuleContent(
-                    nickname: "加载失败",
-                    iconName: "exclamationmark.triangle.fill",
-                    onTap: {
-                        retryLoadUser()
-                    }
-                )
-            }
+        case .error:
+            capsuleContent(
+                nickname: "加载失败",
+                iconName: "exclamationmark.triangle.fill",
+                onTap: {
+                    retryLoadUser()
+                }
+            )
         }
     }
 

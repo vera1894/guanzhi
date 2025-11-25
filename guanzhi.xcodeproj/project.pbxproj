@@ -58,6 +58,7 @@
 		FF5D24192D23DA2700C1D463 /* SingleToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D24182D23DA2700C1D463 /* SingleToastView.swift */; };
 		FF5D241B2D2C10E200C1D463 /* LocalUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D241A2D2C10E200C1D463 /* LocalUserProfile.swift */; };
 		FF5D241D2D2C145B00C1D463 /* UserProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D241C2D2C145B00C1D463 /* UserProfileManager.swift */; };
+		FF650F502ED5B909001437AB /* PreviewHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F4F2ED5B909001437AB /* PreviewHarness.swift */; };
 		FF6BC4D12C7C183F00423660 /* DeviceLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D02C7C183F00423660 /* DeviceLookup.swift */; };
 		FF6BC4D52C7C186000423660 /* SPCObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D42C7C186000423660 /* SPCObserver.swift */; };
 		FF6BC4D62C7C186000423660 /* PhotoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D22C7C186000423660 /* PhotoCapture.swift */; };
@@ -189,6 +190,7 @@
 		FF5D24182D23DA2700C1D463 /* SingleToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleToastView.swift; sourceTree = "<group>"; };
 		FF5D241A2D2C10E200C1D463 /* LocalUserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUserProfile.swift; sourceTree = "<group>"; };
 		FF5D241C2D2C145B00C1D463 /* UserProfileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileManager.swift; sourceTree = "<group>"; };
+		FF650F4F2ED5B909001437AB /* PreviewHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHarness.swift; sourceTree = "<group>"; };
 		FF6BC4D02C7C183F00423660 /* DeviceLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceLookup.swift; sourceTree = "<group>"; };
 		FF6BC4D22C7C186000423660 /* PhotoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCapture.swift; sourceTree = "<group>"; };
 		FF6BC4D32C7C186000423660 /* MovieCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCapture.swift; sourceTree = "<group>"; };
@@ -349,6 +351,7 @@
 		D19912032B52931A002A711A /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				FF650F4F2ED5B909001437AB /* PreviewHarness.swift */,
 				FF87A8DD2ECF034B00C92D25 /* 观之接口文档 20251120.md */,
 				FF4ED5BA2DAA6D0C0017131B /* UserAgreement.txt */,
 				FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */,
@@ -743,6 +746,7 @@
 				FF6BC4D52C7C186000423660 /* SPCObserver.swift in Sources */,
 				FF6BC4ED2C7C18B400423660 /* RecordingTimeView.swift in Sources */,
 				D1093C322B6A819A008553A3 /* ShareSingleView.swift in Sources */,
+				FF650F502ED5B909001437AB /* PreviewHarness.swift in Sources */,
 				FF6BC4F22C7C18CC00423660 /* FoundationExtensions.swift in Sources */,
 				FFF6692B2CB6292D005FDB86 /* MapOverlayView.swift in Sources */,
 				FF84D7C32D40DE190060F060 /* OtherUserProfile.swift in Sources */,
