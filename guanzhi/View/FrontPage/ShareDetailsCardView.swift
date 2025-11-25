@@ -346,7 +346,11 @@ struct ShareDetailsCardView: View {
     }
     
     private func isAuthorMyself(_ userId: Int64) -> Bool {
+        #if DEBUG
+            return OTOLoginStatusManager.shared.__effectiveUserIdForPreview() == userId
+        #else
             return OTOLoginStatusManager.shared.getUserID() == userId
+        #endif
         }
     
     // MARK: - 视图拆分

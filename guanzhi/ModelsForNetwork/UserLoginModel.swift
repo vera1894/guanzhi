@@ -259,3 +259,27 @@ class OTOLoginStatusManager {
     }
 }
 
+
+#if DEBUG
+extension OTOLoginStatusManager {
+    /// 预览模式覆盖：返回一个看起来“已登录”的状态
+    func __overrideForPreview(userId: Int = 11) {
+        // 关键：对外暴露的 userId/getUserId() 必须返回非 0
+        self.__previewUserId = userId
+    }
+
+    /// 内部预览态 UserID（仅 DEBUG 内存可见，不落盘）
+    private struct __Holder { static var id: Int = 0 }
+    private var __previewUserId: Int {
+        get { __Holder.id }
+        set { __Holder.id = newValue }
+    }
+
+    /// 在 getUserId() 或 public userId 访问点附近，加一个 DEBUG 下的“优先返回预览ID”的分支
+    func __effectiveUserIdForPreview() -> Int {
+        if __previewUserId != 0 { return __previewUserId }
+        return self.getUserID()
+    }
+}
+#endif
+

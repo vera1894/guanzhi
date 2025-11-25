@@ -38,13 +38,34 @@ class UserProfileManager: ObservableObject {
     @Published var userLoadingStates: [Int: UserLoadingState] = [:]
 
     // MARK: - 拉取任意用户详细信息
-    /// 如果 userId 等于当前登录者 => 额外存入 SwiftData
-    /// 否则 => 暂存在 `otherUserProfile`
-    func fetchUserFullInfo(userId: Int) async throws {
-        // 设置为加载中状态
-        userLoadingStates[userId] = .loading
-        print("👤 Profile load start \(userId)")
-
+            /// 如果 userId 等于当前登录者 => 额外存入 SwiftData
+            /// 否则 => 暂存在 `otherUserProfile`
+            func fetchUserFullInfo(userId: Int) async throws {
+                #if DEBUG
+                if __PreviewGate.enabled {
+                    print("🔌 [PreviewHarness] UserProfile mocked for userId: \(userId)")
+                    let mockProfile = UserFullInfoModel(
+                        id: userId,
+                        name: "testuser",
+                        nickname: "测试用户 \(userId)",
+                        phone: "13800138000",
+                        photo: nil,
+                        code: "MOCK001",
+                        createDate: nil,
+                        jpushId: nil,
+                        titleDOS: nil
+                    )
+                    DispatchQueue.main.async {
+                        self.otherUserProfile = mockProfile
+                        self.userLoadingStates[userId] = .loaded
+                    }
+                    return
+                }
+                #endif
+    
+                // 设置为加载中状态
+                userLoadingStates[userId] = .loading
+                print("👤 Profile load start \(userId)")
         do {
             let data = try await OTONetwork.request(.fetchUserFullInfo(userId: userId))
             let decoder = JSONDecoder()

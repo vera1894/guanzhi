@@ -93,7 +93,11 @@ struct ShareDetailView: View {
     // 判断是否是自己的分享
     private var isMyShare: Bool {
         guard let share = searchViewModel.selectedShare else { return false }
+        #if DEBUG
+        let currentUserId = OTOLoginStatusManager.shared.__effectiveUserIdForPreview()
+        #else
         let currentUserId = OTOLoginStatusManager.shared.getUserID()
+        #endif
         return Int64(currentUserId) == share.userId
     }
 
@@ -413,6 +417,15 @@ struct ShareDetailView: View {
         ) // 底部详情卡片和评论输入区
         .background(Color.black.ignoresSafeArea())
         .onAppear {
+            #if DEBUG
+            if __PreviewGate.enabled {
+                print("🔌 [PreviewHarness] Overriding login status for preview")
+                OTOLoginStatusManager.shared.__overrideForPreview(userId: 11)
+                // 清空可能存在的错误状态，避免显示旧的错误信息
+                searchViewModel.shareDeletedMessage = nil
+            }
+            #endif
+
             #if DEBUG
             print("🏠 ShareDetailView.onAppear - 开始加载分享详情")
             #endif
@@ -1090,4 +1103,19 @@ struct ShareDetailViewPreview: View {
     ShareDetailViewPreview()
         .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self, OtherUserProfile.self], inMemory: true)
 }
+
+
+#if DEBUG
+/// 统一判断：Xcode 预览 或 手动开关（方便真机 DEBUG 测试）
+enum __PreviewGate {
+    static var enabled: Bool {
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return true }
+        return UserDefaults.standard.bool(forKey: "__PreviewMocksEnabled")
+    }
+}
+
+/// 便捷开关（你也可以在控制台执行：UserDefaults.standard.set(true, forKey: "__PreviewMocksEnabled")）
+func __enablePreviewMocks() { UserDefaults.standard.set(true, forKey: "__PreviewMocksEnabled") }
+func __disablePreviewMocks() { UserDefaults.standard.set(false, forKey: "__PreviewMocksEnabled") }
+#endif
 

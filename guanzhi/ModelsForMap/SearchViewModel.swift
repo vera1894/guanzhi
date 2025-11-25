@@ -847,6 +847,37 @@ class SearchViewModel: ObservableObject {
     
     //加载分享详情
     func loadShareDetail(for shareId: Int64) {
+        #if DEBUG
+        if __PreviewGate.enabled {
+            print("🔌 [PreviewHarness] ShareDetail mocked for shareId: \(shareId)")
+
+            // 1. 创建一个 mock Share
+            let mockShare = Share(
+                id: shareId,
+                createDate: Date(),
+                userId: 11, // Mock user ID
+                data: "这是一个测试分享，用于预览页面布局和样式效果",
+                longitude: 121.5,
+                latitude: 31.2,
+                address: "上海市 浦东新区 张江高科技园区",
+                title: "测试分享"
+            )
+
+            // 2. 创建一个 mock MediaItemWrapper
+            let poster = UIImage(systemName: "photo.artframe")
+            let wrapper = MediaItemWrapper(nil)
+            wrapper.mediaItem = Photo(data: poster?.pngData() ?? Data(), isProxy: true, livePhotoMovieURL: nil)
+
+            // 3. 在主线程更新UI相关的属性
+            DispatchQueue.main.async {
+                self.selectedShare = mockShare
+                self.downloadMedia = [wrapper]
+                // 如果有加载状态，也应设为.loaded
+            }
+            return
+        }
+        #endif
+
         // 尝试加载本地数据
         let hasLocalData = loadFromLocal(shareId: shareId)
         
