@@ -851,7 +851,7 @@ class SearchViewModel: ObservableObject {
         if __PreviewGate.enabled {
             print("🔌 [PreviewHarness] ShareDetail mocked for shareId: \(shareId)")
 
-            // 1. 创建一个 mock Share
+            // 1. 使用便捷构造器创建一个 mock Share
             let mockShare = Share(
                 id: shareId,
                 createDate: Date(),
@@ -863,16 +863,14 @@ class SearchViewModel: ObservableObject {
                 title: "测试分享"
             )
 
-            // 2. 创建一个 mock MediaItemWrapper
-            let poster = UIImage(systemName: "photo.artframe")
+            // 2. 创建一个不依赖 UIImage 的 mock MediaItemWrapper
             let wrapper = MediaItemWrapper(nil)
-            wrapper.mediaItem = Photo(data: poster?.pngData() ?? Data(), isProxy: true, livePhotoMovieURL: nil)
+            wrapper.mediaItem = Photo(data: Data(), isProxy: true, livePhotoMovieURL: nil)
 
             // 3. 在主线程更新UI相关的属性
             DispatchQueue.main.async {
                 self.selectedShare = mockShare
                 self.downloadMedia = [wrapper]
-                // 如果有加载状态，也应设为.loaded
             }
             return
         }
