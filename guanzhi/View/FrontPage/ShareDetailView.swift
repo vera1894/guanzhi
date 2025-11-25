@@ -9,6 +9,19 @@ import SwiftUI
 import PhotosUI
 import _AVKit_SwiftUI
 import Combine
+import SwiftData
+
+// MARK: - Preview Mock Switch (DEBUG only)
+#if DEBUG
+/// 打开后：将"未授权"视为"已登录"，并使用伪数据渲染用户信息，隐藏 Unauthorized 报错
+fileprivate let __PreviewMockLoginEnabled: Bool = true
+
+/// 伪用户信息
+fileprivate struct __PreviewMockUser {
+    static let nickname = "测试用户"
+    static let avatarSystemName: String? = nil
+}
+#endif
 
 // MARK: - PreferenceKey for Player Frame Anchoring
 
@@ -302,6 +315,17 @@ struct ShareDetailView: View {
                             Image("icon-back")
                         }
                         .buttonStyle(ButtonStyle_m())
+
+                        Spacer()
+
+                        // 用户信息胶囊
+                        if let share = searchViewModel.selectedShare {
+                            UserInfoCapsule(
+                                userId: share.userId,
+                                searchViewModel: searchViewModel
+                            )
+                            .environmentObject(navigationCoordinator)
+                        }
 
                         Spacer()
 
@@ -773,5 +797,297 @@ struct ShareDetailView: View {
         #endif
     }
 
+}
+
+// MARK: - 用户信息胶囊组件
+struct UserInfoCapsule: View {
+    let userId: Int64
+    @ObservedObject var searchViewModel: SearchViewModel
+    @EnvironmentObject var userProfileManager: UserProfileManager
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+
+    private var isMyself: Bool {
+        return OTOLoginStatusManager.shared.getUserID() == userId
+    }
+
+    var body: some View {
+        Group {
+            if isMyself {
+                // 显示本机用户
+                if let localUser = userProfileManager.localUserProfile {
+                    capsuleContent(
+                        nickname: localUser.nickname,
+                        iconName: nil,
+                        onTap: {
+                            navigationCoordinator.path.append(Route.myView)
+                        }
+                    )
+                } else {
+                    capsuleContent(nickname: "我", iconName: nil, onTap: {})
+                }
+            } else {
+                // 显示他人用户 - 根据加载状态显示不同 UI
+                renderOtherUserCapsule()
+            }
+        }
+        .onAppear {
+            loadUserIfNeeded()
+        }
+    }
+
+    @ViewBuilder
+    private func renderOtherUserCapsule() -> some View {
+        #if DEBUG
+        if __PreviewMockLoginEnabled {
+            // 预览模式：直接返回"已登录"的胶囊
+            capsuleContent(
+                nickname: __PreviewMockUser.nickname,
+                iconName: __PreviewMockUser.avatarSystemName,
+                onTap: {}
+            )
+        } else {
+            // 开发模式但未启用Mock：走真实逻辑
+            renderOtherUserCapsuleReal()
+        }
+        #else
+        // 生产环境：走真实逻辑
+        renderOtherUserCapsuleReal()
+        #endif
+    }
+
+    @ViewBuilder
+    private func renderOtherUserCapsuleReal() -> some View {
+        let state = userProfileManager.userLoadingStates[Int(userId)] ?? .idle
+
+        switch state {
+        case .idle, .loading:
+            capsuleContent(nickname: "加载中...", iconName: nil, onTap: {})
+
+        case .loaded:
+            if let otherUser = userProfileManager.otherUserProfile, otherUser.id == userId {
+                capsuleContent(
+                    nickname: otherUser.nickname ?? "陌生人",
+                    iconName: nil,
+                    onTap: {
+                        navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
+                    }
+                )
+            } else {
+                capsuleContent(nickname: "陌生人", iconName: nil, onTap: {})
+            }
+
+        case .error(let error):
+            let nsError = error as NSError
+            if nsError.code == 401 || nsError.domain.contains("Unauthorized") {
+                capsuleContent(
+                    nickname: "登录已过期",
+                    iconName: "lock.fill",
+                    onTap: {} //
+                )
+            } else {
+                capsuleContent(
+                    nickname: "加载失败",
+                    iconName: "exclamationmark.triangle.fill",
+                    onTap: {
+                        retryLoadUser()
+                    }
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func capsuleContent(nickname: String, iconName: String?, onTap: @escaping () -> Void) -> some View {
+        HStack(spacing: 6) {
+            // 如果有错误图标，显示图标；否则显示头像
+            if let iconName = iconName {
+                Image(systemName: iconName)
+                    .font(.system(size: 14))
+                    .foregroundColor(.orange)
+            } else {
+                AvatarView_s(
+                    isEnabled: true,
+                    profileImage: Image("例子"),
+                    borderThickness: 2
+                )
+            }
+
+            // 用户昵称或状态文本
+            Text(nickname)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .onTapGesture {
+            onTap()
+        }
+    }
+
+    private func loadUserIfNeeded() {
+        guard !isMyself else { return }
+
+        // 检查当前状态，如果已加载或正在加载，则不重复加载
+        let currentState = userProfileManager.userLoadingStates[Int(userId)] ?? .idle
+        if case .loaded = currentState {
+            return
+        }
+        if case .loading = currentState {
+            return
+        }
+
+        Task {
+            do {
+                try await userProfileManager.fetchUserFullInfo(userId: Int(userId))
+            } catch {
+                // 错误已经在 UserProfileManager 中处理和记录
+            }
+        }
+    }
+
+    private func retryLoadUser() {
+        Task {
+            do {
+                try await userProfileManager.fetchUserFullInfo(userId: Int(userId))
+            } catch {
+                // 错误已经在 UserProfileManager 中处理和记录
+            }
+        }
+    }
+}
+
+// MARK: - 小尺寸头像组件
+struct AvatarView_s: View {
+    var isEnabled: Bool
+    var profileImage: Image
+    var borderThickness: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .center) {
+            // 边框层（使用底层头像图形）
+            Image("avatar")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28 - 2, height: 28 - 2)
+                .foregroundColor(.black)
+            // 头像图像层，使用遮罩将其切成相同的形状
+            profileImage
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28 - borderThickness - 2, height: 28 - borderThickness - 2)
+                .mask(
+                    Image("avatar")
+                        .resizable()
+                        .scaledToFit()
+                )
+        }
+        .brightness(0)
+        .grayscale(isEnabled ? 0 : 1)
+        .scaleEffect(1.0)
+        .opacity(isEnabled ? 1 : 0.5)
+    }
+}
+
+// MARK: - Preview Support
+
+// 为预览创建必要的环境和数据
+@MainActor
+class PreviewDependencies {
+    let searchViewModel: SearchViewModel
+    let navigationCoordinator: NavigationCoordinator
+    let userProfileManager: UserProfileManager
+    let appState: AppStateModel
+
+    init(modelContext: ModelContext) {
+        // 创建 AppStateModel
+        self.appState = AppStateModel()
+
+        // 创建 NavigationCoordinator
+        self.navigationCoordinator = NavigationCoordinator()
+
+        // 创建 UserProfileManager
+        self.userProfileManager = UserProfileManager()
+        self.userProfileManager.localUserProfile = LocalUserProfile(
+            id: 1,
+            name: "testuser",
+            nickname: "测试用户",
+            phone: "13800138000",
+            photo: nil,
+            code: "TEST001",
+            createDate: nil,
+            jpushId: nil,
+            titleDOS: nil
+        )
+
+        // 创建 SearchViewModel 并设置 context
+        self.searchViewModel = SearchViewModel()
+        self.searchViewModel.context = modelContext
+    }
+}
+
+// 预览包装器视图
+@available(iOS 17.0, *)
+struct ShareDetailViewPreview: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var deps: PreviewDependencies?
+    @Namespace private var namespace
+
+    var body: some View {
+        if let deps = deps {
+            ShareDetailView(
+                searchViewModel: deps.searchViewModel,
+                animationNamespace: namespace,
+                annotationID: "12345"
+            )
+            .environment(\.appState, deps.appState)
+            .environmentObject(deps.navigationCoordinator)
+            .environmentObject(deps.userProfileManager)
+        } else {
+            Color.clear
+                .onAppear {
+                    setupPreview()
+                }
+        }
+    }
+
+    private func setupPreview() {
+        // 创建测试分享数据并插入到 context 中
+        let testShare = Share(
+            id: 12345,
+            createDate: Date(),
+            userId: 1,
+            data: "这是一个测试分享，用于预览页面布局和样式效果",
+            longitude: 121.5,
+            latitude: 31.2,
+            provinceCode: "31",
+            cityCode: "3101",
+            districtCode: "310115",
+            address: "上海市 浦东新区 张江高科技园区",
+            imagePaths: [],
+            title: "测试分享",
+            deleted: false
+        )
+        modelContext.insert(testShare)
+
+        // 创建依赖项
+        let newDeps = PreviewDependencies(modelContext: modelContext)
+
+        // 设置 selectedShare
+        newDeps.searchViewModel.selectedShare = testShare
+
+        // 设置一个测试图片
+        newDeps.searchViewModel.selectedAnnotationImage = UIImage(named: "例子")
+
+        deps = newDeps
+    }
+}
+
+@available(iOS 17.0, *)
+#Preview("ShareDetailView") {
+    ShareDetailViewPreview()
+        .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self, OtherUserProfile.self], inMemory: true)
 }
 

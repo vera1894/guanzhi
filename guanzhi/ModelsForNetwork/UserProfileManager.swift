@@ -11,6 +11,14 @@ import SwiftUI
 import SwiftData
 import Alamofire
 
+// MARK: - 用户加载状态枚举
+enum UserLoadingState {
+    case idle           // 未开始
+    case loading        // 加载中
+    case loaded         // 加载成功
+    case error(Error)   // 加载失败
+}
+
 @MainActor
 class UserProfileManager: ObservableObject {
     // 让它可访问 SwiftData 的 context
@@ -26,38 +34,63 @@ class UserProfileManager: ObservableObject {
     @Published var avatarImage: UIImage?
     private let avatarCacheKey = "userAvatarCache"
 
+    // 用户加载状态管理 - 为每个 userId 维护状态
+    @Published var userLoadingStates: [Int: UserLoadingState] = [:]
+
     // MARK: - 拉取任意用户详细信息
     /// 如果 userId 等于当前登录者 => 额外存入 SwiftData
     /// 否则 => 暂存在 `otherUserProfile`
     func fetchUserFullInfo(userId: Int) async throws {
-        let data = try await OTONetwork.request(.fetchUserFullInfo(userId: userId))
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(OTOResponseModel<UserFullInfoModel>.self, from: data)
+        // 设置为加载中状态
+        userLoadingStates[userId] = .loading
+        print("👤 Profile load start \(userId)")
 
-        guard response.respCode == 0 else {
-            throw NSError(domain: "UserProfileManager", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: response.respMsg ?? "未知错误"
-            ])
-        }
-        
-        guard let userData = response.datas else {
-            throw NSError(domain: "UserProfileManager", code: 2, userInfo: [
-                NSLocalizedDescriptionKey: "datas 为空"
-            ])
-        }
+        do {
+            let data = try await OTONetwork.request(.fetchUserFullInfo(userId: userId))
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(OTOResponseModel<UserFullInfoModel>.self, from: data)
 
-        // 如果是当前用户，处理头像
-        if isCurrentLoggedUser(userId: userId) {
-            if let photoPath = userData.photo {
-                // 异步加载头像
-                Task {
-                    await loadAndCacheAvatar(path: photoPath)
-                }
+            guard response.respCode == 0 else {
+                let error = NSError(domain: "UserProfileManager", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: response.respMsg ?? "未知错误"
+                ])
+                userLoadingStates[userId] = .error(error)
+                print("❌ Profile error \(userId): \(response.respMsg ?? "未知错误")")
+                throw error
             }
-            try saveToSwiftData(userInfo: userData)
-            self.localUserProfile = findLocalUserInSwiftData(userId: userId)
-        } else {
-            self.otherUserProfile = userData
+
+            guard let userData = response.datas else {
+                let error = NSError(domain: "UserProfileManager", code: 2, userInfo: [
+                    NSLocalizedDescriptionKey: "datas 为空"
+                ])
+                userLoadingStates[userId] = .error(error)
+                print("❌ Profile error \(userId): datas 为空")
+                throw error
+            }
+
+            // 如果是当前用户，处理头像
+            if isCurrentLoggedUser(userId: userId) {
+                if let photoPath = userData.photo {
+                    // 异步加载头像
+                    Task {
+                        await loadAndCacheAvatar(path: photoPath)
+                    }
+                }
+                try saveToSwiftData(userInfo: userData)
+                self.localUserProfile = findLocalUserInSwiftData(userId: userId)
+            } else {
+                self.otherUserProfile = userData
+            }
+
+            // 设置为加载成功状态
+            userLoadingStates[userId] = .loaded
+            print("✅ Profile loaded \(userId)")
+
+        } catch {
+            // 捕获所有错误并更新状态
+            userLoadingStates[userId] = .error(error)
+            print("❌ Profile error \(userId): \(error.localizedDescription)")
+            throw error
         }
     }
 
