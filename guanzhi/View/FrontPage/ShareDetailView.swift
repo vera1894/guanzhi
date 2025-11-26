@@ -814,6 +814,7 @@ struct UserInfoCapsule: View {
                 if let localUser = userProfileManager.localUserProfile {
                     capsuleContent(
                         nickname: localUser.nickname,
+                        oneCode: localUser.code,
                         iconName: nil,
                         onTap: {
                             navigationCoordinator.path.append(Route.myView)
@@ -837,6 +838,7 @@ struct UserInfoCapsule: View {
         if PreviewHarness.enabled {
             capsuleContent(
                 nickname: "测试用户",
+                oneCode: "TEST001",
                 iconName: "person.crop.circle.fill",
                 onTap: {}
             )
@@ -857,6 +859,7 @@ struct UserInfoCapsule: View {
             if let otherUser = userProfileManager.otherUserProfile, otherUser.id == userId {
                 capsuleContent(
                     nickname: otherUser.nickname ?? "陌生人",
+                    oneCode: otherUser.code,
                     iconName: nil,
                     onTap: {
                         navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
@@ -878,8 +881,8 @@ struct UserInfoCapsule: View {
     }
 
     @ViewBuilder
-    private func capsuleContent(nickname: String, iconName: String?, onTap: @escaping () -> Void) -> some View {
-        HStack(spacing: 6) {
+    private func capsuleContent(nickname: String, oneCode: String? = nil, iconName: String?, onTap: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
             // 如果有错误图标，显示图标；否则显示头像
             if let iconName = iconName {
                 Image(systemName: iconName)
@@ -893,14 +896,22 @@ struct UserInfoCapsule: View {
                 )
             }
 
-            // 用户昵称或状态文本
-            Text(nickname)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.primary)
-                .lineLimit(1)
+            // 用户昵称和 OneCode（使用 VStack）
+            VStack(alignment: .leading, spacing: 2) {
+                Text(nickname)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+
+                // 总是显示 OneCode，nil 时使用占位符
+                Text("OneCode: \(oneCode ?? "⬛️⬛️⬛️⬛️")")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .clipShape(Capsule())
         .onTapGesture {
