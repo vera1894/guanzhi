@@ -536,8 +536,8 @@
 			children = (
 				FF650F522ED7D962001437AB /* CameraViewWrapper.swift */,
 				FF650F532ED7D962001437AB /* MediaItemView.swift */,
-				FF650F542ED7D962001437AB /* ShareDetailsCardView.swift */,
 				FF650F552ED7D962001437AB /* ShareDetailView.swift */,
+				FF650F542ED7D962001437AB /* ShareDetailsCardView.swift */,
 				FF650F5B2ED7E7BF001437AB /* InteractionOverlayView.swift */,
 			);
 			path = SharePages;

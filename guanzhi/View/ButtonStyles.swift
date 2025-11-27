@@ -160,7 +160,7 @@ struct ButtonStyles: View {
             }label: {
                 Image(systemName: isLiked ?  "heart.circle.fill" : "heart.circle")
                     .font(.system(size: 32))
-                    .foregroundStyle(Color(isLiked ? Color("color-primary") : Color("color-deep") ))
+                    .foregroundStyle(Color(isLiked ? Color("color-primary") : Color(.white) ))
             }
             .buttonStyle(ButtonStyle_LikeControl())
         }
@@ -752,7 +752,7 @@ struct ButtonStyle_LikeControl: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
             .frame(width: 32, height: 32)
-//            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
+            .shadow(color: configuration.isPressed ? Color.clear : Color(.black), radius: 16, x: 2, y:4)
             .brightness(configuration.isPressed ? -0.2 : 0)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
     }

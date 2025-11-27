@@ -445,6 +445,13 @@ struct ShareDetailView: View {
             )
             .ignoresSafeArea()
         ) // 底部详情卡片和评论输入区
+        .overlay(
+            // 点赞打卡交互层
+            InteractionOverlayView()
+                .opacity(isShowShareDetailsCard ? 1 : 0)
+                .allowsHitTesting(isShowShareDetailsCard)
+                .animation(.easeInOut(duration: 0.25), value: isShowShareDetailsCard)
+        )
         .background(Color.black.ignoresSafeArea())
         .onAppear {
             if PreviewHarness.enabled {
