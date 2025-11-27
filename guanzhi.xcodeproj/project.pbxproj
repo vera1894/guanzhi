@@ -62,6 +62,7 @@
 		FF650F592ED7D962001437AB /* ShareDetailsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F542ED7D962001437AB /* ShareDetailsCardView.swift */; };
 		FF650F5A2ED7D962001437AB /* ShareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F552ED7D962001437AB /* ShareDetailView.swift */; };
 		FF650F5C2ED7E7BF001437AB /* InteractionOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F5B2ED7E7BF001437AB /* InteractionOverlayView.swift */; };
+		FF650F612ED7FA6A001437AB /* 11.27 分享详情中交互实现.md in Resources */ = {isa = PBXBuildFile; fileRef = FF650F602ED7FA5F001437AB /* 11.27 分享详情中交互实现.md */; };
 		FF6BC4D12C7C183F00423660 /* DeviceLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D02C7C183F00423660 /* DeviceLookup.swift */; };
 		FF6BC4D52C7C186000423660 /* SPCObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D42C7C186000423660 /* SPCObserver.swift */; };
 		FF6BC4D62C7C186000423660 /* PhotoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D22C7C186000423660 /* PhotoCapture.swift */; };
@@ -195,6 +196,7 @@
 		FF650F542ED7D962001437AB /* ShareDetailsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareDetailsCardView.swift; sourceTree = "<group>"; };
 		FF650F552ED7D962001437AB /* ShareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareDetailView.swift; sourceTree = "<group>"; };
 		FF650F5B2ED7E7BF001437AB /* InteractionOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionOverlayView.swift; sourceTree = "<group>"; };
+		FF650F602ED7FA5F001437AB /* 11.27 分享详情中交互实现.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "11.27 分享详情中交互实现.md"; sourceTree = "<group>"; };
 		FF6BC4D02C7C183F00423660 /* DeviceLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceLookup.swift; sourceTree = "<group>"; };
 		FF6BC4D22C7C186000423660 /* PhotoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCapture.swift; sourceTree = "<group>"; };
 		FF6BC4D32C7C186000423660 /* MovieCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCapture.swift; sourceTree = "<group>"; };
@@ -384,6 +386,7 @@
 		D1CE06172B526930001303F2 /* guanzhi */ = {
 			isa = PBXGroup;
 			children = (
+				FF650F5D2ED7F9E2001437AB /* 重要项目信息 */,
 				D1093C2E2B669795008553A3 /* Info.plist */,
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
 				FF6BC4FB2C7C6A3000423660 /* AppStateModel.swift */,
@@ -543,6 +546,14 @@
 			path = SharePages;
 			sourceTree = "<group>";
 		};
+		FF650F5D2ED7F9E2001437AB /* 重要项目信息 */ = {
+			isa = PBXGroup;
+			children = (
+				FF650F602ED7FA5F001437AB /* 11.27 分享详情中交互实现.md */,
+			);
+			path = "重要项目信息";
+			sourceTree = "<group>";
+		};
 		FF6C38AB2D549932006966A7 /* MapPages */ = {
 			isa = PBXGroup;
 			children = (
@@ -664,6 +675,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */,
+				FF650F612ED7FA6A001437AB /* 11.27 分享详情中交互实现.md in Resources */,
 				FF4224642CE5C2E700734C39 /* GCJ02.json in Resources */,
 				FF4ED5BB2DAA6D0C0017131B /* UserAgreement.txt in Resources */,
 				FF87A8DE2ECF034B00C92D25 /* 观之接口文档 20251120.md in Resources */,
