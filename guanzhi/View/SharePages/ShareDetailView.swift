@@ -447,10 +447,42 @@ struct ShareDetailView: View {
         ) // 底部详情卡片和评论输入区
         .overlay(
             // 点赞打卡交互层
-            InteractionOverlayView()
-                .opacity(isShowShareDetailsCard ? 1 : 0)
-                .allowsHitTesting(isShowShareDetailsCard)
-                .animation(.easeInOut(duration: 0.25), value: isShowShareDetailsCard)
+            Group {
+                if let share = searchViewModel.selectedShare {
+                    InteractionOverlayView(
+                        share: share,
+                        onVoteStateChanged: { shareId, voteState, agreeCount, neutralCount in
+                            Task { @MainActor in
+                                // 1. 更新 selectedShare
+                                if let share = searchViewModel.selectedShare, share.id == shareId {
+                                    share.agreeCount = agreeCount
+                                    share.currentUserVoteType = voteState.rawValue
+                                    share.neutralCount = neutralCount
+
+                                    // 2. ✅ 手动保存 SwiftData 上下文（确保持久化）
+                                    do {
+                                        try searchViewModel.context.save()
+                                        #if DEBUG
+                                        print("💾 [ShareDetailView] SwiftData 已保存到磁盘")
+                                        #endif
+                                    } catch {
+                                        #if DEBUG
+                                        print("❌ [ShareDetailView] SwiftData 保存失败: \(error)")
+                                        #endif
+                                    }
+                                }
+
+                                #if DEBUG
+                                print("✅ [ShareDetailView] 同步点赞状态: shareId=\(shareId), agreeCount=\(agreeCount), voteState=\(voteState)")
+                                #endif
+                            }
+                        }
+                    )
+                    .opacity(isShowShareDetailsCard ? 1 : 0)
+                    .allowsHitTesting(isShowShareDetailsCard)
+                    .animation(.easeInOut(duration: 0.25), value: isShowShareDetailsCard)
+                }
+            }
         )
         .background(Color.black.ignoresSafeArea())
         .onAppear {

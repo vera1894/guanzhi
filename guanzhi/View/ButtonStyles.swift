@@ -218,6 +218,13 @@ struct ButtonStyles: View {
                 Button(action: {
                             // 发布-胶囊按钮fill
                         }) {
+                            Text("🚩 打卡这条观之")
+                        }
+                        .buttonStyle(ButtonStyle_capsuleFillPrimary_switched(isEnabled: true, isProcessing: false))
+                
+                Button(action: {
+                            // 发布-胶囊按钮fill
+                        }) {
                             Text("✅ 发布")
                         }
                     .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: true))
@@ -438,6 +445,36 @@ struct ButtonStyle_capsuleHugLeft: ButtonStyle {
 struct ButtonStyle_capsuleFillPrimary: ButtonStyle {
 
     var isEnabled: Bool
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 16, weight: .semibold, design: .rounded))
+            .foregroundColor(Color("text-black"))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(height: 32, alignment: .center)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
+                    .fill(Color("color-primary"))
+            )
+            .overlay(
+                RoundedCorner(radius: 20, corners: [.topLeft, .topRight, .bottomLeft])
+                    .stroke(Color.black, lineWidth: 4)
+            )
+            .compositingGroup()
+            .shadow(color: configuration.isPressed || !isEnabled ? Color.clear : Color("color-primary").opacity(1), radius: 0, x: 2, y: 4)
+            .brightness(isEnabled && configuration.isPressed ? -0.2 : 0)
+            .grayscale(isEnabled ? 0 : 1)
+            .scaleEffect(isEnabled && configuration.isPressed ? 0.95 : 1.0)
+            .opacity(isEnabled ? 1 : 0.5) // Adjust the opacity based on isEnabled
+    }
+}
+
+struct ButtonStyle_capsuleFillPrimary_switched: ButtonStyle {
+
+    var isEnabled: Bool
+    var isProcessing: Bool
 
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label

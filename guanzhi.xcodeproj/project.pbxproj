@@ -63,6 +63,7 @@
 		FF650F5A2ED7D962001437AB /* ShareDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F552ED7D962001437AB /* ShareDetailView.swift */; };
 		FF650F5C2ED7E7BF001437AB /* InteractionOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F5B2ED7E7BF001437AB /* InteractionOverlayView.swift */; };
 		FF650F612ED7FA6A001437AB /* 11.27 分享详情中交互实现.md in Resources */ = {isa = PBXBuildFile; fileRef = FF650F602ED7FA5F001437AB /* 11.27 分享详情中交互实现.md */; };
+		FF650F632ED81C06001437AB /* ShareInteractionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF650F622ED81C06001437AB /* ShareInteractionViewModel.swift */; };
 		FF6BC4D12C7C183F00423660 /* DeviceLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D02C7C183F00423660 /* DeviceLookup.swift */; };
 		FF6BC4D52C7C186000423660 /* SPCObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D42C7C186000423660 /* SPCObserver.swift */; };
 		FF6BC4D62C7C186000423660 /* PhotoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4D22C7C186000423660 /* PhotoCapture.swift */; };
@@ -197,6 +198,7 @@
 		FF650F552ED7D962001437AB /* ShareDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareDetailView.swift; sourceTree = "<group>"; };
 		FF650F5B2ED7E7BF001437AB /* InteractionOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionOverlayView.swift; sourceTree = "<group>"; };
 		FF650F602ED7FA5F001437AB /* 11.27 分享详情中交互实现.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "11.27 分享详情中交互实现.md"; sourceTree = "<group>"; };
+		FF650F622ED81C06001437AB /* ShareInteractionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInteractionViewModel.swift; sourceTree = "<group>"; };
 		FF6BC4D02C7C183F00423660 /* DeviceLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceLookup.swift; sourceTree = "<group>"; };
 		FF6BC4D22C7C186000423660 /* PhotoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCapture.swift; sourceTree = "<group>"; };
 		FF6BC4D32C7C186000423660 /* MovieCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCapture.swift; sourceTree = "<group>"; };
@@ -537,6 +539,7 @@
 		FF650F562ED7D962001437AB /* SharePages */ = {
 			isa = PBXGroup;
 			children = (
+				FF650F622ED81C06001437AB /* ShareInteractionViewModel.swift */,
 				FF650F522ED7D962001437AB /* CameraViewWrapper.swift */,
 				FF650F532ED7D962001437AB /* MediaItemView.swift */,
 				FF650F552ED7D962001437AB /* ShareDetailView.swift */,
@@ -810,6 +813,7 @@
 				D13FFDCB2B90CA9A007E1970 /* SheetView.swift in Sources */,
 				FF769B512D68631300321540 /* EditOneCodeView.swift in Sources */,
 				FF769B532D6C6CD300321540 /* EditAvatarView.swift in Sources */,
+				FF650F632ED81C06001437AB /* ShareInteractionViewModel.swift in Sources */,
 				FF5C360A2CD78B82001D7D32 /* SharesData.swift in Sources */,
 				FFD24BE92C50E27A00BCE228 /* ProcessingView.swift in Sources */,
 				D1F67AB32B8A193A00292FEB /* SettingView.swift in Sources */,

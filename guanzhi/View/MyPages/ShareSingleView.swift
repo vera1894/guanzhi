@@ -184,6 +184,11 @@ struct ShareSingleView: View {
         address: "北京市海淀区某处",
         imagePath: "image-20240904080557516.jpg",
         title: "MockTitle",
-        deleted: 0
+        deleted: 0,
+        agreeCount: 10,
+        neutralCount: 2,
+        checkinCount: 5,
+        commentCount: 3,
+        currentUserVoteType: nil
     ))
 }

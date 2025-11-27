@@ -24,6 +24,13 @@ class Share {
     var title: String
     var deleted: Bool
 
+    // ✅ 新增：互动统计字段
+    var agreeCount: Int = 0           // 赞同数
+    var neutralCount: Int = 0         // 无感数
+    var checkinCount: Int = 0         // 打卡数
+    var commentCount: Int = 0         // 评论数
+    var currentUserVoteType: Int? = nil // 当前用户的投票状态 (1=赞同, 0=无感, -1或nil=取消)
+
     // 修改计算属性以处理可选值
     var imagePaths: [String] {
         get {
@@ -48,6 +55,13 @@ class Share {
         self.imagePathsString = imagePaths.joined(separator: ",") // 存储为字符串
         self.title = title
         self.deleted = deleted
+
+        // ✅ 新增：初始化互动统计字段
+        self.agreeCount = 0
+        self.neutralCount = 0
+        self.checkinCount = 0
+        self.commentCount = 0
+        self.currentUserVoteType = nil
     }
 }
 

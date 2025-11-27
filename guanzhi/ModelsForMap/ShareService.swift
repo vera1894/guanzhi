@@ -96,6 +96,14 @@ final class ShareService {
     func fetchShareDetail(shareId: Int64) async throws -> ResponsedShare {
         let data = try await OTONetwork.request(.fetchShareDetail(id: shareId))
 
+        #if DEBUG
+        // ✅ 调试：打印原始 JSON
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("🔍 [ShareService] fetchShareDetail 原始 JSON:")
+            print(jsonString)
+        }
+        #endif
+
         let decoder = JSONDecoder()
         let response = try decoder.decode(OTOResponseModel<ResponsedShare>.self, from: data)
 
@@ -114,6 +122,13 @@ final class ShareService {
             )
         }
 
+        #if DEBUG
+        print("🔍 [ShareService] 解析后的数据:")
+        print("   - shareId: \(detailData.id)")
+        print("   - agreeCount: \(detailData.agreeCount ?? 0)")
+        print("   - currentUserVoteType: \(detailData.currentUserVoteType?.description ?? "nil")")
+        #endif
+
         return detailData
     }
 
@@ -129,6 +144,28 @@ final class ShareService {
                 domain: "ShareService",
                 code: response.respCode,
                 userInfo: [NSLocalizedDescriptionKey: response.respMsg ?? "删除失败"]
+            )
+        }
+    }
+
+    /// 对分享进行投票
+    /// - Parameters:
+    ///   - shareId: 分享ID
+    ///   - voteType: 投票类型 (1=赞同, 0=无感, -1=取消)
+    /// - Returns: 空结果（成功/失败）
+    func voteShare(shareId: Int64, voteType: Int) async throws {
+        let data = try await OTONetwork.request(
+            .voteShare(shareId: shareId, voteType: voteType)
+        )
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
+
+        guard response.respCode == 0 else {
+            throw NSError(
+                domain: "ShareService",
+                code: response.respCode,
+                userInfo: [NSLocalizedDescriptionKey: response.respMsg ?? "投票失败"]
             )
         }
     }

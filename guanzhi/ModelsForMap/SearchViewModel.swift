@@ -193,6 +193,33 @@ class SearchViewModel: ObservableObject {
         share.imagePaths = responsedShare.imagePath.components(separatedBy: ",").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         share.title = responsedShare.title
         share.deleted = responsedShare.deleted == 1
+
+        // ✅ 新增：同步互动统计字段
+        share.agreeCount = responsedShare.agreeCount ?? 0
+        share.neutralCount = responsedShare.neutralCount ?? 0
+        share.checkinCount = responsedShare.checkinCount ?? 0
+        share.commentCount = responsedShare.commentCount ?? 0
+
+        // ✅ 关键修复：只在后端返回非 nil 时更新 currentUserVoteType
+        // 避免后端不返回该字段时，用 nil 覆盖本地已保存的状态
+        if let voteType = responsedShare.currentUserVoteType {
+            share.currentUserVoteType = voteType
+            #if DEBUG
+            print("🔄 [SearchViewModel] 从后端更新 currentUserVoteType: \(voteType)")
+            #endif
+        } else {
+            #if DEBUG
+            print("⚠️ [SearchViewModel] 后端未返回 currentUserVoteType，保持本地值: \(share.currentUserVoteType?.description ?? "nil")")
+            #endif
+        }
+
+        #if DEBUG
+        print("🔄 [SearchViewModel] updateShare - 同步互动数据:")
+        print("   - shareId: \(share.id)")
+        print("   - agreeCount: \(share.agreeCount)")
+        print("   - currentUserVoteType (最终): \(share.currentUserVoteType?.description ?? "nil")")
+        #endif
+
         // 异步更新媒体文件
         Task {
             await updateMediaFiles(for: share)
@@ -1373,6 +1400,13 @@ struct ResponsedShare: Codable, Equatable {
     let imagePath: String
     let title: String
     let deleted: Int
+
+    // ✅ 新增：互动统计字段
+    let agreeCount: Int?
+    let neutralCount: Int?
+    let checkinCount: Int?
+    let commentCount: Int?
+    let currentUserVoteType: Int?  // 当前用户的投票状态 (1=赞同, 0=无感, nil=未投票)
 }
 
 //服务器返回的附近Share列表模型
