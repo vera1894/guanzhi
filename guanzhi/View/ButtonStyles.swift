@@ -13,6 +13,7 @@ struct ButtonStyles: View {
     @State private var isCaptureEnabled: Bool = true  //拍摄按钮可用？
     
     @State private var isFlashOn: Bool = false //camera闪光灯开启？
+    @State private var isLiked: Bool = false //是否喜欢？
     @State private var isDateShow: Bool = false //camera日期显示？
     @State private var isBackCamera: Bool = false //camera使用后摄像头？
     
@@ -150,6 +151,18 @@ struct ButtonStyles: View {
             }
             .buttonStyle(ButtonStyle_CameraControl())
             
+        }
+        
+        HStack { //分享内容交互
+            Button{
+                //喜欢按钮❤️
+                isLiked.toggle()
+            }label: {
+                Image(systemName: isLiked ?  "heart.circle.fill" : "heart.circle")
+                    .font(.system(size: 32))
+                    .foregroundStyle(Color(isLiked ? Color("color-primary") : Color("color-deep") ))
+            }
+            .buttonStyle(ButtonStyle_LikeControl())
         }
         
         
@@ -724,6 +737,17 @@ struct IconStylePosition: ButtonStyle {
 }
 
 struct ButtonStyle_CameraControl: ButtonStyle {
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .frame(width: 32, height: 32)
+//            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
+            .brightness(configuration.isPressed ? -0.2 : 0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct ButtonStyle_LikeControl: ButtonStyle {
 
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label

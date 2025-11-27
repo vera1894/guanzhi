@@ -4,6 +4,48 @@
 //
 //  Created by 晨光 訾 on 2024/10/28.
 //
+//ZStack (最外层)
+//  └── GeometryReader
+//      └── ZStack
+//          ├── Color.clear (容器层)
+//          │   └── .overlay
+//          │       └── TabView (媒体展示)
+//          │           └── .overlayPreferenceValue
+//          │               └── VideoPlayerView (全局播放器)
+//          ├── 点击手势 (.onTapGesture 切换 isShowShareDetailsCard)
+//          └── HStack (左边缘滑动退出区域)
+//
+//  .overlay (顶部操作栏)
+//      └── 返回按钮、用户信息胶囊、更多按钮
+//      └── opacity/allowsHitTesting 受 isShowShareDetailsCard 控制
+//
+//  .overlay (底部详情卡片)
+//      └── ShareDetailsCardView
+//      └── opacity/allowsHitTesting 受 isShowShareDetailsCard 控制
+//
+//  .overlay (自定义对话框遮罩)
+//      └── DialogOverlay
+
+//1. 主要结构：
+//    - 最外层是一个ZStack
+//    - 包含一个GeometryReader
+//    - GeometryReader内部还有一个ZStack
+//    - 在ZStack内部有一个Color.clear作为容器，然后用.overlay添加TabView（显示媒体
+//  内容）
+//    - TabView上还有.overlayPreferenceValue用于视频播放器的全局显示
+//    - 退出手势和点击手势直接加在Color.clear上
+//    - 左边缘滑动手势是一个单独的HStack层
+//  2. Overlay层级：
+//    - 顶部操作栏（返回按钮、用户信息、更多按钮）使用.overlay添加，通过isShowShar
+//  eDetailsCard控制显隐
+//    - 底部ShareDetailsCardView也用.overlay添加，同样受isShowShareDetailsCard控制
+//    - DialogOverlay（自定义遮罩）也是用.overlay添加
+//    - Alert是SwiftUI原生的，不算在ZStack/overlay体系里
+//  3. 点击交互逻辑：
+//    -
+//  点击图片区域会切换isShowShareDetailsCard，从而控制顶部导航栏和底部sheet的显隐
+
+
 
 import SwiftUI
 import PhotosUI
@@ -348,7 +390,7 @@ struct ShareDetailView: View {
             .environmentObject(searchViewModel)
             .zIndex(1)
             .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 4 / 5 + dragOffset)
+            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 0.86 + dragOffset)
             .opacity(isShowShareDetailsCard ? 1 : 0)
             .allowsHitTesting(isShowShareDetailsCard)
             .gesture(
@@ -814,7 +856,8 @@ struct UserInfoCapsule: View {
                 if let localUser = userProfileManager.localUserProfile {
                     capsuleContent(
                         nickname: localUser.nickname,
-                        oneCode: localUser.code,
+                        oneCode: localUser.name,
+                        phone: localUser.phone,
                         iconName: nil,
                         onTap: {
                             navigationCoordinator.path.append(Route.myView)
@@ -859,7 +902,8 @@ struct UserInfoCapsule: View {
             if let otherUser = userProfileManager.otherUserProfile, otherUser.id == userId {
                 capsuleContent(
                     nickname: otherUser.nickname ?? "陌生人",
-                    oneCode: otherUser.code,
+                    oneCode: otherUser.name,
+                    phone: otherUser.phone,
                     iconName: nil,
                     onTap: {
                         navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
@@ -881,7 +925,7 @@ struct UserInfoCapsule: View {
     }
 
     @ViewBuilder
-    private func capsuleContent(nickname: String, oneCode: String? = nil, iconName: String?, onTap: @escaping () -> Void) -> some View {
+    private func capsuleContent(nickname: String, oneCode: String? = nil, phone: String? = nil, iconName: String?, onTap: @escaping () -> Void) -> some View {
         HStack(spacing: 8) {
             // 如果有错误图标，显示图标；否则显示头像
             if let iconName = iconName {
@@ -903,8 +947,16 @@ struct UserInfoCapsule: View {
                     .foregroundColor(.primary)
                     .lineLimit(1)
 
-                // 总是显示 OneCode，nil 时使用占位符
-                Text("OneCode: \(oneCode ?? "⬛️⬛️⬛️⬛️")")
+                // OneCode 显示逻辑：如果 oneCode == phone，隐私保护显示占位符
+                let displayCode: String = {
+                    guard let code = oneCode else { return "⬛️⬛️⬛️⬛️" }
+                    if let phone = phone, code == phone {
+                        return "⬛️⬛️⬛️⬛️"  // 隐私保护：与手机号相同时隐藏
+                    }
+                    return code
+                }()
+
+                Text("OneCode: \(displayCode)")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .lineLimit(1)

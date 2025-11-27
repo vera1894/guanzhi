@@ -378,8 +378,8 @@ struct ShareDetailsCardView: View {
                 VStack(alignment: .leading) {
                     Text(localUser.nickname)
                         .font(.headline)
-                    // 其他想展示的字段
-                    Text("OneCode: \(localUser.code ?? "⬛️⬛️⬛️⬛️")")
+                    // 其他想展示的字段 - 使用隐私保护逻辑
+                    Text("OneCode: \((localUser.name == localUser.phone) ? "⬛️⬛️⬛️⬛️" : (localUser.name))")
                         .font(.subheadline)
                 }
 
@@ -410,8 +410,8 @@ struct ShareDetailsCardView: View {
                 VStack(alignment: .leading) {
                     Text(otherInfo.nickname ?? "陌生人")
                         .font(.headline)
-                    // 其他想展示的字段
-                    Text("OneCode: \(otherInfo.code ?? "⬛️⬛️⬛️⬛️")")
+                    // 其他想展示的字段 - 使用隐私保护逻辑
+                    Text("OneCode: \((otherInfo.name == otherInfo.phone) ? "⬛️⬛️⬛️⬛️" : (otherInfo.name ?? "⬛️⬛️⬛️⬛️"))")
                         .font(.subheadline)
                 }
 
