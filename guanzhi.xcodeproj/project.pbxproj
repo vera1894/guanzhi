@@ -388,7 +388,7 @@
 		D1CE06172B526930001303F2 /* guanzhi */ = {
 			isa = PBXGroup;
 			children = (
-				FF650F5D2ED7F9E2001437AB /* 重要项目信息 */,
+				FF650F5D2ED7F9E2001437AB /* 项目信息记录 */,
 				D1093C2E2B669795008553A3 /* Info.plist */,
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
 				FF6BC4FB2C7C6A3000423660 /* AppStateModel.swift */,
@@ -549,12 +549,12 @@
 			path = SharePages;
 			sourceTree = "<group>";
 		};
-		FF650F5D2ED7F9E2001437AB /* 重要项目信息 */ = {
+		FF650F5D2ED7F9E2001437AB /* 项目信息记录 */ = {
 			isa = PBXGroup;
 			children = (
 				FF650F602ED7FA5F001437AB /* 11.27 分享详情中交互实现.md */,
 			);
-			path = "重要项目信息";
+			path = "项目信息记录";
 			sourceTree = "<group>";
 		};
 		FF6C38AB2D549932006966A7 /* MapPages */ = {
