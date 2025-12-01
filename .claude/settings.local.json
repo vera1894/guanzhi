@@ -65,7 +65,9 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiI1ZTYwYzJlMjBlZTc0ZjMzOTk5MmRmZDFiNTVkNWUyNyIsImF1dGgiOiJST0xFX0FETUlOIiwidXNlciI6MiwibmFtZSI6IjEzODEwMjY5NjI3Iiwibmlja25hbWUiOiJUZXN0QWRtaW4iLCJwaG9uZSI6IjEzODEwMjY5NjI3Iiwic3ViIjoiMiJ9.cfIGo-00EKb1YqYjcYiauLZ1oPozNxzDM4KsFXXvRPJ1IModMl1kYqotBj7A0Dct7r6GmpMOEd8ngrRQSmyIrw\" curl -s http://localhost:8085/api/guan/user/info -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\")",
       "Bash(lsof:*)",
       "Bash(ssh:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(javac:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }
