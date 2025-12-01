@@ -67,7 +67,21 @@
       "Bash(ssh:*)",
       "Bash(scp:*)",
       "Bash(javac:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(tee:*)",
+      "Bash(/usr/libexec/java_home:*)",
+      "Bash(export:*)",
+      "Bash(/usr/bin/tail:*)",
+      "Bash(pkill:*)",
+      "Bash(__NEW_LINE__ curl -s http://localhost:8085/api/admin/fade/simulate )",
+      "Bash(__NEW_LINE__ echo \"=== 步骤1: 获取现有褪色配置 ===\")",
+      "Bash(cd:*)",
+      "Bash(npm --version:*)",
+      "Bash(node --version)",
+      "Bash(cd /Users/zaptain/Library/Mobile\\ Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi && npm create vite@latest admin-panel -- --template vue-ts:*)",
+      "Bash(npm install:*)",
+      "Bash(npm create:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }
