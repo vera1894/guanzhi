@@ -83,7 +83,13 @@
       "Bash(npm create:*)",
       "Bash(npm run dev:*)",
       "Bash(/opt/homebrew/Cellar/maven/3.9.11/bin/mvn spring-boot:run:*)",
-      "Bash(/opt/homebrew/Cellar/mysql/9.5.0_2/bin/mysql:*)"
+      "Bash(/opt/homebrew/Cellar/mysql/9.5.0_2/bin/mysql:*)",
+      "Bash(JAVA_HOME=\"/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home\" mvn clean compile:*)",
+      "Bash(cd /Users/zaptain/Library/Mobile\\ Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi/Server/onettoo && JAVA_HOME=\"/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home\" mvn spring-boot:run:*)",
+      "Bash(kill:*)",
+      "Bash(http://localhost:8085/api/admin/config/fade-configs)",
+      "Bash(JAVA_HOME=\"/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home\" mvn spring-boot:run:*)",
+      "Bash(git -C \"/Users/zaptain/Library/Mobile Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi\" status --short)"
     ],
     "deny": []
   }

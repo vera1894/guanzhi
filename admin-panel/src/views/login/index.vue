@@ -8,7 +8,7 @@ const router = useRouter()
 const token = ref('')
 const loading = ref(false)
 
-const handleLogin = () => {
+const handleLogin = async () => {
   if (!token.value.trim()) {
     ElMessage.warning('请输入 Admin Token')
     return
@@ -16,11 +16,24 @@ const handleLogin = () => {
 
   loading.value = true
   try {
-    setToken(token.value.trim())
+    // 自动去除可能的 "Bearer " 前缀
+    let cleanToken = token.value.trim()
+    if (cleanToken.startsWith('Bearer ')) {
+      cleanToken = cleanToken.substring(7).trim()
+      console.log('[Login] 已自动去除 Bearer 前缀')
+    }
+
+    setToken(cleanToken)
     ElMessage.success('登录成功')
-    router.push('/')
+
+    // 使用 setTimeout 确保 token 已经保存到 localStorage
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // 使用 replace 而不是 push，避免返回到登录页
+    await router.replace('/')
   } catch (error) {
     ElMessage.error('登录失败')
+    console.error('Login error:', error)
   } finally {
     loading.value = false
   }

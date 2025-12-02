@@ -27,8 +27,10 @@ export interface LevelDefinition {
   levelCode: string
   levelName: string
   minPoints: number
-  maxPoints?: number
-  description?: string
+  minCheckins?: number      // 最小打卡数
+  minComments?: number      // 最小评论数
+  taggingAllowance?: number // 打标签权限
+  extraConditions?: string  // 额外条件
 }
 
 export interface PointsRule {
@@ -36,15 +38,16 @@ export interface PointsRule {
   actionType: string
   pointsValue: number
   dailyLimit?: number
-  description?: string
 }
 
 export interface TagDefinition {
   id?: number
-  tagKey: string
-  tagName: string
-  tagType: string
-  description?: string
+  tagCode: string      // 标签键（拼音形式，如 MIJING）
+  tagName: string      // 标签名称（中文，如"秘境"）
+  tagType: string      // 标签类型：POSITIVE（正面）或 NEGATIVE（负面）
+  minLevelCode?: string // 最低等级要求
+  isActive?: boolean    // 是否激活
+  sortOrder?: number    // 排序顺序
 }
 
 export function simulateFadeScore(data: FadeSimulationRequest) {

@@ -1,7 +1,7 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { isAuthenticated } from '../utils/auth'
 
-const routes: RouteRecordRaw[] = [
+const routes = [
   {
     path: '/login',
     name: 'Login',
@@ -56,12 +56,23 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.meta.requiresAuth !== false
+  const authenticated = isAuthenticated()
 
-  if (requiresAuth && !isAuthenticated()) {
+  console.log('[Router Guard]', {
+    to: to.path,
+    from: from.path,
+    requiresAuth,
+    authenticated
+  })
+
+  if (requiresAuth && !authenticated) {
+    console.log('[Router Guard] 未认证，重定向到登录页')
     next('/login')
-  } else if (to.path === '/login' && isAuthenticated()) {
+  } else if (to.path === '/login' && authenticated) {
+    console.log('[Router Guard] 已认证，重定向到首页')
     next('/')
   } else {
+    console.log('[Router Guard] 允许导航')
     next()
   }
 })
