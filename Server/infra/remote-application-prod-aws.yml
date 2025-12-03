@@ -1,0 +1,144 @@
+#配置数据源
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+  servlet:
+    multipart:
+      maxFileSize: 10MB
+      maxRequestSize: 100MB
+      enabled: true
+  datasource:
+    dbs: one
+    one:
+      ip: localhost
+      name: onettoo
+      jdbc-url: jdbc:log4jdbc:mysql://${DB_HOST:52.83.127.15}:${DB_PORT:3306}/${DB_NAME:ONETTOO}?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
+      username: root
+      password: oneAa123123!.
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    druid:
+      db-type: com.alibaba.druid.pool.DruidDataSource
+      driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      #mysql8
+      #driverClassName: com.mysql.cj.jdbc.Driver
+      #mysql5,6,7
+      #driverClassName: com.mysql.jdbc.Driver
+      url: jdbc:log4jdbc:mysql://${DB_HOST:52.83.127.15}:${DB_PORT:3306}/${DB_NAME:four}?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false
+
+      username: ${DB_USER:root}
+      password: ${DB_PWD:112233}
+      #password: ${DB_PWD:112233}
+      # 初始连接数
+      initial-size: 5
+      # 最小连接数
+      min-idle: 10
+      # 最大连接数
+      max-active: 20
+      # 获取连接超时时间
+      max-wait: 5000
+      # 连接有效性检测时间
+      time-between-eviction-runs-millis: 60000
+      # 连接在池中最小生存的时间
+      min-evictable-idle-time-millis: 300000
+      # 连接在池中最大生存的时间
+      max-evictable-idle-time-millis: 900000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      # 检测连接是否有效
+      validation-query: select 1
+      # 配置监控统计
+      webStatFilter:
+        enabled: true
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+      filter:
+        stat:
+          enabled: true
+          # 记录慢SQL
+          log-slow-sql: true
+          slow-sql-millis: 1000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
+  redis:
+    database: ${REDIS_DB:0}
+    host: ${REDIS_HOST:52.83.127.15}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PWD:onettoo-redis-2023-onettoo.}
+    timeout: 10000
+
+
+mybatis-plus:
+  mapper-locations: classpath:mapping/*.xml
+  type-aliases-package: com.cloud.onettoo.modules
+  configuration:
+    log-impl: org.apache.ibatis.logging.log4j2.Log4j2Impl
+
+##### logging ######
+logging:
+  config: classpath:log4j2.xml
+
+#是否开启 swagger-ui
+swagger:
+  enabled: true
+  serverIp: 172.31.33.21
+
+#jwt
+jwt:
+  header: Authorization
+  # 令牌前缀
+  token-start-with: Bearer
+  # 必须使用最少88位的Base64对该令牌进行编码
+  base64-secret: w8fL6FEJwTetFO8rhOvz6B/ugUjb1FImbRfAEfKAdKnkq9sYZ7zdr53yikgm9nVb0RdOIsntYrHjwAx+atF29w==
+  # 令牌过期时间 此处单位/毫秒 ，默认24小时，可在此网站生成 https://www.convertworld.com/zh-hans/time/milliseconds.html
+  token-validity-in-seconds: 86400000
+  # 令牌过期时间 此处单位/毫秒 ，默认365天，可在此网站生成 https://www.convertworld.com/zh-hans/time/milliseconds.html
+  token-validity-in-long-seconds: 31536000000
+  # 在线用户key
+  online-key: "online-token:"
+  # 在线IOT设备key
+  equip-key: "online-equip:"
+  # 验证码
+  code-key: code-key-
+  # token 续期检查时间范围（默认300分钟，单位毫秒），在token即将过期的一段时间内用户操作了，则给用户的token续期
+  detect: 18000000
+  # 续期时间范围，默认24小时，单位毫秒
+  renew: 86400000
+  # 本地化语言类型
+  language: Language
+  # 权限 claim key
+  auth-key: auth
+
+knife4j:
+  enable: true
+  setting:
+    #是否开启界面中对某接口的版本控制,如果开启，后端接口变化后Ui界面会存在小蓝点
+    enableVersion: true
+    enableSwaggerModels: true
+    swaggerModelName: 实体类列表
+    enableReloadCacheParameter: true
+    enable-footer: false
+    enable-footer-custom: true
+    footer-custom-content: Apache License 2.0 | Copyright  2023-[顽涂研究基地](https://onettoo.com)
+  basic:
+    enable: true
+    username: onettoo
+    password: 123456
+
+admin:
+  phone: 13810269627
+
+image:
+  baseImagePath: ./images/
+
+app:
+  distance:
+    check:
+      limit:
+        meters: 200.0
