@@ -47,6 +47,23 @@ const menuItems = [
     path: '/configs/tags',
     icon: 'PriceTag',
     title: '标签定义管理'
+  },
+  {
+    type: 'submenu',
+    icon: 'Search',
+    title: '数据观察',
+    children: [
+      {
+        path: '/inspector/share',
+        icon: 'Document',
+        title: '分享查询'
+      },
+      {
+        path: '/inspector/user',
+        icon: 'User',
+        title: '用户查询'
+      }
+    ]
   }
 ]
 </script>
@@ -65,14 +82,28 @@ const menuItems = [
           :collapse="collapsed"
           :router="true"
         >
-          <el-menu-item
-            v-for="item in menuItems"
-            :key="item.path"
-            :index="item.path"
-          >
-            <el-icon><component :is="item.icon" /></el-icon>
-            <template #title>{{ item.title }}</template>
-          </el-menu-item>
+          <template v-for="item in menuItems" :key="item.path || item.title">
+            <!-- 子菜单 -->
+            <el-sub-menu v-if="item.type === 'submenu'" :index="item.title">
+              <template #title>
+                <el-icon><component :is="item.icon" /></el-icon>
+                <span>{{ item.title }}</span>
+              </template>
+              <el-menu-item
+                v-for="child in item.children"
+                :key="child.path"
+                :index="child.path"
+              >
+                <el-icon><component :is="child.icon" /></el-icon>
+                <template #title>{{ child.title }}</template>
+              </el-menu-item>
+            </el-sub-menu>
+            <!-- 普通菜单项 -->
+            <el-menu-item v-else :index="item.path">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <template #title>{{ item.title }}</template>
+            </el-menu-item>
+          </template>
         </el-menu>
 
         <div class="collapse-btn" @click="collapsed = !collapsed">
@@ -141,6 +172,15 @@ const menuItems = [
 
 :deep(.el-menu-item.is-active) {
   background-color: #409eff !important;
+  color: #fff;
+}
+
+:deep(.el-sub-menu__title) {
+  color: #bfcbd9;
+}
+
+:deep(.el-sub-menu__title:hover) {
+  background-color: #263445 !important;
   color: #fff;
 }
 

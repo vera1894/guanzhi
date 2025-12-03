@@ -44,6 +44,18 @@ const routes = [
         name: 'TagsConfig',
         component: () => import('../views/configs/TagsConfig.vue'),
         meta: { requiresAuth: true, title: '标签定义管理' }
+      },
+      {
+        path: '/inspector/share',
+        name: 'ShareInspector',
+        component: () => import('../views/inspector/ShareInspectorPage.vue'),
+        meta: { requiresAuth: true, title: '分享查询' }
+      },
+      {
+        path: '/inspector/user',
+        name: 'UserInspector',
+        component: () => import('../views/inspector/UserInspectorPage.vue'),
+        meta: { requiresAuth: true, title: '用户查询' }
       }
     ]
   }
