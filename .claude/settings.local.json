@@ -94,7 +94,14 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiI1ZTYwYzJlMjBlZTc0ZjMzOTk5MmRmZDFiNTVkNWUyNyIsImF1dGgiOiJST0xFX0FETUlOIiwidXNlciI6MiwibmFtZSI6IjEzODEwMjY5NjI3Iiwibmlja25hbWUiOiJUZXN0QWRtaW4iLCJwaG9uZSI6IjEzODEwMjY5NjI3Iiwic3ViIjoiMiJ9.cfIGo-00EKb1YqYjcYiauLZ1oPozNxzDM4KsFXXvRPJ1IModMl1kYqotBj7A0Dct7r6GmpMOEd8ngrRQSmyIrw\" curl -s http://localhost:8085/api/admin/config/points-rules -H \"Authorization: Bearer $TOKEN\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiI1ZTYwYzJlMjBlZTc0ZjMzOTk5MmRmZDFiNTVkNWUyNyIsImF1dGgiOiJST0xFX0FETUlOIiwidXNlciI6MiwibmFtZSI6IjEzODEwMjY5NjI3Iiwibmlja25hbWUiOiJUZXN0QWRtaW4iLCJwaG9uZSI6IjEzODEwMjY5NjI3Iiwic3ViIjoiMiJ9.cfIGo-00EKb1YqYjcYiauLZ1oPozNxzDM4KsFXXvRPJ1IModMl1kYqotBj7A0Dct7r6GmpMOEd8ngrRQSmyIrw\" curl -s http://localhost:8085/api/admin/config/levels -H \"Authorization: Bearer $TOKEN\")",
       "Bash(xargs:*)",
-      "Bash(\"/Users/zaptain/Library/Mobile Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi/Server/infra/remote-application-prod-aws.yml\")"
+      "Bash(\"/Users/zaptain/Library/Mobile Documents/com~apple~CloudDocs/DarkForce/Seee/guanzhi/Server/infra/remote-application-prod-aws.yml\")",
+      "Bash(git commit:*)",
+      "Bash(JAVA_HOME=\"/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home\" mvn clean package:*)",
+      "Bash(md5:*)",
+      "Bash(pip3 install:*)",
+      "Bash(ADMIN_TOKEN=\"eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzMjFkYzliNmYwMzA0ZjdiYWZmZjc5MmY3ZDJjMjY4NCIsImF1dGgiOiJST0xFX0FETUlOIiwidXNlciI6MTEsIm5hbWUiOiIxNTgxMDM0OTc2NiIsIm5pY2tuYW1lIjoiNDQ0NCIsInBob25lIjoiMTU4MTAzNDk3NjYiLCJzdWIiOiIxMSJ9.ayWCngLQXMr5HDbC3YayuQbvQonwp5I-bjASLW7mOyd_wzF9VkCHzoXSS1DZXJ38s6X0B4c3viJW-vhJb-T5Bg\")",
+      "Bash(aws ssm send-command:*)",
+      "Bash(aws ssm get-command-invocation:*)"
     ],
     "deny": []
   }
