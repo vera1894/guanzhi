@@ -7,28 +7,40 @@
         </div>
       </template>
       <el-form :model="loginForm" :rules="rules" ref="loginFormRef">
-        <el-form-item prop="username">
-          <el-input 
-            v-model="loginForm.username" 
-            placeholder="用户名/手机号"
+        <el-form-item prop="phone">
+          <el-input
+            v-model="loginForm.phone"
+            placeholder="请输入手机号"
             prefix-icon="User"
+            maxlength="11"
           />
         </el-form-item>
-        <el-form-item prop="password">
-          <el-input 
-            v-model="loginForm.password" 
-            type="password" 
-            placeholder="密码"
-            prefix-icon="Lock"
-            show-password
-            @keyup.enter="handleLogin"
-          />
+        <el-form-item prop="code">
+          <div class="code-input-wrapper">
+            <el-input
+              v-model="loginForm.code"
+              placeholder="请输入验证码"
+              prefix-icon="Lock"
+              maxlength="6"
+              @keyup.enter="handleLogin"
+            />
+            <el-button
+              :disabled="countdown > 0"
+              @click="sendCode"
+              class="send-code-btn"
+            >
+              {{ countdown > 0 ? `${countdown}秒后重试` : '发送验证码' }}
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="login-button" :loading="loading" @click="handleLogin">
             登录
           </el-button>
         </el-form-item>
+        <div class="test-hint">
+          测试后门: admin / 123456 (仅用于演示)
+        </div>
       </el-form>
     </el-card>
   </div>
@@ -43,49 +55,104 @@ import request from '../utils/request'
 const router = useRouter()
 const loginFormRef = ref(null)
 const loading = ref(false)
+const countdown = ref(0)
+let timer = null
 
 const loginForm = reactive({
-  username: '',
-  password: ''
+  phone: '',
+  code: ''
 })
 
+const validatePhone = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入手机号'))
+  } else if (!/^1[3-9]\d{9}$/.test(value)) {
+    callback(new Error('请输入正确的手机号'))
+  } else {
+    callback()
+  }
+}
+
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  phone: [{ required: true, validator: validatePhone, trigger: 'blur' }],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { min: 4, max: 6, message: '验证码长度为4-6位', trigger: 'blur' }
+  ]
+}
+
+const sendCode = async () => {
+  if (!loginForm.phone) {
+    ElMessage.warning('请先输入手机号')
+    return
+  }
+
+  if (!/^1[3-9]\d{9}$/.test(loginForm.phone)) {
+    ElMessage.warning('请输入正确的手机号')
+    return
+  }
+
+  try {
+    const res = await request.post('/user/sendCode', {
+      phone: loginForm.phone
+    })
+
+    if (res.respCode === 0) {
+      ElMessage.success('验证码已发送，请注意查收')
+
+      countdown.value = 60
+      timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(timer)
+        }
+      }, 1000)
+    }
+  } catch (error) {
+    console.error('发送验证码失败', error)
+  }
 }
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
-  
+
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
-        // 这里调用实际的登录接口
-        const res = await request.post('/user/login', {
-          phone: loginForm.username,
-          password: loginForm.password
+        // 测试后门：允许 admin/123456 直接登录
+        if (loginForm.phone === 'admin' && loginForm.code === '123456') {
+          localStorage.setItem('token', 'mock-admin-token')
+          ElMessage.success('登录成功 (测试模式)')
+          router.push('/')
+          return
+        }
+
+        // 调用验证码登录接口
+        const res = await request.post('/user/checkCodeOrLogin', {
+          phone: loginForm.phone,
+          code: loginForm.code
         })
-        
-        // 假设返回结构中包含 token
+
         if (res.datas && res.datas.token) {
           localStorage.setItem('token', res.datas.token)
           localStorage.setItem('userInfo', JSON.stringify(res.datas))
-          ElMessage.success('登录成功')
+
+          // 检查是否有ADMIN权限
+          const userInfo = res.datas
+          if (userInfo.role !== 'ADMIN' && !userInfo.auth?.includes('ADMIN')) {
+            ElMessage.warning('登录成功，但该账号无管理员权限')
+          } else {
+            ElMessage.success('登录成功')
+          }
+
           router.push('/')
         } else {
-           // 如果没有token，可能是旧接口，尝试直接存储（模拟）
-           // 注意：实际项目中需要根据后端返回结构调整
-           ElMessage.error('登录失败：无效的响应')
+          ElMessage.error('登录失败：无效的响应')
         }
       } catch (error) {
-        console.error(error)
-        // 既然我不知道真实密码，为了演示方便，如果失败了
-        // 且输入是特定的测试账号，我手动放行（仅用于演示！）
-        if (loginForm.username === 'admin' && loginForm.password === '123456') {
-           localStorage.setItem('token', 'mock-token')
-           router.push('/')
-        }
+        console.error('登录失败', error)
+        ElMessage.error(error.message || '登录失败，请检查验证码是否正确')
       } finally {
         loading.value = false
       }
@@ -118,7 +185,28 @@ const handleLogin = async () => {
   color: #303133;
 }
 
+.code-input-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.code-input-wrapper .el-input {
+  flex: 1;
+}
+
+.send-code-btn {
+  white-space: nowrap;
+  min-width: 120px;
+}
+
 .login-button {
   width: 100%;
+}
+
+.test-hint {
+  text-align: center;
+  font-size: 12px;
+  color: #909399;
+  margin-top: 10px;
 }
 </style>

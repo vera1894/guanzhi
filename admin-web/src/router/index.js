@@ -47,6 +47,22 @@ const routes = [
             component: () => import('../views/config/TagDefinition.vue')
           }
         ]
+      },
+      {
+        path: 'inspector',
+        name: 'Inspector',
+        children: [
+          {
+            path: 'user',
+            name: 'UserDetail',
+            component: () => import('../views/inspector/UserDetail.vue')
+          },
+          {
+            path: 'share',
+            name: 'ShareDetail',
+            component: () => import('../views/inspector/ShareDetail.vue')
+          }
+        ]
       }
     ]
   }

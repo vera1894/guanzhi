@@ -2,8 +2,21 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '../router'
 
+// 根据环境选择 baseURL
+// 开发环境: 使用 Vite proxy (/api 会被代理到环境变量配置的后端)
+// 生产环境: 直接使用完整的后端 URL
+const getBaseURL = () => {
+  if (import.meta.env.DEV) {
+    // 开发环境使用代理
+    return '/api'
+  } else {
+    // 生产环境使用完整URL
+    return import.meta.env.VITE_API_BASE_URL + '/api'
+  }
+}
+
 const service = axios.create({
-  baseURL: '/api', // 使用代理
+  baseURL: getBaseURL(),
   timeout: 5000
 })
 
