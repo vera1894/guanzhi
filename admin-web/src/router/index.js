@@ -69,7 +69,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  // 生产环境使用 /guanzhi-admin/ 作为基础路径
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

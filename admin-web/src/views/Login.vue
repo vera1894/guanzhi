@@ -134,15 +134,25 @@ const handleLogin = async () => {
           code: loginForm.code
         })
 
-        if (res.datas && res.datas.token) {
-          localStorage.setItem('token', res.datas.token)
-          localStorage.setItem('userInfo', JSON.stringify(res.datas))
+        // 后端返回格式：{ respCode: 0, respMsg: "...", datas: "token字符串" }
+        // datas 直接是 token 字符串，不是对象
+        const token = typeof res.datas === 'string' ? res.datas : res.datas?.token
 
-          // 检查是否有ADMIN权限
-          const userInfo = res.datas
-          if (userInfo.role !== 'ADMIN' && !userInfo.auth?.includes('ADMIN')) {
-            ElMessage.warning('登录成功，但该账号无管理员权限')
-          } else {
+        if (token) {
+          localStorage.setItem('token', token)
+
+          // 解析 JWT token 获取用户信息
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]))
+            localStorage.setItem('userInfo', JSON.stringify(payload))
+
+            // 检查是否有ADMIN权限
+            if (payload.auth !== 'ROLE_ADMIN' && !payload.auth?.includes('ADMIN')) {
+              ElMessage.warning('登录成功，但该账号无管理员权限')
+            } else {
+              ElMessage.success('登录成功')
+            }
+          } catch (e) {
             ElMessage.success('登录成功')
           }
 

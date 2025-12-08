@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(JAVA_HOME=\"/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home\" mvn clean package:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(npm run build:*)",
+      "Bash(base64:*)",
+      "Bash(split:*)"
     ],
     "deny": [],
     "ask": []
