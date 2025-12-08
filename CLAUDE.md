@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## 必读：首先阅读项目信息目录
+
+**新 Agent 在开始工作前，必须先阅读 `projectBasicInfo/` 目录下的文档：**
+
+```
+projectBasicInfo/
+├── 00_AGENT_RULES.md         # Agent 使用规则（必读）
+├── 01_PROJECT_OVERVIEW.md    # 项目概述（必读）
+├── 02_CONNECTIONS.private.md # 服务器连接信息（部署时需要）
+├── 03_CREDENTIALS.private.md # 凭证信息（认证时需要）
+└── logs/                     # 历史操作日志（了解之前做过什么）
+```
+
+这些文档包含完整的项目结构、技术栈、部署信息和操作规范。
+
+---
+
 ## Language Rule
 - All responses from Claude Code should be in Chinese (Simplified) as specified in .rules/agent_rules.md
 - Code comments may be in Chinese or English depending on context
