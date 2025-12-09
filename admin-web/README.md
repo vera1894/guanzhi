@@ -561,9 +561,12 @@ import 'element-plus/dist/index.css'
 
 ## 📚 相关文档
 
-- [V1项目进度总结](../重要项目信息/V1项目进度总结.md)
-- [项目结构说明](../重要项目信息/项目结构说明.md)
-- [后端API文档](../Server/onettoo/README.md)
+### 项目文档
+- [项目概述](../projectBasicInfo/01_PROJECT_OVERVIEW.md)
+- [服务器连接信息](../projectBasicInfo/02_CONNECTIONS.private.md)
+- [凭证信息](../projectBasicInfo/03_CREDENTIALS.private.md)
+
+### 外部文档
 - [Vue 3官方文档](https://cn.vuejs.org/)
 - [Vite官方文档](https://cn.vitejs.dev/)
 - [Element Plus官方文档](https://element-plus.org/zh-CN/)
@@ -586,5 +589,5 @@ import 'element-plus/dist/index.css'
 ---
 
 **项目版本**: V1
-**最后更新**: 2025-12-01
+**最后更新**: 2025-12-09
 **文档维护**: Claude Code
