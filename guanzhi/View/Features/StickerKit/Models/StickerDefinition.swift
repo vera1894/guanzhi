@@ -74,11 +74,11 @@ struct StickerDefinition: Identifiable, Hashable {
 
 extension StickerDefinition {
 
-    /// 点赞贴纸
+    /// 点赞贴纸（使用自定义图片）
     static let mockLike = StickerDefinition(
         stickerID: StickerID(rawValue: "like"),
         displayName: "点赞",
-        assetKind: .systemSymbol(name: "hand.thumbsup.fill"),
+        assetKind: .image(name: "stickers-good"),
         priority: 100,
         meta: ["type": "like"]
     )

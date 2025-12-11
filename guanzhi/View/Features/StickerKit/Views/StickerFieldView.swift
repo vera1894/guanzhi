@@ -108,7 +108,8 @@ struct StickerFieldView: View {
             scene: getOrCreateScene(size: size),
             options: [.allowsTransparency]
         )
-        .ignoresSafeArea()
+        // 不使用 ignoresSafeArea，让场景尺寸与视图尺寸匹配
+        .frame(width: size.width, height: size.height)
     }
 
     /// 使用区域 overlay
