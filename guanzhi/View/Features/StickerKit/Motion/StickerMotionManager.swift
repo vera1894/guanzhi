@@ -16,13 +16,13 @@ import Combine
 /// 封装 CoreMotion 功能，提供设备重力向量
 final class StickerMotionManager: ObservableObject {
 
-    // MARK: - 发布属性
+    // MARK: - 属性（不使用 @Published 避免频繁触发 SwiftUI 更新）
 
     /// 当前重力 X 分量（-1.0 到 1.0，左负右正）
-    @Published private(set) var gravityX: CGFloat = 0
+    private(set) var gravityX: CGFloat = 0
 
     /// 当前重力 Y 分量（-1.0 到 1.0，下负上正）
-    @Published private(set) var gravityY: CGFloat = 0
+    private(set) var gravityY: CGFloat = 0
 
     /// 设备是否大致水平放置
     var isDeviceFlat: Bool {
@@ -46,7 +46,7 @@ final class StickerMotionManager: ObservableObject {
     // MARK: - 私有属性
 
     private let motionManager = CMMotionManager()
-    private let updateInterval: TimeInterval = 1.0 / 60.0
+    private let updateInterval: TimeInterval = 1.0 / 30.0  // 30Hz 足够了，降低 CPU 占用
 
     // MARK: - 初始化
 

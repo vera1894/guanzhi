@@ -101,6 +101,10 @@ struct ShareDetailView: View {
     @State private var selectedIndex: Int = 0 //跟踪当前选中的索引
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     var annotationID: String
+    
+    // Sheet 控制状态
+    @State private var currentDetent: PresentationDetent = .height(Constants.sheetCollapsedHeight)
+    
     @State private var viewOpacity: Double = 1.0
     @State var cardDragIsActive = true
     @State private var isDeleting: Bool = false // 是否正在删除
@@ -380,6 +384,96 @@ struct ShareDetailView: View {
             .allowsHitTesting(isShowShareDetailsCard),
             alignment: .top
         )
+        // 贴纸交互层（全屏覆盖，但只在底部区域响应触摸）
+        .overlay {
+            StickerFieldView(
+                stickers: StickerDefinition.mockAll,
+                onUseSticker: { sticker in
+                    #if DEBUG
+                    print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName)")
+                    #endif
+                    // TODO: 处理贴纸使用逻辑
+                },
+                showBackground: false,
+                showUseZoneHint: false,
+                queueBottomY: 180,       // 贴纸队列位置（避开底部卡片）
+                touchAreaHeight: 250,    // 只在底部 250pt 区域响应触摸，上方区域穿透
+                enableAutoScroll: false  // 关闭自动轮播，节省性能
+            )
+            .opacity(isShowShareDetailsCard ? 1 : 0)
+            .allowsHitTesting(isShowShareDetailsCard)
+        }
+//        .sheet(isPresented: $isShowShareDetailsCard)
+//        {
+//                        ShareDetailsCardView(
+//                            isFullScreen: $isFullScreen,
+//                            isAtTop: $isAtTop,
+//                            dragOffset: $dragOffset,
+//                            cardDragIsActive: $cardDragIsActive
+//                        )
+//                        .environmentObject(searchViewModel)
+//            //            .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+//            //            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 0.86 + dragOffset)
+//            //            .opacity(isShowShareDetailsCard ? 1 : 0)
+//            //            .allowsHitTesting(isShowShareDetailsCard)
+//            //            .gesture(
+//            //                DragGesture()
+//            //                    .onChanged { value in
+//            //                        let translation = value.translation.height
+//            //                        if !isFullScreen {
+//            //                            // 只处理「上拉」
+//            //                            if translation < 0 {
+//            //                                dragOffset = translation
+//            //                            }
+//            //                        }
+//            //                    }
+//            //                    .onEnded { value in
+//            //                        let translation = value.translation.height
+//            //                        withAnimation(.easeInOut) {
+//            //                            if !isFullScreen {
+//            //                                // 上拉阈值
+//            //                                if translation < -150 {
+//            //                                    isFullScreen = true
+//            //                                }
+//            //                            }
+//            //                            dragOffset = 0
+//            //                        }
+//            //                    },
+//            //                isEnabled: !isFullScreen && isShowShareDetailsCard
+//            //            )
+//            //            .simultaneousGesture (
+//            //                DragGesture()
+//            //                    .onChanged { value in
+//            //                        let translation = value.translation.height
+//            //                        if (isFullScreen && isAtTop) {
+//            //                            if translation > 0 {
+//            //                                cardDragIsActive = false
+//            //                                dragOffset = translation
+//            //                            }
+//            //                        }
+//            //                    }
+//            //                    .onEnded { value in
+//            //                        let translation = value.translation.height
+//            //                        withAnimation(.easeInOut) {
+//            //                            if (isFullScreen && isAtTop) {
+//            //                                if translation > 150 {
+//            //                                    isFullScreen = false
+//            //                                }
+//            //                            }
+//            //                            dragOffset = 0
+//            //                            cardDragIsActive = true
+//            //                        }
+//            //                    },
+//            //                isEnabled: (isFullScreen && isAtTop) && isShowShareDetailsCard
+//            //            )
+//                        // --- 新增 Sheet 样式配置 ---
+//                        .presentationDetents([.height(Constants.sheetCollapsedHeight), .fraction(Constants.sheetExpandedFraction)], selection: $currentDetent)
+//                        .presentationDragIndicator(.hidden)
+//                        .presentationCornerRadius(Constants.sheetCornerRadius)
+//                        .presentationBackground(.regularMaterial)
+//                        .presentationBackgroundInteraction(.enabled)
+//                        .interactiveDismissDisabled()
+//        }
         .overlay(
             ShareDetailsCardView(
                 isFullScreen: $isFullScreen,

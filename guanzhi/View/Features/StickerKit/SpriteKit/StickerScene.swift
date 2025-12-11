@@ -12,19 +12,19 @@ import SpriteKit
 // MARK: - ⚙️ 可调参数（方便调试）
 
 /// 自动轮播速度（点/秒），值越大轮播越快
-private let kAutoScrollSpeed: CGFloat = 25
+private let kAutoScrollSpeed: CGFloat = 50
 
 /// 橡皮筋阻力系数（0-1），值越小拉动越费力
-private let kRubberBandResistance: CGFloat = 0.4
+private let kRubberBandResistance: CGFloat = 0.55
 
 /// 橡皮筋回弹动画时长（秒）
-private let kRubberBandBounceDuration: TimeInterval = 0.35
+private let kRubberBandBounceDuration: TimeInterval = 0.4
 
 /// 惯性滚动减速系数（0-1），值越大滑得越远
-private let kDecelerationRate: CGFloat = 0.92
+private let kDecelerationRate: CGFloat = 0.95
 
 /// 惯性滚动最小速度阈值（点/秒），低于此值停止滚动
-private let kMinVelocityThreshold: CGFloat = 5
+private let kMinVelocityThreshold: CGFloat = 8
 
 // MARK: - StickerSceneDelegate
 
@@ -53,7 +53,26 @@ final class StickerScene: SKScene {
     private let stickerSize = CGSize(width: 72, height: 72)
     private let spacing: CGFloat = 16
     private let edgePadding: CGFloat = 24  // 屏幕边缘留白（确保贴纸完全显示）
-    private let queueY: CGFloat = 100  // 贴纸队列距底部高度
+
+    /// 贴纸队列距离底部的距离（可配置）
+    var queueBottomY: CGFloat = 100
+
+    /// 是否启用自动轮播
+    var enableAutoScroll: Bool = true
+
+    /// 贴纸队列的 Y 坐标
+    private var queueY: CGFloat {
+        return queueBottomY
+    }
+
+    // MARK: - 横向位置管理（slot 系统）
+
+    /// 每个贴纸的基准 X（slot 中心位置），不包含滚动偏移
+    /// 使用数组索引作为 key，与 stickerNodes 对应
+    private var baseXPositions: [CGFloat] = []
+
+    /// 当前队列的横向滚动偏移（所有贴纸共享）
+    private var scrollOffsetX: CGFloat = 0
 
     // MARK: - 滚动状态
 
@@ -61,10 +80,10 @@ final class StickerScene: SKScene {
     private var canAutoScroll = false
     private var isUserInteracting = false
 
-    // MARK: - 边界限制
+    // MARK: - 边界限制（基于 scrollOffsetX）
 
-    private var minScrollX: CGFloat = 0
-    private var maxScrollX: CGFloat = 0
+    private var minScrollOffsetX: CGFloat = 0
+    private var maxScrollOffsetX: CGFloat = 0
 
     // MARK: - 拖拽状态
 
@@ -107,6 +126,17 @@ final class StickerScene: SKScene {
     /// 向上拖动的最小角度阈值（度数，相对于水平线）
     private let upwardAngleThreshold: CGFloat = 45
 
+    // MARK: - 贴纸交互状态
+
+    /// 正在执行回弹动画的贴纸节点
+    private weak var returningNode: SKSpriteNode?
+
+    /// 是否有贴纸正在被拖拽或回弹中
+    /// 当此状态为 true 时，队列禁止滑动
+    private var isQueueLocked: Bool {
+        return draggingNode != nil || returningNode != nil
+    }
+
     // MARK: - 使用区域（由 SwiftUI 层传入）
 
     var useZoneFrameInScene: CGRect = .zero
@@ -148,6 +178,13 @@ final class StickerScene: SKScene {
         setupPhysicsWorld()
         layoutStickers()
         calculateScrollBounds()
+
+        // 如果禁用自动轮播，初始时暂停场景以节省性能
+        if !enableAutoScroll {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.pauseIfIdle()
+            }
+        }
     }
 
     override func willMove(from view: SKView) {
@@ -157,26 +194,31 @@ final class StickerScene: SKScene {
     // MARK: - 布局
 
     private func layoutStickers() {
-        // 清理现有节点
+        // 清理现有节点和基准位置
         stickerNodes.forEach { $0.removeFromParent() }
         stickerNodes.removeAll()
+        baseXPositions.removeAll()
 
-        // 第一个贴纸的中心 x = 边缘留白 + 贴纸半宽
-        var x: CGFloat = edgePadding + stickerSize.width / 2
+        // 重置滚动偏移
+        scrollOffsetX = 0
+
+        // 第一个贴纸的基准 x = 边缘留白 + 贴纸半宽
+        var baseX: CGFloat = edgePadding + stickerSize.width / 2
         let y: CGFloat = queueY
 
         for def in stickerDefinitions {
             let node = StickerSpriteFactory.makeNode(for: def, size: stickerSize)
-            node.position = CGPoint(x: x, y: y)
+            node.position = CGPoint(x: baseX, y: y)  // 初始位置 = 基准位置（偏移为0）
             node.zPosition = 1
             addChild(node)
             stickerNodes.append(node)
+            baseXPositions.append(baseX)  // 记录这个 slot 的基准 X
 
-            x += stickerSize.width + spacing
+            baseX += stickerSize.width + spacing
         }
 
         // 内容总宽度 = 最后一个贴纸右边缘 + 边缘留白
-        contentWidth = x - spacing + edgePadding
+        contentWidth = baseX - spacing + edgePadding
         canAutoScroll = contentWidth > size.width
     }
 
@@ -184,57 +226,56 @@ final class StickerScene: SKScene {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
     }
 
-    /// 计算滚动边界
+    /// 计算滚动边界（基于 scrollOffsetX）
     private func calculateScrollBounds() {
-        // 重新计算当前内容宽度（基于实际贴纸数量）
-        // 内容宽度 = 边缘留白 + n个贴纸 + (n-1)个间距 + 边缘留白
+        guard !baseXPositions.isEmpty else {
+            minScrollOffsetX = 0
+            maxScrollOffsetX = 0
+            canAutoScroll = false
+            return
+        }
+
         let stickerCount = CGFloat(stickerNodes.count)
         let actualContentWidth = edgePadding * 2 + stickerCount * stickerSize.width + max(0, stickerCount - 1) * spacing
 
         // 如果内容不足屏幕宽度，居中显示，不允许滚动
         if actualContentWidth <= size.width {
             canAutoScroll = false
-            // 居中位置：第一个贴纸的中心 x
+            // 计算居中需要的偏移量
             let totalStickerWidth = stickerCount * stickerSize.width + max(0, stickerCount - 1) * spacing
             let centeredFirstX = (size.width - totalStickerWidth) / 2 + stickerSize.width / 2
-            minScrollX = centeredFirstX
-            maxScrollX = centeredFirstX
-            // 将贴纸移到居中位置
-            centerStickers()
+            let currentFirstBaseX = baseXPositions[0]
+            let centerOffset = centeredFirstX - currentFirstBaseX
+            minScrollOffsetX = centerOffset
+            maxScrollOffsetX = centerOffset
+            // 应用居中偏移
+            scrollOffsetX = centerOffset
+            repositionAllStickers()
         } else {
             canAutoScroll = true
-            // 最右位置：第一个贴纸完全显示在屏幕左侧
-            // 第一个贴纸左边缘 = edgePadding，所以中心 x = edgePadding + stickerSize/2
-            maxScrollX = edgePadding + stickerSize.width / 2
+            let firstBaseX = baseXPositions[0]
+            let lastBaseX = baseXPositions[baseXPositions.count - 1]
 
-            // 最左位置：最后一个贴纸完全显示在屏幕右侧
-            // 最后一个贴纸右边缘 = size.width - edgePadding
+            // maxScrollOffsetX: 第一个贴纸完全显示在屏幕左侧
+            // 第一个贴纸中心 x = edgePadding + stickerSize/2
+            // firstBaseX + maxScrollOffsetX = edgePadding + stickerSize/2
+            maxScrollOffsetX = (edgePadding + stickerSize.width / 2) - firstBaseX
+
+            // minScrollOffsetX: 最后一个贴纸完全显示在屏幕右侧
             // 最后一个贴纸中心 x = size.width - edgePadding - stickerSize/2
-            let step = stickerSize.width + spacing
-            let lastStickerCenterX = size.width - edgePadding - stickerSize.width / 2
-            minScrollX = lastStickerCenterX - CGFloat(stickerNodes.count - 1) * step
+            // lastBaseX + minScrollOffsetX = size.width - edgePadding - stickerSize/2
+            minScrollOffsetX = (size.width - edgePadding - stickerSize.width / 2) - lastBaseX
         }
     }
 
-    /// 将贴纸队列居中显示
-    private func centerStickers() {
-        guard !stickerNodes.isEmpty else { return }
-
-        let stickerCount = CGFloat(stickerNodes.count)
-        // 所有贴纸占用的总宽度（不含边缘留白）
-        let totalStickerWidth = stickerCount * stickerSize.width + max(0, stickerCount - 1) * spacing
-        // 第一个贴纸的中心 x（居中）
-        let startX = (size.width - totalStickerWidth) / 2 + stickerSize.width / 2
-
-        let animationDuration: TimeInterval = 0.3
-
+    /// 统一管理所有贴纸的 X 位置
+    /// X = baseX + scrollOffsetX
+    private func repositionAllStickers() {
         for (index, node) in stickerNodes.enumerated() {
-            let targetX = startX + CGFloat(index) * (stickerSize.width + spacing)
-            if node.position.x != targetX {
-                let moveAction = SKAction.moveTo(x: targetX, duration: animationDuration)
-                moveAction.timingMode = .easeOut
-                node.run(moveAction)
-            }
+            guard index < baseXPositions.count else { continue }
+            // 如果这个贴纸正在被拖拽，不要改它的位置
+            if node === draggingNode { continue }
+            node.position.x = baseXPositions[index] + scrollOffsetX
         }
     }
 
@@ -252,11 +293,14 @@ final class StickerScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         super.update(currentTime)
 
-        // 处理惯性滚动
+        // 处理惯性滚动（无论是否启用自动轮播都需要处理）
         if isDecelerating {
             updateDeceleration()
             return  // 惯性滚动期间不执行自动轮播
         }
+
+        // 如果禁用自动轮播，直接返回（节省性能）
+        guard enableAutoScroll else { return }
 
         // 用户正在交互或正在回弹时不执行自动轮播
         guard canAutoScroll, !isUserInteracting, !isBouncingBack else { return }
@@ -278,16 +322,8 @@ final class StickerScene: SKScene {
 
     /// 处理惯性减速滚动
     private func updateDeceleration() {
-        // 检查是否超出边界
-        guard let firstNode = stickerNodes.first else {
-            stopDeceleration()
-            return
-        }
-
-        let currentFirstX = firstNode.position.x
-
         // 如果已经超出边界，触发回弹
-        if currentFirstX > maxScrollX || currentFirstX < minScrollX {
+        if scrollOffsetX > maxScrollOffsetX || scrollOffsetX < minScrollOffsetX {
             startBounceBack()
             return
         }
@@ -297,32 +333,34 @@ final class StickerScene: SKScene {
 
         // 计算本帧移动距离（速度是点/秒，需要转换为点/帧）
         let delta = scrollVelocity / 60.0
-        let newFirstX = currentFirstX + delta
+        let newOffsetX = scrollOffsetX + delta
 
         // 如果移动后会超出边界，允许超出一点然后回弹
-        if newFirstX > maxScrollX {
+        if newOffsetX > maxScrollOffsetX {
             // 超出右边界，应用橡皮筋阻力
-            let overscroll = newFirstX - maxScrollX
+            let overscroll = newOffsetX - maxScrollOffsetX
             let resistedDelta = delta - overscroll * (1 - kRubberBandResistance)
-            moveAllStickersDirectly(by: resistedDelta)
+            scrollOffsetX += resistedDelta
+            repositionAllStickers()
             // 快速减速
             scrollVelocity *= 0.5
-        } else if newFirstX < minScrollX {
+        } else if newOffsetX < minScrollOffsetX {
             // 超出左边界，应用橡皮筋阻力
-            let overscroll = minScrollX - newFirstX
+            let overscroll = minScrollOffsetX - newOffsetX
             let resistedDelta = delta + overscroll * (1 - kRubberBandResistance)
-            moveAllStickersDirectly(by: resistedDelta)
+            scrollOffsetX += resistedDelta
+            repositionAllStickers()
             // 快速减速
             scrollVelocity *= 0.5
         } else {
             // 正常移动
-            moveAllStickersDirectly(by: delta)
+            scrollOffsetX += delta
+            repositionAllStickers()
         }
 
         // 如果速度过小，检查是否需要回弹
         if abs(scrollVelocity) < kMinVelocityThreshold {
-            let finalFirstX = stickerNodes.first?.position.x ?? 0
-            if finalFirstX > maxScrollX || finalFirstX < minScrollX {
+            if scrollOffsetX > maxScrollOffsetX || scrollOffsetX < minScrollOffsetX {
                 startBounceBack()
             } else {
                 stopDeceleration()
@@ -332,42 +370,40 @@ final class StickerScene: SKScene {
 
     /// 开始橡皮筋回弹动画
     private func startBounceBack() {
-        guard let firstNode = stickerNodes.first else {
-            stopDeceleration()
-            return
-        }
-
         isDecelerating = false
         isBouncingBack = true
         scrollVelocity = 0
 
-        let currentFirstX = firstNode.position.x
-        let targetFirstX: CGFloat
-
-        if currentFirstX > maxScrollX {
-            targetFirstX = maxScrollX
-        } else if currentFirstX < minScrollX {
-            targetFirstX = minScrollX
+        let targetOffsetX: CGFloat
+        if scrollOffsetX > maxScrollOffsetX {
+            targetOffsetX = maxScrollOffsetX
+        } else if scrollOffsetX < minScrollOffsetX {
+            targetOffsetX = minScrollOffsetX
         } else {
             isBouncingBack = false
             stopDeceleration()
             return
         }
 
-        let deltaX = targetFirstX - currentFirstX
+        let startOffsetX = scrollOffsetX
 
-        // 为所有贴纸添加回弹动画
-        for node in stickerNodes {
-            let targetX = node.position.x + deltaX
-            let moveAction = SKAction.moveTo(x: targetX, duration: kRubberBandBounceDuration)
-            moveAction.timingMode = .easeOut
-            node.run(moveAction)
+        // 使用 SKAction 动画 scrollOffsetX
+        let bounceAction = SKAction.customAction(withDuration: kRubberBandBounceDuration) { [weak self] _, elapsedTime in
+            guard let self = self else { return }
+            let progress = elapsedTime / CGFloat(kRubberBandBounceDuration)
+            // easeOut 曲线
+            let easedProgress = 1 - pow(1 - progress, 3)
+            self.scrollOffsetX = startOffsetX + (targetOffsetX - startOffsetX) * easedProgress
+            self.repositionAllStickers()
         }
 
-        // 动画结束后恢复状态
-        DispatchQueue.main.asyncAfter(deadline: .now() + kRubberBandBounceDuration) { [weak self] in
+        // 在场景上运行动画（不是在节点上）
+        run(bounceAction) { [weak self] in
+            self?.scrollOffsetX = targetOffsetX
+            self?.repositionAllStickers()
             self?.isBouncingBack = false
             self?.isUserInteracting = false
+            self?.pauseIfIdle()
         }
     }
 
@@ -379,51 +415,57 @@ final class StickerScene: SKScene {
         // 延迟恢复自动轮播
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.isUserInteracting = false
+            // 如果禁用自动轮播且处于空闲状态，暂停场景
+            self?.pauseIfIdle()
         }
     }
 
-    /// 直接移动所有贴纸（无边界限制，用于惯性滚动）
-    private func moveAllStickersDirectly(by delta: CGFloat) {
-        for node in stickerNodes {
-            node.position.x += delta
-        }
+    /// 如果场景处于空闲状态且不需要自动轮播，暂停场景以节省性能
+    private func pauseIfIdle() {
+        // 只有在禁用自动轮播时才考虑暂停
+        guard !enableAutoScroll else { return }
+        // 确保没有用户交互、没有惯性滚动、没有回弹动画
+        guard !isUserInteracting, !isDecelerating, !isBouncingBack else { return }
+        // 确保没有正在拖拽的贴纸
+        guard draggingNode == nil else { return }
+        // 确保没有正在回弹的贴纸
+        guard returningNode == nil else { return }
+        // 确保没有任何贴纸正在执行动画
+        let anyNodeHasActions = stickerNodes.contains { $0.hasActions() }
+        guard !anyNodeHasActions else { return }
+
+        isPaused = true
     }
 
     /// 移动所有贴纸（用于自动轮播，有边界限制）
     private func moveAllStickersForAutoScroll(by delta: CGFloat) {
-        guard let firstNode = stickerNodes.first else { return }
-
-        let newFirstX = firstNode.position.x + delta
+        let newOffsetX = scrollOffsetX + delta
 
         // 边界检查（自动轮播不允许超出边界）
-        if delta > 0 && newFirstX > maxScrollX {
+        if delta > 0 && newOffsetX > maxScrollOffsetX {
             return
         }
-        if delta < 0 && newFirstX < minScrollX {
+        if delta < 0 && newOffsetX < minScrollOffsetX {
             return
         }
 
-        for node in stickerNodes {
-            node.position.x += delta
-        }
+        scrollOffsetX = newOffsetX
+        repositionAllStickers()
     }
 
     /// 移动所有贴纸（用于手动滑动，带橡皮筋效果）
     private func moveAllStickers(by delta: CGFloat) {
-        guard let firstNode = stickerNodes.first else { return }
-
-        let currentFirstX = firstNode.position.x
         var actualDelta = delta
 
         // 橡皮筋效果：超出边界时增加阻力
-        if currentFirstX > maxScrollX {
+        if scrollOffsetX > maxScrollOffsetX {
             // 已超出右边界
             if delta > 0 {
                 // 继续向右拉，增加阻力
                 actualDelta = delta * kRubberBandResistance
             }
             // 向左拉正常响应
-        } else if currentFirstX < minScrollX {
+        } else if scrollOffsetX < minScrollOffsetX {
             // 已超出左边界
             if delta < 0 {
                 // 继续向左拉，增加阻力
@@ -432,23 +474,22 @@ final class StickerScene: SKScene {
             // 向右拉正常响应
         } else {
             // 在边界内，检查是否会超出
-            let newFirstX = currentFirstX + delta
-            if newFirstX > maxScrollX {
+            let newOffsetX = scrollOffsetX + delta
+            if newOffsetX > maxScrollOffsetX {
                 // 将要超出右边界，部分应用阻力
-                let normalPart = maxScrollX - currentFirstX
+                let normalPart = maxScrollOffsetX - scrollOffsetX
                 let overPart = delta - normalPart
                 actualDelta = normalPart + overPart * kRubberBandResistance
-            } else if newFirstX < minScrollX {
+            } else if newOffsetX < minScrollOffsetX {
                 // 将要超出左边界，部分应用阻力
-                let normalPart = minScrollX - currentFirstX
+                let normalPart = minScrollOffsetX - scrollOffsetX
                 let overPart = delta - normalPart
                 actualDelta = normalPart + overPart * kRubberBandResistance
             }
         }
 
-        for node in stickerNodes {
-            node.position.x += actualDelta
-        }
+        scrollOffsetX += actualDelta
+        repositionAllStickers()
     }
 
     /// 应用倾斜效果
@@ -470,18 +511,37 @@ final class StickerScene: SKScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        // 停止任何正在进行的惯性滚动或回弹动画
+        // 恢复场景运行（如果之前暂停了）
+        if isPaused {
+            isPaused = false
+        }
+
+        // 停止任何正在进行的惯性滚动
         isDecelerating = false
         scrollVelocity = 0
         velocitySamples.removeAll()
 
-        // 如果正在回弹，停止回弹动画
+        // 如果队列正在橡皮筋回弹，停止回弹动画
         if isBouncingBack {
             isBouncingBack = false
-            for node in stickerNodes {
-                node.removeAllActions()
-            }
+            removeAllActions()  // 停止场景上的回弹动画
         }
+
+        // 停止所有贴纸的动画，并强制归位
+        for node in stickerNodes {
+            node.removeAllActions()
+            // 重置 Y 到队列位置
+            node.position.y = queueY
+            // 重置缩放和层级
+            node.setScale(1.0)
+            node.zPosition = 1
+        }
+
+        // 重置 X 位置到正确的 slot
+        repositionAllStickers()
+
+        // 清除回弹状态
+        returningNode = nil
 
         isUserInteracting = true
         touchStartLocation = location
@@ -523,7 +583,7 @@ final class StickerScene: SKScene {
                 if let node = pendingStickerNode,
                    angleDegrees > upwardAngleThreshold,
                    let index = stickerNodes.firstIndex(of: node) {
-                    // 开始拖拽贴纸
+                    // 开始拖拽贴纸（touchesBegan 已经清理过所有动画和状态）
                     draggingNode = node
                     draggingOriginalPosition = node.position
                     draggingOriginalIndex = index
@@ -598,6 +658,9 @@ final class StickerScene: SKScene {
     // MARK: - 结束交互
 
     private func endInteraction() {
+        // 记录是否是贴纸拖拽模式
+        let wasDraggingSticker = draggingNode != nil
+
         // 处理贴纸拖拽结束
         if let node = draggingNode {
             let inZone = useZoneFrameInScene.contains(node.position)
@@ -615,28 +678,36 @@ final class StickerScene: SKScene {
             draggingNode = nil
             draggingOriginalPosition = nil
             draggingOriginalIndex = nil
+        }
 
-            // 拖拽贴纸结束，不触发惯性滚动
+        // 如果是贴纸拖拽模式，不触发队列的惯性滚动或回弹
+        // 直接清理状态并返回（队列保持锁定直到贴纸回弹完成）
+        if wasDraggingSticker {
+            isPanningQueue = false
+            lastPanLocation = nil
             velocitySamples.removeAll()
+            touchStartLocation = nil
+            pendingStickerNode = nil
+            interactionModeDecided = false
+            // 注意：不设置 isUserInteracting = false
+            // 由贴纸回弹动画完成后或使用成功后来恢复
+            return
         }
 
         // 处理队列滚动结束 - 触发惯性滚动或橡皮筋回弹
         let wasPanning = isPanningQueue || !interactionModeDecided
         if wasPanning {
             // 检查是否超出边界，需要回弹
-            if let firstNode = stickerNodes.first {
-                let currentFirstX = firstNode.position.x
-                if currentFirstX > maxScrollX || currentFirstX < minScrollX {
-                    // 超出边界，触发回弹（忽略速度）
-                    startBounceBack()
-                    isPanningQueue = false
-                    lastPanLocation = nil
-                    velocitySamples.removeAll()
-                    touchStartLocation = nil
-                    pendingStickerNode = nil
-                    interactionModeDecided = false
-                    return
-                }
+            if scrollOffsetX > maxScrollOffsetX || scrollOffsetX < minScrollOffsetX {
+                // 超出边界，触发回弹（忽略速度）
+                startBounceBack()
+                isPanningQueue = false
+                lastPanLocation = nil
+                velocitySamples.removeAll()
+                touchStartLocation = nil
+                pendingStickerNode = nil
+                interactionModeDecided = false
+                return
             }
 
             // 没有超出边界，检查是否需要惯性滚动
@@ -653,18 +724,21 @@ final class StickerScene: SKScene {
                     // 速度太小，直接恢复自动轮播
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                         self?.isUserInteracting = false
+                        self?.pauseIfIdle()
                     }
                 }
             } else {
                 // 没有速度采样，直接恢复
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                     self?.isUserInteracting = false
+                    self?.pauseIfIdle()
                 }
             }
-        } else if draggingNode == nil {
-            // 没有滑动也没有拖贴纸，直接恢复
+        } else {
+            // 没有滑动，直接恢复
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.isUserInteracting = false
+                self?.pauseIfIdle()
             }
         }
 
@@ -686,9 +760,12 @@ final class StickerScene: SKScene {
         // 获取被移除贴纸的索引
         let removedIndex = stickerNodes.firstIndex(of: node)
 
-        // 从数组中移除
+        // 从数组中移除（同时移除对应的 baseX）
         if let index = removedIndex {
             stickerNodes.remove(at: index)
+            if index < baseXPositions.count {
+                baseXPositions.remove(at: index)
+            }
         }
 
         // 消失动画
@@ -697,8 +774,11 @@ final class StickerScene: SKScene {
         let group = SKAction.group([fadeOut, scaleUp])
         group.timingMode = .easeOut
 
-        node.run(group) {
+        node.run(group) { [weak self] in
             node.removeFromParent()
+            // 动画完成后恢复交互状态
+            self?.isUserInteracting = false
+            self?.pauseIfIdle()
         }
 
         // 让后面的贴纸补位
@@ -708,47 +788,28 @@ final class StickerScene: SKScene {
         calculateScrollBounds()
     }
 
-    /// 重新排列贴纸队列（从指定索引开始，让后面的贴纸补位）
+    /// 重新排列贴纸队列（贴纸被移除后重建 baseXPositions）
     private func rearrangeStickers(fromIndex: Int) {
-        guard !stickerNodes.isEmpty else { return }
+        guard !stickerNodes.isEmpty else {
+            baseXPositions.removeAll()
+            return
+        }
 
-        // 先重新计算边界（基于新的贴纸数量）
-        let stickerCount = CGFloat(stickerNodes.count)
-        let totalStickerWidth = stickerCount * stickerSize.width + max(0, stickerCount - 1) * spacing
-        let actualContentWidth = edgePadding * 2 + totalStickerWidth
-
-        // 计算第一个贴纸当前的 X 位置
-        var targetFirstX = stickerNodes.first?.position.x ?? (edgePadding + stickerSize.width / 2)
-
-        // 检查是否需要调整位置（队列可能超出新边界）
-        if actualContentWidth <= size.width {
-            // 内容不足屏幕宽度，需要居中
-            targetFirstX = (size.width - totalStickerWidth) / 2 + stickerSize.width / 2
-        } else {
-            // 检查最后一个贴纸是否超出右边界
-            let step = stickerSize.width + spacing
-            let lastStickerTargetX = targetFirstX + CGFloat(stickerNodes.count - 1) * step
-            let maxLastX = size.width - edgePadding - stickerSize.width / 2
-
-            if lastStickerTargetX < maxLastX {
-                // 最后一个贴纸超出了右边界（左移过多），需要向右修正
-                let correction = maxLastX - lastStickerTargetX
-                targetFirstX += correction
-            }
-
-            // 确保第一个贴纸不超出左边界
-            let maxFirstX = edgePadding + stickerSize.width / 2
-            if targetFirstX > maxFirstX {
-                targetFirstX = maxFirstX
-            }
+        // 重建 baseXPositions（因为有贴纸被移除了）
+        baseXPositions.removeAll()
+        var baseX: CGFloat = edgePadding + stickerSize.width / 2
+        for _ in stickerNodes {
+            baseXPositions.append(baseX)
+            baseX += stickerSize.width + spacing
         }
 
         // 动画时长
         let animationDuration: TimeInterval = 0.25
 
-        // 更新所有贴纸的位置
+        // 使用动画将所有贴纸移动到新的位置
         for (index, node) in stickerNodes.enumerated() {
-            let targetX = targetFirstX + CGFloat(index) * (stickerSize.width + spacing)
+            guard index < baseXPositions.count else { continue }
+            let targetX = baseXPositions[index] + scrollOffsetX
 
             if node.position.x != targetX {
                 let moveAction = SKAction.moveTo(x: targetX, duration: animationDuration)
@@ -759,35 +820,49 @@ final class StickerScene: SKScene {
     }
 
     /// 贴纸回到原位（带弹性效果）
+    /// X 和 Y 同时动画回去，动画期间队列锁定
     private func returnStickerToOriginalPosition(node: SKSpriteNode) {
         node.removeAllActions()
         node.alpha = 1.0
+        node.zPosition = 1
 
-        guard let originalPos = draggingOriginalPosition else {
-            node.zPosition = 1
-            return
+        // 确保场景没有被暂停，否则动画不会执行
+        if isPaused {
+            isPaused = false
         }
 
-        let startPos = node.position
+        // 记录正在回弹的贴纸（锁定队列）
+        returningNode = node
+
+        // 计算目标位置
+        let startX = node.position.x
+        let startY = node.position.y
+        let targetY = queueY
+
+        // 计算目标 X（slot 位置）
+        var targetX = startX  // 默认保持当前位置
+        if let index = stickerNodes.firstIndex(of: node), index < baseXPositions.count {
+            targetX = baseXPositions[index] + scrollOffsetX
+        }
+
         let startScale = node.xScale
         let targetScale: CGFloat = 1.0
-        let duration: TimeInterval = 0.5
+        let duration: TimeInterval = 0.4
 
-        // 使用 customAction 实现弹性动画
-        let springAction = SKAction.customAction(withDuration: duration) { [weak node] _, elapsedTime in
+        // 使用 customAction 实现弹性动画（X 和 Y 同时动画）
+        let springAction = SKAction.customAction(withDuration: duration) { [weak node, targetX, targetY] _, elapsedTime in
             guard let node = node else { return }
 
             let progress = elapsedTime / CGFloat(duration)
 
             // Spring 公式：damped oscillation
-            // f(t) = 1 - e^(-damping * t) * cos(frequency * t)
             let damping: CGFloat = 6.0
             let frequency: CGFloat = 12.0
             let springProgress = 1 - exp(-damping * progress) * cos(frequency * progress)
 
-            // 插值位置
-            let newX = startPos.x + (originalPos.x - startPos.x) * springProgress
-            let newY = startPos.y + (originalPos.y - startPos.y) * springProgress
+            // 同时插值 X 和 Y
+            let newX = startX + (targetX - startX) * springProgress
+            let newY = startY + (targetY - startY) * springProgress
             node.position = CGPoint(x: newX, y: newY)
 
             // 插值缩放
@@ -795,11 +870,18 @@ final class StickerScene: SKScene {
             node.setScale(newScale)
         }
 
-        node.run(springAction) { [weak node] in
+        node.run(springAction) { [weak self, weak node, targetX, targetY] in
             // 确保最终位置和缩放精确
-            node?.position = originalPos
+            node?.position = CGPoint(x: targetX, y: targetY)
             node?.setScale(targetScale)
-            node?.zPosition = 1
+            // 清除回弹状态，解锁队列
+            self?.returningNode = nil
+            // 恢复交互状态
+            self?.isUserInteracting = false
+            // 动画完成后，延迟尝试暂停场景
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.pauseIfIdle()
+            }
         }
     }
 }

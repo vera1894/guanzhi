@@ -24,6 +24,29 @@ struct StickerFieldView: View {
     /// 使用贴纸的回调
     var onUseSticker: (StickerDefinition) -> Void
 
+    /// 是否显示背景渐变（默认 true）
+    var showBackground: Bool = true
+
+    /// 是否显示使用区域提示框（默认 true）
+    var showUseZoneHint: Bool = true
+
+    /// 使用区域在场景中的位置（可外部传入，默认自动计算）
+    /// 当嵌入到其他视图中时，可以通过此属性指定使用区域
+    var customUseZoneFrame: CGRect? = nil
+
+    /// 贴纸队列距离底部的距离（SpriteKit 坐标系）
+    /// 默认 100pt，在有底部 sheet 的页面中可以设置更大的值
+    var queueBottomY: CGFloat = 100
+
+    /// 触摸响应区域高度（从底部算起，SwiftUI 坐标系）
+    /// 只有在这个区域内的触摸才会被贴纸场景处理，其他区域会穿透到下层视图
+    /// 设置为 nil 表示全屏响应（适用于独立的 StickerPage）
+    var touchAreaHeight: CGFloat? = nil
+
+    /// 是否启用自动轮播（基于陀螺仪的贴纸滚动）
+    /// 在嵌入到其他页面时可以关闭以节省性能
+    var enableAutoScroll: Bool = true
+
     // MARK: - 状态
 
     @StateObject private var motionManager = StickerMotionManager()
@@ -39,8 +62,10 @@ struct StickerFieldView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .top) {
-                // 背景渐变
-                backgroundGradient
+                // 背景渐变（可选）
+                if showBackground {
+                    backgroundGradient
+                }
 
                 // 加载中
                 if isLoading {
@@ -50,12 +75,16 @@ struct StickerFieldView: View {
                     spriteKitView(size: proxy.size)
                 }
 
-                // 使用区域 overlay
-                useZoneOverlay
-                    .frame(height: 110)
-                    .padding(.top, 100)
-                    .padding(.horizontal, 40)
-                    .background(useZoneGeometryReader(rootProxy: proxy))
+                // 使用区域 overlay（仅在需要时显示和计算）
+                if showUseZoneHint {
+                    useZoneOverlay
+                        .frame(height: 110)
+                        .padding(.top, 100)
+                        .padding(.horizontal, 40)
+                        .background(useZoneGeometryReader(rootProxy: proxy))
+                }
+                // 注意：当 showUseZoneHint = false 时，不再计算使用区域坐标
+                // 如果需要使用区域功能，请设置 customUseZoneFrame
 
                 // 调试信息
                 #if DEBUG
@@ -68,7 +97,10 @@ struct StickerFieldView: View {
         }
         .onAppear {
             preloadTextures()
-            motionManager.start()
+            // 只在启用自动轮播时启动陀螺仪
+            if enableAutoScroll {
+                motionManager.start()
+            }
         }
         .onDisappear {
             motionManager.stop()
@@ -103,13 +135,25 @@ struct StickerFieldView: View {
     }
 
     /// SpriteKit 视图
+    @ViewBuilder
     private func spriteKitView(size: CGSize) -> some View {
-        SpriteView(
-            scene: getOrCreateScene(size: size),
-            options: [.allowsTransparency]
-        )
-        // 不使用 ignoresSafeArea，让场景尺寸与视图尺寸匹配
-        .frame(width: size.width, height: size.height)
+        let scene = getOrCreateScene(size: size)
+
+        if let height = touchAreaHeight {
+            // 使用 PassthroughSpriteView，只在底部指定区域响应触摸
+            let touchRegion = CGRect(
+                x: 0,
+                y: size.height - height,  // SwiftUI 坐标系，Y 向下
+                width: size.width,
+                height: height
+            )
+            PassthroughSpriteView(scene: scene, touchActiveRegion: touchRegion)
+                .frame(width: size.width, height: size.height)
+        } else {
+            // 全屏响应触摸（独立页面使用）
+            SpriteView(scene: scene, options: [.allowsTransparency])
+                .frame(width: size.width, height: size.height)
+        }
     }
 
     /// 使用区域 overlay
@@ -158,13 +202,18 @@ struct StickerFieldView: View {
             if existingScene.size != size {
                 existingScene.size = size
             }
+            // 更新队列位置
+            existingScene.queueBottomY = queueBottomY
+            existingScene.enableAutoScroll = enableAutoScroll
             return existingScene
         }
 
         // 创建新场景
         let newScene = StickerScene(size: size, stickers: stickers)
         newScene.stickerDelegate = Coordinator(onUseSticker: onUseSticker)
-        newScene.motionManager = motionManager
+        newScene.motionManager = enableAutoScroll ? motionManager : nil  // 不启用自动轮播时不传入 motionManager
+        newScene.queueBottomY = queueBottomY
+        newScene.enableAutoScroll = enableAutoScroll
 
         // 延迟设置状态，避免在视图更新中修改状态
         DispatchQueue.main.async {
@@ -194,6 +243,12 @@ struct StickerFieldView: View {
 
     private func updateUseZoneFrame(zoneProxy: GeometryProxy, rootProxy: GeometryProxy) {
         guard let scene = scene else { return }
+
+        // 如果有自定义使用区域，直接使用
+        if let customFrame = customUseZoneFrame {
+            scene.useZoneFrameInScene = customFrame
+            return
+        }
 
         // 获取使用区域在坐标空间中的位置
         let zoneFrameInRoot = zoneProxy.frame(in: .named("stickerField"))
