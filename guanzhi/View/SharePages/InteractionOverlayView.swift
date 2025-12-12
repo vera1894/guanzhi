@@ -13,12 +13,22 @@ struct InteractionOverlayView: View {
     let share: Share
     let onVoteStateChanged: ((Int64, VoteState, Int, Int) -> Void)?
 
-    @StateObject private var viewModel = ShareInteractionViewModel()
+    /// 外部传入的 ViewModel（用于与其他组件共享状态）
+    @ObservedObject var viewModel: ShareInteractionViewModel
 
     // MARK: - Initializer
 
+    /// 使用外部传入的 ViewModel（推荐，用于状态共享）
+    init(share: Share, viewModel: ShareInteractionViewModel, onVoteStateChanged: ((Int64, VoteState, Int, Int) -> Void)? = nil) {
+        self.share = share
+        self.viewModel = viewModel
+        self.onVoteStateChanged = onVoteStateChanged
+    }
+
+    /// 兼容旧接口：自动创建内部 ViewModel（用于独立使用场景）
     init(share: Share, onVoteStateChanged: ((Int64, VoteState, Int, Int) -> Void)? = nil) {
         self.share = share
+        self.viewModel = ShareInteractionViewModel()
         self.onVoteStateChanged = onVoteStateChanged
     }
 

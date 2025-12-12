@@ -47,6 +47,12 @@ class ShareInteractionViewModel: ObservableObject {
     /// 错误消息
     @Published var errorMessage: String? = nil
 
+    /// 贴纸统计列表（用于顶部展示条）
+    @Published var stickerSummaries: [StickerSummaryItem] = []
+
+    /// 是否显示贴纸统计覆层
+    @Published var isShowingStickerSummaryOverlay: Bool = false
+
     // MARK: - Computed Properties（派生属性）
 
     /// 是否已点赞（只读，派生自 voteState）
@@ -104,6 +110,9 @@ class ShareInteractionViewModel: ObservableObject {
         print("   - 解析后 voteState: \(voteState)")
         print("   - agreeCount: \(agreeCount)")
         #endif
+
+        // 构建贴纸统计列表
+        rebuildStickerSummaries()
     }
 
     // MARK: - Actions
@@ -116,6 +125,12 @@ class ShareInteractionViewModel: ObservableObject {
     /// 切换无感状态（当前版本不调用，预留接口）
     func toggleNeutral() {
         vote(to: .neutral)
+    }
+
+    /// 统一投票入口（供外部调用）
+    /// 所有入口（底部贴纸拖动、右侧按钮、顶部展示条）都应该通过这个方法更新
+    func setVote(_ targetState: VoteState) {
+        vote(to: targetState)
     }
 
     // MARK: - Private Methods
@@ -245,6 +260,36 @@ class ShareInteractionViewModel: ObservableObject {
 
         // 更新状态
         voteState = newState
+
+        // 重建贴纸统计列表
+        rebuildStickerSummaries()
+    }
+
+    /// 重建贴纸统计列表
+    /// 从当前的 agreeCount / neutralCount 构建 StickerSummaryItem 数组
+    /// 调用时机：初始化、投票状态变化后
+    private func rebuildStickerSummaries() {
+        var items: [StickerSummaryItem] = []
+
+        // 添加赞同贴纸统计（如果有）
+        if agreeCount > 0 {
+            items.append(StickerSummaryItem(kind: .like, count: agreeCount))
+        }
+
+        // 添加无感贴纸统计（如果有）
+        if neutralCount > 0 {
+            items.append(StickerSummaryItem(kind: .neutral, count: neutralCount))
+        }
+
+        // 排序：按 StickerSummaryItem 的 Comparable 实现
+        // 规则：count 降序 → priority 降序 → displayName 升序
+        stickerSummaries = items.sorted()
+
+        #if DEBUG
+        print("📊 [ShareInteraction] 重建贴纸统计:")
+        print("   - agreeCount: \(agreeCount), neutralCount: \(neutralCount)")
+        print("   - summaries: \(stickerSummaries.map { "\($0.displayName)(\($0.count))" })")
+        #endif
     }
 
     /// 回滚到指定状态
@@ -254,6 +299,9 @@ class ShareInteractionViewModel: ObservableObject {
             self.agreeCount = self.originalAgreeCount
             self.neutralCount = self.originalNeutralCount
             self.isAnimating = false
+
+            // 重建贴纸统计列表
+            self.rebuildStickerSummaries()
 
             #if DEBUG
             print("🔄 [ShareInteraction] 回滚: voteState=\(state), agreeCount=\(agreeCount)")

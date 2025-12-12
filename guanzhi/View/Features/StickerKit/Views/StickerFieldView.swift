@@ -53,6 +53,8 @@ struct StickerFieldView: View {
     @State private var scene: StickerScene?
     @State private var isLoading = true
     @State private var sceneCreated = false
+    /// ✅ 强引用 Coordinator，防止被释放（因为 StickerScene.stickerDelegate 是 weak）
+    @State private var coordinator: Coordinator?
 
     /// 调试模式（仅 DEBUG 生效）
     private let debugMode = false
@@ -205,23 +207,49 @@ struct StickerFieldView: View {
             // 更新队列位置
             existingScene.queueBottomY = queueBottomY
             existingScene.enableAutoScroll = enableAutoScroll
+            // 更新自定义使用区域（如果有）
+            if let customFrame = customUseZoneFrame {
+                existingScene.useZoneFrameInScene = convertToSpriteKitCoordinates(customFrame, in: size)
+            }
             return existingScene
         }
 
         // 创建新场景
         let newScene = StickerScene(size: size, stickers: stickers)
-        newScene.stickerDelegate = Coordinator(onUseSticker: onUseSticker)
+
+        // ✅ 创建 Coordinator 并强引用保持，防止被释放
+        let newCoordinator = Coordinator(onUseSticker: onUseSticker)
+        newScene.stickerDelegate = newCoordinator
         newScene.motionManager = enableAutoScroll ? motionManager : nil  // 不启用自动轮播时不传入 motionManager
         newScene.queueBottomY = queueBottomY
         newScene.enableAutoScroll = enableAutoScroll
+        // 设置自定义使用区域（如果有）
+        if let customFrame = customUseZoneFrame {
+            newScene.useZoneFrameInScene = convertToSpriteKitCoordinates(customFrame, in: size)
+        }
 
         // 延迟设置状态，避免在视图更新中修改状态
         DispatchQueue.main.async {
             self.scene = newScene
+            self.coordinator = newCoordinator  // ✅ 保持强引用
             self.sceneCreated = true
         }
 
         return newScene
+    }
+
+    /// 将 SwiftUI 坐标系的 frame 转换为 SpriteKit 坐标系
+    /// SwiftUI: Y 轴向下，原点左上角
+    /// SpriteKit: Y 轴向上，原点左下角
+    private func convertToSpriteKitCoordinates(_ frame: CGRect, in sceneSize: CGSize) -> CGRect {
+        // 转换公式: spriteKitY = sceneHeight - swiftUIY - height
+        let convertedY = sceneSize.height - frame.origin.y - frame.height
+        return CGRect(
+            x: frame.origin.x,
+            y: convertedY,
+            width: frame.width,
+            height: frame.height
+        )
     }
 
     // MARK: - 坐标转换

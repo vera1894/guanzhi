@@ -141,6 +141,15 @@ final class StickerScene: SKScene {
 
     var useZoneFrameInScene: CGRect = .zero
 
+    // MARK: - 粒子效果
+
+    /// 使用区域圆环提示粒子发射器
+    private var useZoneHintEmitter: SKEmitterNode?
+    /// 使用区域位置（圆环粒子的中心点）
+    private var useZoneCenter: CGPoint {
+        CGPoint(x: useZoneFrameInScene.midX, y: useZoneFrameInScene.midY)
+    }
+
     // MARK: - 运动管理器（外部注入）
 
     weak var motionManager: StickerMotionManager?
@@ -595,6 +604,9 @@ final class StickerScene: SKScene {
                     scaleUp.timingMode = .easeOut
                     node.run(scaleUp, withKey: "scale")
 
+                    // 显示使用区域圆环提示粒子
+                    showUseZoneHint()
+
                     isPanningQueue = false
                 } else {
                     // 横向滑动或未点中贴纸 -> 滚动队列
@@ -663,6 +675,9 @@ final class StickerScene: SKScene {
 
         // 处理贴纸拖拽结束
         if let node = draggingNode {
+            // 隐藏使用区域圆环提示粒子
+            hideUseZoneHint()
+
             let inZone = useZoneFrameInScene.contains(node.position)
 
             if inZone,
@@ -756,6 +771,9 @@ final class StickerScene: SKScene {
     private func useStickerSuccessfully(node: SKSpriteNode, definition: StickerDefinition) {
         // 回调代理
         stickerDelegate?.stickerScene(self, didUse: definition)
+
+        // 播放绽放粒子效果
+        playUseZoneBurst(at: node.position)
 
         // 获取被移除贴纸的索引
         let removedIndex = stickerNodes.firstIndex(of: node)
@@ -883,5 +901,67 @@ final class StickerScene: SKScene {
                 self?.pauseIfIdle()
             }
         }
+    }
+
+    // MARK: - 粒子效果
+
+    /// 显示使用区域圆环提示粒子
+    private func showUseZoneHint() {
+        // 如果已经在显示，直接返回
+        guard useZoneHintEmitter == nil else { return }
+
+        #if DEBUG
+        print("🔥 [StickerScene] showUseZoneHint - useZoneCenter: \(useZoneCenter), useZoneFrame: \(useZoneFrameInScene)")
+        #endif
+
+        // 创建圆环粒子发射器
+        let emitter = UseZoneParticleFactory.makeSimpleRingEmitter()
+        emitter.position = useZoneCenter
+        emitter.zPosition = 50  // 在贴纸下方，但在背景上方
+
+        // 初始透明，渐入显示
+        emitter.alpha = 0
+        addChild(emitter)
+        useZoneHintEmitter = emitter
+
+        // 渐入动画
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.2)
+        fadeIn.timingMode = .easeOut
+        emitter.run(fadeIn)
+    }
+
+    /// 隐藏使用区域圆环提示粒子
+    private func hideUseZoneHint() {
+        guard let emitter = useZoneHintEmitter else { return }
+
+        // 渐出动画后移除
+        let fadeOut = SKAction.fadeOut(withDuration: 0.15)
+        fadeOut.timingMode = .easeIn
+
+        emitter.run(fadeOut) { [weak emitter] in
+            emitter?.removeFromParent()
+        }
+        useZoneHintEmitter = nil
+    }
+
+    /// 播放使用成功的绽放粒子效果
+    private func playUseZoneBurst(at position: CGPoint) {
+        #if DEBUG
+        print("🎆 [StickerScene] playUseZoneBurst at \(position)")
+        #endif
+
+        // 创建绽放粒子发射器
+        let emitter = UseZoneParticleFactory.makeSimpleBurstEmitter()
+        emitter.position = position
+        emitter.zPosition = 150  // 在最上层
+
+        addChild(emitter)
+
+        // 粒子发射完毕后自动移除（numParticlesToEmit = 50，birthRate = 400）
+        // 发射时间约 50/400 = 0.125 秒，加上粒子生命周期 0.6 秒，共约 0.8 秒
+        let waitDuration = 1.0  // 稍微多等一会儿确保所有粒子消失
+        let wait = SKAction.wait(forDuration: waitDuration)
+        let remove = SKAction.removeFromParent()
+        emitter.run(SKAction.sequence([wait, remove]))
     }
 }

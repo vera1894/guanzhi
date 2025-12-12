@@ -47,6 +47,9 @@ struct StickerDefinition: Identifiable, Hashable {
     /// 贴纸唯一标识
     let stickerID: StickerID
 
+    /// 贴纸种类（统一 ID，链接后端与前端）
+    let kind: StickerKind
+
     /// 显示名称
     let displayName: String
 
@@ -70,6 +73,29 @@ struct StickerDefinition: Identifiable, Hashable {
     }
 }
 
+// MARK: - 工厂方法
+
+extension StickerDefinition {
+    /// 从 StickerKind 获取对应的贴纸定义
+    /// 这是获取贴纸配置的统一入口，避免在各处使用魔法字符串
+    static func definition(for kind: StickerKind) -> StickerDefinition {
+        switch kind {
+        case .like:
+            return .mockLike
+        case .neutral:
+            return .mockNeutral
+        case .heart:
+            return .mockHeart
+        case .star:
+            return .mockStar
+        case .fire:
+            return .mockFire
+        case .bolt:
+            return .mockBolt
+        }
+    }
+}
+
 // MARK: - Mock 数据
 
 extension StickerDefinition {
@@ -77,55 +103,61 @@ extension StickerDefinition {
     /// 点赞贴纸（使用自定义图片）
     static let mockLike = StickerDefinition(
         stickerID: StickerID(rawValue: "like"),
-        displayName: "点赞",
+        kind: .like,
+        displayName: "赞同",
         assetKind: .image(name: "stickers-good"),
         priority: 100,
-        meta: ["type": "like"]
+        meta: [:]
     )
 
     /// 无感贴纸
     static let mockNeutral = StickerDefinition(
         stickerID: StickerID(rawValue: "neutral"),
+        kind: .neutral,
         displayName: "无感",
         assetKind: .systemSymbol(name: "face.smiling"),
         priority: 80,
-        meta: ["type": "neutral"]
+        meta: [:]
     )
 
     /// 爱心贴纸
     static let mockHeart = StickerDefinition(
         stickerID: StickerID(rawValue: "heart"),
+        kind: .heart,
         displayName: "爱心",
         assetKind: .systemSymbol(name: "heart.fill"),
         priority: 90,
-        meta: ["type": "heart"]
+        meta: [:]
     )
 
     /// 收藏贴纸
     static let mockStar = StickerDefinition(
         stickerID: StickerID(rawValue: "star"),
+        kind: .star,
         displayName: "收藏",
         assetKind: .systemSymbol(name: "star.fill"),
         priority: 70,
-        meta: ["type": "star"]
+        meta: [:]
     )
 
     /// 火焰贴纸
     static let mockFire = StickerDefinition(
         stickerID: StickerID(rawValue: "fire"),
+        kind: .fire,
         displayName: "火热",
         assetKind: .systemSymbol(name: "flame.fill"),
         priority: 60,
-        meta: ["type": "fire"]
+        meta: [:]
     )
 
     /// 闪电贴纸
     static let mockBolt = StickerDefinition(
         stickerID: StickerID(rawValue: "bolt"),
+        kind: .bolt,
         displayName: "闪电",
         assetKind: .systemSymbol(name: "bolt.fill"),
         priority: 50,
-        meta: ["type": "bolt"]
+        meta: [:]
     )
 
     /// 所有 Mock 贴纸（按优先级排序）

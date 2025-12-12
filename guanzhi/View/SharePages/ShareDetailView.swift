@@ -124,6 +124,9 @@ struct ShareDetailView: View {
     // ✅ 稳定的播放器矩形（防抖，只在滑动结束时更新）
     @State private var stablePlayerFrame: CGRect = .zero
 
+    // ✅ 贴纸互动 ViewModel（统一管理点赞/无感状态和贴纸统计）
+    @StateObject private var interactionViewModel = ShareInteractionViewModel()
+
     // 判断是否是自己的分享
     private var isMyShare: Bool {
         guard let share = searchViewModel.selectedShare else { return false }
@@ -377,6 +380,16 @@ struct ShareDetailView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
+                    // 贴纸统计展示条
+                    StickerSummaryBar(
+                        items: interactionViewModel.stickerSummaries,
+                        maxVisibleItems: 4,
+                        onTap: {
+                            interactionViewModel.isShowingStickerSummaryOverlay = true
+                        }
+                    )
+                    .padding(.top, 12)
+
                     Spacer()
                 }
             }
@@ -386,20 +399,39 @@ struct ShareDetailView: View {
         )
         // 贴纸交互层（全屏覆盖，但只在底部区域响应触摸）
         .overlay {
-            StickerFieldView(
-                stickers: StickerDefinition.mockAll,
-                onUseSticker: { sticker in
-                    #if DEBUG
-                    print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName)")
-                    #endif
-                    // TODO: 处理贴纸使用逻辑
-                },
-                showBackground: false,
-                showUseZoneHint: false,
-                queueBottomY: 180,       // 贴纸队列位置（避开底部卡片）
-                touchAreaHeight: 250,    // 只在底部 250pt 区域响应触摸，上方区域穿透
-                enableAutoScroll: false  // 关闭自动轮播，节省性能
-            )
+            GeometryReader { geo in
+                // 计算使用区域：屏幕中心偏上位置（SwiftUI 坐标系）
+                // 注意：这里使用 SwiftUI 坐标系，StickerFieldView 内部会自动转换为 SpriteKit 坐标
+                let useZoneSize = CGSize(width: geo.size.width - 80, height: 120)
+                let customFrame = CGRect(
+                    x: 40,
+                    y: geo.size.height * 0.25,  // 屏幕上方 1/4 位置（SwiftUI Y 轴向下）
+                    width: useZoneSize.width,
+                    height: useZoneSize.height
+                )
+
+                StickerFieldView(
+                    stickers: StickerDefinition.mockAll,
+                    onUseSticker: { sticker in
+                        #if DEBUG
+                        print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName) (\(sticker.kind))")
+                        #endif
+
+                        // 根据贴纸种类处理投票逻辑
+                        if let voteState = sticker.kind.voteState {
+                            // 可持久化贴纸：调用统一投票入口
+                            interactionViewModel.setVote(voteState)
+                        }
+                        // 其他本地贴纸：只做动画效果，不上报服务器
+                    },
+                    showBackground: false,
+                    showUseZoneHint: false,
+                    customUseZoneFrame: customFrame,  // 传入自定义使用区域（SwiftUI 坐标）
+                    queueBottomY: 180,       // 贴纸队列位置（避开底部卡片）
+                    touchAreaHeight: 250,    // 只在底部 250pt 区域响应触摸，上方区域穿透
+                    enableAutoScroll: false  // 关闭自动轮播，节省性能
+                )
+            }
             .opacity(isShowShareDetailsCard ? 1 : 0)
             .allowsHitTesting(isShowShareDetailsCard)
         }
@@ -540,37 +572,12 @@ struct ShareDetailView: View {
             .ignoresSafeArea()
         ) // 底部详情卡片和评论输入区
         .overlay(
-            // 点赞打卡交互层
+            // 点赞打卡交互层（使用共享的 interactionViewModel）
             Group {
                 if let share = searchViewModel.selectedShare {
                     InteractionOverlayView(
                         share: share,
-                        onVoteStateChanged: { shareId, voteState, agreeCount, neutralCount in
-                            Task { @MainActor in
-                                // 1. 更新 selectedShare
-                                if let share = searchViewModel.selectedShare, share.id == shareId {
-                                    share.agreeCount = agreeCount
-                                    share.currentUserVoteType = voteState.rawValue
-                                    share.neutralCount = neutralCount
-
-                                    // 2. ✅ 手动保存 SwiftData 上下文（确保持久化）
-                                    do {
-                                        try searchViewModel.context.save()
-                                        #if DEBUG
-                                        print("💾 [ShareDetailView] SwiftData 已保存到磁盘")
-                                        #endif
-                                    } catch {
-                                        #if DEBUG
-                                        print("❌ [ShareDetailView] SwiftData 保存失败: \(error)")
-                                        #endif
-                                    }
-                                }
-
-                                #if DEBUG
-                                print("✅ [ShareDetailView] 同步点赞状态: shareId=\(shareId), agreeCount=\(agreeCount), voteState=\(voteState)")
-                                #endif
-                            }
-                        }
+                        viewModel: interactionViewModel
                     )
                     .opacity(isShowShareDetailsCard ? 1 : 0)
                     .allowsHitTesting(isShowShareDetailsCard)
@@ -591,6 +598,13 @@ struct ShareDetailView: View {
             selectedIndex = 0
             if let shareId = Int64(annotationID) {
                 searchViewModel.loadShareDetail(for: shareId)
+            }
+
+            // 初始化贴纸互动 ViewModel
+            // 注意：loadShareDetail 是异步的，selectedShare 此时可能为 nil
+            // 真正的初始化依赖 .onChange(of: selectedShare?.id) 监听器
+            if let share = searchViewModel.selectedShare {
+                interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
             }
         }
         .onDisappear {
@@ -628,6 +642,50 @@ struct ShareDetailView: View {
             }
         } message: {
             Text(searchViewModel.shareDeletedMessage ?? "")
+        }
+        // 贴纸统计详细覆层
+        .sheet(isPresented: $interactionViewModel.isShowingStickerSummaryOverlay) {
+            StickerSummaryOverlay(
+                items: interactionViewModel.stickerSummaries,
+                onClose: {
+                    interactionViewModel.isShowingStickerSummaryOverlay = false
+                }
+            )
+            .presentationDetents([.medium, .large])
+        }
+        // ✅ 监听 selectedShare?.id 变化，重新初始化 interactionViewModel
+        // 注意：监听整个对象在 SwiftData @Model 中可能不会触发，改为监听 id
+        .onChange(of: searchViewModel.selectedShare?.id) { oldValue, newValue in
+            handleShareIdChange(oldValue: oldValue, newValue: newValue)
+        }
+    }
+
+    // MARK: - Share ID 变化处理
+
+    /// 处理 selectedShare.id 变化，重新初始化 interactionViewModel
+    private func handleShareIdChange(oldValue: Int64?, newValue: Int64?) {
+        #if DEBUG
+        print("🔄 [ShareDetailView] selectedShare.id 变化: \(oldValue?.description ?? "nil") -> \(newValue?.description ?? "nil")")
+        #endif
+        guard let share = searchViewModel.selectedShare else { return }
+        interactionViewModel.initialize(
+            share: share,
+            onStateChanged: makeStateChangedCallback()
+        )
+    }
+
+    /// 创建状态变化回调（同步到 SwiftData）
+    private func makeStateChangedCallback() -> (Int64, VoteState, Int, Int) -> Void {
+        return { [weak searchViewModel] shareId, voteState, agreeCount, neutralCount in
+            Task { @MainActor in
+                guard let vm = searchViewModel,
+                      let currentShare = vm.selectedShare,
+                      currentShare.id == shareId else { return }
+                currentShare.agreeCount = agreeCount
+                currentShare.currentUserVoteType = voteState.rawValue
+                currentShare.neutralCount = neutralCount
+                try? vm.context.save()
+            }
         }
     }
 
