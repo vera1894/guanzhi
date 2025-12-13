@@ -591,14 +591,20 @@ struct ShareDetailView: View {
                 searchViewModel.loadShareDetail(for: shareId)
             }
 
-            // 初始化贴纸互动 ViewModel
-            // 注意：loadShareDetail 是异步的，selectedShare 此时可能为 nil
-            // 真正的初始化依赖 .onChange(of: selectedShare?.id) 监听器
-            if let share = searchViewModel.selectedShare {
-                interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
-                // 计算可用贴纸（基于用户等级权限）
-                // TODO: 从 userProfileManager.localUserProfile?.levelCode 获取
-                interactionViewModel.computeAvailableStickerKinds(for: nil)
+            // ✅ 修复：每次 onAppear 都强制重新初始化 interactionViewModel
+            // 因为 loadFromLocal 是同步的，此时 selectedShare 应该已经有值
+            // 延迟执行确保 loadFromLocal 完成
+            DispatchQueue.main.async {
+                if let share = searchViewModel.selectedShare {
+                    #if DEBUG
+                    print("🔄 [ShareDetailView] onAppear 初始化 interactionViewModel")
+                    print("   - share.currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
+                    #endif
+                    interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
+                    // 计算可用贴纸（基于用户等级权限）
+                    // TODO: 从 userProfileManager.localUserProfile?.levelCode 获取
+                    interactionViewModel.computeAvailableStickerKinds(for: nil)
+                }
             }
         }
         .onDisappear {
@@ -647,31 +653,30 @@ struct ShareDetailView: View {
             )
             .presentationDetents([.medium, .large])
         }
-        // ✅ 监听 selectedShare?.id 变化，重新初始化 interactionViewModel
-        // 注意：监听整个对象在 SwiftData @Model 中可能不会触发，改为监听 id
-        .onChange(of: searchViewModel.selectedShare?.id) { oldValue, newValue in
-            handleShareIdChange(oldValue: oldValue, newValue: newValue)
+        // ✅ 监听 selectedShare 变化，重新初始化 interactionViewModel
+        .onChange(of: shareStateKey) { _, _ in
+            reinitializeInteractionViewModel()
         }
     }
 
-    // MARK: - Share ID 变化处理
+    /// 组合键：用于监听 share 状态变化（id + voteType + agreeCount）
+    /// 任何一个变化都会触发 reinitializeInteractionViewModel
+    private var shareStateKey: String {
+        guard let share = searchViewModel.selectedShare else { return "nil" }
+        return "\(share.id)_\(share.currentUserVoteType ?? -999)_\(share.agreeCount)"
+    }
 
-    /// 处理 selectedShare.id 变化，重新初始化 interactionViewModel
-    private func handleShareIdChange(oldValue: Int64?, newValue: Int64?) {
-        #if DEBUG
-        print("🔄 [ShareDetailView] selectedShare.id 变化: \(oldValue?.description ?? "nil") -> \(newValue?.description ?? "nil")")
-        #endif
+    // MARK: - 重新初始化交互 ViewModel
+
+    /// 重新初始化 interactionViewModel（当 share 数据变化时调用）
+    private func reinitializeInteractionViewModel() {
         guard let share = searchViewModel.selectedShare else { return }
-
-        // 初始化 interactionViewModel
-        interactionViewModel.initialize(
-            share: share,
-            onStateChanged: makeStateChangedCallback()
-        )
-
-        // 计算可用贴纸（基于用户等级权限）
-        // TODO: 从 userProfileManager.localUserProfile?.levelCode 获取
-        // 本轮暂时使用默认值（只显示投票类贴纸）
+        #if DEBUG
+        print("🔄 [ShareDetailView] reinitializeInteractionViewModel")
+        print("   - currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
+        print("   - agreeCount: \(share.agreeCount)")
+        #endif
+        interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
         interactionViewModel.computeAvailableStickerKinds(for: nil)
     }
 

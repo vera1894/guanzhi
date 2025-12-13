@@ -150,6 +150,8 @@ final class StickerScene: SKScene {
     private var useZoneCenter: CGPoint {
         CGPoint(x: useZoneFrameInScene.midX, y: useZoneFrameInScene.midY)
     }
+    /// 活跃的绽放粒子发射器计数（用于防止场景在粒子播放期间暂停）
+    private var activeBurstEmitterCount: Int = 0
 
     // MARK: - 运动管理器（外部注入）
 
@@ -613,6 +615,8 @@ final class StickerScene: SKScene {
         // 确保没有任何贴纸正在执行动画
         let anyNodeHasActions = stickerNodes.contains { $0.hasActions() }
         guard !anyNodeHasActions else { return }
+        // 确保没有活跃的粒子效果
+        guard activeBurstEmitterCount == 0 else { return }
 
         isPaused = true
     }
@@ -1121,6 +1125,9 @@ final class StickerScene: SKScene {
         print("🎆 [StickerScene] playUseZoneBurst at \(position)")
         #endif
 
+        // 标记有活跃的粒子效果（防止场景暂停）
+        activeBurstEmitterCount += 1
+
         // 创建绽放粒子发射器
         let emitter = UseZoneParticleFactory.makeSimpleBurstEmitter()
         emitter.position = position
@@ -1130,9 +1137,13 @@ final class StickerScene: SKScene {
 
         // 粒子发射完毕后自动移除（numParticlesToEmit = 50，birthRate = 400）
         // 发射时间约 50/400 = 0.125 秒，加上粒子生命周期 0.6 秒，共约 0.8 秒
-        let waitDuration = 1.0  // 稍微多等一会儿确保所有粒子消失
-        let wait = SKAction.wait(forDuration: waitDuration)
-        let remove = SKAction.removeFromParent()
-        emitter.run(SKAction.sequence([wait, remove]))
+        // ⚠️ 使用 GCD 而非 SKAction，因为场景可能被暂停导致 SKAction 不执行
+        let waitDuration: TimeInterval = 1.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + waitDuration) { [weak self, weak emitter] in
+            emitter?.removeFromParent()
+            // 粒子效果完成，减少计数并尝试暂停场景
+            self?.activeBurstEmitterCount -= 1
+            self?.pauseIfIdle()
+        }
     }
 }
