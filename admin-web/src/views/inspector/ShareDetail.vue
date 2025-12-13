@@ -54,14 +54,23 @@
         <el-descriptions-item label="纬度">
           {{ shareDetail.latitude ?? '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="点赞数">
-          {{ shareDetail.likeCount ?? 0 }}
+        <el-descriptions-item label="赞同数">
+          <span style="color: #67c23a; font-weight: bold;">{{ shareDetail.agreeCount ?? 0 }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="无感数">
+          <span style="color: #909399;">{{ shareDetail.neutralCount ?? 0 }}</span>
         </el-descriptions-item>
         <el-descriptions-item label="打卡数">
           {{ shareDetail.checkinCount ?? 0 }}
         </el-descriptions-item>
         <el-descriptions-item label="评论数">
           {{ shareDetail.commentCount ?? 0 }}
+        </el-descriptions-item>
+        <el-descriptions-item label="浏览人数">
+          {{ shareDetail.viewUserCount ?? 0 }}
+        </el-descriptions-item>
+        <el-descriptions-item label="最近7日浏览">
+          {{ shareDetail.recentViewUserCount ?? 0 }}
         </el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="shareDetail.status === 'ACTIVE' ? 'success' : 'warning'">

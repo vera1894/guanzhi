@@ -6,6 +6,10 @@
 //
 //  贴纸纹理缓存 - 避免重复渲染 SwiftUI → UIImage → SKTexture
 //
+//  ⚠️ 重要：所有纹理创建必须在主线程执行！
+//  UIGraphicsImageRenderer 和 String.draw 涉及 Core Text，
+//  在后台线程执行容易导致并发崩溃 (EXC_BAD_ACCESS)。
+//
 
 import SpriteKit
 import UIKit
@@ -14,6 +18,10 @@ import UIKit
 
 /// 贴纸纹理缓存
 /// 使用 NSCache 缓存已生成的纹理，避免每帧重复渲染
+///
+/// ⚠️ 线程安全说明：
+/// - 所有涉及 UIGraphicsImageRenderer、String.draw 的操作必须在主线程执行
+/// - preload 方法已移除后台线程逻辑，改为同步执行
 final class StickerTextureCache {
 
     // MARK: - 单例
@@ -23,7 +31,6 @@ final class StickerTextureCache {
     // MARK: - 属性
 
     private var cache = NSCache<NSString, SKTexture>()
-    private let queue = DispatchQueue(label: "com.guanzhi.stickerTextureCache", qos: .userInitiated)
 
     // MARK: - 初始化
 
@@ -34,12 +41,19 @@ final class StickerTextureCache {
 
     // MARK: - 公开方法
 
-    /// 获取或创建纹理（同步）
+    /// 获取或创建纹理（同步，必须在主线程调用）
     /// - Parameters:
     ///   - definition: 贴纸定义
     ///   - size: 纹理尺寸
     /// - Returns: SKTexture
+    ///
+    /// ⚠️ 此方法必须在主线程调用，涉及 UIGraphicsImageRenderer
     func texture(for definition: StickerDefinition, size: CGSize) -> SKTexture {
+        // ✅ 断言主线程（DEBUG 模式下检查）
+        #if DEBUG
+        assert(Thread.isMainThread, "⚠️ [StickerTextureCache] texture(for:size:) 必须在主线程调用！")
+        #endif
+
         let key = cacheKey(for: definition, size: size)
 
         if let cached = cache.object(forKey: key) {
@@ -51,25 +65,22 @@ final class StickerTextureCache {
         return texture
     }
 
-    /// 预加载所有贴纸纹理（异步）
+    /// 预加载所有贴纸纹理（同步，主线程执行）
     /// - Parameters:
     ///   - definitions: 贴纸定义数组
     ///   - size: 纹理尺寸
-    ///   - completion: 完成回调（主线程）
-    func preload(definitions: [StickerDefinition], size: CGSize, completion: @escaping () -> Void) {
-        queue.async { [weak self] in
-            guard let self else {
-                DispatchQueue.main.async { completion() }
-                return
-            }
+    ///
+    /// ⚠️ 此方法必须在主线程调用
+    /// 由于贴纸数量少（通常 < 10 个）且尺寸小（72x72），
+    /// 同步执行对性能影响微乎其微，但能保证线程安全。
+    func preload(definitions: [StickerDefinition], size: CGSize) {
+        #if DEBUG
+        assert(Thread.isMainThread, "⚠️ [StickerTextureCache] preload 必须在主线程调用！")
+        print("✅ [StickerTextureCache] preload \(definitions.count) 个贴纸纹理")
+        #endif
 
-            for definition in definitions {
-                _ = self.texture(for: definition, size: size)
-            }
-
-            DispatchQueue.main.async {
-                completion()
-            }
+        for definition in definitions {
+            _ = texture(for: definition, size: size)
         }
     }
 
@@ -114,6 +125,10 @@ final class StickerTextureCache {
                 return SKTexture(image: renderWithFrame(image: image, size: size))
             }
             return createPlaceholderTexture(size: size, label: "SVG")
+
+        case .textFallback(let characters):
+            // 文字回退：渲染为带圆形背景的文字贴纸
+            return createTextFallbackTexture(characters: characters, size: size)
 
         case .threeD(let configID):
             // TODO: 对接 3D 渲染（SK3DNode 或预渲染 snapshot）
@@ -196,6 +211,64 @@ final class StickerTextureCache {
             )
             symbolImage.draw(in: symbolRect)
         }
+    }
+
+    /// 创建文字回退纹理（用于没有图标的标签类贴纸）
+    private func createTextFallbackTexture(characters: String, size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            let insetRect = rect.insetBy(dx: 3, dy: 3)
+
+            // 渐变背景色（柔和的蓝紫色调）
+            context.cgContext.setShadow(offset: CGSize(width: 0, height: 2), blur: 4, color: UIColor.black.withAlphaComponent(0.15).cgColor)
+
+            // 圆形背景
+            let gradientColors = [
+                UIColor.systemIndigo.withAlphaComponent(0.85).cgColor,
+                UIColor.systemPurple.withAlphaComponent(0.7).cgColor
+            ]
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                          colors: gradientColors as CFArray,
+                                          locations: [0, 1]) {
+                context.cgContext.saveGState()
+                context.cgContext.addPath(UIBezierPath(ovalIn: insetRect).cgPath)
+                context.cgContext.clip()
+                context.cgContext.drawLinearGradient(
+                    gradient,
+                    start: CGPoint(x: 0, y: 0),
+                    end: CGPoint(x: size.width, y: size.height),
+                    options: []
+                )
+                context.cgContext.restoreGState()
+            }
+
+            // 重置阴影
+            context.cgContext.setShadow(offset: .zero, blur: 0, color: nil)
+
+            // 白色边框
+            UIColor.white.withAlphaComponent(0.6).setStroke()
+            let borderPath = UIBezierPath(ovalIn: insetRect.insetBy(dx: 1, dy: 1))
+            borderPath.lineWidth = 1.5
+            borderPath.stroke()
+
+            // 文字（白色，居中）
+            let displayText = String(characters.prefix(2))  // 安全截取前两个字符
+            let fontSize = size.width * 0.32
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: fontSize, weight: .bold),
+                .foregroundColor: UIColor.white
+            ]
+            let textSize = displayText.size(withAttributes: attributes)
+            let textRect = CGRect(
+                x: (size.width - textSize.width) / 2,
+                y: (size.height - textSize.height) / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            displayText.draw(in: textRect, withAttributes: attributes)
+        }
+        return SKTexture(image: image)
     }
 
     /// 创建占位纹理

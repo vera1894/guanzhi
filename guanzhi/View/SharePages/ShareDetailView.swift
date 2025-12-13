@@ -411,18 +411,9 @@ struct ShareDetailView: View {
                 )
 
                 StickerFieldView(
-                    stickers: StickerDefinition.mockAll,
+                    stickers: interactionViewModel.visibleStickerDefinitions,  // 动态贴纸列表（应用互斥逻辑）
                     onUseSticker: { sticker in
-                        #if DEBUG
-                        print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName) (\(sticker.kind))")
-                        #endif
-
-                        // 根据贴纸种类处理投票逻辑
-                        if let voteState = sticker.kind.voteState {
-                            // 可持久化贴纸：调用统一投票入口
-                            interactionViewModel.setVote(voteState)
-                        }
-                        // 其他本地贴纸：只做动画效果，不上报服务器
+                        handleStickerUse(sticker)
                     },
                     showBackground: false,
                     showUseZoneHint: false,
@@ -605,6 +596,9 @@ struct ShareDetailView: View {
             // 真正的初始化依赖 .onChange(of: selectedShare?.id) 监听器
             if let share = searchViewModel.selectedShare {
                 interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
+                // 计算可用贴纸（基于用户等级权限）
+                // TODO: 从 userProfileManager.localUserProfile?.levelCode 获取
+                interactionViewModel.computeAvailableStickerKinds(for: nil)
             }
         }
         .onDisappear {
@@ -668,10 +662,39 @@ struct ShareDetailView: View {
         print("🔄 [ShareDetailView] selectedShare.id 变化: \(oldValue?.description ?? "nil") -> \(newValue?.description ?? "nil")")
         #endif
         guard let share = searchViewModel.selectedShare else { return }
+
+        // 初始化 interactionViewModel
         interactionViewModel.initialize(
             share: share,
             onStateChanged: makeStateChangedCallback()
         )
+
+        // 计算可用贴纸（基于用户等级权限）
+        // TODO: 从 userProfileManager.localUserProfile?.levelCode 获取
+        // 本轮暂时使用默认值（只显示投票类贴纸）
+        interactionViewModel.computeAvailableStickerKinds(for: nil)
+    }
+
+    // MARK: - 贴纸使用处理
+
+    /// 处理贴纸使用动作
+    /// - Parameter sticker: 被使用的贴纸定义
+    private func handleStickerUse(_ sticker: StickerDefinition) {
+        #if DEBUG
+        print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName) (\(sticker.kind))")
+        #endif
+
+        // 使用统一的映射方法，避免 like/agree 命名混淆
+        if let voteState = sticker.kind.asVoteState {
+            // 投票类贴纸：调用统一投票入口
+            interactionViewModel.setVote(voteState)
+        } else if let tagCode = sticker.kind.tagCode {
+            // 标签类贴纸：本轮只做视觉效果，不调用 API
+            #if DEBUG
+            print("🏷️ [ShareDetailView] 使用标签贴纸: \(tagCode) (暂不上报)")
+            #endif
+            // TODO: 后续实现 ShareService.shared.tagShare(shareId: xxx, tagCode: tagCode)
+        }
     }
 
     /// 创建状态变化回调（同步到 SwiftData）

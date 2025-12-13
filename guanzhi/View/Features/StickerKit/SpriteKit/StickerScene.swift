@@ -45,7 +45,8 @@ final class StickerScene: SKScene {
 
     // MARK: - 数据（私有，通过方法访问）
 
-    private let stickerDefinitions: [StickerDefinition]
+    /// 当前贴纸定义列表（可通过 resetStickers 更新）
+    private var stickerDefinitions: [StickerDefinition]
     private var stickerNodes: [SKSpriteNode] = []
 
     // MARK: - 配置
@@ -156,6 +157,15 @@ final class StickerScene: SKScene {
 
     // MARK: - 初始化
 
+    /// 默认初始化器（空贴纸列表）
+    /// 用于 StickerFieldView 中场景始终存在的模式
+    override init(size: CGSize) {
+        self.stickerDefinitions = []
+        super.init(size: size)
+        scaleMode = .resizeFill
+    }
+
+    /// 带贴纸列表的初始化器
     init(size: CGSize, stickers: [StickerDefinition]) {
         self.stickerDefinitions = stickers
         super.init(size: size)
@@ -166,6 +176,98 @@ final class StickerScene: SKScene {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - 公开方法：重置/清空贴纸
+
+    /// 重置贴纸列表（用于贴纸数据变化时）
+    /// 会清除所有现有节点，然后根据新的定义重新布局
+    func resetStickers(with newStickers: [StickerDefinition]) {
+        #if DEBUG
+        print("✅ [StickerScene] resetStickers, count=\(newStickers.count), size=\(size)")
+        #endif
+
+        // ✅ 保护：场景尺寸必须有效
+        guard size.width > 0, size.height > 0 else {
+            #if DEBUG
+            print("⚠️ [StickerScene] resetStickers 跳过，size 无效：\(size)")
+            #endif
+            // 先保存定义，等尺寸有效时再布局
+            stickerDefinitions = newStickers
+            return
+        }
+
+        // 停止所有进行中的动画和状态
+        stopAllInteractions()
+
+        // 更新定义
+        stickerDefinitions = newStickers
+
+        // 重新布局
+        layoutStickers()
+        calculateScrollBounds()
+
+        // 恢复场景运行（如果之前暂停了）
+        if isPaused {
+            isPaused = false
+        }
+    }
+
+    /// 清空所有贴纸节点（保持场景存在）
+    func clearAllStickers() {
+        #if DEBUG
+        print("🧹 [StickerScene] clearAllStickers")
+        #endif
+
+        // 停止所有进行中的动画和状态
+        stopAllInteractions()
+
+        // 清除节点
+        stickerNodes.forEach { $0.removeFromParent() }
+        stickerNodes.removeAll()
+        baseXPositions.removeAll()
+        stickerDefinitions = []
+
+        // 重置滚动状态
+        scrollOffsetX = 0
+        contentWidth = 0
+        canAutoScroll = false
+        minScrollOffsetX = 0
+        maxScrollOffsetX = 0
+    }
+
+    /// 停止所有进行中的交互和动画
+    private func stopAllInteractions() {
+        // 停止惯性滚动
+        isDecelerating = false
+        scrollVelocity = 0
+        velocitySamples.removeAll()
+
+        // 停止橡皮筋回弹
+        isBouncingBack = false
+        removeAllActions()
+
+        // 清除拖拽状态
+        draggingNode = nil
+        draggingOriginalPosition = nil
+        draggingOriginalIndex = nil
+        returningNode = nil
+
+        // 清除滚动状态
+        isPanningQueue = false
+        lastPanLocation = nil
+        touchStartLocation = nil
+        pendingStickerNode = nil
+        interactionModeDecided = false
+
+        // 恢复用户交互标志
+        isUserInteracting = false
+
+        // 隐藏粒子效果
+        hideUseZoneHint()
+
+        // 停止所有节点的动画
+        stickerNodes.forEach { $0.removeAllActions() }
     }
 
     // MARK: - 公开方法：查找贴纸定义
@@ -183,10 +285,22 @@ final class StickerScene: SKScene {
     // MARK: - 生命周期
 
     override func didMove(to view: SKView) {
+        #if DEBUG
+        print("✅ [StickerScene] didMove(to:), size=\(size), stickers=\(stickerDefinitions.count)")
+        #endif
+
         backgroundColor = .clear
         setupPhysicsWorld()
-        layoutStickers()
-        calculateScrollBounds()
+
+        // ✅ 只有尺寸有效时才布局
+        if size.width > 0, size.height > 0 {
+            layoutStickers()
+            calculateScrollBounds()
+        } else {
+            #if DEBUG
+            print("⚠️ [StickerScene] didMove(to:) 跳过布局，size 无效：\(size)")
+            #endif
+        }
 
         // 如果禁用自动轮播，初始时暂停场景以节省性能
         if !enableAutoScroll {
@@ -203,6 +317,14 @@ final class StickerScene: SKScene {
     // MARK: - 布局
 
     private func layoutStickers() {
+        // ✅ 保护：场景尺寸必须有效
+        guard size.width > 0, size.height > 0 else {
+            #if DEBUG
+            print("⚠️ [StickerScene] layoutStickers 跳过，size 无效：\(size)")
+            #endif
+            return
+        }
+
         // 清理现有节点和基准位置
         stickerNodes.forEach { $0.removeFromParent() }
         stickerNodes.removeAll()
@@ -237,6 +359,17 @@ final class StickerScene: SKScene {
 
     /// 计算滚动边界（基于 scrollOffsetX）
     private func calculateScrollBounds() {
+        // ✅ 保护：场景尺寸必须有效
+        guard size.width > 0, size.height > 0 else {
+            #if DEBUG
+            print("⚠️ [StickerScene] calculateScrollBounds 跳过，size 无效：\(size)")
+            #endif
+            minScrollOffsetX = 0
+            maxScrollOffsetX = 0
+            canAutoScroll = false
+            return
+        }
+
         guard !baseXPositions.isEmpty else {
             minScrollOffsetX = 0
             maxScrollOffsetX = 0
@@ -255,6 +388,17 @@ final class StickerScene: SKScene {
             let centeredFirstX = (size.width - totalStickerWidth) / 2 + stickerSize.width / 2
             let currentFirstBaseX = baseXPositions[0]
             let centerOffset = centeredFirstX - currentFirstBaseX
+
+            // ✅ 安全检查：确保计算结果有限
+            guard centerOffset.isFinite else {
+                #if DEBUG
+                print("⚠️ [StickerScene] calculateScrollBounds 跳过，centerOffset 无效：\(centerOffset)")
+                #endif
+                minScrollOffsetX = 0
+                maxScrollOffsetX = 0
+                return
+            }
+
             minScrollOffsetX = centerOffset
             maxScrollOffsetX = centerOffset
             // 应用居中偏移
@@ -268,12 +412,26 @@ final class StickerScene: SKScene {
             // maxScrollOffsetX: 第一个贴纸完全显示在屏幕左侧
             // 第一个贴纸中心 x = edgePadding + stickerSize/2
             // firstBaseX + maxScrollOffsetX = edgePadding + stickerSize/2
-            maxScrollOffsetX = (edgePadding + stickerSize.width / 2) - firstBaseX
+            let calculatedMax = (edgePadding + stickerSize.width / 2) - firstBaseX
 
             // minScrollOffsetX: 最后一个贴纸完全显示在屏幕右侧
             // 最后一个贴纸中心 x = size.width - edgePadding - stickerSize/2
             // lastBaseX + minScrollOffsetX = size.width - edgePadding - stickerSize/2
-            minScrollOffsetX = (size.width - edgePadding - stickerSize.width / 2) - lastBaseX
+            let calculatedMin = (size.width - edgePadding - stickerSize.width / 2) - lastBaseX
+
+            // ✅ 安全检查：确保计算结果有限
+            guard calculatedMax.isFinite, calculatedMin.isFinite else {
+                #if DEBUG
+                print("⚠️ [StickerScene] calculateScrollBounds 跳过，计算值无效：max=\(calculatedMax), min=\(calculatedMin)")
+                #endif
+                minScrollOffsetX = 0
+                maxScrollOffsetX = 0
+                canAutoScroll = false
+                return
+            }
+
+            maxScrollOffsetX = calculatedMax
+            minScrollOffsetX = calculatedMin
         }
     }
 
@@ -292,7 +450,20 @@ final class StickerScene: SKScene {
 
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
+
+        // ✅ 保护：新尺寸必须有效
+        guard size.width > 0, size.height > 0 else {
+            #if DEBUG
+            print("⚠️ [StickerScene] didChangeSize 跳过，新 size 无效：\(size)")
+            #endif
+            return
+        }
+
+        // 尺寸变化时重新计算边界
         if oldSize != size && !stickerNodes.isEmpty {
+            #if DEBUG
+            print("✅ [StickerScene] didChangeSize: \(oldSize) → \(size)")
+            #endif
             calculateScrollBounds()
         }
     }

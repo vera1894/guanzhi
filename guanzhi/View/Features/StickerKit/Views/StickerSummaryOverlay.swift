@@ -112,9 +112,9 @@ struct StickerSummaryOverlay: View {
     StickerSummaryOverlay(
         items: [
             StickerSummaryItem(kind: .like, count: 128),
-            StickerSummaryItem(kind: .heart, count: 56),
-            StickerSummaryItem(kind: .neutral, count: 23),
-            StickerSummaryItem(kind: .star, count: 12)
+            StickerSummaryItem(kind: .neutral, count: 56),
+            StickerSummaryItem(kind: .mijing, count: 23),
+            StickerSummaryItem(kind: .zhenxiu, count: 12)
         ],
         onClose: {}
     )

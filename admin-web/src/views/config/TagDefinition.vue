@@ -9,16 +9,27 @@
       </template>
       
       <el-table :data="tableData" v-loading="loading" border stripe>
-        <el-table-column prop="tagName" label="标签名称" width="150" />
-        <el-table-column prop="type" label="类型" width="120">
+        <el-table-column prop="tagCode" label="标签键" width="150">
           <template #default="scope">
-            <el-tag :type="scope.row.type === 'POSITIVE' ? 'success' : 'danger'">
-              {{ scope.row.type === 'POSITIVE' ? '正面' : '负面' }}
+            <el-tag type="info" effect="plain">{{ scope.row.tagCode }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="tagName" label="标签名称" width="150" />
+        <el-table-column prop="tagType" label="类型" width="120">
+          <template #default="scope">
+            <el-tag :type="scope.row.tagType === 'POSITIVE' ? 'success' : 'danger'">
+              {{ scope.row.tagType === 'POSITIVE' ? '正面' : '负面' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="weight" label="权重" width="100" />
-        <el-table-column prop="description" label="描述" />
+        <el-table-column prop="sortOrder" label="排序" width="80" />
+        <el-table-column prop="isActive" label="状态" width="80">
+          <template #default="scope">
+            <el-tag :type="scope.row.isActive ? 'success' : 'info'">
+              {{ scope.row.isActive ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="180" align="center">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
@@ -31,20 +42,28 @@
     <!-- 编辑对话框 -->
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="500px">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="标签名称" prop="tagName">
-          <el-input v-model="form.tagName" placeholder="如: 水贴" />
+        <el-form-item label="标签键" prop="tagCode">
+          <el-input
+            v-model="form.tagCode"
+            placeholder="如: MIJING (拼音大写)"
+            :disabled="!!form.id"
+          />
+          <div class="form-tip" v-if="!form.id">标签键创建后不可修改，请使用拼音大写形式</div>
         </el-form-item>
-        <el-form-item label="类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择">
+        <el-form-item label="标签名称" prop="tagName">
+          <el-input v-model="form.tagName" placeholder="如: 秘境" />
+        </el-form-item>
+        <el-form-item label="类型" prop="tagType">
+          <el-select v-model="form.tagType" placeholder="请选择">
             <el-option label="正面 (POSITIVE)" value="POSITIVE" />
             <el-option label="负面 (NEGATIVE)" value="NEGATIVE" />
           </el-select>
         </el-form-item>
-        <el-form-item label="权重" prop="weight">
-          <el-input-number v-model="form.weight" :step="0.1" />
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="form.sortOrder" :min="0" :max="999" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" />
+        <el-form-item label="状态" prop="isActive">
+          <el-switch v-model="form.isActive" active-text="启用" inactive-text="禁用" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -71,15 +90,20 @@ const formRef = ref(null)
 
 const form = reactive({
   id: null,
+  tagCode: '',
   tagName: '',
-  type: 'NEGATIVE',
-  weight: 1.0,
-  description: ''
+  tagType: 'NEGATIVE',
+  sortOrder: 0,
+  isActive: true
 })
 
 const rules = {
+  tagCode: [
+    { required: true, message: '请输入标签键', trigger: 'blur' },
+    { pattern: /^[A-Z][A-Z0-9_]*$/, message: '标签键需为大写字母开头，只能包含大写字母、数字和下划线', trigger: 'blur' }
+  ],
   tagName: [{ required: true, message: '请输入标签名称', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }]
+  tagType: [{ required: true, message: '请选择类型', trigger: 'change' }]
 }
 
 const fetchData = async () => {
@@ -98,10 +122,11 @@ const handleAdd = () => {
   dialogTitle.value = '新增标签'
   Object.assign(form, {
     id: null,
+    tagCode: '',
     tagName: '',
-    type: 'NEGATIVE',
-    weight: 1.0,
-    description: ''
+    tagType: 'NEGATIVE',
+    sortOrder: 0,
+    isActive: true
   })
   dialogVisible.value = true
 }
@@ -161,5 +186,10 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 </style>

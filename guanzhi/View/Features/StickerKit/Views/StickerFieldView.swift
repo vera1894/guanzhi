@@ -6,6 +6,11 @@
 //
 //  贴纸交互区域视图 - SwiftUI 容器
 //
+//  重要架构说明：
+//  - StickerScene 始终存在，不会被设为 nil
+//  - 贴纸变化时通过 scene.resetStickers() 更新内容
+//  - 所有尺寸相关操作都有 size > 0 的防护
+//
 
 import SwiftUI
 import SpriteKit
@@ -50,11 +55,21 @@ struct StickerFieldView: View {
     // MARK: - 状态
 
     @StateObject private var motionManager = StickerMotionManager()
-    @State private var scene: StickerScene?
+
+    /// ✅ 场景始终存在，永不为 nil
+    @StateObject private var sceneHolder = SceneHolder()
+
+    /// 是否正在加载纹理
     @State private var isLoading = true
-    @State private var sceneCreated = false
-    /// ✅ 强引用 Coordinator，防止被释放（因为 StickerScene.stickerDelegate 是 weak）
+
+    /// ✅ 强引用 Coordinator，防止被释放
     @State private var coordinator: Coordinator?
+
+    /// 缓存的上次有效尺寸（防止零尺寸更新）
+    @State private var lastValidSize: CGSize = .zero
+
+    /// 是否已完成初始设置
+    @State private var isSetupDone = false
 
     /// 调试模式（仅 DEBUG 生效）
     private let debugMode = false
@@ -63,21 +78,26 @@ struct StickerFieldView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let size = proxy.size
+
             ZStack(alignment: .top) {
                 // 背景渐变（可选）
                 if showBackground {
                     backgroundGradient
                 }
 
-                // 加载中
-                if isLoading {
-                    loadingView
-                } else {
-                    // SpriteKit 场景
-                    spriteKitView(size: proxy.size)
+                // ✅ 只有尺寸有效时才渲染 SpriteKit 场景
+                if size.width > 0 && size.height > 0 {
+                    spriteKitView(size: size)
+                        .opacity(stickers.isEmpty ? 0 : 1)
                 }
 
-                // 使用区域 overlay（仅在需要时显示和计算）
+                // 加载中显示加载视图
+                if isLoading && !stickers.isEmpty {
+                    loadingView
+                }
+
+                // 使用区域 overlay
                 if showUseZoneHint {
                     useZoneOverlay
                         .frame(height: 110)
@@ -85,8 +105,6 @@ struct StickerFieldView: View {
                         .padding(.horizontal, 40)
                         .background(useZoneGeometryReader(rootProxy: proxy))
                 }
-                // 注意：当 showUseZoneHint = false 时，不再计算使用区域坐标
-                // 如果需要使用区域功能，请设置 customUseZoneFrame
 
                 // 调试信息
                 #if DEBUG
@@ -96,10 +114,18 @@ struct StickerFieldView: View {
                 #endif
             }
             .coordinateSpace(name: "stickerField")
+            .onAppear {
+                #if DEBUG
+                print("✅ [StickerFieldView] onAppear, size=\(size), stickers=\(stickers.count)")
+                #endif
+                setupSceneIfNeeded()
+                applySizeIfNeeded(size)
+            }
+            .onChange(of: size) { _, newSize in
+                applySizeIfNeeded(newSize)
+            }
         }
         .onAppear {
-            preloadTextures()
-            // 只在启用自动轮播时启动陀螺仪
             if enableAutoScroll {
                 motionManager.start()
             }
@@ -107,6 +133,77 @@ struct StickerFieldView: View {
         .onDisappear {
             motionManager.stop()
         }
+        // ✅ 简化的 onChange：每次 stickers 变化都直接 reset
+        .onChange(of: stickers) { _, newValue in
+            #if DEBUG
+            print("🔄 [StickerFieldView] stickers changed, count=\(newValue.count)")
+            #endif
+            applyStickerChange(to: newValue)
+        }
+    }
+
+    // MARK: - 场景设置
+
+    /// 初始化场景配置（只执行一次）
+    private func setupSceneIfNeeded() {
+        guard !isSetupDone else { return }
+        isSetupDone = true
+
+        #if DEBUG
+        print("✅ [StickerFieldView] setupSceneIfNeeded")
+        #endif
+
+        // 创建 Coordinator 并设置代理
+        let newCoordinator = Coordinator(onUseSticker: onUseSticker)
+        sceneHolder.scene.stickerDelegate = newCoordinator
+        sceneHolder.scene.motionManager = enableAutoScroll ? motionManager : nil
+        sceneHolder.scene.queueBottomY = queueBottomY
+        sceneHolder.scene.enableAutoScroll = enableAutoScroll
+
+        coordinator = newCoordinator
+
+        // 应用初始贴纸（如果有）
+        applyStickerChange(to: stickers)
+    }
+
+    /// 应用尺寸变化（带防护）
+    private func applySizeIfNeeded(_ size: CGSize) {
+        // 保护：0 尺寸直接跳过
+        guard size.width > 0, size.height > 0 else {
+            #if DEBUG
+            print("⚠️ [StickerFieldView] 跳过 applySizeIfNeeded，size 为 0：\(size)")
+            #endif
+            return
+        }
+
+        // 如果尺寸没变，跳过
+        guard size != lastValidSize else { return }
+
+        #if DEBUG
+        print("✅ [StickerFieldView] applySizeIfNeeded, size=\(size)")
+        #endif
+
+        lastValidSize = size
+        configureScene(size: size)
+    }
+
+    /// 处理贴纸列表变化（简化版：不做 diff，直接 reset）
+    private func applyStickerChange(to newStickers: [StickerDefinition]) {
+        #if DEBUG
+        print("✅ [StickerFieldView] applyStickerChange, count=\(newStickers.count)")
+        #endif
+
+        if newStickers.isEmpty {
+            sceneHolder.scene.clearAllStickers()
+            isLoading = false
+            return
+        }
+
+        isLoading = true
+        // ✅ 主线程同步预加载，确保线程安全
+        preloadTexturesSync(for: newStickers)
+        sceneHolder.scene.resetStickers(with: newStickers)
+        isLoading = false
     }
 
     // MARK: - 子视图
@@ -139,40 +236,63 @@ struct StickerFieldView: View {
     /// SpriteKit 视图
     @ViewBuilder
     private func spriteKitView(size: CGSize) -> some View {
-        let scene = getOrCreateScene(size: size)
+        // 在渲染前配置场景（尺寸已在 applySizeIfNeeded 中验证）
+        let _ = configureScene(size: size)
 
         if let height = touchAreaHeight {
-            // 使用 PassthroughSpriteView，只在底部指定区域响应触摸
             let touchRegion = CGRect(
                 x: 0,
-                y: size.height - height,  // SwiftUI 坐标系，Y 向下
+                y: size.height - height,
                 width: size.width,
                 height: height
             )
-            PassthroughSpriteView(scene: scene, touchActiveRegion: touchRegion)
+            PassthroughSpriteView(scene: sceneHolder.scene, touchActiveRegion: touchRegion)
                 .frame(width: size.width, height: size.height)
         } else {
-            // 全屏响应触摸（独立页面使用）
-            SpriteView(scene: scene, options: [.allowsTransparency])
+            SpriteView(scene: sceneHolder.scene, options: [.allowsTransparency])
                 .frame(width: size.width, height: size.height)
+        }
+    }
+
+    /// 配置场景参数
+    private func configureScene(size: CGSize) {
+        // 保护：0 尺寸直接跳过
+        guard size.width > 0, size.height > 0 else {
+            #if DEBUG
+            print("⚠️ [StickerFieldView] 跳过 configureScene，size 为 0：\(size)")
+            #endif
+            return
+        }
+
+        let scene = sceneHolder.scene
+
+        if scene.size != size {
+            #if DEBUG
+            print("✅ [StickerFieldView] configureScene, size=\(size)")
+            #endif
+            scene.size = size
+        }
+
+        scene.queueBottomY = queueBottomY
+        scene.enableAutoScroll = enableAutoScroll
+
+        if let customFrame = customUseZoneFrame {
+            scene.useZoneFrameInScene = convertToSpriteKitCoordinates(customFrame, in: size)
         }
     }
 
     /// 使用区域 overlay
     private var useZoneOverlay: some View {
         ZStack {
-            // 背景
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.primary.opacity(0.03))
 
-            // 虚线边框
             RoundedRectangle(cornerRadius: 24)
                 .strokeBorder(
                     style: StrokeStyle(lineWidth: 2, dash: [12, 8])
                 )
                 .foregroundStyle(Color.secondary.opacity(0.4))
 
-            // 提示内容
             VStack(spacing: 8) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 28))
@@ -187,62 +307,17 @@ struct StickerFieldView: View {
 
     // MARK: - 预加载
 
-    private func preloadTextures() {
+    /// ✅ 主线程同步预加载（确保线程安全）
+    private func preloadTexturesSync(for definitions: [StickerDefinition]) {
         let size = CGSize(width: 72, height: 72)
-        StickerTextureCache.shared.preload(definitions: stickers, size: size) {
-            withAnimation(.easeIn(duration: 0.3)) {
-                isLoading = false
-            }
+        for definition in definitions {
+            _ = StickerTextureCache.shared.texture(for: definition, size: size)
         }
-    }
-
-    // MARK: - 场景管理
-
-    private func getOrCreateScene(size: CGSize) -> SKScene {
-        if let existingScene = scene {
-            // 更新尺寸
-            if existingScene.size != size {
-                existingScene.size = size
-            }
-            // 更新队列位置
-            existingScene.queueBottomY = queueBottomY
-            existingScene.enableAutoScroll = enableAutoScroll
-            // 更新自定义使用区域（如果有）
-            if let customFrame = customUseZoneFrame {
-                existingScene.useZoneFrameInScene = convertToSpriteKitCoordinates(customFrame, in: size)
-            }
-            return existingScene
-        }
-
-        // 创建新场景
-        let newScene = StickerScene(size: size, stickers: stickers)
-
-        // ✅ 创建 Coordinator 并强引用保持，防止被释放
-        let newCoordinator = Coordinator(onUseSticker: onUseSticker)
-        newScene.stickerDelegate = newCoordinator
-        newScene.motionManager = enableAutoScroll ? motionManager : nil  // 不启用自动轮播时不传入 motionManager
-        newScene.queueBottomY = queueBottomY
-        newScene.enableAutoScroll = enableAutoScroll
-        // 设置自定义使用区域（如果有）
-        if let customFrame = customUseZoneFrame {
-            newScene.useZoneFrameInScene = convertToSpriteKitCoordinates(customFrame, in: size)
-        }
-
-        // 延迟设置状态，避免在视图更新中修改状态
-        DispatchQueue.main.async {
-            self.scene = newScene
-            self.coordinator = newCoordinator  // ✅ 保持强引用
-            self.sceneCreated = true
-        }
-
-        return newScene
     }
 
     /// 将 SwiftUI 坐标系的 frame 转换为 SpriteKit 坐标系
-    /// SwiftUI: Y 轴向下，原点左上角
-    /// SpriteKit: Y 轴向上，原点左下角
     private func convertToSpriteKitCoordinates(_ frame: CGRect, in sceneSize: CGSize) -> CGRect {
-        // 转换公式: spriteKitY = sceneHeight - swiftUIY - height
+        guard sceneSize.width > 0, sceneSize.height > 0 else { return .zero }
         let convertedY = sceneSize.height - frame.origin.y - frame.height
         return CGRect(
             x: frame.origin.x,
@@ -263,33 +338,28 @@ struct StickerFieldView: View {
                 .onChange(of: rootProxy.size) { _, _ in
                     updateUseZoneFrame(zoneProxy: zoneProxy, rootProxy: rootProxy)
                 }
-                .onChange(of: sceneCreated) { _, _ in
-                    updateUseZoneFrame(zoneProxy: zoneProxy, rootProxy: rootProxy)
-                }
         }
     }
 
     private func updateUseZoneFrame(zoneProxy: GeometryProxy, rootProxy: GeometryProxy) {
-        guard let scene = scene else { return }
+        let scene = sceneHolder.scene
 
-        // 如果有自定义使用区域，直接使用
         if let customFrame = customUseZoneFrame {
             scene.useZoneFrameInScene = customFrame
             return
         }
 
-        // 获取使用区域在坐标空间中的位置
+        guard scene.size.width > 0 && scene.size.height > 0 else { return }
+        guard rootProxy.size.width > 0 && rootProxy.size.height > 0 else { return }
+
         let zoneFrameInRoot = zoneProxy.frame(in: .named("stickerField"))
         let rootSize = rootProxy.size
         let sceneSize = scene.size
 
-        // 计算缩放比例
         let scaleX = sceneSize.width / rootSize.width
         let scaleY = sceneSize.height / rootSize.height
 
-        // SwiftUI: Y 轴向下，原点左上角
-        // SpriteKit: Y 轴向上，原点左下角
-        // 转换公式: sceneY = sceneHeight - swiftUIY * scaleY
+        guard scaleX.isFinite, scaleY.isFinite else { return }
 
         let convertedMinY = sceneSize.height - (zoneFrameInRoot.maxY * scaleY)
 
@@ -308,12 +378,13 @@ struct StickerFieldView: View {
     #if DEBUG
     private var debugOverlay: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let scene = scene {
-                Text("Scene: \(Int(scene.size.width))×\(Int(scene.size.height))")
-                Text("Zone: (\(Int(scene.useZoneFrameInScene.minX)), \(Int(scene.useZoneFrameInScene.minY))) \(Int(scene.useZoneFrameInScene.width))×\(Int(scene.useZoneFrameInScene.height))")
-            }
+            let scene = sceneHolder.scene
+            Text("Scene: \(Int(scene.size.width))×\(Int(scene.size.height))")
+            Text("Zone: (\(Int(scene.useZoneFrameInScene.minX)), \(Int(scene.useZoneFrameInScene.minY)))")
             Text("Gravity X: \(String(format: "%.2f", motionManager.gravityX))")
-            Text("Motion: \(motionManager.isAvailable ? "可用" : "不可用")")
+            Text("Loading: \(isLoading ? "是" : "否")")
+            Text("Stickers: \(stickers.count)")
+            Text("LastSize: \(Int(lastValidSize.width))×\(Int(lastValidSize.height))")
         }
         .font(.caption2.monospaced())
         .padding(8)
@@ -327,7 +398,6 @@ struct StickerFieldView: View {
 
     // MARK: - Coordinator
 
-    /// 场景代理适配器
     private class Coordinator: StickerSceneDelegate {
         let onUseSticker: (StickerDefinition) -> Void
 
@@ -338,6 +408,20 @@ struct StickerFieldView: View {
         func stickerScene(_ scene: StickerScene, didUse sticker: StickerDefinition) {
             onUseSticker(sticker)
         }
+    }
+}
+
+// MARK: - SceneHolder
+
+private class SceneHolder: ObservableObject {
+    let scene: StickerScene
+
+    init() {
+        // 使用一个合理的初始尺寸（非零）
+        self.scene = StickerScene(size: CGSize(width: 375, height: 400))
+        #if DEBUG
+        print("✅ [SceneHolder] init, scene created")
+        #endif
     }
 }
 

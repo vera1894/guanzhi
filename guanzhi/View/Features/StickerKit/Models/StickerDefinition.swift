@@ -31,6 +31,10 @@ enum StickerAssetKind: Equatable {
     /// SF Symbol
     case systemSymbol(name: String)
 
+    /// 文字回退（取 displayName 前两个字符）
+    /// 用于没有图标的贴纸，显示文字作为视觉标识
+    case textFallback(characters: String)
+
     /// 未来：SVG 渲染
     case svg(name: String)
 
@@ -80,28 +84,46 @@ extension StickerDefinition {
     /// 这是获取贴纸配置的统一入口，避免在各处使用魔法字符串
     static func definition(for kind: StickerKind) -> StickerDefinition {
         switch kind {
+        // 投票类
         case .like:
-            return .mockLike
+            return .stickerLike
         case .neutral:
-            return .mockNeutral
-        case .heart:
-            return .mockHeart
-        case .star:
-            return .mockStar
-        case .fire:
-            return .mockFire
-        case .bolt:
-            return .mockBolt
+            return .stickerNeutral
+
+        // 标签类
+        case .mijing:
+            return .stickerMijing
+        case .zhenxiu:
+            return .stickerZhenxiu
+        case .wanqu:
+            return .stickerWanqu
+        case .caikeng:
+            return .stickerCaikeng
+        case .maomao:
+            return .stickerMaomao
+        case .chaosheng:
+            return .stickerChaosheng
+        case .richu:
+            return .stickerRichu
+        case .jishi:
+            return .stickerJishi
         }
+    }
+
+    /// 从 StickerKind 集合生成定义数组（按优先级排序）
+    static func definitions(for kinds: Set<StickerKind>) -> [StickerDefinition] {
+        kinds
+            .map { definition(for: $0) }
+            .sorted { $0.priority > $1.priority }
     }
 }
 
-// MARK: - Mock 数据
+// MARK: - 投票类贴纸定义
 
 extension StickerDefinition {
 
-    /// 点赞贴纸（使用自定义图片）
-    static let mockLike = StickerDefinition(
+    /// 赞同贴纸（使用自定义图片）
+    static let stickerLike = StickerDefinition(
         stickerID: StickerID(rawValue: "like"),
         kind: .like,
         displayName: "赞同",
@@ -110,63 +132,128 @@ extension StickerDefinition {
         meta: [:]
     )
 
-    /// 无感贴纸
-    static let mockNeutral = StickerDefinition(
+    /// 无感贴纸（临时使用图片，排查 textFallback 崩溃问题）
+    /// TODO: 确认 textFallback 问题后恢复为 .textFallback(characters: "无感")
+    static let stickerNeutral = StickerDefinition(
         stickerID: StickerID(rawValue: "neutral"),
         kind: .neutral,
         displayName: "无感",
-        assetKind: .systemSymbol(name: "face.smiling"),
+        assetKind: .image(name: "stickers-good"),  // ⚠️ 临时改为图片，排查崩溃
         priority: 80,
         meta: [:]
     )
+}
 
-    /// 爱心贴纸
-    static let mockHeart = StickerDefinition(
-        stickerID: StickerID(rawValue: "heart"),
-        kind: .heart,
-        displayName: "爱心",
-        assetKind: .systemSymbol(name: "heart.fill"),
-        priority: 90,
-        meta: [:]
-    )
+// MARK: - 标签类贴纸定义
+// ⚠️ 临时：所有贴纸都使用 stickers-good 图片，后续用户会自行替换为各自的图标
 
-    /// 收藏贴纸
-    static let mockStar = StickerDefinition(
-        stickerID: StickerID(rawValue: "star"),
-        kind: .star,
-        displayName: "收藏",
-        assetKind: .systemSymbol(name: "star.fill"),
+extension StickerDefinition {
+
+    /// 秘境贴纸
+    static let stickerMijing = StickerDefinition(
+        stickerID: StickerID(rawValue: "mijing"),
+        kind: .mijing,
+        displayName: "秘境",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
         priority: 70,
-        meta: [:]
+        meta: ["tagCode": "MIJING"]
     )
 
-    /// 火焰贴纸
-    static let mockFire = StickerDefinition(
-        stickerID: StickerID(rawValue: "fire"),
-        kind: .fire,
-        displayName: "火热",
-        assetKind: .systemSymbol(name: "flame.fill"),
-        priority: 60,
-        meta: [:]
+    /// 珍馐贴纸
+    static let stickerZhenxiu = StickerDefinition(
+        stickerID: StickerID(rawValue: "zhenxiu"),
+        kind: .zhenxiu,
+        displayName: "珍馐",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 69,
+        meta: ["tagCode": "ZHENXIU"]
     )
 
-    /// 闪电贴纸
-    static let mockBolt = StickerDefinition(
-        stickerID: StickerID(rawValue: "bolt"),
-        kind: .bolt,
-        displayName: "闪电",
-        assetKind: .systemSymbol(name: "bolt.fill"),
-        priority: 50,
-        meta: [:]
+    /// 玩趣贴纸
+    static let stickerWanqu = StickerDefinition(
+        stickerID: StickerID(rawValue: "wanqu"),
+        kind: .wanqu,
+        displayName: "玩趣",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 68,
+        meta: ["tagCode": "WANQU"]
     )
 
-    /// 所有 Mock 贴纸（按优先级排序）
-    static let mockAll: [StickerDefinition] = [
-        .mockLike,
-        .mockHeart,
-        .mockNeutral,
-        .mockStar,
-        .mockFire,
-        .mockBolt
-    ].sorted { $0.priority > $1.priority }
+    /// 踩坑预警贴纸
+    static let stickerCaikeng = StickerDefinition(
+        stickerID: StickerID(rawValue: "caikeng"),
+        kind: .caikeng,
+        displayName: "踩坑",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 67,
+        meta: ["tagCode": "CAIKENG"]
+    )
+
+    /// 猫猫出没贴纸
+    static let stickerMaomao = StickerDefinition(
+        stickerID: StickerID(rawValue: "maomao"),
+        kind: .maomao,
+        displayName: "猫猫",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 66,
+        meta: ["tagCode": "MAOMAO"]
+    )
+
+    /// 朝圣贴纸
+    static let stickerChaosheng = StickerDefinition(
+        stickerID: StickerID(rawValue: "chaosheng"),
+        kind: .chaosheng,
+        displayName: "朝圣",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 65,
+        meta: ["tagCode": "CHAOSHENG"]
+    )
+
+    /// 日出贴纸
+    static let stickerRichu = StickerDefinition(
+        stickerID: StickerID(rawValue: "richu"),
+        kind: .richu,
+        displayName: "日出",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 64,
+        meta: ["tagCode": "RICHU"]
+    )
+
+    /// 集市贴纸
+    static let stickerJishi = StickerDefinition(
+        stickerID: StickerID(rawValue: "jishi"),
+        kind: .jishi,
+        displayName: "集市",
+        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        priority: 63,
+        meta: ["tagCode": "JISHI"]
+    )
+}
+
+// MARK: - 兼容性别名（保持旧代码可用）
+
+extension StickerDefinition {
+
+    /// 兼容旧代码：mockLike
+    static var mockLike: StickerDefinition { stickerLike }
+
+    /// 兼容旧代码：mockNeutral
+    static var mockNeutral: StickerDefinition { stickerNeutral }
+
+    /// 兼容旧代码：mockHeart（已移除，返回 like 作为占位）
+    static var mockHeart: StickerDefinition { stickerLike }
+
+    /// 兼容旧代码：mockStar（已移除，返回 like 作为占位）
+    static var mockStar: StickerDefinition { stickerLike }
+
+    /// 兼容旧代码：mockFire（已移除，返回 like 作为占位）
+    static var mockFire: StickerDefinition { stickerLike }
+
+    /// 兼容旧代码：mockBolt（已移除，返回 like 作为占位）
+    static var mockBolt: StickerDefinition { stickerLike }
+
+    /// 兼容旧代码：所有投票类贴纸（按优先级排序）
+    static var mockAll: [StickerDefinition] {
+        StickerKind.voteTypes.map { definition(for: $0) }.sorted { $0.priority > $1.priority }
+    }
 }

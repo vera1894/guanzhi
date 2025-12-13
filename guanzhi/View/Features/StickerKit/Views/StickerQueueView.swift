@@ -81,10 +81,10 @@ struct StickerQueueView: View {
 
     private func preloadTextures() {
         let size = CGSize(width: 72, height: 72)
-        StickerTextureCache.shared.preload(definitions: stickers, size: size) {
-            withAnimation(.easeIn(duration: 0.3)) {
-                isLoading = false
-            }
+        // ✅ 同步预加载（主线程），确保线程安全
+        StickerTextureCache.shared.preload(definitions: stickers, size: size)
+        withAnimation(.easeIn(duration: 0.3)) {
+            isLoading = false
         }
     }
 

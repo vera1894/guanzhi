@@ -108,6 +108,15 @@ struct StickerThumbnail: View {
     let definition: StickerDefinition
     var size: CGFloat = 24
 
+    /// 文字回退的背景颜色（根据贴纸类型变化）
+    private var textFallbackBackgroundColor: Color {
+        if definition.kind.isVoteType {
+            return Color.orange.opacity(0.3)
+        } else {
+            return Color.blue.opacity(0.3)
+        }
+    }
+
     var body: some View {
         Group {
             switch definition.assetKind {
@@ -121,6 +130,17 @@ struct StickerThumbnail: View {
                     .resizable()
                     .scaledToFit()
                     .foregroundColor(.orange)
+
+            case .textFallback(let characters):
+                // 文字回退：显示前两个字符
+                Text(characters.prefix(2))
+                    .font(.system(size: size * 0.4, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: size, height: size)
+                    .background(
+                        Circle()
+                            .fill(textFallbackBackgroundColor)
+                    )
 
             case .svg(let name):
                 // 未来支持 SVG
@@ -137,6 +157,16 @@ struct StickerThumbnail: View {
             }
         }
         .frame(width: size, height: size)
+    }
+}
+
+// MARK: - String Extension
+
+extension String {
+    /// 安全截取前 N 个字符（支持中文）
+    /// 使用 Swift 的 prefix(_:) 方法，无需担心字符串下标问题
+    func prefix(_ maxLength: Int) -> String {
+        String(self.prefix(maxLength))
     }
 }
 
@@ -189,12 +219,34 @@ struct StickerThumbnail: View {
             StickerSummaryBar(
                 items: [
                     StickerSummaryItem(kind: .like, count: 100),
-                    StickerSummaryItem(kind: .heart, count: 50),
                     StickerSummaryItem(kind: .neutral, count: 30),
-                    StickerSummaryItem(kind: .star, count: 20),
-                    StickerSummaryItem(kind: .fire, count: 10)
+                    StickerSummaryItem(kind: .mijing, count: 20),
+                    StickerSummaryItem(kind: .zhenxiu, count: 15),
+                    StickerSummaryItem(kind: .wanqu, count: 10)
                 ],
                 maxVisibleItems: 3,
+                onTap: {}
+            )
+
+            Spacer()
+        }
+        .padding(.top, 100)
+    }
+}
+
+#Preview("标签类贴纸") {
+    ZStack {
+        Color.black.ignoresSafeArea()
+
+        VStack {
+            StickerSummaryBar(
+                items: [
+                    StickerSummaryItem(kind: .mijing, count: 50),
+                    StickerSummaryItem(kind: .zhenxiu, count: 30),
+                    StickerSummaryItem(kind: .caikeng, count: 20),
+                    StickerSummaryItem(kind: .maomao, count: 10)
+                ],
+                maxVisibleItems: 4,
                 onTap: {}
             )
 

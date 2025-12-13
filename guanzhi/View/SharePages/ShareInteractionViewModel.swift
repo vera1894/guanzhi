@@ -53,6 +53,12 @@ class ShareInteractionViewModel: ObservableObject {
     /// 是否显示贴纸统计覆层
     @Published var isShowingStickerSummaryOverlay: Bool = false
 
+    /// 用户可用的贴纸种类（基于权限，已过滤 isActive）
+    @Published var availableStickerKinds: Set<StickerKind> = []
+
+    /// 当前应显示的贴纸队列定义（应用互斥逻辑后）
+    @Published var visibleStickerDefinitions: [StickerDefinition] = []
+
     // MARK: - Computed Properties（派生属性）
 
     /// 是否已点赞（只读，派生自 voteState）
@@ -113,6 +119,10 @@ class ShareInteractionViewModel: ObservableObject {
 
         // 构建贴纸统计列表
         rebuildStickerSummaries()
+
+        // ✅ 重建可见贴纸队列（应用互斥逻辑）
+        // 注意：此时 availableStickerKinds 可能还未计算，但 rebuildVisibleStickerDefinitions 会处理空集合情况
+        rebuildVisibleStickerDefinitions()
     }
 
     // MARK: - Actions
@@ -261,8 +271,9 @@ class ShareInteractionViewModel: ObservableObject {
         // 更新状态
         voteState = newState
 
-        // 重建贴纸统计列表
+        // 重建贴纸统计列表和可见贴纸队列
         rebuildStickerSummaries()
+        rebuildVisibleStickerDefinitions()
     }
 
     /// 重建贴纸统计列表
@@ -300,12 +311,82 @@ class ShareInteractionViewModel: ObservableObject {
             self.neutralCount = self.originalNeutralCount
             self.isAnimating = false
 
-            // 重建贴纸统计列表
+            // 重建贴纸统计列表和可见贴纸队列
             self.rebuildStickerSummaries()
+            self.rebuildVisibleStickerDefinitions()
 
             #if DEBUG
             print("🔄 [ShareInteraction] 回滚: voteState=\(state), agreeCount=\(agreeCount)")
             #endif
         }
+    }
+
+    // MARK: - 贴纸可用性计算
+
+    /// 计算用户可用的贴纸种类
+    /// - Parameters:
+    ///   - userTaggingAllowance: 用户的 taggingAllowance（从等级获取）
+    ///   - activeTagCodes: 后端启用的标签 tagCode 列表（isActive=true，空集合表示全部启用）
+    func computeAvailableStickerKinds(
+        userTaggingAllowance: Int,
+        activeTagCodes: Set<String> = []
+    ) {
+        // 投票类对所有人开放
+        var available: Set<StickerKind> = [.like, .neutral]
+
+        // 有标签权限时，添加启用的标签类贴纸
+        if userTaggingAllowance > 0 {
+            let activeTagKinds = StickerKind.allCases.filter { kind in
+                guard kind.isTagType, let tagCode = kind.tagCode else { return false }
+                // 空集合表示全部启用
+                return activeTagCodes.isEmpty || activeTagCodes.contains(tagCode)
+            }
+            available.formUnion(activeTagKinds)
+        }
+
+        availableStickerKinds = available
+
+        #if DEBUG
+        print("📊 [ShareInteraction] 计算可用贴纸:")
+        print("   - taggingAllowance: \(userTaggingAllowance)")
+        print("   - available: \(available.map { $0.rawValue })")
+        #endif
+
+        // 重建可见贴纸队列
+        rebuildVisibleStickerDefinitions()
+    }
+
+    /// 使用 UserLevelConfig 计算可用贴纸（便捷方法）
+    /// - Parameter levelCode: 用户等级代码（如 "YOMIN", "CHONGLANG" 等）
+    func computeAvailableStickerKinds(for levelCode: String?) {
+        let allowance = UserLevelConfig.getTaggingAllowance(for: levelCode)
+        computeAvailableStickerKinds(userTaggingAllowance: allowance)
+    }
+
+    /// 重建可见贴纸队列（应用互斥逻辑）
+    /// 调用时机：初始化、投票状态变化、权限变化
+    func rebuildVisibleStickerDefinitions() {
+        var visible = availableStickerKinds
+
+        // ✅ 互斥逻辑修正：已选择的贴纸应该隐藏，让用户可以改变选择
+        // 用户已投 agree → 移除 like（已选），保留 neutral（可改选）
+        // 用户已投 neutral → 移除 neutral（已选），保留 like（可改选）
+        if voteState == .agree {
+            visible.remove(.like)      // 已点赞，隐藏赞同贴纸
+        } else if voteState == .neutral {
+            visible.remove(.neutral)   // 已点无感，隐藏无感贴纸
+        }
+
+        // 转换为 StickerDefinition 并按 priority 降序排序
+        visibleStickerDefinitions = visible
+            .map { StickerDefinition.definition(for: $0) }
+            .sorted { $0.priority > $1.priority }
+
+        #if DEBUG
+        print("📊 [ShareInteraction] 重建可见贴纸队列:")
+        print("   - voteState: \(voteState)")
+        print("   - available: \(availableStickerKinds.map { $0.rawValue })")
+        print("   - visible: \(visibleStickerDefinitions.map { $0.displayName })")
+        #endif
     }
 }
