@@ -31,18 +31,34 @@ struct OTONetwork {
             }
             print("完整 URL: \(url.absoluteString)")
             
-            var request = URLRequest(url: url)
+            // ✅ GET 请求：参数放 URL 查询字符串；POST 请求：参数放 Body
+            var finalURL = url
+            if req.request.method == .get && !req.request.param.isEmpty {
+                var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                components?.queryItems = req.request.param.map { key, value in
+                    URLQueryItem(name: key, value: "\(value)")
+                }
+                if let urlWithQuery = components?.url {
+                    finalURL = urlWithQuery
+                    print("📎 GET 请求 URL（含查询参数）: \(finalURL.absoluteString)")
+                }
+            }
+
+            var request = URLRequest(url: finalURL)
             request.httpMethod = req.request.method.rawValue
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
+
             if OTOLoginStatusManager.shared.isLoggedIn, let token = OTOLoginStatusManager.shared.getToken() {
                 request.setValue(token, forHTTPHeaderField: "Authorization")
                 print("🔑 Authorization Token: \(token)")
             } else {
                 print("⚠️ 未登录或没有 Token")
             }
-            
-            request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
+
+            // ✅ 只有 POST 请求才设置 httpBody
+            if req.request.method == .post && !req.request.param.isEmpty {
+                request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
+            }
 
             print("📤 发送请求中...")
             let (data, response) = try await URLSession.shared.data(for: request)

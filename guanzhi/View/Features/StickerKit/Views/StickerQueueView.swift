@@ -35,6 +35,8 @@ struct StickerQueueView: View {
     @StateObject private var motionManager = StickerMotionManager()
     @State private var scene: StickerScene?
     @State private var isLoading = true
+    /// ✅ 保持 Coordinator 的强引用，防止 weak delegate 立即释放
+    @State private var coordinator: Coordinator?
 
     // MARK: - Body
 
@@ -99,11 +101,15 @@ struct StickerQueueView: View {
         }
 
         let newScene = StickerScene(size: size, stickers: stickers)
-        newScene.stickerDelegate = Coordinator(onUseSticker: onUseSticker)
+
+        // ✅ 创建 Coordinator 并保持强引用
+        let newCoordinator = Coordinator(onUseSticker: onUseSticker)
+        newScene.stickerDelegate = newCoordinator
         newScene.motionManager = motionManager
 
         DispatchQueue.main.async {
             self.scene = newScene
+            self.coordinator = newCoordinator  // ✅ 保持强引用
         }
 
         return newScene

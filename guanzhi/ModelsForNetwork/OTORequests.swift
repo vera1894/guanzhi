@@ -84,6 +84,12 @@ enum OTORequest {
     case updateUserPhoto(newPhoto: String)
     case deleteShare(id: Int)
     case voteShare(shareId: Int64, voteType: Int)
+
+    // MARK: - 贴纸系统 API
+    /// 获取贴纸可用性列表
+    case fetchStickerAvailability(shareId: Int64)
+    /// 使用贴纸
+    case useSticker(shareId: Int64, stickerId: String)
 }
 
 extension OTORequest {
@@ -273,6 +279,24 @@ extension OTORequest {
                         "shareId": shareId,
                         "voteType": voteType
                     ]
+                )
+
+            // MARK: - 贴纸系统 API
+
+            // 获取贴纸可用性列表
+            case .fetchStickerAvailability(let shareId):
+                return .init(
+                    path: "/api/stickers/availability",
+                    method: .get,
+                    param: ["shareId": shareId]
+                )
+
+            // 使用贴纸
+            case .useSticker(let shareId, let stickerId):
+                return .init(
+                    path: "/api/shares/\(shareId)/stickers/use",
+                    method: .post,
+                    param: ["stickerId": stickerId]
                 )
 
             //备用的

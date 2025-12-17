@@ -144,8 +144,8 @@ final class StickerScene: SKScene {
 
     // MARK: - 粒子效果
 
-    /// 使用区域圆环提示粒子发射器
-    private var useZoneHintEmitter: SKEmitterNode?
+    /// 使用区域圆环提示粒子容器（包含发射器 + 引力场 + 中心光点）
+    private var useZoneHintEmitter: SKNode?
     /// 使用区域位置（圆环粒子的中心点）
     private var useZoneCenter: CGPoint {
         CGPoint(x: useZoneFrameInScene.midX, y: useZoneFrameInScene.midY)
@@ -1080,7 +1080,7 @@ final class StickerScene: SKScene {
 
     // MARK: - 粒子效果
 
-    /// 显示使用区域圆环提示粒子
+    /// 显示使用区域圆环提示粒子（向心吸入效果）
     private func showUseZoneHint() {
         // 如果已经在显示，直接返回
         guard useZoneHintEmitter == nil else { return }
@@ -1089,58 +1089,61 @@ final class StickerScene: SKScene {
         print("🔥 [StickerScene] showUseZoneHint - useZoneCenter: \(useZoneCenter), useZoneFrame: \(useZoneFrameInScene)")
         #endif
 
-        // 创建圆环粒子发射器
-        let emitter = UseZoneParticleFactory.makeSimpleRingEmitter()
-        emitter.position = useZoneCenter
-        emitter.zPosition = 50  // 在贴纸下方，但在背景上方
+        // 创建向心吸入粒子容器（包含发射器 + 引力场 + 中心光点）
+        let hintContainer = UseZoneParticleFactory.makeSimpleRingEmitter()
+        hintContainer.position = useZoneCenter
+        hintContainer.zPosition = 50  // 在贴纸下方，但在背景上方
 
         // 初始透明，渐入显示
-        emitter.alpha = 0
-        addChild(emitter)
-        useZoneHintEmitter = emitter
+        hintContainer.alpha = 0
+        addChild(hintContainer)
+        useZoneHintEmitter = hintContainer
 
         // 渐入动画
-        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.2)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.25)
         fadeIn.timingMode = .easeOut
-        emitter.run(fadeIn)
+        hintContainer.run(fadeIn)
     }
 
     /// 隐藏使用区域圆环提示粒子
     private func hideUseZoneHint() {
-        guard let emitter = useZoneHintEmitter else { return }
+        guard let hintContainer = useZoneHintEmitter else { return }
 
         // 渐出动画后移除
-        let fadeOut = SKAction.fadeOut(withDuration: 0.15)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
         fadeOut.timingMode = .easeIn
 
-        emitter.run(fadeOut) { [weak emitter] in
-            emitter?.removeFromParent()
+        hintContainer.run(fadeOut) { [weak hintContainer] in
+            hintContainer?.removeFromParent()
         }
         useZoneHintEmitter = nil
     }
 
-    /// 播放使用成功的绽放粒子效果
+    /// 播放使用成功的绽放粒子效果（彩屑爆发）
     private func playUseZoneBurst(at position: CGPoint) {
         #if DEBUG
-        print("🎆 [StickerScene] playUseZoneBurst at \(position)")
+        print("🎆 [StickerScene] playUseZoneBurst (confetti) at \(position)")
         #endif
 
         // 标记有活跃的粒子效果（防止场景暂停）
         activeBurstEmitterCount += 1
 
-        // 创建绽放粒子发射器
-        let emitter = UseZoneParticleFactory.makeSimpleBurstEmitter()
-        emitter.position = position
-        emitter.zPosition = 150  // 在最上层
+        // 🎉 使用新的彩屑效果
+        let confettiEmitters = ConfettiParticleFactory.makeConfettiBurst(particleCount: 120)
 
-        addChild(emitter)
+        for emitter in confettiEmitters {
+            emitter.position = position
+            emitter.zPosition = 150  // 在最上层
+            addChild(emitter)
+        }
 
-        // 粒子发射完毕后自动移除（numParticlesToEmit = 50，birthRate = 400）
-        // 发射时间约 50/400 = 0.125 秒，加上粒子生命周期 0.6 秒，共约 0.8 秒
-        // ⚠️ 使用 GCD 而非 SKAction，因为场景可能被暂停导致 SKAction 不执行
-        let waitDuration: TimeInterval = 1.0
-        DispatchQueue.main.asyncAfter(deadline: .now() + waitDuration) { [weak self, weak emitter] in
-            emitter?.removeFromParent()
+        // 彩屑效果持续时间较长（粒子生命周期 2.5 秒 + 缓冲）
+        let waitDuration: TimeInterval = 3.5
+        DispatchQueue.main.asyncAfter(deadline: .now() + waitDuration) { [weak self] in
+            // 移除所有发射器
+            for emitter in confettiEmitters {
+                emitter.removeFromParent()
+            }
             // 粒子效果完成，减少计数并尝试暂停场景
             self?.activeBurstEmitterCount -= 1
             self?.pauseIfIdle()

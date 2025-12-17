@@ -601,9 +601,11 @@ struct ShareDetailView: View {
                     print("   - share.currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
                     #endif
                     interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
-                    // 计算可用贴纸（基于用户等级权限）
-                    // TODO: 从 userProfileManager.localUserProfile?.levelCode 获取
-                    interactionViewModel.computeAvailableStickerKinds(for: nil)
+
+                    // ✅ 从服务器加载贴纸可用性（异步，如果失败会自动降级）
+                    Task {
+                        await interactionViewModel.loadStickerAvailability(shareId: share.id)
+                    }
                 }
             }
         }
@@ -677,7 +679,11 @@ struct ShareDetailView: View {
         print("   - agreeCount: \(share.agreeCount)")
         #endif
         interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
-        interactionViewModel.computeAvailableStickerKinds(for: nil)
+
+        // ✅ 重新加载贴纸可用性（异步）
+        Task {
+            await interactionViewModel.loadStickerAvailability(shareId: share.id)
+        }
     }
 
     // MARK: - 贴纸使用处理
@@ -689,17 +695,10 @@ struct ShareDetailView: View {
         print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName) (\(sticker.kind))")
         #endif
 
-        // 使用统一的映射方法，避免 like/agree 命名混淆
-        if let voteState = sticker.kind.asVoteState {
-            // 投票类贴纸：调用统一投票入口
-            interactionViewModel.setVote(voteState)
-        } else if let tagCode = sticker.kind.tagCode {
-            // 标签类贴纸：本轮只做视觉效果，不调用 API
-            #if DEBUG
-            print("🏷️ [ShareDetailView] 使用标签贴纸: \(tagCode) (暂不上报)")
-            #endif
-            // TODO: 后续实现 ShareService.shared.tagShare(shareId: xxx, tagCode: tagCode)
-        }
+        // ✅ 使用 ViewModel 的统一方法处理所有贴纸类型
+        // - 投票类贴纸：走 vote API
+        // - 标签类贴纸：走 sticker use API
+        interactionViewModel.useSticker(sticker.kind)
     }
 
     /// 创建状态变化回调（同步到 SwiftData）

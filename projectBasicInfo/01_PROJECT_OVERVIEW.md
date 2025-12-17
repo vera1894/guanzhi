@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v1.0
-**最后更新**: 2025-12-08
+**文档版本**: v1.2
+**最后更新**: 2025-12-15
 
 ---
 
@@ -133,19 +133,41 @@ npm run build
 - 积分累计可升级等级
 - 等级影响贴标签额度等权益
 
-### 4. 标签系统
+### 4. 贴纸配额系统（Sticker Quota）
 
-- 分为正面标签和负面标签
-- 用户可给分享贴标签
-- 标签影响分享的褪色速度
+统一的贴纸（Sticker）概念，包含 vote（赞同/无感）和 tag（秘境/真秀等）：
+
+**核心规则**：
+- 任何贴纸对同一条分享、同一用户，只允许使用一次，不可撤回
+- vote 类贴纸（LIKE/NEUTRAL）互斥，tag 类贴纸独立
+
+**配额计算**：
+```
+用户每日可用次数 = 贴纸的「基础限额」 × 用户等级的「配额倍率」
+```
+
+**等级解锁**：
+- 每个贴纸可配置「解锁等级」（minLevelCode）
+- 只有达到该等级的用户才能使用该贴纸
+- 留空表示全员可用
+
+**日切规则**：
+- 时区：Asia/Shanghai
+- 日切点：每天 04:00
+- 配额重置时间：每天 04:00
+
+**技术实现**：
+- Redis Lua 脚本实现原子配额扣减
+- 数据库唯一约束保证去重和互斥
+- 04:00 定时任务应用待生效配置
 
 ### 5. 管理后台
 
 - 褪色曲线模拟器（核心功能）
 - 褪色规则配置
 - 积分规则配置
-- 等级定义管理
-- 标签定义管理
+- 等级定义管理（配额倍率、待生效配置）
+- 贴纸定义管理（解锁等级、基础限额、待生效配置）
 - 用户/分享查询工具
 
 ---
@@ -179,9 +201,72 @@ npm run build
 ### 后端 API 路由模式
 
 ```
-/user/**          # 用户相关（登录、验证码等）
-/api/admin/**     # 管理后台 API（需 ADMIN 权限）
+/user/**            # 用户相关（登录、验证码等）
+/guan/**            # 分享业务 API（需登录）
+/stickers/**        # 贴纸 API（需登录）
+/shares/**          # 分享操作 API（需登录）
+/api/admin/**       # 管理后台 API（需 ADMIN 权限）
 /admin/inspector/** # 查询工具 API
+```
+
+### iOS App 贴纸相关 API
+
+| 接口 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 获取贴纸可用性 | GET | `/api/stickers/availability?shareId=X` | 返回所有贴纸的可用状态 |
+| 使用贴纸 | POST | `/api/shares/{shareId}/stickers/use` | 使用贴纸，扣减配额 |
+
+**获取贴纸可用性响应**：
+```json
+{
+  "respCode": 0,
+  "datas": {
+    "stickers": [
+      {
+        "stickerId": "ZHENXIU",
+        "stickerName": "珍馐",
+        "group": "tag",
+        "unlocked": true,
+        "dailyLimit": 20,
+        "usedToday": 5,
+        "remainingToday": 15,
+        "alreadyApplied": false,
+        "minLevelCode": "YOMIN",
+        "minLevelName": "游民"
+      }
+    ]
+  }
+}
+```
+
+**使用贴纸请求**：
+```json
+{ "stickerId": "ZHENXIU" }
+```
+
+**使用贴纸成功响应**：
+```json
+{
+  "respCode": 0,
+  "datas": {
+    "success": true,
+    "remainingToday": 14,
+    "usedToday": 6
+  }
+}
+```
+
+**使用贴纸失败响应**：
+```json
+{
+  "respCode": 0,
+  "datas": {
+    "success": false,
+    "remainingToday": 0,
+    "errorCode": "QUOTA_EXCEEDED",
+    "errorMessage": "今日「珍馐」使用次数已用完"
+  }
+}
 ```
 
 ### Nginx 代理规则（生产环境）
@@ -190,6 +275,7 @@ npm run build
 /guanzhi-admin/   → 静态文件 (/var/www/guanzhi-admin/)
 /api/user/        → http://127.0.0.1:8085/user/
 /api/admin/       → http://127.0.0.1:8085/api/admin/
+/api/             → http://127.0.0.1:8085/ (去掉 /api 前缀)
 /admin/inspector/ → http://127.0.0.1:8085/admin/inspector/
 ```
 
@@ -200,11 +286,13 @@ npm run build
 | 表名 | 用途 |
 |------|------|
 | `user` | 用户信息 |
-| `share` | 分享内容 |
+| `share` / `guanzhi` | 分享内容 |
 | `fade_config` | 褪色配置 |
 | `points_rule` | 积分规则 |
-| `level_definition` | 等级定义 |
-| `tag_definition` | 标签定义 |
+| `level_definition` | 等级定义（含 daily_multiplier 配额倍率）|
+| `tag_definition` | 贴纸定义（含 min_level_code、base_daily_limit）|
+| `share_sticker_action` | 贴纸使用记录（事实来源表）|
+| `sticker_level_quota_override` | 等级-贴纸限额覆盖配置 |
 | `admin_operation_log` | 管理操作日志 |
 
 ---

@@ -165,8 +165,9 @@ struct StickerThumbnail: View {
 extension String {
     /// 安全截取前 N 个字符（支持中文）
     /// 使用 Swift 的 prefix(_:) 方法，无需担心字符串下标问题
-    func prefix(_ maxLength: Int) -> String {
-        String(self.prefix(maxLength))
+    func safePrefix(_ maxLength: Int) -> String {
+        // ✅ 使用标准库的 Substring.prefix(_:) 方法，避免递归
+        String(self[startIndex...].prefix(maxLength))
     }
 }
 

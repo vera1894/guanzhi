@@ -2,8 +2,9 @@
 
 **文档版本**: v5.1
 **创建时间**: 2025-12-14
+**更新时间**: 2025-12-15
 **作者**: Claude Code
-**状态**: 待实施
+**状态**: 已实施（前端+后端+API完成）
 
 ---
 
@@ -650,38 +651,50 @@ public class PendingConfigApplyTask {
 
 ---
 
-## 七、Checklist（实施前必须确认）
+## 七、Checklist（实施状态）
 
 ### 数据库
-- [ ] migration 脚本包含 `share_sticker_action` 表的 **3 个唯一约束 DDL**
-- [ ] 执行后用 SQL 验证约束确实存在
-- [ ] vote 类贴纸的 `sticker_group` = `'vote'`
-- [ ] tag 类贴纸的 `sticker_group` = `'tag'`（不能是 `'vote'`）
-- [ ] 幂等约束是用户维度：`(actor_user_id, client_action_id)`
+- [x] migration 脚本包含 `share_sticker_action` 表的 **3 个唯一约束 DDL**
+- [x] 执行后用 SQL 验证约束确实存在
+- [x] vote 类贴纸的 `sticker_group` = `'vote'`
+- [x] tag 类贴纸的 `sticker_group` = `'tag'`（不能是 `'vote'`）
+- [x] 幂等约束是用户维度：`(actor_user_id, client_action_id)`
 
 ### Redis
-- [ ] DECR 回滚脚本使用 `max(used-1, 0)` 保护下界
-- [ ] DECR 仅用于 DB 写入失败回滚，**无撤回功能**
-- [ ] TTL 设置 48 小时
-- [ ] 并发回滚测试通过（used 不会变负）
+- [x] DECR 回滚脚本使用 `max(used-1, 0)` 保护下界
+- [x] DECR 仅用于 DB 写入失败回滚，**无撤回功能**
+- [x] TTL 设置 48 小时
+- [ ] 并发回滚测试通过（used 不会变负）— 待集成测试
 
 ### 业务逻辑
-- [ ] 积分仅在首次 INSERT 成功时发放
-- [ ] tag 类**不写** `share_tag_user`
-- [ ] vote 类同步写 `share_vote`
+- [x] 积分仅在首次 INSERT 成功时发放
+- [x] tag 类**不写** `share_tag_user`
+- [x] vote 类同步写 `share_vote`
 
 ### 定时任务
-- [ ] applyPending 条件：`pending_effective_day = today`
-- [ ] 三个表（tag/level/override）都有 applyPending SQL
-- [ ] 应用后清空 pending 字段并记录日志
+- [x] applyPending 条件：`pending_effective_day = today`
+- [x] 三个表（tag/level/override）都有 applyPending SQL
+- [x] 应用后清空 pending 字段并记录日志
 
 ### 工具类
-- [ ] `QuotaDayUtil.getNextQuotaDay()` 基于 04:00 日切规则
-- [ ] 04:00 边界单元测试通过
+- [x] `QuotaDayUtil.getNextQuotaDay()` 基于 04:00 日切规则
+- [ ] 04:00 边界单元测试通过 — 待补充测试
 
 ### API
-- [ ] 幂等响应返回 `actionId` + 完整字段
-- [ ] 失败响应包含 `quotaDay`, `quotaResetAt`
+- [x] 幂等响应返回 `actionId` + 完整字段
+- [x] 失败响应包含 `quotaDay`, `quotaResetAt`
+
+### 管理后台（2025-12-15 更新）
+- [x] 贴纸定义页面显示「解锁等级」列
+- [x] 贴纸定义编辑弹窗可选择解锁等级
+- [x] 等级定义页面标记旧字段为弃用
+- [x] 等级定义编辑弹窗将旧字段收进折叠面板
+
+### iOS App API（2025-12-15 更新）
+- [x] `GET /api/stickers/availability` 获取贴纸可用性列表
+- [x] `POST /api/shares/{shareId}/stickers/use` 使用贴纸接口
+- [x] nginx 路由配置正确（/api/ → 去掉前缀转发）
+- [x] 服务器部署验证通过（返回 401 而非 404）
 
 ---
 
@@ -708,16 +721,20 @@ WHERE TABLE_SCHEMA = 'ONETTOO'
 - 扣减/回滚逻辑单元测试通过
 - 并发回滚测试 used 不会变负
 
-### 阶段 4-5：Service + Controller
-- 接口可调用，响应格式符合规范
+### 阶段 4-5：Service + Controller ✅ (2025-12-15 完成)
+- [x] 接口可调用，响应格式符合规范
+- [x] `GET /stickers/availability` 返回贴纸列表
+- [x] `POST /shares/{shareId}/stickers/use` 使用贴纸
 
 ### 阶段 6：定时任务
 - pending 配置在 04:00 按时生效
 - 只应用 `pending_effective_day = today` 的记录
 
-### 阶段 7：管理后台
-- 可配置各字段
-- 保存时提示"次日 04:00 生效"
+### 阶段 7：管理后台 ✅ (2025-12-15 完成)
+- [x] 可配置各字段
+- [x] 保存时提示"次日 04:00 生效"
+- [x] 贴纸页面显示/编辑「解锁等级」
+- [x] 等级页面标记旧字段为弃用
 
 ### 阶段 8：集成测试
 - [ ] tag 去重测试通过

@@ -169,4 +169,126 @@ final class ShareService {
             )
         }
     }
+
+    // MARK: - 贴纸系统 API
+
+    /// 获取贴纸可用性列表
+    /// - Parameter shareId: 分享 ID
+    /// - Returns: 贴纸可用性数组
+    func fetchStickerAvailability(shareId: Int64) async throws -> [StickerAvailability] {
+        let data = try await OTONetwork.request(
+            .fetchStickerAvailability(shareId: shareId)
+        )
+
+        #if DEBUG
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("🔍 [ShareService] fetchStickerAvailability 原始 JSON:")
+            print(jsonString)
+            // 检查原始 JSON 中是否包含 ZHENXIU
+            if jsonString.contains("ZHENXIU") || jsonString.contains("zhenxiu") {
+                print("🔍 [ShareService] ✅ 原始 JSON 中包含 ZHENXIU/zhenxiu")
+            } else {
+                print("🔍 [ShareService] ⚠️ 原始 JSON 中 **不包含** ZHENXIU/zhenxiu！")
+            }
+        }
+        #endif
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(OTOResponseModel<StickerAvailabilityResponse>.self, from: data)
+
+        guard response.respCode == 0 else {
+            throw NSError(
+                domain: "ShareService",
+                code: response.respCode,
+                userInfo: [NSLocalizedDescriptionKey: response.respMsg ?? "获取贴纸可用性失败"]
+            )
+        }
+
+        guard let responseData = response.datas else {
+            throw NSError(
+                domain: "ShareService",
+                code: -999,
+                userInfo: [NSLocalizedDescriptionKey: "贴纸可用性数据为空"]
+            )
+        }
+
+        #if DEBUG
+        print("🔍 [ShareService] 解析 DTO，共 \(responseData.stickers.count) 条:")
+        for dto in responseData.stickers {
+            print("   - stickerId='\(dto.stickerId)', unlocked=\(dto.unlocked), dailyLimit=\(dto.dailyLimit?.description ?? "nil"), remaining=\(dto.remainingToday?.description ?? "nil"), group=\(dto.group ?? "nil"), alreadyApplied=\(dto.alreadyApplied ?? false)")
+        }
+        #endif
+
+        let availabilities = responseData.toAvailabilities()
+
+        #if DEBUG
+        print("🔍 [ShareService] 转换后的 StickerAvailability，共 \(availabilities.count) 条:")
+        for avail in availabilities {
+            print("   - [\(avail.kind.rawValue)] \(avail.kind.displayName): unlocked=\(avail.unlocked), canUse=\(avail.canUse)")
+        }
+        // 检查转换过程中是否有丢失
+        let dtoCount = responseData.stickers.count
+        let availCount = availabilities.count
+        if dtoCount != availCount {
+            print("⚠️ [ShareService] 转换丢失了 \(dtoCount - availCount) 条记录！")
+            print("   可能原因：stickerId 无法匹配到 StickerKind 枚举")
+            // 找出哪些被丢弃了
+            let convertedIds = Set(availabilities.map { $0.kind.rawValue })
+            for dto in responseData.stickers {
+                let lowerId = dto.stickerId.lowercased()
+                if !convertedIds.contains(lowerId) && StickerKind(backendId: dto.stickerId) == nil {
+                    print("   ❌ 丢弃的 stickerId: '\(dto.stickerId)' - 无法匹配到 StickerKind")
+                }
+            }
+        }
+        #endif
+
+        return availabilities
+    }
+
+    /// 使用贴纸
+    /// - Parameters:
+    ///   - shareId: 分享 ID
+    ///   - stickerId: 贴纸 ID（对应 StickerKind.backendId）
+    /// - Returns: 使用结果响应
+    func useSticker(shareId: Int64, stickerId: String) async throws -> StickerUseResponse {
+        let data = try await OTONetwork.request(
+            .useSticker(shareId: shareId, stickerId: stickerId)
+        )
+
+        #if DEBUG
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("🔍 [ShareService] useSticker 原始 JSON:")
+            print(jsonString)
+        }
+        #endif
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(OTOResponseModel<StickerUseResponse>.self, from: data)
+
+        guard response.respCode == 0 else {
+            // 解析错误码
+            let errorCode = response.respMsg ?? "UNKNOWN"
+            if errorCode.contains("LEVEL_LOCKED") {
+                throw StickerUseError.serverError(code: "LEVEL_LOCKED", message: "等级不足，无法使用此贴纸")
+            } else if errorCode.contains("QUOTA_EXHAUSTED") {
+                throw StickerUseError.serverError(code: "QUOTA_EXHAUSTED", message: "今日使用次数已达上限")
+            }
+            throw NSError(
+                domain: "ShareService",
+                code: response.respCode,
+                userInfo: [NSLocalizedDescriptionKey: response.respMsg ?? "使用贴纸失败"]
+            )
+        }
+
+        guard let useResponse = response.datas else {
+            throw NSError(
+                domain: "ShareService",
+                code: -999,
+                userInfo: [NSLocalizedDescriptionKey: "贴纸使用结果为空"]
+            )
+        }
+
+        return useResponse
+    }
 }

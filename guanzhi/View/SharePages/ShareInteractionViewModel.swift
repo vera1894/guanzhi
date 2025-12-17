@@ -59,6 +59,24 @@ class ShareInteractionViewModel: ObservableObject {
     /// 当前应显示的贴纸队列定义（应用互斥逻辑后）
     @Published var visibleStickerDefinitions: [StickerDefinition] = []
 
+    // MARK: - Sticker Availability State (服务器驱动)
+
+    /// 贴纸可用性列表（从服务器加载）
+    @Published var stickerAvailabilities: [StickerAvailability] = []
+
+    /// 是否正在加载贴纸可用性
+    @Published var isLoadingStickerAvailability: Bool = false
+
+    /// 贴纸可用性加载错误
+    @Published var stickerAvailabilityError: String? = nil
+
+    // MARK: - 标签贴纸本地统计（临时方案）
+    // TODO: 后续后端在分享详情中返回标签统计后，用服务器数据替代
+
+    /// 标签贴纸本地统计（当前用户在此分享上使用的标签）
+    /// key: StickerKind, value: 使用次数（通常为 1，因为每人每分享只能用一次）
+    @Published var localTagStickerCounts: [StickerKind: Int] = [:]
+
     // MARK: - Computed Properties（派生属性）
 
     /// 是否已点赞（只读，派生自 voteState）
@@ -108,6 +126,9 @@ class ShareInteractionViewModel: ObservableObject {
         // 重置错误和动画状态
         self.errorMessage = nil
         self.isAnimating = false
+
+        // ✅ 重置本地标签统计（切换分享时需要清空）
+        self.localTagStickerCounts = [:]
 
         #if DEBUG
         print("📊 [ShareInteraction] 初始化:")
@@ -277,8 +298,8 @@ class ShareInteractionViewModel: ObservableObject {
     }
 
     /// 重建贴纸统计列表
-    /// 从当前的 agreeCount / neutralCount 构建 StickerSummaryItem 数组
-    /// 调用时机：初始化、投票状态变化后
+    /// 从当前的 agreeCount / neutralCount / localTagStickerCounts 构建 StickerSummaryItem 数组
+    /// 调用时机：初始化、投票状态变化后、使用标签贴纸后
     private func rebuildStickerSummaries() {
         var items: [StickerSummaryItem] = []
 
@@ -292,6 +313,12 @@ class ShareInteractionViewModel: ObservableObject {
             items.append(StickerSummaryItem(kind: .neutral, count: neutralCount))
         }
 
+        // ✅ 添加标签贴纸统计（本地追踪）
+        // TODO: 后续从后端返回的分享详情中获取全局统计
+        for (kind, count) in localTagStickerCounts where count > 0 {
+            items.append(StickerSummaryItem(kind: kind, count: count))
+        }
+
         // 排序：按 StickerSummaryItem 的 Comparable 实现
         // 规则：count 降序 → priority 降序 → displayName 升序
         stickerSummaries = items.sorted()
@@ -299,6 +326,7 @@ class ShareInteractionViewModel: ObservableObject {
         #if DEBUG
         print("📊 [ShareInteraction] 重建贴纸统计:")
         print("   - agreeCount: \(agreeCount), neutralCount: \(neutralCount)")
+        print("   - localTagCounts: \(localTagStickerCounts.map { "\($0.key.displayName):\($0.value)" })")
         print("   - summaries: \(stickerSummaries.map { "\($0.displayName)(\($0.count))" })")
         #endif
     }
@@ -388,5 +416,265 @@ class ShareInteractionViewModel: ObservableObject {
         print("   - available: \(availableStickerKinds.map { $0.rawValue })")
         print("   - visible: \(visibleStickerDefinitions.map { $0.displayName })")
         #endif
+    }
+
+    // MARK: - 贴纸可用性 API 方法
+
+    /// 从服务器加载贴纸可用性列表
+    /// - Parameter shareId: 分享 ID
+    /// - Note: 如果加载失败，会降级使用本地权限计算
+    func loadStickerAvailability(shareId: Int64) async {
+        isLoadingStickerAvailability = true
+        stickerAvailabilityError = nil
+
+        #if DEBUG
+        print("📡 [ShareInteraction] 开始加载贴纸可用性: shareId=\(shareId)")
+        #endif
+
+        do {
+            let availabilities = try await ShareService.shared.fetchStickerAvailability(shareId: shareId)
+
+            await MainActor.run {
+                self.stickerAvailabilities = availabilities
+                self.isLoadingStickerAvailability = false
+
+                // 应用服务器返回的可用性数据
+                self.applyStickerAvailability(availabilities)
+            }
+
+            #if DEBUG
+            print("✅ [ShareInteraction] 贴纸可用性加载成功，共 \(availabilities.count) 条:")
+            for avail in availabilities {
+                print("   - [\(avail.kind.rawValue)] \(avail.kind.displayName):")
+                print("       unlocked=\(avail.unlocked), canUse=\(avail.canUse)")
+                print("       dailyLimit=\(avail.dailyLimit?.description ?? "nil"), remainingToday=\(avail.remainingToday?.description ?? "nil")")
+                print("       group=\(avail.group?.rawValue ?? "nil")")
+            }
+            // 特别检查珍馐是否存在
+            if availabilities.contains(where: { $0.kind == .zhenxiu }) {
+                print("🔍 [ShareInteraction] ✅ 珍馐贴纸存在于返回列表中")
+            } else {
+                print("🔍 [ShareInteraction] ⚠️ 珍馐贴纸 **不在** 返回列表中！后端未返回该贴纸。")
+            }
+            #endif
+
+        } catch {
+            await MainActor.run {
+                self.isLoadingStickerAvailability = false
+                self.stickerAvailabilityError = error.localizedDescription
+
+                #if DEBUG
+                print("⚠️ [ShareInteraction] 贴纸可用性加载失败: \(error.localizedDescription)")
+                print("   → 降级使用本地权限计算")
+                #endif
+
+                // 降级：使用本地权限计算（投票类贴纸始终可用）
+                self.fallbackToLocalAvailability()
+            }
+        }
+    }
+
+    /// 应用服务器返回的贴纸可用性数据
+    /// - Parameter availabilities: 贴纸可用性列表
+    private func applyStickerAvailability(_ availabilities: [StickerAvailability]) {
+        // 从服务器数据构建可用贴纸集合
+        // 只包含已解锁且有剩余配额的贴纸
+        var available: Set<StickerKind> = []
+
+        // ✅ 重置并重建本地标签统计（基于服务器的 alreadyApplied 数据）
+        localTagStickerCounts = [:]
+
+        for avail in availabilities {
+            if avail.canUse {
+                available.insert(avail.kind)
+            }
+
+            // ✅ 如果标签贴纸已使用过（alreadyApplied=true），添加到本地统计
+            // 这样重新进入分享时也能在统计看板中看到
+            if avail.kind.isTagType && avail.alreadyApplied {
+                localTagStickerCounts[avail.kind, default: 0] += 1
+            }
+        }
+
+        // 确保投票类贴纸始终存在（即使服务器未返回）
+        // 这是业务规则：投票对所有用户开放
+        available.insert(.like)
+        available.insert(.neutral)
+
+        availableStickerKinds = available
+
+        #if DEBUG
+        print("📊 [ShareInteraction] 应用服务器可用性:")
+        print("   - 服务器返回: \(availabilities.count) 种贴纸")
+        print("   - 可用: \(available.map { $0.rawValue })")
+        print("   - 已使用的标签: \(localTagStickerCounts.map { "\($0.key.displayName):\($0.value)" })")
+        #endif
+
+        // 重建可见贴纸队列和统计看板
+        rebuildVisibleStickerDefinitions()
+        rebuildStickerSummaries()
+    }
+
+    /// 降级：使用本地权限计算贴纸可用性
+    /// 在服务器 API 不可用时调用
+    private func fallbackToLocalAvailability() {
+        // 投票类贴纸对所有用户开放
+        availableStickerKinds = [.like, .neutral]
+
+        #if DEBUG
+        print("📊 [ShareInteraction] 降级到本地可用性: \(availableStickerKinds.map { $0.rawValue })")
+        #endif
+
+        // 重建可见贴纸队列
+        rebuildVisibleStickerDefinitions()
+    }
+
+    /// 获取指定贴纸的可用性信息
+    /// - Parameter kind: 贴纸种类
+    /// - Returns: 可用性信息，如果服务器未返回则为 nil
+    func getAvailability(for kind: StickerKind) -> StickerAvailability? {
+        stickerAvailabilities.first { $0.kind == kind }
+    }
+
+    // MARK: - 统一贴纸使用方法
+
+    /// 使用贴纸（统一入口）
+    /// - Parameter kind: 贴纸种类
+    /// - Note: 投票类贴纸走 vote API，标签类贴纸走 sticker use API
+    func useSticker(_ kind: StickerKind) {
+        // 投票类贴纸：使用现有的 vote 逻辑
+        if let voteState = kind.asVoteState {
+            setVote(voteState)
+            return
+        }
+
+        // 标签类贴纸：使用新的贴纸 API
+        guard let shareId = currentShareId else {
+            #if DEBUG
+            print("⚠️ [ShareInteraction] 使用贴纸失败：shareId 为空")
+            #endif
+            return
+        }
+
+        // 检查可用性
+        if let availability = getAvailability(for: kind) {
+            if !availability.unlocked {
+                errorMessage = "\"\(kind.displayName)\"贴纸需要更高等级才能使用"
+                clearErrorAfterDelay()
+                return
+            }
+            if availability.isQuotaExhausted {
+                errorMessage = "\"\(kind.displayName)\"今日使用次数已达上限"
+                clearErrorAfterDelay()
+                return
+            }
+        }
+
+        // 清除之前的错误消息
+        errorMessage = nil
+
+        #if DEBUG
+        print("🎯 [ShareInteraction] 使用标签贴纸: \(kind.displayName) (backendId: \(kind.backendId))")
+        #endif
+
+        // 后台调用 API
+        Task { @MainActor in
+            do {
+                let response = try await ShareService.shared.useSticker(
+                    shareId: shareId,
+                    stickerId: kind.backendId
+                )
+
+                if response.success {
+                    #if DEBUG
+                    print("✅ [ShareInteraction] 贴纸使用成功: \(kind.displayName)")
+                    print("   - remainingToday: \(response.remainingToday?.description ?? "nil")")
+                    #endif
+
+                    // 更新本地可用性数据
+                    if let newRemaining = response.remainingToday {
+                        self.updateLocalAvailability(for: kind, remainingToday: newRemaining)
+                    }
+                } else {
+                    // 服务器返回失败
+                    let errorMsg = response.errorMessage ?? "使用贴纸失败"
+                    self.errorMessage = errorMsg
+                    self.clearErrorAfterDelay()
+
+                    #if DEBUG
+                    print("❌ [ShareInteraction] 贴纸使用失败: \(errorMsg)")
+                    #endif
+                }
+
+            } catch let error as StickerUseError {
+                // 处理已知的贴纸使用错误
+                self.errorMessage = error.localizedDescription
+                self.clearErrorAfterDelay()
+
+                #if DEBUG
+                print("❌ [ShareInteraction] 贴纸使用错误: \(error.localizedDescription)")
+                #endif
+
+            } catch {
+                // 网络或其他错误
+                self.errorMessage = "网络错误，请稍后重试"
+                self.clearErrorAfterDelay()
+
+                #if DEBUG
+                print("❌ [ShareInteraction] 贴纸使用网络错误: \(error.localizedDescription)")
+                #endif
+            }
+        }
+    }
+
+    /// 更新本地贴纸可用性数据（使用贴纸成功后调用）
+    /// - Parameters:
+    ///   - kind: 贴纸种类
+    ///   - remainingToday: 新的剩余次数
+    private func updateLocalAvailability(for kind: StickerKind, remainingToday: Int) {
+        // 查找并更新对应的可用性记录
+        if let index = stickerAvailabilities.firstIndex(where: { $0.kind == kind }) {
+            let old = stickerAvailabilities[index]
+            let updated = StickerAvailability(
+                kind: old.kind,
+                unlocked: old.unlocked,
+                dailyLimit: old.dailyLimit,
+                usedToday: (old.usedToday ?? 0) + 1,
+                remainingToday: remainingToday,
+                group: old.group,
+                alreadyApplied: true  // ✅ 标记为已对此分享使用过
+            )
+            stickerAvailabilities[index] = updated
+
+            // ✅ 标签类贴纸：使用后从可用列表中移除（每个分享只能用一次）
+            // 投票类贴纸不移除（可以切换投票状态）
+            if kind.isTagType {
+                availableStickerKinds.remove(kind)
+                rebuildVisibleStickerDefinitions()
+
+                // ✅ 更新本地标签统计并刷新统计看板
+                localTagStickerCounts[kind, default: 0] += 1
+                rebuildStickerSummaries()
+
+                #if DEBUG
+                print("📊 [ShareInteraction] 标签贴纸已使用，从队列移除: \(kind.displayName)")
+                print("   - 本地统计更新: \(kind.displayName) count=\(localTagStickerCounts[kind] ?? 0)")
+                #endif
+            }
+
+            #if DEBUG
+            print("📊 [ShareInteraction] 更新本地可用性: \(kind.displayName) remaining=\(remainingToday), alreadyApplied=true")
+            #endif
+        }
+    }
+
+    /// 延迟清除错误消息
+    private func clearErrorAfterDelay() {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            if self.errorMessage != nil {
+                self.errorMessage = nil
+            }
+        }
     }
 }

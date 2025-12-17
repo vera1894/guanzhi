@@ -138,6 +138,42 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
         }
     }
 
+    // MARK: - 后端 ID 映射
+
+    /// 后端使用的贴纸 ID（与 rawValue 相同，但语义更明确）
+    var backendId: String {
+        rawValue
+    }
+
+    /// 从后端 stickerId 创建 StickerKind
+    /// - Parameter backendId: 后端返回的贴纸 ID
+    ///   支持两种格式：
+    ///   - rawValue 格式（小写）: "like", "zhenxiu"
+    ///   - tagCode 格式（大写）: "LIKE", "ZHENXIU"
+    /// - Returns: 对应的 StickerKind，未知 ID 返回 nil
+    init?(backendId: String) {
+        // 1. 先尝试直接匹配 rawValue（小写）
+        if let kind = StickerKind(rawValue: backendId) {
+            self = kind
+            return
+        }
+
+        // 2. 尝试将大写 tagCode 转换为小写 rawValue
+        let lowercased = backendId.lowercased()
+        if let kind = StickerKind(rawValue: lowercased) {
+            self = kind
+            return
+        }
+
+        // 3. 尝试通过 tagCode 查找（处理如 "ZHENXIU" -> .zhenxiu）
+        if let kind = StickerKind.allCases.first(where: { $0.tagCode == backendId }) {
+            self = kind
+            return
+        }
+
+        return nil
+    }
+
     // MARK: - 静态方法
 
     /// 从 VoteState 反向获取对应的 StickerKind
@@ -157,6 +193,11 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
     /// 用于从后端数据构建贴纸
     static func from(tagCode: String) -> StickerKind? {
         allCases.first { $0.tagCode == tagCode }
+    }
+
+    /// 从后端 stickerId 创建（推荐使用 init?(backendId:)）
+    static func from(backendId: String) -> StickerKind? {
+        StickerKind(backendId: backendId)
     }
 
     /// 所有投票类贴纸
