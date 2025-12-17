@@ -4,48 +4,70 @@
 //
 //  Created by 晨光 訾 on 2024/10/28.
 //
-//ZStack (最外层)
-//  └── GeometryReader
-//      └── ZStack
-//          ├── Color.clear (容器层)
-//          │   └── .overlay
-//          │       └── TabView (媒体展示)
-//          │           └── .overlayPreferenceValue
-//          │               └── VideoPlayerView (全局播放器)
-//          ├── 点击手势 (.onTapGesture 切换 isShowShareDetailsCard)
-//          └── HStack (左边缘滑动退出区域)
-//
-//  .overlay (顶部操作栏)
-//      └── 返回按钮、用户信息胶囊、更多按钮
-//      └── opacity/allowsHitTesting 受 isShowShareDetailsCard 控制
-//
-//  .overlay (底部详情卡片)
-//      └── ShareDetailsCardView
-//      └── opacity/allowsHitTesting 受 isShowShareDetailsCard 控制
-//
-//  .overlay (自定义对话框遮罩)
-//      └── DialogOverlay
 
-//1. 主要结构：
-//    - 最外层是一个ZStack
-//    - 包含一个GeometryReader
-//    - GeometryReader内部还有一个ZStack
-//    - 在ZStack内部有一个Color.clear作为容器，然后用.overlay添加TabView（显示媒体
-//  内容）
-//    - TabView上还有.overlayPreferenceValue用于视频播放器的全局显示
-//    - 退出手势和点击手势直接加在Color.clear上
-//    - 左边缘滑动手势是一个单独的HStack层
-//  2. Overlay层级：
-//    - 顶部操作栏（返回按钮、用户信息、更多按钮）使用.overlay添加，通过isShowShar
-//  eDetailsCard控制显隐
-//    - 底部ShareDetailsCardView也用.overlay添加，同样受isShowShareDetailsCard控制
-//    - DialogOverlay（自定义遮罩）也是用.overlay添加
-//    - Alert是SwiftUI原生的，不算在ZStack/overlay体系里
-//  3. 点击交互逻辑：
-//    -
-//  点击图片区域会切换isShowShareDetailsCard，从而控制顶部导航栏和底部sheet的显隐
-
-
+// MARK: - ═══════════════════════════════════════════════════════════════════
+// MARK:   📐 视图层级结构图
+// MARK: - ═══════════════════════════════════════════════════════════════════
+//
+//  ZStack (最外层容器)
+//  │
+//  ├── GeometryReader (获取全屏尺寸)
+//  │   └── ZStack
+//  │       ├── Color.clear (透明容器层)
+//  │       │   └── .overlay
+//  │       │       └── TabView (媒体分页展示 - 图片/视频)
+//  │       │           └── .overlayPreferenceValue(PlayerFrameKey)
+//  │       │               └── VideoPlayerView (全局单实例视频播放器)
+//  │       │
+//  │       ├── 下拉退出手势 (.gesture DragGesture 垂直)
+//  │       ├── 点击切换UI手势 (.onTapGesture → isShowShareDetailsCard)
+//  │       │
+//  │       └── HStack (左边缘滑动退出区域 - 40pt宽)
+//  │           └── 左滑退出手势 (.gesture DragGesture 水平)
+//  │
+//  ├── .overlay (顶部导航栏) ← zIndex 默认
+//  │   └── VStack
+//  │       ├── HStack (返回按钮 | 用户信息胶囊 | 更多按钮)
+//  │       └── StickerSummaryBar (贴纸统计展示条)
+//  │
+//  ├── .overlay (贴纸交互层 - SpriteKit) ← 底部 250pt 响应触摸
+//  │   └── StickerFieldView (贴纸队列 + 使用区域)
+//  │
+//  ├── .overlay (底部详情卡片)
+//  │   └── ShareDetailsCardView (分享描述 + 评论)
+//  │       └── 上拉/下拉手势控制全屏/收起
+//  │
+//  ├── .overlay (右侧互动按钮)
+//  │   └── InteractionOverlayView (点赞/无感按钮)
+//  │
+//  └── .overlay (弹窗遮罩层) ← zIndex: 9999
+//      └── DialogOverlay (半透明黑色背景)
+//
+// MARK: - ═══════════════════════════════════════════════════════════════════
+// MARK:   🔗 关键状态变量说明
+// MARK: - ═══════════════════════════════════════════════════════════════════
+//
+//  isShowShareDetailsCard: Bool
+//      - 控制顶部导航栏、底部卡片、贴纸层、互动按钮的显隐
+//      - 点击媒体区域切换此状态
+//
+//  isFullScreen: Bool
+//      - 控制底部卡片是收起状态还是全屏状态
+//      - 上拉超过 150pt 展开，下拉超过 150pt 收起
+//
+//  selectedIndex: Int
+//      - 当前选中的媒体索引（TabView 的 selection）
+//      - 变化时触发 switchToVideo() 切换视频播放器
+//
+//  currentEngine: VideoEngine?
+//      - 当前全局视频播放器的引擎实例
+//      - 单实例模式：所有视频共用一个播放器，滑动时切换
+//
+//  interactionViewModel: ShareInteractionViewModel
+//      - 管理点赞/无感状态、贴纸统计、API 调用
+//      - 提供 visibleStickerDefinitions（应用互斥逻辑后的可用贴纸）
+//
+// MARK: - ═══════════════════════════════════════════════════════════════════
 
 import SwiftUI
 import PhotosUI
@@ -53,9 +75,13 @@ import _AVKit_SwiftUI
 import Combine
 import SwiftData
 
-// MARK: - PreferenceKey for Player Frame Anchoring
+// MARK: - ═══════════════════════════════════════════════════════════════════
+// MARK:   🎬 视频播放器定位 PreferenceKey
+// MARK: - ═══════════════════════════════════════════════════════════════════
 
-/// PreferenceKey 用于传递当前选中页的播放矩形
+/// PreferenceKey：用于从 MediaItemView 传递视频播放区域的 frame
+/// 全局视频播放器 (VideoPlayerView) 使用此 frame 定位自己的位置
+/// 只有当前选中页的 frame 会被保留（非 .zero 的值）
 struct PlayerFrameKey: PreferenceKey {
     static var defaultValue: CGRect = .zero
 
@@ -68,8 +94,13 @@ struct PlayerFrameKey: PreferenceKey {
     }
 }
 
-// MARK: - 全局弹窗遮罩配置（临时放置）
+// MARK: - ═══════════════════════════════════════════════════════════════════
+// MARK:   🌫️ 弹窗遮罩组件
+// MARK: - ═══════════════════════════════════════════════════════════════════
+
 // TODO: 将文件 DialogStyles.swift 添加到 Xcode 项目后，删除此段代码
+
+/// 弹窗遮罩配置（半透明黑色背景）
 struct DialogOverlayConfig {
     static let overlayColor: Color = .black
     static let overlayOpacity: Double = 0.4
@@ -89,45 +120,67 @@ struct DialogOverlay: View {
     }
 }
 
+// MARK: - ═══════════════════════════════════════════════════════════════════
+// MARK:   📱 ShareDetailView 主视图
+// MARK: - ═══════════════════════════════════════════════════════════════════
+
 struct ShareDetailView: View {
+
+    // MARK: - 环境与依赖
+
     @Environment(\.appState) var appState
     @ObservedObject var searchViewModel: SearchViewModel
-    var animationNamespace: Namespace.ID
-    @State private var isShowShareDetailsCard: Bool = true //显示描述和操作控件
-    @State private var isFullScreen: Bool = false // 控制卡片的当前状态（部分或全屏）
-    @State private var dragOffset: CGFloat = 0 // 记录底部卡片拖动偏移量
-    @State private var isAtTop: Bool = true
-    @State private var isTieTieEnabled: Bool = false
-    @State private var selectedIndex: Int = 0 //跟踪当前选中的索引
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
-    var annotationID: String
-    
-    // Sheet 控制状态
+    var animationNamespace: Namespace.ID
+    var annotationID: String                        // 当前分享的 ID（从导航传入）
+
+    // MARK: - UI 显隐控制状态
+
+    @State private var isShowShareDetailsCard: Bool = true  // 控制顶部栏+底部卡片+贴纸层的显隐
+    @State private var isFullScreen: Bool = false           // 底部卡片是否全屏展开
+    @State private var dragOffset: CGFloat = 0              // 底部卡片拖动偏移量
+    @State private var isAtTop: Bool = true                 // 底部卡片滚动是否在顶部
+    @State private var viewOpacity: Double = 1.0            // 退出手势时的整体透明度
+    @State var cardDragIsActive = true                      // 底部卡片拖拽是否激活
+
+    // MARK: - 媒体展示状态
+
+    @State private var selectedIndex: Int = 0               // 当前选中的媒体索引（TabView selection）
+    @State private var isTieTieEnabled: Bool = false        // 贴贴功能开关（暂未使用）
+
+    // MARK: - Sheet 控制（已废弃，改用 overlay）
+
     @State private var currentDetent: PresentationDetent = .height(Constants.sheetCollapsedHeight)
-    
-    @State private var viewOpacity: Double = 1.0
-    @State var cardDragIsActive = true
-    @State private var isDeleting: Bool = false // 是否正在删除
-    
-    // ✅ 方案B：单实例播放器 Overlay
-    @State private var currentEngine: VideoEngine? = nil // 当前选中页的 VideoEngine
-    @State private var currentCoverVisible: Bool = true // 当前选中页的封面可见性
-    @State private var currentIsPlaying: Bool = false // 当前选中页的播放状态
 
-    // ✅ 双门机制状态
-    @State private var isReadyLayer: Bool = false // 图层是否可显示（isReadyForDisplay）
-    @State private var hasFirstPixel: Bool = false // 是否已渲染首帧像素
+    // MARK: - 删除操作状态
 
-    // ✅ 可播监听
-    @State private var mediaItemCancellable: AnyCancellable? = nil // 监听 wrapper 可播状态
+    @State private var isDeleting: Bool = false             // 是否正在执行删除
 
-    // ✅ 稳定的播放器矩形（防抖，只在滑动结束时更新）
-    @State private var stablePlayerFrame: CGRect = .zero
+    // MARK: - 🎬 视频播放器状态（单实例 Overlay 方案）
 
-    // ✅ 贴纸互动 ViewModel（统一管理点赞/无感状态和贴纸统计）
+    @State private var currentEngine: VideoEngine? = nil    // 当前绑定的 VideoEngine
+    @State private var currentCoverVisible: Bool = true     // 封面是否可见
+    @State private var currentIsPlaying: Bool = false       // 是否正在播放
+
+    // MARK: - 🚪 视频封面双门机制（两个条件都满足才隐藏封面）
+
+    @State private var isReadyLayer: Bool = false           // 条件1: AVPlayerLayer.isReadyForDisplay
+    @State private var hasFirstPixel: Bool = false          // 条件2: 首帧已渲染到屏幕
+
+    // MARK: - 视频可播状态监听
+
+    @State private var mediaItemCancellable: AnyCancellable? = nil  // 监听 wrapper.mediaItem 变化
+    @State private var stablePlayerFrame: CGRect = .zero            // 稳定的播放器 frame（防抖）
+
+    // MARK: - 🎯 贴纸交互 ViewModel
+
+    /// 统一管理：点赞/无感状态、贴纸统计、API 调用
+    /// 提供 visibleStickerDefinitions（应用互斥逻辑后的可用贴纸列表）
     @StateObject private var interactionViewModel = ShareInteractionViewModel()
 
-    // 判断是否是自己的分享
+    // MARK: - 计算属性
+
+    /// 判断当前分享是否是自己发布的（用于决定显示"删除"还是"举报"）
     private var isMyShare: Bool {
         guard let share = searchViewModel.selectedShare else { return false }
         #if DEBUG
@@ -138,22 +191,27 @@ struct ShareDetailView: View {
         return Int64(currentUserId) == share.userId
     }
 
-    // 统一的弹窗状态：仅需要自定义遮罩的弹窗
-    // 注意：iOS 18/26 中，alert、UIAlertController 都自带系统 dimming
+    /// 是否需要显示自定义弹窗遮罩
+    /// 注意：iOS 18+ 的 alert/UIAlertController 自带系统 dimming，不需要额外遮罩
     private var anyModalOn: Bool {
         searchViewModel.shareDeletedMessage != nil
-        // ❌ 不包含更多操作弹窗（UIAlertController 自带系统 dimming）
-        // ❌ 不包含删除确认弹窗（UIAlertController 自带系统 dimming）
-        // ❌ 不包含查看路线弹窗（UIAlertController 自带系统 dimming）
     }
+
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   🏗️ Body - 主视图构建
+    // MARK: - ═══════════════════════════════════════════════════════════════════
 
     var body: some View {
         @Bindable var appState = appState
         ZStack {
             GeometryReader { fullScreenGeometry in
                 ZStack {
-                // 主内容区域：媒体展示（TabView或ProcessingView）
-                // 使用固定布局，不受安全区域影响
+
+                // ┌─────────────────────────────────────────────────────────────┐
+                // │  📸 媒体展示区域（TabView 或 加载中指示器）                    │
+                // │  - 全屏铺满，忽略安全区域                                     │
+                // │  - 包含全局视频播放器 Overlay                                 │
+                // └─────────────────────────────────────────────────────────────┘
                 Color.clear
                     .frame(width: fullScreenGeometry.size.width, height: fullScreenGeometry.size.height)
                     .overlay(
@@ -271,7 +329,12 @@ struct ShareDetailView: View {
                             }
                         }
                     }
-            // 下拉退出手势
+
+            // ┌─────────────────────────────────────────────────────────────┐
+            // │  👇 下拉退出手势                                             │
+            // │  - 下拉超过 120pt 退出详情页                                  │
+            // │  - 拖动过程中调整透明度提供反馈                               │
+            // └─────────────────────────────────────────────────────────────┘
             .gesture(
                 DragGesture()
                     .onChanged { value in
@@ -298,12 +361,21 @@ struct ShareDetailView: View {
                         }
                     }
             )
-            // 点击切换顶部和底部内容显隐
+
+            // ┌─────────────────────────────────────────────────────────────┐
+            // │  👆 点击切换 UI 显隐                                          │
+            // │  - 点击媒体区域切换 isShowShareDetailsCard                    │
+            // │  - 控制顶部栏、底部卡片、贴纸层、互动按钮的显隐                │
+            // └─────────────────────────────────────────────────────────────┘
             .onTapGesture {
                 isShowShareDetailsCard.toggle()
             }
 
-            // 左边缘滑动退出区域
+            // ┌─────────────────────────────────────────────────────────────┐
+            // │  👈 左边缘滑动退出区域（40pt 宽）                              │
+            // │  - 右滑超过 120pt 退出详情页                                  │
+            // │  - 与 NavigationStack 的返回手势兼容                          │
+            // └─────────────────────────────────────────────────────────────┘
             HStack {
                 Color.clear
                     .frame(width: 40)
@@ -342,7 +414,14 @@ struct ShareDetailView: View {
         }
         .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
-        .overlay(// 顶部操作栏（始终存在，通过 opacity 控制可见性）
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🔝 顶部导航栏 Overlay                                               │
+        // │  - 返回按钮 | 用户信息胶囊 | 更多按钮                                 │
+        // │  - 贴纸统计展示条 (StickerSummaryBar)                                │
+        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
+        // └─────────────────────────────────────────────────────────────────────┘
+        .overlay(
             GeometryReader { geo in
                 VStack(spacing: 0) {
                     HStack {
@@ -397,7 +476,14 @@ struct ShareDetailView: View {
             .allowsHitTesting(isShowShareDetailsCard),
             alignment: .top
         )
-        // 贴纸交互层（全屏覆盖，但只在底部区域响应触摸）
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🎨 贴纸交互层 Overlay (SpriteKit)                                   │
+        // │  - 底部贴纸队列（可拖动使用）                                         │
+        // │  - 使用区域在屏幕上方 1/4 位置                                        │
+        // │  - 只有底部 250pt 响应触摸，上方区域穿透                              │
+        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
+        // └─────────────────────────────────────────────────────────────────────┘
         .overlay {
             GeometryReader { geo in
                 // 计算使用区域：屏幕中心偏上位置（SwiftUI 坐标系）
@@ -426,6 +512,10 @@ struct ShareDetailView: View {
             .opacity(isShowShareDetailsCard ? 1 : 0)
             .allowsHitTesting(isShowShareDetailsCard)
         }
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  📝 底部详情卡片 Overlay (已废弃的 Sheet 代码保留作参考)              │
+        // └─────────────────────────────────────────────────────────────────────┘
 //        .sheet(isPresented: $isShowShareDetailsCard)
 //        {
 //                        ShareDetailsCardView(
@@ -497,6 +587,15 @@ struct ShareDetailView: View {
 //                        .presentationBackgroundInteraction(.enabled)
 //                        .interactiveDismissDisabled()
 //        }
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  📋 底部详情卡片 Overlay                                             │
+        // │  - 显示分享描述、评论等内容                                          │
+        // │  - 收起状态：距底部 10%                                              │
+        // │  - 全屏状态：铺满屏幕                                                │
+        // │  - 上拉 150pt 展开，下拉 150pt 收起                                  │
+        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
+        // └─────────────────────────────────────────────────────────────────────┘
         .overlay(
             ShareDetailsCardView(
                 isFullScreen: $isFullScreen,
@@ -507,9 +606,10 @@ struct ShareDetailView: View {
             .environmentObject(searchViewModel)
             .zIndex(1)
             .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 0.86 + dragOffset)
+            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 0.9 + dragOffset)
             .opacity(isShowShareDetailsCard ? 1 : 0)
             .allowsHitTesting(isShowShareDetailsCard)
+            // 上拉展开手势（收起状态时）
             .gesture(
                 DragGesture()
                     .onChanged { value in
@@ -535,6 +635,7 @@ struct ShareDetailView: View {
                     },
                 isEnabled: !isFullScreen && isShowShareDetailsCard
             )
+            // 下拉收起手势（全屏状态 + 滚动在顶部时）
             .simultaneousGesture (
                 DragGesture()
                     .onChanged { value in
@@ -561,9 +662,15 @@ struct ShareDetailView: View {
                 isEnabled: (isFullScreen && isAtTop) && isShowShareDetailsCard
             )
             .ignoresSafeArea()
-        ) // 底部详情卡片和评论输入区
+        )
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  👍 右侧互动按钮 Overlay                                             │
+        // │  - 点赞/无感按钮                                                     │
+        // │  - 使用共享的 interactionViewModel                                   │
+        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
+        // └─────────────────────────────────────────────────────────────────────┘
         .overlay(
-            // 点赞打卡交互层（使用共享的 interactionViewModel）
             Group {
                 if let share = searchViewModel.selectedShare {
                     InteractionOverlayView(
@@ -577,6 +684,13 @@ struct ShareDetailView: View {
             }
         )
         .background(Color.black.ignoresSafeArea())
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🔄 生命周期：onAppear                                               │
+        // │  - 加载分享详情                                                      │
+        // │  - 初始化 interactionViewModel                                       │
+        // │  - 加载贴纸可用性                                                    │
+        // └─────────────────────────────────────────────────────────────────────┘
         .onAppear {
             if PreviewHarness.enabled {
                 print("🔌 [PreviewHarness] Overriding login status for preview")
@@ -609,6 +723,12 @@ struct ShareDetailView: View {
                 }
             }
         }
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🔄 生命周期：onDisappear                                            │
+        // │  - 恢复地图视图状态                                                  │
+        // │  - 清理媒体下载数据                                                  │
+        // └─────────────────────────────────────────────────────────────────────┘
         .onDisappear {
             if navigationCoordinator.path.isEmpty {
                 withAnimation(.easeInOut) {
@@ -624,11 +744,23 @@ struct ShareDetailView: View {
                 searchViewModel.cleandownloadMedia()
             }
         }
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🌫️ 弹窗遮罩 Overlay                                                │
+        // │  - 半透明黑色背景                                                    │
+        // │  - zIndex: 9999 确保在最上层                                         │
+        // └─────────────────────────────────────────────────────────────────────┘
         .overlay(
             DialogOverlay(isPresented: anyModalOn)
-                .zIndex(9999)  // 确保遮罩在最上层，避免层级冲突
+                .zIndex(9999)
                 .animation(.easeInOut(duration: 0.25), value: anyModalOn)
         )
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  ⚠️ 分享已删除提示弹窗                                               │
+        // │  - 当分享被其他用户删除时显示                                         │
+        // │  - 点击确定后退出详情页                                              │
+        // └─────────────────────────────────────────────────────────────────────┘
         .alert("提示", isPresented: Binding(
             get: { searchViewModel.shareDeletedMessage != nil },
             set: { if !$0 { searchViewModel.shareDeletedMessage = nil } }
@@ -645,7 +777,12 @@ struct ShareDetailView: View {
         } message: {
             Text(searchViewModel.shareDeletedMessage ?? "")
         }
-        // 贴纸统计详细覆层
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  📊 贴纸统计详情 Sheet                                               │
+        // │  - 点击 StickerSummaryBar 时弹出                                     │
+        // │  - 显示所有贴纸的详细统计                                            │
+        // └─────────────────────────────────────────────────────────────────────┘
         .sheet(isPresented: $interactionViewModel.isShowingStickerSummaryOverlay) {
             StickerSummaryOverlay(
                 items: interactionViewModel.stickerSummaries,
@@ -655,11 +792,20 @@ struct ShareDetailView: View {
             )
             .presentationDetents([.medium, .large])
         }
-        // ✅ 监听 selectedShare 变化，重新初始化 interactionViewModel
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🔄 状态监听：selectedShare 变化                                      │
+        // │  - 当 share 数据变化时重新初始化 interactionViewModel                │
+        // │  - 使用组合键监听多个属性变化                                         │
+        // └─────────────────────────────────────────────────────────────────────┘
         .onChange(of: shareStateKey) { _, _ in
             reinitializeInteractionViewModel()
         }
     }
+
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   🔧 辅助计算属性
+    // MARK: - ═══════════════════════════════════════════════════════════════════
 
     /// 组合键：用于监听 share 状态变化（id + voteType + agreeCount）
     /// 任何一个变化都会触发 reinitializeInteractionViewModel
@@ -668,7 +814,9 @@ struct ShareDetailView: View {
         return "\(share.id)_\(share.currentUserVoteType ?? -999)_\(share.agreeCount)"
     }
 
-    // MARK: - 重新初始化交互 ViewModel
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   🎯 贴纸与互动处理方法
+    // MARK: - ═══════════════════════════════════════════════════════════════════
 
     /// 重新初始化 interactionViewModel（当 share 数据变化时调用）
     private func reinitializeInteractionViewModel() {
@@ -685,8 +833,6 @@ struct ShareDetailView: View {
             await interactionViewModel.loadStickerAvailability(shareId: share.id)
         }
     }
-
-    // MARK: - 贴纸使用处理
 
     /// 处理贴纸使用动作
     /// - Parameter sticker: 被使用的贴纸定义
@@ -716,12 +862,22 @@ struct ShareDetailView: View {
         }
     }
 
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   📋 底部卡片控制方法
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+
+    /// 重置底部卡片状态到收起状态
     func resetCardState() {
         isFullScreen = false
         dragOffset = 0
         isAtTop = true
     }
 
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   ⚙️ 更多操作菜单
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+
+    /// 显示更多操作 ActionSheet（分享/删除/举报）
     func showMoreActionsSheet() {
         // 捕获需要的上下文
         let viewModel = searchViewModel
@@ -762,7 +918,11 @@ struct ShareDetailView: View {
         }
     }
 
-    // 显示删除确认弹窗的静态函数
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   🗑️ 删除分享操作
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+
+    /// 显示删除确认弹窗
     private static func showDeleteConfirmation(
         viewModel: SearchViewModel,
         appState: AppStateModel,
@@ -888,8 +1048,22 @@ struct ShareDetailView: View {
             }
         }
     }
-    
-    // MARK: - 方案B：全局播放器切换逻辑
+
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   🎬 视频播放器控制（单实例 Overlay 方案）
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    //
+    //  核心流程：
+    //  1. switchToVideo(at:) - 切换到指定索引的视频
+    //  2. watchPlayableState(of:) - 监听 wrapper 变为可播状态
+    //  3. tryHideCoverForCurrentVideo() - 双门机制通过后隐藏封面
+    //
+    //  双门机制说明：
+    //  - 条件1: isReadyLayer = true (AVPlayerLayer.isReadyForDisplay)
+    //  - 条件2: hasFirstPixel = true (首帧已渲染)
+    //  - 两个条件都满足时才隐藏封面，避免闪烁
+    //
+    // ═══════════════════════════════════════════════════════════════════════════
 
     /// 监听当前 wrapper 的可播状态，当它变为 Movie 时自动播放
     private func watchPlayableState(of index: Int) {
@@ -1056,7 +1230,16 @@ struct ShareDetailView: View {
 
 }
 
-// MARK: - 用户信息胶囊组件
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+// MARK:   👤 用户信息胶囊组件
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+//
+//  显示在顶部导航栏中间位置
+//  - 自己的分享：显示本机用户信息，点击跳转个人中心
+//  - 他人的分享：加载并显示发布者信息，点击跳转他人主页
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+
 struct UserInfoCapsule: View {
     let userId: Int64
     @ObservedObject var searchViewModel: SearchViewModel
@@ -1221,7 +1404,11 @@ struct UserInfoCapsule: View {
     }
 }
 
-// MARK: - 小尺寸头像组件
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+// MARK:   🖼️ 小尺寸头像组件
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+
+/// 28pt 尺寸的头像组件（用于用户信息胶囊）
 struct AvatarView_s: View {
     var isEnabled: Bool
     var profileImage: Image
@@ -1253,9 +1440,17 @@ struct AvatarView_s: View {
     }
 }
 
-// MARK: - Preview Support
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+// MARK:   🔬 Preview Support（Xcode 预览支持）
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+//
+//  提供 Xcode 预览所需的模拟环境和测试数据
+//  - PreviewDependencies: 创建所有必要的依赖项
+//  - ShareDetailViewPreview: 预览包装器视图
+//
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// 为预览创建必要的环境和数据
+/// 为预览创建必要的环境和数据
 @MainActor
 class PreviewDependencies {
     let searchViewModel: SearchViewModel
@@ -1353,6 +1548,9 @@ struct ShareDetailViewPreview: View {
         .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self, OtherUserProfile.self], inMemory: true)
 }
 
+// MARK: - ═══════════════════════════════════════════════════════════════════════
+// MARK:   🐛 Debug 工具
+// MARK: - ═══════════════════════════════════════════════════════════════════════
 
 #if DEBUG
 /// 统一判断：Xcode 预览 或 手动开关（方便真机 DEBUG 测试）

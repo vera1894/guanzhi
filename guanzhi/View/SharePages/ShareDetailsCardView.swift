@@ -39,6 +39,37 @@ struct ShareDetailsCardView: View {
                     
                     ScrollView {
                         VStack {
+                            
+                            // 用户信息区域
+                            if isAuthorMyself(share.userId) {
+                                // 显示本机用户
+                                if let local = userProfileManager.localUserProfile {
+                                    userProfileSectionForMine(localUser: local)
+                                        .onTapGesture {
+                                            navigationCoordinator.path.append(Route.myView)
+                                        }
+                                } else {
+                                    Text("本机用户信息尚未加载")
+                                }
+                            } else {
+                                // 显示他人用户
+                                if isLoadingUser {
+                                    Text("加载中...")
+                                } else if let error = loadUserError {
+                                    Text("加载失败：\(error)")
+                                        .foregroundColor(.red)
+                                } else if let otherUserInfo = userProfileManager.otherUserProfile,
+                                          otherUserInfo.id == share.userId  {
+                                    userProfileSectionForOthers(otherInfo: otherUserInfo)
+                                        .onTapGesture {
+                                            navigationCoordinator.path.append(Route.othersView(userId: Int(share.userId)))
+                                        }
+                                } else {
+                                    Text("加载中或无数据")
+                                }
+                            }
+                            
+                            
                             VStack(alignment: .leading, spacing: Constants.spacingSpacingXs) {
 //                                Text("快来这里看看！快来这里看看！快来这里看看！快来这里看看！")
                                 Text(share.data)
@@ -82,76 +113,7 @@ struct ShareDetailsCardView: View {
                             .padding(.horizontal, Constants.spacingSpacingM)
                             .padding(.bottom, Constants.spacingSpacingXs)
                             
-                            // 用户信息
-//                            HStack(alignment: .top, spacing: Constants.spacingSpacingXs) {
-//                                HStack(alignment: .center, spacing: Constants.spacingSpacing0) {
-////                                    Image("icon-avatar")
-////                                        .frame(width: Constants.iconSizeXl, height: Constants.iconSizeXl)
-//                                    Button(action: {
-//                                        // 头像-l
-//                                    }) { }
-//                                        .buttonStyle(AvatarStyle_l(
-//                                            isEnabled: true,
-//                                            profileImage: Image("例子"), //需要处理图片格式，后端增加更新功能
-//                                            borderThickness: 4))
-//                                    
-//                                    VStack(alignment: .leading) {
-//                                        // 用户名
-//                                        Text(localUser.nickname)
-//                                            .font(
-//                                                Font.custom("PingFang SC", size: 18)
-//                                                    .weight(.semibold)
-//                                            )
-//                                            .kerning(0.22)
-//                                            .foregroundColor(.black)
-//                                        
-//                                        // 次级信息
-//                                        HStack {
-//                                            Text("☠️")
-//                                                .font(Font.custom("PingFang SC", size: 14))
-//                                                .kerning(0.22)
-//                                                .foregroundColor(Color(red: 0.61, green: 0.61, blue: 0.61))
-//                                            
-//                                            Text("Onettoooo")
-//                                                .font(Font.custom("PingFang SC", size: 14))
-//                                                .kerning(0.22)
-//                                                .foregroundColor(Constants.textColorTxGery)
-//                                        }
-//                                    }
-//                                }
-//                                
-//                                Spacer()
-//                            }
-//                            .padding(.horizontal, Constants.spacingSpacingM)
                             
-                            // 用户信息区域
-                            if isAuthorMyself(share.userId) {
-                                // 显示本机用户
-                                if let local = userProfileManager.localUserProfile {
-                                    userProfileSectionForMine(localUser: local)
-                                        .onTapGesture {
-                                            navigationCoordinator.path.append(Route.myView)
-                                        }
-                                } else {
-                                    Text("本机用户信息尚未加载")
-                                }
-                            } else {
-                                // 显示他人用户
-                                if isLoadingUser {
-                                    Text("加载中...")
-                                } else if let error = loadUserError {
-                                    Text("加载失败：\(error)")
-                                        .foregroundColor(.red)
-                                } else if let otherUserInfo = userProfileManager.otherUserProfile,
-                                          otherUserInfo.id == share.userId  {
-                                    userProfileSectionForOthers(otherInfo: otherUserInfo)
-                                        .onTapGesture {
-                                            navigationCoordinator.path.append(Route.othersView(userId: Int(share.userId)))
-                                        }
-                                } else {
-                                    Text("加载中或无数据")
-                                }
-                            }
                             
 //                            //评论区
 //                            ForEach(0..<20, id: \.self) { i in
