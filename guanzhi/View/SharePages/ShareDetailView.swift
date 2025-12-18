@@ -132,7 +132,7 @@ private let kStickerQueueToCardSpacing: CGFloat = 32
 
 /// 底部卡片收起时距离屏幕底部的比例（0.1 = 10%）
 /// 卡片收起时的 Y 偏移 = screenHeight * (1 - kBottomCardCollapsedRatio)
-private let kBottomCardCollapsedRatio: CGFloat = 0.07
+private let kBottomCardCollapsedRatio: CGFloat = 0.08
 
 struct ShareDetailView: View {
 

@@ -345,18 +345,18 @@ struct ShareDetailsCardView: View {
     
     // MARK: - 视图拆分
 
-    /// 收起状态的内容视图（最多2行 + "·查看更多"）
+    /// 收起状态的内容视图（最多2行 + "... ·查看更多"）
     @ViewBuilder
     private func collapsedContentView(text: String) -> some View {
-        // 使用 Text 连接，支持不同样式
-        // 注意：lineLimit(2) 会截断整个组合文本
-        (Text(text) + Text(" ·查看更多").foregroundColor(Color("color-primary")))
-            .font(Font.custom("PingFang SC", size: 16))
-            .kerning(0.22)
-            .foregroundColor(Color("color-black"))
-            .lineLimit(2)
-            .truncationMode(.tail)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        TruncatedTextWithViewMore(
+            text: text,
+            maxLines: 2,
+            font: UIFont(name: "PingFangSC-Regular", size: 16) ?? .systemFont(ofSize: 16),
+            textColor: UIColor(named: "color-black") ?? .black,
+            viewMoreText: " ·查看更多",
+            viewMoreColor: UIColor(named: "color-primary") ?? .systemBlue
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
         @ViewBuilder
@@ -465,13 +465,13 @@ struct CommentContentView: View {
     @State private var commentContent: String = ""
     @State private var placeholder: String = "发表一个贴贴"
     @Binding var isTieTieEnabled: Bool
-    
+
     var body: some View {
         VStack {
             Spacer()
-            
+
             HStack(spacing: 8) {
-                
+
                 RoundedRectangle(cornerRadius: 20)
                     .fill(.shadow(.inner(color: Color("color-primary").opacity(1), radius: 0, x: 4, y: 6)))
                     .stroke(.black, lineWidth: 4)
@@ -489,26 +489,186 @@ struct CommentContentView: View {
                             .multilineTextAlignment(.leading)
                             .autocorrectionDisabled()
                             .onTapGesture {
-                                
+
                             }
                             .onSubmit {
-                                
+
                             }
                     }
-                
+
                 Button(action: {
                     // 贴贴--胶囊按钮hug
                 }) {
                     Text("🫂 贴贴")
                 }
                 .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: isTieTieEnabled))
-                
-                
+
+
             }
             .padding(.top, 16)
             .padding(.horizontal)
             .padding(.bottom, 48)
             .background(BlurView(style: .systemMaterialLight)/*Color.white.opacity(0.9)*/)
         }
+    }
+}
+
+// MARK: - TruncatedTextWithViewMore
+
+/// 支持截断后显示 "... ·查看更多" 的文本组件
+/// 使用 UILabel 实现精确的截断控制
+struct TruncatedTextWithViewMore: View {
+    let text: String
+    let maxLines: Int
+    let font: UIFont
+    let textColor: UIColor
+    let viewMoreText: String
+    let viewMoreColor: UIColor
+
+    @State private var intrinsicHeight: CGFloat = 40
+
+    var body: some View {
+        GeometryReader { geometry in
+            TruncatedLabelRepresentable(
+                text: text,
+                maxLines: maxLines,
+                font: font,
+                textColor: textColor,
+                viewMoreText: viewMoreText,
+                viewMoreColor: viewMoreColor,
+                availableWidth: geometry.size.width,
+                onHeightChange: { height in
+                    DispatchQueue.main.async {
+                        intrinsicHeight = height
+                    }
+                }
+            )
+        }
+        .frame(height: intrinsicHeight)
+    }
+}
+
+/// UILabel 包装器
+private struct TruncatedLabelRepresentable: UIViewRepresentable {
+    let text: String
+    let maxLines: Int
+    let font: UIFont
+    let textColor: UIColor
+    let viewMoreText: String
+    let viewMoreColor: UIColor
+    let availableWidth: CGFloat
+    let onHeightChange: (CGFloat) -> Void
+
+    func makeUIView(context: Context) -> UILabel {
+        let label = UILabel()
+        label.numberOfLines = maxLines
+        label.lineBreakMode = .byWordWrapping
+        label.setContentHuggingPriority(.required, for: .vertical)
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        return label
+    }
+
+    func updateUIView(_ label: UILabel, context: Context) {
+        let maxWidth = availableWidth > 0 ? availableWidth : UIScreen.main.bounds.width - 32
+
+        // 设置 preferredMaxLayoutWidth 确保换行正确
+        label.preferredMaxLayoutWidth = maxWidth
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor,
+            .kern: 0.22,
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let viewMoreAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: viewMoreColor,
+            .kern: 0.22
+        ]
+
+        // 测量完整文本需要多少行
+        let fullAttributedText = NSAttributedString(string: text, attributes: textAttributes)
+        let textSize = fullAttributedText.boundingRect(
+            with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            context: nil
+        )
+        let lineHeight = font.lineHeight
+        let estimatedLines = Int(ceil(textSize.height / lineHeight))
+
+        if estimatedLines <= maxLines {
+            // 不需要截断，直接显示完整文本 + "·查看更多"
+            let combined = NSMutableAttributedString(string: text, attributes: textAttributes)
+            combined.append(NSAttributedString(string: viewMoreText, attributes: viewMoreAttributes))
+            label.attributedText = combined
+        } else {
+            // 需要截断，计算能显示多少字符
+            let suffix = "..." + viewMoreText
+            let truncatedText = calculateTruncatedText(
+                text: text,
+                maxWidth: maxWidth,
+                maxLines: maxLines,
+                font: font,
+                suffix: suffix,
+                textAttributes: textAttributes
+            )
+
+            let combined = NSMutableAttributedString(string: truncatedText + "...", attributes: textAttributes)
+            combined.append(NSAttributedString(string: viewMoreText, attributes: viewMoreAttributes))
+            label.attributedText = combined
+        }
+
+        // 计算实际高度并回调
+        label.sizeToFit()
+        let actualHeight = label.sizeThatFits(CGSize(width: maxWidth, height: .greatestFiniteMagnitude)).height
+        onHeightChange(actualHeight)
+    }
+
+    /// 计算截断后能显示的最大文本
+    private func calculateTruncatedText(
+        text: String,
+        maxWidth: CGFloat,
+        maxLines: Int,
+        font: UIFont,
+        suffix: String,
+        textAttributes: [NSAttributedString.Key: Any]
+    ) -> String {
+        // 计算每行大约能容纳的字符数
+        let avgCharWidth = ("测" as NSString).size(withAttributes: [.font: font]).width
+        let charsPerLine = Int(maxWidth / avgCharWidth)
+        let maxChars = charsPerLine * maxLines
+
+        // 从估算的最大字符数开始，逐步减少直到能放下
+        var endIndex = min(text.count, maxChars)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+
+        while endIndex > 0 {
+            let substring = String(text.prefix(endIndex))
+            let testString = substring + suffix
+
+            let testSize = (testString as NSString).boundingRect(
+                with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: [.font: font, .kern: 0.22, .paragraphStyle: paragraphStyle],
+                context: nil
+            )
+
+            let lineHeight = font.lineHeight
+            let lines = Int(ceil(testSize.height / lineHeight))
+
+            if lines <= maxLines {
+                return substring
+            }
+
+            endIndex -= 1
+        }
+
+        return String(text.prefix(10)) // 兜底返回前10个字符
     }
 }
