@@ -456,18 +456,25 @@ class ShareInteractionViewModel: ObservableObject {
         computeAvailableStickerKinds(userTaggingAllowance: allowance)
     }
 
-    /// 重建可见贴纸队列（应用互斥逻辑）
+    /// 重建可见贴纸队列（应用投票规则）
     /// 调用时机：初始化、投票状态变化、权限变化
+    ///
+    /// 投票贴纸规则（模拟真实贴纸，贴上就撕不下来）：
+    /// - 未投票：显示"赞同"和"无感"两个选项
+    /// - 已投票：两个投票贴纸都消失（无法取消投票）
     func rebuildVisibleStickerDefinitions() {
         var visible = availableStickerKinds
 
-        // ✅ 互斥逻辑修正：已选择的贴纸应该隐藏，让用户可以改变选择
-        // 用户已投 agree → 移除 like（已选），保留 neutral（可改选）
-        // 用户已投 neutral → 移除 neutral（已选），保留 like（可改选）
-        if voteState == .agree {
-            visible.remove(.like)      // 已点赞，隐藏赞同贴纸
-        } else if voteState == .neutral {
-            visible.remove(.neutral)   // 已点无感，隐藏无感贴纸
+        // ✅ 投票规则：一旦投票，两个投票贴纸都消失
+        // 贴纸贴上就撕不下来，无法取消投票
+        if voteState == .none {
+            // 未投票：确保两个投票贴纸都存在
+            visible.insert(.like)
+            visible.insert(.neutral)
+        } else {
+            // 已投票（agree 或 neutral）：两个投票贴纸都移除
+            visible.remove(.like)
+            visible.remove(.neutral)
         }
 
         // 转换为 StickerDefinition 并按 priority 降序排序
@@ -479,7 +486,8 @@ class ShareInteractionViewModel: ObservableObject {
         print("📊 [ShareInteraction] 重建可见贴纸队列:")
         print("   - voteState: \(voteState)")
         print("   - available: \(availableStickerKinds.map { $0.rawValue })")
-        print("   - visible: \(visibleStickerDefinitions.map { $0.displayName })")
+        print("   - visible(after vote rule): \(visible.map { $0.rawValue })")
+        print("   - visibleDefinitions: \(visibleStickerDefinitions.map { $0.displayName })")
         #endif
     }
 

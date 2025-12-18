@@ -11,6 +11,22 @@ import SpriteKit
 
 // MARK: - ⚙️ 可调参数（方便调试）
 
+// MARK: - 📐 贴纸外观参数
+
+/// 贴纸图标大小（宽度和高度）
+let kStickerIconSize: CGFloat = 64
+
+/// 贴纸之间的间距（水平方向）
+let kStickerSpacing: CGFloat = 16
+
+/// 贴纸图标和下方名称的间距
+let kStickerLabelSpacing: CGFloat = 4
+
+/// 屏幕边缘留白（确保贴纸完全显示）
+let kStickerEdgePadding: CGFloat = 24
+
+// MARK: - 🔄 滚动参数
+
 /// 自动轮播速度（点/秒），值越大轮播越快
 private let kAutoScrollSpeed: CGFloat = 50
 
@@ -53,11 +69,11 @@ final class StickerScene: SKScene {
     /// 当 didChangeSize 收到 (0, 0) 时，恢复此尺寸
     private var lastValidSize: CGSize = .zero
 
-    // MARK: - 配置
+    // MARK: - 配置（使用顶部的可调参数）
 
-    private let stickerSize = CGSize(width: 72, height: 72)
-    private let spacing: CGFloat = 16
-    private let edgePadding: CGFloat = 24  // 屏幕边缘留白（确保贴纸完全显示）
+    private var stickerSize: CGSize { CGSize(width: kStickerIconSize, height: kStickerIconSize) }
+    private var spacing: CGFloat { kStickerSpacing }
+    private var edgePadding: CGFloat { kStickerEdgePadding }
 
     /// 贴纸队列距离底部的距离（可配置）
     var queueBottomY: CGFloat = 100
@@ -195,7 +211,7 @@ final class StickerScene: SKScene {
     // MARK: - 公开方法：重置/清空贴纸
 
     /// 重置贴纸列表（用于贴纸数据变化时）
-    /// 会清除所有现有节点，然后根据新的定义重新布局
+    /// 会比较新旧列表，对移除的贴纸播放"缩小-渐隐"动画
     func resetStickers(with newStickers: [StickerDefinition]) {
         #if DEBUG
         print("✅ [StickerScene] resetStickers, count=\(newStickers.count), size=\(size), lastValidSize=\(lastValidSize)")
@@ -221,6 +237,104 @@ final class StickerScene: SKScene {
         // 保存当前有效 size
         lastValidSize = size
 
+        // 恢复场景运行（如果之前暂停了）
+        if isPaused {
+            isPaused = false
+        }
+
+        // ✅ 计算需要移除的贴纸（互斥逻辑触发时）
+        let oldIDs = Set(stickerDefinitions.map { $0.stickerID })
+        let newIDs = Set(newStickers.map { $0.stickerID })
+        let removedIDs = oldIDs.subtracting(newIDs)
+
+        #if DEBUG
+        if !removedIDs.isEmpty {
+            print("🎭 [StickerScene] 检测到移除的贴纸: \(removedIDs.map { $0.rawValue })")
+        }
+        #endif
+
+        // 如果有贴纸被移除，先播放动画再布局
+        if !removedIDs.isEmpty {
+            animateRemovedStickersAndRelayout(removedIDs: removedIDs, newStickers: newStickers)
+        } else {
+            // 没有移除，直接重新布局
+            performDirectReset(with: newStickers)
+        }
+    }
+
+    /// 对移除的贴纸播放"缩小-渐隐"动画，然后重新布局
+    private func animateRemovedStickersAndRelayout(removedIDs: Set<StickerID>, newStickers: [StickerDefinition]) {
+        // 找到需要移除的节点
+        var nodesToRemove: [SKSpriteNode] = []
+        for node in stickerNodes {
+            if let name = node.name, removedIDs.contains(StickerID(rawValue: name)) {
+                nodesToRemove.append(node)
+            }
+        }
+
+        guard !nodesToRemove.isEmpty else {
+            performDirectReset(with: newStickers)
+            return
+        }
+
+        #if DEBUG
+        print("🎭 [StickerScene] 开始播放移除动画，节点数: \(nodesToRemove.count)")
+        #endif
+
+        // 动画参数
+        let shrinkDuration: TimeInterval = 0.25
+        let shrinkScale: CGFloat = 0.3
+
+        // 使用 DispatchGroup 等待所有动画完成
+        let animationGroup = DispatchGroup()
+
+        for node in nodesToRemove {
+            animationGroup.enter()
+
+            // 停止该节点的其他动画
+            node.removeAllActions()
+
+            // 缩小 + 渐隐动画
+            let shrink = SKAction.scale(to: shrinkScale, duration: shrinkDuration)
+            let fadeOut = SKAction.fadeOut(withDuration: shrinkDuration)
+            let group = SKAction.group([shrink, fadeOut])
+            group.timingMode = .easeIn
+
+            node.run(group) { [weak self, weak node] in
+                // 从场景移除
+                node?.removeFromParent()
+
+                // 从数组中移除
+                if let self = self, let node = node {
+                    if let index = self.stickerNodes.firstIndex(of: node) {
+                        self.stickerNodes.remove(at: index)
+                        if index < self.baseXPositions.count {
+                            self.baseXPositions.remove(at: index)
+                        }
+                    }
+                }
+
+                animationGroup.leave()
+            }
+        }
+
+        // 动画完成后重新布局
+        animationGroup.notify(queue: .main) { [weak self] in
+            guard let self = self else { return }
+
+            #if DEBUG
+            print("🎭 [StickerScene] 移除动画完成，开始重新布局")
+            #endif
+
+            // 更新定义并重新布局
+            self.stickerDefinitions = newStickers
+            self.layoutStickers()
+            self.calculateScrollBounds()
+        }
+    }
+
+    /// 直接重置（无动画）
+    private func performDirectReset(with newStickers: [StickerDefinition]) {
         // 停止所有进行中的动画和状态
         stopAllInteractions()
 
@@ -230,11 +344,6 @@ final class StickerScene: SKScene {
         // 重新布局
         layoutStickers()
         calculateScrollBounds()
-
-        // 恢复场景运行（如果之前暂停了）
-        if isPaused {
-            isPaused = false
-        }
     }
 
     /// 清空所有贴纸节点（保持场景存在）

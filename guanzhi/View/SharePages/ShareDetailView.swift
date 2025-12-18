@@ -124,6 +124,16 @@ struct DialogOverlay: View {
 // MARK:   📱 ShareDetailView 主视图
 // MARK: - ═══════════════════════════════════════════════════════════════════
 
+// MARK: - ⚙️ 可调节的布局配置（方便手动调整）
+
+/// 贴纸队列距离底部卡片顶部的间距（像素）
+/// 计算方式：贴纸队列最底部 = 底部卡片顶部 - 此间距
+private let kStickerQueueToCardSpacing: CGFloat = 32
+
+/// 底部卡片收起时距离屏幕底部的比例（0.1 = 10%）
+/// 卡片收起时的 Y 偏移 = screenHeight * (1 - kBottomCardCollapsedRatio)
+private let kBottomCardCollapsedRatio: CGFloat = 0.07
+
 struct ShareDetailView: View {
 
     // MARK: - 环境与依赖
@@ -476,24 +486,24 @@ struct ShareDetailView: View {
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.white.opacity(0.85))
                                 .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.white.opacity(0.35))
-                                )
+                                .padding(.vertical, 4)
+//                                .background(
+//                                    Capsule()
+//                                        .fill(Color.white.opacity(0.35))
+//                                )
 
-                            Spacer()
+//                            Spacer()
 
                             // 右边：褪色度
                             Text("褪色度：\(share.fadeScore)%")
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.white.opacity(0.85))
                                 .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.white.opacity(0.35))
-                                )
+                                .padding(.vertical, 4)
+//                                .background(
+//                                    Capsule()
+//                                        .fill(Color.white.opacity(0.35))
+//                                )
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
@@ -507,7 +517,7 @@ struct ShareDetailView: View {
                             interactionViewModel.isShowingStickerSummaryOverlay = true
                         }
                     )
-                    .padding(.top, 8)
+//                    .padding(.top, 8)
 
                     Spacer()
                 }
@@ -520,21 +530,26 @@ struct ShareDetailView: View {
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │  🎨 贴纸交互层 Overlay (SpriteKit)                                   │
         // │  - 底部贴纸队列（可拖动使用）                                         │
-        // │  - 使用区域在屏幕上方 1/4 位置                                        │
-        // │  - 只有底部 250pt 响应触摸，上方区域穿透                              │
+        // │  - 使用区域在屏幕正中心                                               │
+        // │  - 只有底部区域响应触摸，上方区域穿透                                  │
         // │  - 通过 isShowShareDetailsCard 控制显隐                              │
         // └─────────────────────────────────────────────────────────────────────┘
         .overlay {
             GeometryReader { geo in
-                // 计算使用区域：屏幕中心偏上位置（SwiftUI 坐标系）
-                // 注意：这里使用 SwiftUI 坐标系，StickerFieldView 内部会自动转换为 SpriteKit 坐标
+                // ✅ 粒子效果使用区域：屏幕正中心（SwiftUI 坐标系）
                 let useZoneSize = CGSize(width: geo.size.width - 80, height: 120)
                 let customFrame = CGRect(
                     x: 40,
-                    y: geo.size.height * 0.25,  // 屏幕上方 1/4 位置（SwiftUI Y 轴向下）
+                    y: (geo.size.height - useZoneSize.height) / 2,  // 屏幕垂直居中
                     width: useZoneSize.width,
                     height: useZoneSize.height
                 )
+
+                // ✅ 贴纸队列位置计算（SpriteKit 坐标系，Y 轴向上）
+                // 底部卡片收起时占屏幕底部 10%，所以卡片顶部在 SpriteKit 中的 Y = screenHeight * 0.1
+                // 贴纸队列最底部 = 底部卡片顶部 + 间距
+                let bottomCardTopY = geo.size.height * kBottomCardCollapsedRatio
+                let stickerQueueBottomY = bottomCardTopY + kStickerQueueToCardSpacing
 
                 StickerFieldView(
                     stickers: interactionViewModel.visibleStickerDefinitions,  // 动态贴纸列表（应用互斥逻辑）
@@ -549,7 +564,7 @@ struct ShareDetailView: View {
                     showBackground: false,
                     showUseZoneHint: false,
                     customUseZoneFrame: customFrame,  // 传入自定义使用区域（SwiftUI 坐标）
-                    queueBottomY: 180,       // 贴纸队列位置（避开底部卡片）
+                    queueBottomY: stickerQueueBottomY,  // 动态计算的贴纸队列位置
                     touchAreaHeight: 250,    // 只在底部 250pt 区域响应触摸，上方区域穿透
                     enableAutoScroll: false  // 关闭自动轮播，节省性能
                 )
@@ -633,6 +648,7 @@ struct ShareDetailView: View {
 //                        .interactiveDismissDisabled()
 //        }
 
+        // MARK: - 底部详情卡片 Overlay
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │  📋 底部详情卡片 Overlay                                             │
         // │  - 显示分享描述、评论等内容                                          │
@@ -703,6 +719,7 @@ struct ShareDetailView: View {
             .ignoresSafeArea()
         )
 
+        // MARK: - 👍 右侧互动按钮 Overlay
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │  👍 右侧互动按钮 Overlay                                             │
         // │  - 点赞/无感按钮                                                     │
@@ -878,11 +895,12 @@ struct ShareDetailView: View {
     // MARK:   🔧 辅助计算属性
     // MARK: - ═══════════════════════════════════════════════════════════════════
 
-    /// 组合键：用于监听 share 状态变化（id + voteType + agreeCount）
-    /// 任何一个变化都会触发 reinitializeInteractionViewModel
+    /// 组合键：用于监听 share ID 变化（切换到不同分享时）
+    /// ⚠️ 不再监听 voteType/agreeCount 变化，因为这些已被 ViewModel 内部处理
+    /// 如果监听这些属性，会导致投票成功后触发 reinitialize，打断互斥动画
     private var shareStateKey: String {
         guard let share = searchViewModel.selectedShare else { return "nil" }
-        return "\(share.id)_\(share.currentUserVoteType ?? -999)_\(share.agreeCount)"
+        return "\(share.id)"
     }
 
     // MARK: - ═══════════════════════════════════════════════════════════════════

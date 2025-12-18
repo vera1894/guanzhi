@@ -62,7 +62,8 @@ enum StickerSpriteFactory {
 
         // 位置：贴纸下方居中（相对于贴纸中心）
         // 贴纸中心在 (0, 0)，标签在下方
-        label.position = CGPoint(x: 0, y: -stickerSize.height / 2 - 10)
+        // 间距使用 StickerScene.swift 顶部的 kStickerLabelSpacing 常量
+        label.position = CGPoint(x: 0, y: -stickerSize.height / 2 - kStickerLabelSpacing)
         label.horizontalAlignmentMode = .center
         label.verticalAlignmentMode = .top
 

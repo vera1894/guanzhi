@@ -81,40 +81,50 @@ struct ShareDetailsCardView: View {
                             
                             
                             VStack(alignment: .leading, spacing: Constants.spacingSpacingXs) {
-                                //内容
-                                Text(share.data)
-                                    .font(Font.custom("PingFang SC", size: 16))
-                                    .kerning(0.22)
-                                    .foregroundColor(isFullScreen ? Color("color-black") : Color.white)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                //分享内容
+                                if isFullScreen {
+                                    // 全屏状态：显示完整内容
+                                    Text(share.data)
+                                        .font(Font.custom("PingFang SC", size: 16))
+                                        .kerning(0.22)
+                                        .foregroundColor(Color("color-black"))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                } else {
+                                    // 收起状态：最多2行 + "·查看更多"
+                                    collapsedContentView(text: share.data)
+                                }
                                 
                                 // 次级信息
-                                HStack {
-    //                                Text("#FB80765·2023.02.12 12:22")
-                                    Text("#\(share.id) · \(searchViewModel.formattedDate(from: share.createDate))")
-                                        .font(Font.custom("PingFang SC", size: 14))
-                                        .kerning(0.22)
-                                        .foregroundColor(Color("text-deepgray"))
-                                    Spacer()
-                                }
+//                                HStack {
+//    //                                Text("#FB80765·2023.02.12 12:22")
+//                                    Text("#\(share.id) · \(searchViewModel.formattedDate(from: share.createDate))")
+//                                        .font(Font.custom("PingFang SC", size: 14))
+//                                        .kerning(0.22)
+//                                        .foregroundColor(Color("text-deepgray"))
+//                                    Spacer()
+//                                }
                                 
                                 // 位置信息
-                                HStack{
-                                    Text("📌 \(share.address)") //需要调整
-                                        .font(Font.custom("PingFang SC", size: 14))
-                                        .kerning(0.22)
-                                        .foregroundColor(isFullScreen ? Color("color-black") : Color.white)
-                                        .lineLimit(1) // 限制显示一行
-                                        .truncationMode(.tail) // 设置省略模式为尾部省略
-                                    Spacer()
-                                    Button(action: {
-                                        // 查看路线-胶囊按钮s
-                                        openNavigationApp(destination: CLLocationCoordinate2D(latitude: share.latitude, longitude: share.longitude))
-                                    }) {
-                                        Text("🧭 查看路线")
+                                if isFullScreen {
+                                    HStack{
+                                        Text("📌 \(share.address)") //需要调整
+                                            .font(Font.custom("PingFang SC", size: 14))
+                                            .kerning(0.22)
+                                            .foregroundColor(isFullScreen ? Color("color-black") : Color.white)
+                                            .lineLimit(1) // 限制显示一行
+                                            .truncationMode(.tail) // 设置省略模式为尾部省略
+                                        Spacer()
+                                        Button(action: {
+                                            // 查看路线-胶囊按钮s
+                                            openNavigationApp(destination: CLLocationCoordinate2D(latitude: share.latitude, longitude: share.longitude))
+                                        }) {
+                                            Text("🧭 查看路线")
+                                        }
+                                        .buttonStyle(ButtonStyle_capsuleHugPrimary_s(isEnabled: true))
                                     }
-                                    .buttonStyle(ButtonStyle_capsuleHugPrimary_s(isEnabled: true))
                                 }
+                                
+                                
                             } //主题内容
                             .padding(.horizontal, Constants.spacingSpacingM)
                             .padding(.bottom, Constants.spacingSpacingXs)
@@ -159,7 +169,7 @@ struct ShareDetailsCardView: View {
                     Group {
                         if isFullScreen {
                             // 展开状态：模糊背景
-                            BlurView(style: .systemMaterialLight)
+                            BlurView(style: .systemMaterial)
                         } else {
                             // 收起状态：完全透明背景
                             Color.clear
@@ -334,6 +344,20 @@ struct ShareDetailsCardView: View {
         }
     
     // MARK: - 视图拆分
+
+    /// 收起状态的内容视图（最多2行 + "·查看更多"）
+    @ViewBuilder
+    private func collapsedContentView(text: String) -> some View {
+        // 使用 Text 连接，支持不同样式
+        // 注意：lineLimit(2) 会截断整个组合文本
+        (Text(text) + Text(" ·查看更多").foregroundColor(Color("color-primary")))
+            .font(Font.custom("PingFang SC", size: 16))
+            .kerning(0.22)
+            .foregroundColor(Color("color-black"))
+            .lineLimit(2)
+            .truncationMode(.tail)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
         @ViewBuilder
         private func userProfileSectionForMine(localUser: LocalUserProfile) -> some View {
