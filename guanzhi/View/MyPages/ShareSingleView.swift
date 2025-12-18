@@ -189,6 +189,7 @@ struct ShareSingleView: View {
         neutralCount: 2,
         checkinCount: 5,
         commentCount: 3,
-        currentUserVoteType: nil
+        currentUserVoteType: nil,
+        fadeScore: 25
     ))
 }

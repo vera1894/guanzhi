@@ -31,6 +31,9 @@ class Share {
     var commentCount: Int = 0         // 评论数
     var currentUserVoteType: Int? = nil // 当前用户的投票状态 (1=赞同, 0=无感, -1或nil=取消)
 
+    // ✅ 新增：褪色度字段
+    var fadeScore: Int = 0            // 褪色度 (0-100)
+
     // 修改计算属性以处理可选值
     var imagePaths: [String] {
         get {

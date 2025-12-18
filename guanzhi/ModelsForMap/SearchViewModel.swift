@@ -200,6 +200,9 @@ class SearchViewModel: ObservableObject {
         share.checkinCount = responsedShare.checkinCount ?? 0
         share.commentCount = responsedShare.commentCount ?? 0
 
+        // ✅ 新增：同步褪色度字段
+        share.fadeScore = responsedShare.fadeScore ?? 0
+
         // ✅ 关键修复：只在后端返回非 nil 时更新 currentUserVoteType
         // 避免后端不返回该字段时，用 nil 覆盖本地已保存的状态
         if let voteType = responsedShare.currentUserVoteType {
@@ -540,6 +543,10 @@ class SearchViewModel: ObservableObject {
                 )
             } else {
                 // 无法解析的文件名格式
+                print("⚠️ 无法解析媒体文件：文件名格式不匹配任何已知模式")
+                print("   - 原始路径: '\(path)'")
+                print("   - 文件名: '\(fileName)'")
+                print("   - 按 '-' 分割后组件数: \(components.count) (期望: 2)")
                 return nil
             }
         }
@@ -951,26 +958,50 @@ class SearchViewModel: ObservableObject {
         
         self.selectedShare = share
         self.selectedAnnotation = annotations.first { $0.id == "\(shareId)" }
+
+        #if DEBUG
+        print("📂 [loadFromLocal] 加载分享 \(shareId)")
+        print("   - imagePaths: \(share.imagePaths)")
+        #endif
+
         // 获取媒体文件
         let mediaFetchDescriptor = FetchDescriptor<MediaFile>(
             predicate: #Predicate { $0.shareId == shareId },
             sortBy: [SortDescriptor(\MediaFile.timestamp, order: .forward)]
         )
-        
+
         if let mediaFiles = try? context.fetch(mediaFetchDescriptor) {
+            #if DEBUG
+            print("   - 数据库中找到 \(mediaFiles.count) 个 MediaFile 记录")
+            for mf in mediaFiles {
+                print("     • type=\(mf.type), prefix=\(mf.prefix), fullPath=\(mf.fullPath)")
+            }
+            #endif
+
             // 解析媒体文件，创建 MediaItemWrapper 数组
             let mediaItems = parseMediaFiles(mediaFiles)
-            
+
+            #if DEBUG
+            print("   - 解析后得到 \(mediaItems.count) 个 MediaItemWrapper")
+            if mediaItems.isEmpty && !share.imagePaths.isEmpty {
+                print("   ⚠️ 警告：imagePaths 非空但 MediaItemWrapper 为空，可能是解析问题！")
+            }
+            #endif
+
             // 更新 self.downloadMedia
             DispatchQueue.main.async {
                 self.downloadMedia = mediaItems
             }
-            
+
             // 下载媒体文件并更新对应的 MediaItemWrapper
             downloadMediaFiles(mediaItems: mediaItems)
             return true
         }
-        
+
+        #if DEBUG
+        print("   - ⚠️ 无法从数据库获取 MediaFile 记录")
+        #endif
+
         return true
     }
     
@@ -1115,7 +1146,37 @@ class SearchViewModel: ObservableObject {
             throw error
         }
     }
-    
+
+    /// 重新下载损坏的媒体文件并更新 MediaItemWrapper
+    /// - Parameters:
+    ///   - mediaFile: 需要重新下载的 MediaFile
+    ///   - wrapper: 对应的 MediaItemWrapper
+    func redownloadMediaFile(mediaFile: MediaFile, wrapper: MediaItemWrapper) async {
+        print("🔄 开始重新下载损坏的媒体文件：\(mediaFile.fullPath)")
+
+        do {
+            // 重新下载
+            try await downloadMediaFile(mediaFile: mediaFile)
+
+            // 如果是视频文件，也检查并重新下载
+            if let videoFile = wrapper.videoFile, videoFile.localURL == nil {
+                try await downloadMediaFile(mediaFile: videoFile)
+            }
+
+            // 在主线程上创建媒体项
+            await MainActor.run {
+                if let mediaItem = createMediaItem(from: wrapper) {
+                    wrapper.mediaItem = mediaItem
+                    print("✅ 重新下载成功，媒体项已创建")
+                } else {
+                    print("❌ 重新下载后仍无法创建媒体项")
+                }
+            }
+        } catch {
+            print("❌ 重新下载媒体文件失败：\(error)")
+        }
+    }
+
     // 解析媒体文件，创建 MediaItemWrapper 数组
     func parseMediaFiles(_ mediaFiles: [MediaFile]) -> [MediaItemWrapper] {
         // 按照客户端标记分组
@@ -1227,11 +1288,35 @@ class SearchViewModel: ObservableObject {
     func createMediaItem(from mediaItemWrapper: MediaItemWrapper) -> MediaItemProtocol? {
         if let photoFile = mediaItemWrapper.photoFile, photoFile.type != .thumbnail, let photoLocalURL = photoFile.localURL {
             print("创建媒体项，照片文件已下载，本地 URL：\(photoLocalURL)")
+
+            // ✅ 验证缓存文件是否存在且可读
+            guard FileManager.default.fileExists(atPath: photoLocalURL.path) else {
+                print("⚠️ 缓存文件不存在，清除 localURL 以触发重新下载：\(photoLocalURL.path)")
+                photoFile.localURL = nil
+                try? context.save()
+                // 触发重新下载
+                Task {
+                    await redownloadMediaFile(mediaFile: photoFile, wrapper: mediaItemWrapper)
+                }
+                return nil
+            }
+
             if let imageData = try? Data(contentsOf: photoLocalURL) {
                 if let videoFile = mediaItemWrapper.videoFile {
                     if let videoLocalURL = videoFile.localURL {
+                        // ✅ 验证视频缓存文件是否存在
+                        guard FileManager.default.fileExists(atPath: videoLocalURL.path) else {
+                            print("⚠️ LivePhoto 视频缓存文件不存在，清除 localURL 以触发重新下载：\(videoLocalURL.path)")
+                            videoFile.localURL = nil
+                            try? context.save()
+                            Task {
+                                await redownloadMediaFile(mediaFile: videoFile, wrapper: mediaItemWrapper)
+                            }
+                            return nil
+                        }
+
                         print("创建媒体项，视频文件已下载，本地 URL：\(videoLocalURL)")
-                        
+
                         // ✅ 方案切换：根据开关决定创建类型
                         if USE_VIDEO_PLAYBACK {
                             // 方案B：创建 Movie（短视频播放）
@@ -1268,10 +1353,30 @@ class SearchViewModel: ObservableObject {
                     return photo
                 }
             } else {
-                print("无法读取照片数据，路径：\(photoLocalURL)")
+                print("⚠️ 无法读取照片数据（文件可能损坏），删除并重新下载：\(photoLocalURL)")
+                // 删除损坏的缓存文件
+                try? FileManager.default.removeItem(at: photoLocalURL)
+                photoFile.localURL = nil
+                try? context.save()
+                // 触发重新下载
+                Task {
+                    await redownloadMediaFile(mediaFile: photoFile, wrapper: mediaItemWrapper)
+                }
             }
         } else if let videoFile = mediaItemWrapper.videoFile, let videoLocalURL = videoFile.localURL {
             print("创建媒体项，视频文件已下载，本地 URL：\(videoLocalURL)")
+
+            // ✅ 验证视频缓存文件是否存在
+            guard FileManager.default.fileExists(atPath: videoLocalURL.path) else {
+                print("⚠️ 视频缓存文件不存在，清除 localURL 以触发重新下载：\(videoLocalURL.path)")
+                videoFile.localURL = nil
+                try? context.save()
+                Task {
+                    await redownloadMediaFile(mediaFile: videoFile, wrapper: mediaItemWrapper)
+                }
+                return nil
+            }
+
             // 视频
             let movie = Movie(url: videoLocalURL)
             mediaItemWrapper.mediaItem = movie
@@ -1407,6 +1512,9 @@ struct ResponsedShare: Codable, Equatable {
     let checkinCount: Int?
     let commentCount: Int?
     let currentUserVoteType: Int?  // 当前用户的投票状态 (1=赞同, 0=无感, nil=未投票)
+
+    // ✅ 新增：褪色度字段
+    let fadeScore: Int?  // 褪色度 (0-100)
 }
 
 //服务器返回的附近Share列表模型

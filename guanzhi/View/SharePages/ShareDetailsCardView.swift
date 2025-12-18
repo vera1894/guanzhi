@@ -20,6 +20,8 @@ struct ShareDetailsCardView: View {
     
     @State private var isLoadingUser: Bool = false
     @State private var loadUserError: String?
+    @State private var topPadding: Double = 0.01
+    @State private var showDragIndicator: Bool = false  // 拖动指示条延迟显示
     
     private var localUser: LocalUserProfile {
         return userProfileManager.localUserProfile!
@@ -29,53 +31,61 @@ struct ShareDetailsCardView: View {
         if let share = searchViewModel.selectedShare {
             ZStack {
                 VStack {
-    //                Text("Scroll offset: \(scrollPosition.y)  \(isFullScreen)  \(isAtTop)") //调试用
-                    
-                    Rectangle()
-                        .foregroundStyle(Color("color-gray"))
-                        .frame(width: 36, height: 5)
-                        .cornerRadius(2.5, corners: .allCorners)
-                        .padding(.top, 6)
+
+                    // 拖动指示条（仅展开状态显示，带延迟以配合展开动画）
+                    if showDragIndicator {
+                        Rectangle()
+                            .foregroundStyle(Color("color-white"))
+                            .frame(width: 36, height: 6)
+                            .cornerRadius(3, corners: .allCorners)
+                            .padding(.top, 8)
+                            .transition(.opacity)
+                    } else {
+                        // 收起状态：占位符保持布局一致
+                        Color.clear
+                            .frame(width: 36, height: 6)
+                            .padding(.top, 8)
+                    }
                     
                     ScrollView {
                         VStack {
                             
                             // 用户信息区域
-                            if isAuthorMyself(share.userId) {
-                                // 显示本机用户
-                                if let local = userProfileManager.localUserProfile {
-                                    userProfileSectionForMine(localUser: local)
-                                        .onTapGesture {
-                                            navigationCoordinator.path.append(Route.myView)
-                                        }
-                                } else {
-                                    Text("本机用户信息尚未加载")
-                                }
-                            } else {
-                                // 显示他人用户
-                                if isLoadingUser {
-                                    Text("加载中...")
-                                } else if let error = loadUserError {
-                                    Text("加载失败：\(error)")
-                                        .foregroundColor(.red)
-                                } else if let otherUserInfo = userProfileManager.otherUserProfile,
-                                          otherUserInfo.id == share.userId  {
-                                    userProfileSectionForOthers(otherInfo: otherUserInfo)
-                                        .onTapGesture {
-                                            navigationCoordinator.path.append(Route.othersView(userId: Int(share.userId)))
-                                        }
-                                } else {
-                                    Text("加载中或无数据")
-                                }
-                            }
+//                            if isAuthorMyself(share.userId) {
+//                                // 显示本机用户
+//                                if let local = userProfileManager.localUserProfile {
+//                                    userProfileSectionForMine(localUser: local)
+//                                        .onTapGesture {
+//                                            navigationCoordinator.path.append(Route.myView)
+//                                        }
+//                                } else {
+//                                    Text("本机用户信息尚未加载")
+//                                }
+//                            } else {
+//                                // 显示他人用户
+//                                if isLoadingUser {
+//                                    Text("加载中...")
+//                                } else if let error = loadUserError {
+//                                    Text("加载失败：\(error)")
+//                                        .foregroundColor(.red)
+//                                } else if let otherUserInfo = userProfileManager.otherUserProfile,
+//                                          otherUserInfo.id == share.userId  {
+//                                    userProfileSectionForOthers(otherInfo: otherUserInfo)
+//                                        .onTapGesture {
+//                                            navigationCoordinator.path.append(Route.othersView(userId: Int(share.userId)))
+//                                        }
+//                                } else {
+//                                    Text("加载中或无数据")
+//                                }
+//                            }
                             
                             
                             VStack(alignment: .leading, spacing: Constants.spacingSpacingXs) {
-//                                Text("快来这里看看！快来这里看看！快来这里看看！快来这里看看！")
+                                //内容
                                 Text(share.data)
                                     .font(Font.custom("PingFang SC", size: 16))
                                     .kerning(0.22)
-                                    .foregroundColor(Color("color-black"))
+                                    .foregroundColor(isFullScreen ? Color("color-black") : Color.white)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
                                 // 次级信息
@@ -86,10 +96,6 @@ struct ShareDetailsCardView: View {
                                         .kerning(0.22)
                                         .foregroundColor(Color("text-deepgray"))
                                     Spacer()
-//                                    Text("👀 XXX") //浏览量 暂时去除
-//                                        .font(Font.custom("PingFang SC", size: 14))
-//                                        .kerning(0.22)
-//                                        .foregroundColor(Color("color-black"))
                                 }
                                 
                                 // 位置信息
@@ -97,7 +103,7 @@ struct ShareDetailsCardView: View {
                                     Text("📌 \(share.address)") //需要调整
                                         .font(Font.custom("PingFang SC", size: 14))
                                         .kerning(0.22)
-                                        .foregroundColor(Color("color-black"))
+                                        .foregroundColor(isFullScreen ? Color("color-black") : Color.white)
                                         .lineLimit(1) // 限制显示一行
                                         .truncationMode(.tail) // 设置省略模式为尾部省略
                                     Spacer()
@@ -134,14 +140,14 @@ struct ShareDetailsCardView: View {
                         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
                             self.scrollPosition = value
                         }
-                        .padding(.top, isFullScreen ? UIScreen.main.bounds.height * 0.05 : 0)
-                    }
+                        .padding(.top, isFullScreen ? UIScreen.main.bounds.height * topPadding : 0)
+                    }  // 卡片中的内容与顶部距离
                     .coordinateSpace(name: "scroll")
                     .onAppear(perform: {
                         isAtTop = true
                     })
                     .onChange(of: scrollPosition) { _ , _ in
-                        if scrollPosition.y >= (UIScreen.main.bounds.height * 0.05 - 5) {
+                        if scrollPosition.y >= (UIScreen.main.bounds.height * topPadding - 5) { // 卡片中的内容与顶部距离
                             isAtTop = true
                         } else {
                             isAtTop = false
@@ -150,10 +156,16 @@ struct ShareDetailsCardView: View {
                     
                 }
                 .background(
-                    BlurView(style: .systemMaterial) // 毛玻璃效果背景
-                        .opacity(isFullScreen ? 1 : 0.7) //根据状态调整透明度
-                        .cornerRadius(isFullScreen ? 0 : Constants.cornerRCornerRM) //卡片状态下有圆角，全屏无圆角
-    //                Color.white.opacity(isFullScreen ? 1 : 0.5 )
+                    Group {
+                        if isFullScreen {
+                            // 展开状态：模糊背景
+                            BlurView(style: .systemMaterialLight)
+                        } else {
+                            // 收起状态：完全透明背景
+                            Color.clear
+                        }
+                    }
+                    .cornerRadius(isFullScreen ? 0 : Constants.cornerRCornerRM)
                 )
                 .frame(maxWidth: .infinity)
                 .scrollDisabled(!isFullScreen || !cardDragIsActive)
@@ -201,17 +213,23 @@ struct ShareDetailsCardView: View {
                         }
                     }
                 }
-//                let userId = share.userId
-//                Task {
-//                    do {
-//                        try await userProfileManager.fetchUserFullInfo(userId: Int(userId))
-//                        print()
-//                    } catch {
-//                        print("获取本机用户信息失败: \(error)")
-//                    }
-//                }
             }
-    //        .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height) // 固定卡片尺寸为屏幕大小
+            // 监听展开/收起状态，控制拖动指示条的延迟显示
+            .onChange(of: isFullScreen) { _, newValue in
+                if newValue {
+                    // 展开时：延迟 0.3 秒显示指示条（等待展开动画完成）
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            showDragIndicator = true
+                        }
+                    }
+                } else {
+                    // 收起时：立即隐藏指示条
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        showDragIndicator = false
+                    }
+                }
+            }
         }
         
     }
@@ -319,31 +337,26 @@ struct ShareDetailsCardView: View {
 
         @ViewBuilder
         private func userProfileSectionForMine(localUser: LocalUserProfile) -> some View {
+            // 获取本机用户头像
+            let avatarImage: Image = {
+                if let uiImage = userProfileManager.avatarImage {
+                    return Image(uiImage: uiImage)
+                } else {
+                    return Image("例子")
+                }
+            }()
+
             HStack(alignment: .center, spacing: Constants.spacingSpacingXs) {
-                // 头像
-//                Button(action: {}) {
-//                    // 头像-l
-//                    
-//                }
-//                .buttonStyle(AvatarStyle_l(
-//                    isEnabled: true,
-//                    profileImage: Image("例子"),
-//                    borderThickness: 4
-//                ))
-                
+                // 头像（使用真实头像）
                 AvatarView_m(
                     isEnabled: true,
-                    profileImage: Image("例子"),
+                    profileImage: avatarImage,
                     borderThickness: 4
                 )
 
-                VStack(alignment: .leading) {
-                    Text(localUser.nickname)
-                        .font(.headline)
-                    // 其他想展示的字段 - 使用隐私保护逻辑
-                    Text("OneCode: \((localUser.name == localUser.phone) ? "⬛️⬛️⬛️⬛️" : (localUser.name))")
-                        .font(.subheadline)
-                }
+                // 只显示用户名，不显示 OneCode
+                Text(localUser.nickname)
+                    .font(.headline)
 
                 Spacer()
             }
@@ -353,29 +366,44 @@ struct ShareDetailsCardView: View {
         @ViewBuilder
         private func userProfileSectionForOthers(otherInfo: UserFullInfoModel) -> some View {
             HStack(alignment: .center, spacing: Constants.spacingSpacingXs) {
-                // 头像
-//                Button(action: {}) {
-//                    // 头像-l
-//                }
-//                .buttonStyle(AvatarStyle_l(
-//                    isEnabled: true,
-//                    profileImage: Image("例子"),
-//                    borderThickness: 4
-//                ))
-                
-                AvatarView_m(
-                    isEnabled: true,
-                    profileImage: Image("例子"),
-                    borderThickness: 4
-                )
-
-                VStack(alignment: .leading) {
-                    Text(otherInfo.nickname ?? "陌生人")
-                        .font(.headline)
-                    // 其他想展示的字段 - 使用隐私保护逻辑
-                    Text("OneCode: \((otherInfo.name == otherInfo.phone) ? "⬛️⬛️⬛️⬛️" : (otherInfo.name ?? "⬛️⬛️⬛️⬛️"))")
-                        .font(.subheadline)
+                // 头像（从网络加载或使用默认）
+                if let photoPath = otherInfo.photo,
+                   let photoURL = URL(string: photoPath) {
+                    // 使用 AsyncImage 加载他人头像
+                    AsyncImage(url: photoURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            AvatarView_m(
+                                isEnabled: true,
+                                profileImage: image,
+                                borderThickness: 4
+                            )
+                        case .failure, .empty:
+                            AvatarView_m(
+                                isEnabled: true,
+                                profileImage: Image("例子"),
+                                borderThickness: 4
+                            )
+                        @unknown default:
+                            AvatarView_m(
+                                isEnabled: true,
+                                profileImage: Image("例子"),
+                                borderThickness: 4
+                            )
+                        }
+                    }
+                } else {
+                    // 无头像 URL，使用默认头像
+                    AvatarView_m(
+                        isEnabled: true,
+                        profileImage: Image("例子"),
+                        borderThickness: 4
+                    )
                 }
+
+                // 只显示用户名，不显示 OneCode
+                Text(otherInfo.nickname ?? "陌生人")
+                    .font(.headline)
 
                 Spacer()
             }

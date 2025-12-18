@@ -49,6 +49,10 @@ final class StickerScene: SKScene {
     private var stickerDefinitions: [StickerDefinition]
     private var stickerNodes: [SKSpriteNode] = []
 
+    /// ✅ 备用的有效尺寸（用于解决 SpriteView 创建时 size 被重置为 0 的问题）
+    /// 当 didChangeSize 收到 (0, 0) 时，恢复此尺寸
+    private var lastValidSize: CGSize = .zero
+
     // MARK: - 配置
 
     private let stickerSize = CGSize(width: 72, height: 72)
@@ -165,6 +169,10 @@ final class StickerScene: SKScene {
         self.stickerDefinitions = []
         super.init(size: size)
         scaleMode = .resizeFill
+        // ✅ 保存初始有效 size
+        if size.width > 0, size.height > 0 {
+            lastValidSize = size
+        }
     }
 
     /// 带贴纸列表的初始化器
@@ -174,6 +182,10 @@ final class StickerScene: SKScene {
         // 使用 resizeFill 让场景坐标系精确匹配视图尺寸
         // 这样 size.width 就是实际屏幕宽度
         scaleMode = .resizeFill
+        // ✅ 保存初始有效 size
+        if size.width > 0, size.height > 0 {
+            lastValidSize = size
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -186,18 +198,28 @@ final class StickerScene: SKScene {
     /// 会清除所有现有节点，然后根据新的定义重新布局
     func resetStickers(with newStickers: [StickerDefinition]) {
         #if DEBUG
-        print("✅ [StickerScene] resetStickers, count=\(newStickers.count), size=\(size)")
+        print("✅ [StickerScene] resetStickers, count=\(newStickers.count), size=\(size), lastValidSize=\(lastValidSize)")
         #endif
 
-        // ✅ 保护：场景尺寸必须有效
-        guard size.width > 0, size.height > 0 else {
-            #if DEBUG
-            print("⚠️ [StickerScene] resetStickers 跳过，size 无效：\(size)")
-            #endif
-            // 先保存定义，等尺寸有效时再布局
-            stickerDefinitions = newStickers
-            return
+        // ✅ 修复：如果当前 size 无效，但有有效的 lastValidSize，先恢复
+        if size.width <= 0 || size.height <= 0 {
+            if lastValidSize.width > 0, lastValidSize.height > 0 {
+                #if DEBUG
+                print("✅ [StickerScene] resetStickers 恢复 size: \(lastValidSize)")
+                #endif
+                self.size = lastValidSize
+            } else {
+                #if DEBUG
+                print("⚠️ [StickerScene] resetStickers 跳过，size 无效且无 lastValidSize")
+                #endif
+                // 先保存定义，等尺寸有效时再布局
+                stickerDefinitions = newStickers
+                return
+            }
         }
+
+        // 保存当前有效 size
+        lastValidSize = size
 
         // 停止所有进行中的动画和状态
         stopAllInteractions()
@@ -288,19 +310,34 @@ final class StickerScene: SKScene {
 
     override func didMove(to view: SKView) {
         #if DEBUG
-        print("✅ [StickerScene] didMove(to:), size=\(size), stickers=\(stickerDefinitions.count)")
+        print("✅ [StickerScene] didMove(to:), size=\(size), lastValidSize=\(lastValidSize), stickers=\(stickerDefinitions.count)")
         #endif
 
         backgroundColor = .clear
         setupPhysicsWorld()
 
-        // ✅ 只有尺寸有效时才布局
-        if size.width > 0, size.height > 0 {
+        // ✅ 修复：如果当前 size 无效，尝试使用 lastValidSize
+        var effectiveSize = size
+        if size.width <= 0 || size.height <= 0 {
+            if lastValidSize.width > 0, lastValidSize.height > 0 {
+                #if DEBUG
+                print("✅ [StickerScene] didMove(to:) 恢复 size: \(lastValidSize)")
+                #endif
+                self.size = lastValidSize
+                effectiveSize = lastValidSize
+            }
+        } else {
+            // 保存有效 size
+            lastValidSize = size
+        }
+
+        // 只有尺寸有效时才布局
+        if effectiveSize.width > 0, effectiveSize.height > 0 {
             layoutStickers()
             calculateScrollBounds()
         } else {
             #if DEBUG
-            print("⚠️ [StickerScene] didMove(to:) 跳过布局，size 无效：\(size)")
+            print("⚠️ [StickerScene] didMove(to:) 跳过布局，size 无效且无 lastValidSize")
             #endif
         }
 
@@ -453,13 +490,24 @@ final class StickerScene: SKScene {
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
 
-        // ✅ 保护：新尺寸必须有效
+        // ✅ 修复：如果新尺寸无效，恢复到最后有效的尺寸
         guard size.width > 0, size.height > 0 else {
             #if DEBUG
-            print("⚠️ [StickerScene] didChangeSize 跳过，新 size 无效：\(size)")
+            print("⚠️ [StickerScene] didChangeSize 收到无效 size：\(size)")
             #endif
+
+            // 如果有保存的有效尺寸，恢复它
+            if lastValidSize.width > 0, lastValidSize.height > 0 {
+                #if DEBUG
+                print("✅ [StickerScene] 恢复到 lastValidSize：\(lastValidSize)")
+                #endif
+                self.size = lastValidSize
+            }
             return
         }
+
+        // 保存有效尺寸
+        lastValidSize = size
 
         // 尺寸变化时重新计算边界
         if oldSize != size && !stickerNodes.isEmpty {

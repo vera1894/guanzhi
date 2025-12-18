@@ -29,6 +29,12 @@ struct StickerFieldView: View {
     /// 使用贴纸的回调
     var onUseSticker: (StickerDefinition) -> Void
 
+    /// 贴纸加载状态（用于显示 loading/error UI）
+    var stickerLoadingState: StickerLoadingState = .loaded
+
+    /// 重试加载的回调（用户点击重试按钮时调用）
+    var onRetryLoad: (() -> Void)? = nil
+
     /// 是否显示背景渐变（默认 true）
     var showBackground: Bool = true
 
@@ -86,19 +92,54 @@ struct StickerFieldView: View {
                     backgroundGradient
                 }
 
-                // ✅ 只有尺寸有效时才渲染 SpriteKit 场景
-                if size.width > 0 && size.height > 0 {
-                    spriteKitView(size: size)
-                        .opacity(stickers.isEmpty ? 0 : 1)
+                // 根据加载状态显示不同内容
+                #if DEBUG
+                let _ = print("🎨 [StickerFieldView] 渲染状态: loadingState=\(stickerLoadingState), stickers.count=\(stickers.count), stickers.isEmpty=\(stickers.isEmpty)")
+                #endif
+
+                switch stickerLoadingState {
+                case .idle, .loading:
+                    // 加载中状态：显示加载动画
+                    #if DEBUG
+                    let _ = print("🎨 [StickerFieldView] 显示: stickerLoadingView (状态=\(stickerLoadingState))")
+                    #endif
+                    stickerLoadingView
+
+                case .failed(let retryCount):
+                    // 加载失败状态
+                    if retryCount >= StickerLoadingConfig.maxRetryCount {
+                        // 达到最大重试次数：显示重试按钮
+                        #if DEBUG
+                        let _ = print("🎨 [StickerFieldView] 显示: stickerFailedView (retryCount=\(retryCount))")
+                        #endif
+                        stickerFailedView
+                    } else {
+                        // 自动重试中：显示加载动画
+                        #if DEBUG
+                        let _ = print("🎨 [StickerFieldView] 显示: stickerLoadingView (自动重试中, retryCount=\(retryCount))")
+                        #endif
+                        stickerLoadingView
+                    }
+
+                case .loaded:
+                    // 加载成功：显示贴纸场景
+                    #if DEBUG
+                    let _ = print("🎨 [StickerFieldView] 显示: spriteKitView (stickers.count=\(stickers.count), opacity=\(stickers.isEmpty ? 0 : 1))")
+                    #endif
+                    // ✅ 只有尺寸有效时才渲染 SpriteKit 场景
+                    if size.width > 0 && size.height > 0 {
+                        spriteKitView(size: size)
+                            .opacity(stickers.isEmpty ? 0 : 1)
+                    }
+
+                    // 纹理加载中显示加载视图
+                    if isLoading && !stickers.isEmpty {
+                        loadingView
+                    }
                 }
 
-                // 加载中显示加载视图
-                if isLoading && !stickers.isEmpty {
-                    loadingView
-                }
-
-                // 使用区域 overlay
-                if showUseZoneHint {
+                // 使用区域 overlay（仅在加载成功且有贴纸时显示）
+                if showUseZoneHint && stickerLoadingState == .loaded && !stickers.isEmpty {
                     useZoneOverlay
                         .frame(height: 110)
                         .padding(.top, 100)
@@ -221,7 +262,7 @@ struct StickerFieldView: View {
         .ignoresSafeArea()
     }
 
-    /// 加载视图
+    /// 加载视图（纹理加载）
     private var loadingView: some View {
         VStack(spacing: 12) {
             ProgressView()
@@ -232,6 +273,92 @@ struct StickerFieldView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    /// 贴纸可用性加载中视图（从服务器加载）
+    /// 位置：固定在屏幕底部，与贴纸队列位置一致
+    private var stickerLoadingView: some View {
+        VStack {
+            Spacer()
+
+            HStack(spacing: 12) {
+                // 加载动画
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.2), lineWidth: 2)
+                        .frame(width: 24, height: 24)
+
+                    Circle()
+                        .trim(from: 0, to: 0.7)
+                        .stroke(
+                            Color.white.opacity(0.8),
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                        )
+                        .frame(width: 24, height: 24)
+                        .rotationEffect(.degrees(stickerLoadingRotation))
+                        .onAppear {
+                            withAnimation(.linear(duration: 1.0).repeatForever(autoreverses: false)) {
+                                stickerLoadingRotation = 360
+                            }
+                        }
+                }
+
+                Text("正在加载贴纸...")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.85))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 14)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.3))
+            )
+            .padding(.bottom, queueBottomY - 40)  // 与贴纸队列位置对齐
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 贴纸加载失败视图（显示重试按钮）
+    /// 位置：固定在屏幕底部，与贴纸队列位置一致
+    private var stickerFailedView: some View {
+        VStack {
+            Spacer()
+
+            VStack(spacing: 12) {
+                Text("贴纸加载失败")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+
+                // 重试按钮
+                Button(action: {
+                    onRetryLoad?()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("点击重试")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.2))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.35), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.bottom, queueBottomY - 40)  // 与贴纸队列位置对齐
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 加载动画旋转角度
+    @State private var stickerLoadingRotation: Double = 0
 
     /// SpriteKit 视图
     @ViewBuilder

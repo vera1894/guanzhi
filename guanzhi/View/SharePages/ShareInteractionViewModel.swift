@@ -20,6 +20,59 @@ enum VoteState: Int, Codable {
     }
 }
 
+/// 贴纸可用性加载状态枚举
+/// 参考主流 App 图片加载逻辑：idle -> loading -> loaded/failed
+enum StickerLoadingState: Equatable {
+    /// 空闲状态（初始状态）
+    case idle
+
+    /// 加载中（显示 loading 动画）
+    case loading
+
+    /// 加载成功
+    case loaded
+
+    /// 加载失败（可重试）
+    /// - Parameter retryCount: 已重试次数
+    case failed(retryCount: Int)
+
+    /// 是否可以重试（未达到最大重试次数）
+    var canRetry: Bool {
+        if case .failed(let count) = self {
+            return count < StickerLoadingConfig.maxRetryCount
+        }
+        return false
+    }
+
+    /// 是否显示重试按钮（达到最大重试次数）
+    var shouldShowRetryButton: Bool {
+        if case .failed(let count) = self {
+            return count >= StickerLoadingConfig.maxRetryCount
+        }
+        return false
+    }
+
+    /// 当前重试次数
+    var currentRetryCount: Int {
+        if case .failed(let count) = self {
+            return count
+        }
+        return 0
+    }
+}
+
+/// 贴纸加载配置
+enum StickerLoadingConfig {
+    /// 最大重试次数（主流 App 通常为 3 次）
+    static let maxRetryCount = 3
+
+    /// 重试延迟基数（毫秒）- 使用指数退避
+    static let retryBaseDelayMs: UInt64 = 500
+
+    /// 请求超时时间（秒）
+    static let requestTimeoutSeconds: Double = 10.0
+}
+
 /// 分享互动 ViewModel（点赞、打卡等）
 ///
 /// 关键特性：
@@ -64,11 +117,23 @@ class ShareInteractionViewModel: ObservableObject {
     /// 贴纸可用性列表（从服务器加载）
     @Published var stickerAvailabilities: [StickerAvailability] = []
 
-    /// 是否正在加载贴纸可用性
-    @Published var isLoadingStickerAvailability: Bool = false
+    /// 贴纸加载状态（统一状态管理）
+    @Published var stickerLoadingState: StickerLoadingState = .idle
 
-    /// 贴纸可用性加载错误
+    /// 贴纸可用性加载错误信息（用于显示）
     @Published var stickerAvailabilityError: String? = nil
+
+    // MARK: - Computed Properties for Loading State (向后兼容)
+
+    /// 是否正在加载贴纸可用性（派生属性，向后兼容）
+    var isLoadingStickerAvailability: Bool {
+        stickerLoadingState == .loading
+    }
+
+    /// 是否加载失败且需要显示重试按钮
+    var shouldShowStickerRetryButton: Bool {
+        stickerLoadingState.shouldShowRetryButton
+    }
 
     // MARK: - 标签贴纸本地统计（临时方案）
     // TODO: 后续后端在分享详情中返回标签统计后，用服务器数据替代
@@ -420,15 +485,26 @@ class ShareInteractionViewModel: ObservableObject {
 
     // MARK: - 贴纸可用性 API 方法
 
-    /// 从服务器加载贴纸可用性列表
-    /// - Parameter shareId: 分享 ID
-    /// - Note: 如果加载失败，会降级使用本地权限计算
-    func loadStickerAvailability(shareId: Int64) async {
-        isLoadingStickerAvailability = true
+    /// 从服务器加载贴纸可用性列表（带自动重试机制）
+    /// - Parameters:
+    ///   - shareId: 分享 ID
+    ///   - isManualRetry: 是否为用户手动重试（重置重试计数）
+    /// - Note: 自动重试 3 次，使用指数退避策略；超过后显示重试按钮
+    func loadStickerAvailability(shareId: Int64, isManualRetry: Bool = false) async {
+        // 如果是手动重试，重置状态
+        let currentRetryCount: Int
+        if isManualRetry {
+            currentRetryCount = 0
+        } else {
+            currentRetryCount = stickerLoadingState.currentRetryCount
+        }
+
+        // 设置为加载中状态
+        stickerLoadingState = .loading
         stickerAvailabilityError = nil
 
         #if DEBUG
-        print("📡 [ShareInteraction] 开始加载贴纸可用性: shareId=\(shareId)")
+        print("📡 [ShareInteraction] 开始加载贴纸可用性: shareId=\(shareId), retry=\(currentRetryCount)")
         #endif
 
         do {
@@ -436,10 +512,12 @@ class ShareInteractionViewModel: ObservableObject {
 
             await MainActor.run {
                 self.stickerAvailabilities = availabilities
-                self.isLoadingStickerAvailability = false
 
-                // 应用服务器返回的可用性数据
+                // ✅ 修复：先应用贴纸数据，再设置状态为 loaded
+                // 这样 SwiftUI 渲染时 visibleStickerDefinitions 已经有值
+                // 避免 StickerFieldView 因 stickers.isEmpty 而设置透明度为 0
                 self.applyStickerAvailability(availabilities)
+                self.stickerLoadingState = .loaded
             }
 
             #if DEBUG
@@ -459,19 +537,54 @@ class ShareInteractionViewModel: ObservableObject {
             #endif
 
         } catch {
+            let newRetryCount = currentRetryCount + 1
+
             await MainActor.run {
-                self.isLoadingStickerAvailability = false
+                self.stickerLoadingState = .failed(retryCount: newRetryCount)
                 self.stickerAvailabilityError = error.localizedDescription
 
                 #if DEBUG
-                print("⚠️ [ShareInteraction] 贴纸可用性加载失败: \(error.localizedDescription)")
-                print("   → 降级使用本地权限计算")
+                print("⚠️ [ShareInteraction] 贴纸可用性加载失败 (第 \(newRetryCount) 次): \(error.localizedDescription)")
+                #endif
+            }
+
+            // 判断是否需要自动重试
+            if newRetryCount < StickerLoadingConfig.maxRetryCount {
+                // 使用指数退避策略重试
+                let delayMs = StickerLoadingConfig.retryBaseDelayMs * UInt64(1 << (newRetryCount - 1))
+
+                #if DEBUG
+                print("🔄 [ShareInteraction] 将在 \(delayMs)ms 后自动重试...")
                 #endif
 
-                // 降级：使用本地权限计算（投票类贴纸始终可用）
-                self.fallbackToLocalAvailability()
+                try? await Task.sleep(nanoseconds: delayMs * 1_000_000)
+
+                // 递归重试（非手动重试，保留重试计数）
+                await loadStickerAvailability(shareId: shareId, isManualRetry: false)
+            } else {
+                // 达到最大重试次数，降级到本地可用性
+                await MainActor.run {
+                    #if DEBUG
+                    print("❌ [ShareInteraction] 达到最大重试次数 (\(StickerLoadingConfig.maxRetryCount))，降级使用本地权限计算")
+                    #endif
+
+                    // 降级：使用本地权限计算（投票类贴纸始终可用）
+                    self.fallbackToLocalAvailability()
+
+                    // ✅ 关键修复：降级后将状态设为 loaded，让 UI 显示降级后的贴纸
+                    self.stickerLoadingState = .loaded
+                }
             }
         }
+    }
+
+    /// 用户手动重试加载贴纸可用性
+    /// - Parameter shareId: 分享 ID
+    func retryStickerAvailability(shareId: Int64) async {
+        #if DEBUG
+        print("🔁 [ShareInteraction] 用户点击重试，重新加载贴纸可用性")
+        #endif
+        await loadStickerAvailability(shareId: shareId, isManualRetry: true)
     }
 
     /// 应用服务器返回的贴纸可用性数据

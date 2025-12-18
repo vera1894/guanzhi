@@ -84,6 +84,8 @@ enum OTORequest {
     case updateUserPhoto(newPhoto: String)
     case deleteShare(id: Int)
     case voteShare(shareId: Int64, voteType: Int)
+    /// 记录分享浏览（用于褪色度计算）
+    case recordShareView(shareId: Int64)
 
     // MARK: - 贴纸系统 API
     /// 获取贴纸可用性列表
@@ -279,6 +281,14 @@ extension OTORequest {
                         "shareId": shareId,
                         "voteType": voteType
                     ]
+                )
+
+            // ✅ 新增：记录分享浏览（用于褪色度计算）
+            case .recordShareView(let shareId):
+                return .init(
+                    path: "/api/shares/\(shareId)/view",
+                    method: .post,
+                    param: [:]
                 )
 
             // MARK: - 贴纸系统 API

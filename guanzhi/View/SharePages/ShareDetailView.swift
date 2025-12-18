@@ -178,6 +178,11 @@ struct ShareDetailView: View {
     /// 提供 visibleStickerDefinitions（应用互斥逻辑后的可用贴纸列表）
     @StateObject private var interactionViewModel = ShareInteractionViewModel()
 
+    // MARK: - 📊 浏览统计（用于褪色度计算）
+
+    /// 是否已记录本次浏览（防止重复上报）
+    @State private var hasRecordedView: Bool = false
+
     // MARK: - 计算属性
 
     /// 判断当前分享是否是自己发布的（用于决定显示"删除"还是"举报"）
@@ -223,13 +228,14 @@ struct ShareDetailView: View {
                                             mediaItemWrapper: itemWrapper,
                                             thumbnailImage: searchViewModel.selectedAnnotationImage,
                                             currentIndex: index,
-                                            selectedIndex: selectedIndex
+                                            selectedIndex: selectedIndex,
+                                            totalMediaCount: searchViewModel.downloadMedia.count  // 传入总数用于页数指示器
                                         )
                                         .tag(index)
                                     }
                                 }
-                                .tabViewStyle(PageTabViewStyle())
-                                .coordinateSpace(name: "PlayerSpace") // ✅ 将坐标空间定义在 TabView 上
+                                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))  // 隐藏页数指示点
+                                .coordinateSpace(name: "PlayerSpace")
                                 .ignoresSafeArea()
     //                            .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: animationNamespace, isSource: false)
                                 // ✅ 将 overlayPreferenceValue 应用在 TabView 上，确保坐标空间一致
@@ -330,6 +336,7 @@ struct ShareDetailView: View {
                         }
                     }
 
+            // MARK: - 整个页面的手势控制
             // ┌─────────────────────────────────────────────────────────────┐
             // │  👇 下拉退出手势                                             │
             // │  - 下拉超过 120pt 退出详情页                                  │
@@ -415,6 +422,7 @@ struct ShareDetailView: View {
         .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
 
+        // MARK: - 顶部导航栏
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │  🔝 顶部导航栏 Overlay                                               │
         // │  - 返回按钮 | 用户信息胶囊 | 更多按钮                                 │
@@ -438,6 +446,7 @@ struct ShareDetailView: View {
 
                         Spacer()
 
+                        // MARK: - 用户信息胶囊💊
                         // 用户信息胶囊
                         if let share = searchViewModel.selectedShare {
                             UserInfoCapsule(
@@ -459,6 +468,37 @@ struct ShareDetailView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
+                    // 分享次级信息 + 褪色度显示行
+                    if let share = searchViewModel.selectedShare {
+                        HStack {
+                            // 左边：分享ID和日期
+                            Text("#\(share.id) · \(searchViewModel.formattedDate(from: share.createDate))")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.85))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.35))
+                                )
+
+                            Spacer()
+
+                            // 右边：褪色度
+                            Text("褪色度：\(share.fadeScore)%")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.85))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.35))
+                                )
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                    }
+
                     // 贴纸统计展示条
                     StickerSummaryBar(
                         items: interactionViewModel.stickerSummaries,
@@ -467,7 +507,7 @@ struct ShareDetailView: View {
                             interactionViewModel.isShowingStickerSummaryOverlay = true
                         }
                     )
-                    .padding(.top, 12)
+                    .padding(.top, 8)
 
                     Spacer()
                 }
@@ -500,6 +540,11 @@ struct ShareDetailView: View {
                     stickers: interactionViewModel.visibleStickerDefinitions,  // 动态贴纸列表（应用互斥逻辑）
                     onUseSticker: { sticker in
                         handleStickerUse(sticker)
+                    },
+                    stickerLoadingState: interactionViewModel.stickerLoadingState,  // 传入加载状态
+                    onRetryLoad: {
+                        // 用户点击重试按钮
+                        retryStickerLoad()
                     },
                     showBackground: false,
                     showUseZoneHint: false,
@@ -591,76 +636,70 @@ struct ShareDetailView: View {
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │  📋 底部详情卡片 Overlay                                             │
         // │  - 显示分享描述、评论等内容                                          │
-        // │  - 收起状态：距底部 10%                                              │
-        // │  - 全屏状态：铺满屏幕                                                │
-        // │  - 上拉 150pt 展开，下拉 150pt 收起                                  │
+        // │  - 收起状态：距底部 10%，背景透明，点击展开（禁用拖拽）               │
+        // │  - 展开状态：顶部安全区下方，背景模糊，可拖拽收起                     │
         // │  - 通过 isShowShareDetailsCard 控制显隐                              │
         // └─────────────────────────────────────────────────────────────────────┘
         .overlay(
-            ShareDetailsCardView(
-                isFullScreen: $isFullScreen,
-                isAtTop: $isAtTop,
-                dragOffset: $dragOffset,
-                cardDragIsActive: $cardDragIsActive
-            )
-            .environmentObject(searchViewModel)
-            .zIndex(1)
-            .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 0.9 + dragOffset)
-            .opacity(isShowShareDetailsCard ? 1 : 0)
-            .allowsHitTesting(isShowShareDetailsCard)
-            // 上拉展开手势（收起状态时）
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        let translation = value.translation.height
-                        if !isFullScreen {
-                            // 只处理「上拉」
-                            if translation < 0 {
-                                dragOffset = translation
-                            }
+            GeometryReader { _ in
+                // ✅ 修复：直接从 UIApplication 获取安全区，避免 ignoresSafeArea 影响
+                let topSafeArea = UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .first?.windows.first?.safeAreaInsets.top ?? 0
+                let screenHeight = UIScreen.main.bounds.height
+                let screenWidth = UIScreen.main.bounds.width
+                // 展开时的卡片高度：屏幕高度减去顶部安全区
+                let expandedHeight = screenHeight - topSafeArea
+
+                ShareDetailsCardView(
+                    isFullScreen: $isFullScreen,
+                    isAtTop: $isAtTop,
+                    dragOffset: $dragOffset,
+                    cardDragIsActive: $cardDragIsActive
+                )
+                .environmentObject(searchViewModel)
+                .zIndex(1)
+                // 展开时高度限制在安全区下方；收起时使用全屏高度
+                .frame(width: screenWidth, height: isFullScreen ? expandedHeight : screenHeight)
+                // 展开时：顶部安全区下方；收起时：距底部 10%
+                .offset(y: isFullScreen ? topSafeArea + dragOffset : screenHeight * 0.9 + dragOffset)
+                .opacity(isShowShareDetailsCard ? 1 : 0)
+                .allowsHitTesting(isShowShareDetailsCard)
+                // 点击展开（仅收起状态）
+                .onTapGesture {
+                    if !isFullScreen {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isFullScreen = true
                         }
                     }
-                    .onEnded { value in
-                        let translation = value.translation.height
-                        withAnimation(.easeInOut) {
-                            if !isFullScreen {
-                                // 上拉阈值
-                                if translation < -150 {
-                                    isFullScreen = true
+                }
+                // 下拉收起手势（仅展开状态 + 滚动在顶部时）
+                .simultaneousGesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let translation = value.translation.height
+                            if isFullScreen && isAtTop {
+                                if translation > 0 {
+                                    cardDragIsActive = false
+                                    dragOffset = translation
                                 }
                             }
-                            dragOffset = 0
                         }
-                    },
-                isEnabled: !isFullScreen && isShowShareDetailsCard
-            )
-            // 下拉收起手势（全屏状态 + 滚动在顶部时）
-            .simultaneousGesture (
-                DragGesture()
-                    .onChanged { value in
-                        let translation = value.translation.height
-                        if (isFullScreen && isAtTop) {
-                            if translation > 0 {
-                                cardDragIsActive = false
-                                dragOffset = translation
-                            }
-                        }
-                    }
-                    .onEnded { value in
-                        let translation = value.translation.height
-                        withAnimation(.easeInOut) {
-                            if (isFullScreen && isAtTop) {
-                                if translation > 150 {
-                                    isFullScreen = false
+                        .onEnded { value in
+                            let translation = value.translation.height
+                            withAnimation(.easeInOut) {
+                                if isFullScreen && isAtTop {
+                                    if translation > 150 {
+                                        isFullScreen = false
+                                    }
                                 }
+                                dragOffset = 0
+                                cardDragIsActive = true
                             }
-                            dragOffset = 0
-                            cardDragIsActive = true
-                        }
-                    },
-                isEnabled: (isFullScreen && isAtTop) && isShowShareDetailsCard
-            )
+                        },
+                    including: (isFullScreen && isAtTop && isShowShareDetailsCard) ? .all : .none
+                )
+            }
             .ignoresSafeArea()
         )
 
@@ -712,14 +751,41 @@ struct ShareDetailView: View {
                 if let share = searchViewModel.selectedShare {
                     #if DEBUG
                     print("🔄 [ShareDetailView] onAppear 初始化 interactionViewModel")
+                    print("   - shareId: \(share.id)")
                     print("   - share.currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
+                    print("   - 初始化前 loadingState: \(interactionViewModel.stickerLoadingState)")
+                    print("   - 初始化前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
                     #endif
                     interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
 
+                    #if DEBUG
+                    print("   - 初始化后 loadingState: \(interactionViewModel.stickerLoadingState)")
+                    print("   - 初始化后 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+                    print("   - 初始化后 availableKinds: \(interactionViewModel.availableStickerKinds.map { $0.rawValue })")
+                    #endif
+
                     // ✅ 从服务器加载贴纸可用性（异步，如果失败会自动降级）
+                    #if DEBUG
+                    print("📡 [ShareDetailView] 开始加载贴纸可用性...")
+                    #endif
                     Task {
                         await interactionViewModel.loadStickerAvailability(shareId: share.id)
+                        #if DEBUG
+                        await MainActor.run {
+                            print("📡 [ShareDetailView] 贴纸可用性加载完成")
+                            print("   - loadingState: \(interactionViewModel.stickerLoadingState)")
+                            print("   - visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+                            print("   - availableKinds: \(interactionViewModel.availableStickerKinds.map { $0.rawValue })")
+                        }
+                        #endif
                     }
+
+                    // ✅ 记录浏览行为（用于褪色度计算）
+                    recordShareViewIfNeeded(shareId: share.id)
+                } else {
+                    #if DEBUG
+                    print("⚠️ [ShareDetailView] onAppear - selectedShare 为空，无法初始化")
+                    #endif
                 }
             }
         }
@@ -798,7 +864,12 @@ struct ShareDetailView: View {
         // │  - 当 share 数据变化时重新初始化 interactionViewModel                │
         // │  - 使用组合键监听多个属性变化                                         │
         // └─────────────────────────────────────────────────────────────────────┘
-        .onChange(of: shareStateKey) { _, _ in
+        .onChange(of: shareStateKey) { oldKey, newKey in
+            #if DEBUG
+            print("⚠️ [ShareDetailView] shareStateKey 变化: \(oldKey) -> \(newKey)")
+            print("   - 当前 loadingState: \(interactionViewModel.stickerLoadingState)")
+            print("   - 当前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+            #endif
             reinitializeInteractionViewModel()
         }
     }
@@ -834,6 +905,29 @@ struct ShareDetailView: View {
         }
     }
 
+    /// 记录分享浏览行为（用于褪色度计算）
+    /// 条件：用户已登录 + 非 PreviewHarness 模式 + 本次打开尚未上报
+    private func recordShareViewIfNeeded(shareId: Int64) {
+        guard !PreviewHarness.enabled else { return }
+        guard OTOLoginStatusManager.shared.isLoggedIn else { return }
+        guard !hasRecordedView else { return }
+
+        hasRecordedView = true
+        Task {
+            do {
+                try await ShareService.shared.recordShareView(shareId: shareId)
+                #if DEBUG
+                print("📊 [ShareDetailView] 已上报浏览: shareId=\(shareId)")
+                #endif
+            } catch {
+                #if DEBUG
+                print("⚠️ [ShareDetailView] 上报浏览失败（静默忽略）: \(error)")
+                #endif
+                // 上报失败静默忽略，不影响用户操作
+            }
+        }
+    }
+
     /// 处理贴纸使用动作
     /// - Parameter sticker: 被使用的贴纸定义
     private func handleStickerUse(_ sticker: StickerDefinition) {
@@ -845,6 +939,19 @@ struct ShareDetailView: View {
         // - 投票类贴纸：走 vote API
         // - 标签类贴纸：走 sticker use API
         interactionViewModel.useSticker(sticker.kind)
+    }
+
+    /// 重试加载贴纸可用性（用户点击重试按钮时调用）
+    private func retryStickerLoad() {
+        guard let share = searchViewModel.selectedShare else { return }
+
+        #if DEBUG
+        print("🔁 [ShareDetailView] 用户点击重试，重新加载贴纸可用性: shareId=\(share.id)")
+        #endif
+
+        Task {
+            await interactionViewModel.retryStickerAvailability(shareId: share.id)
+        }
     }
 
     /// 创建状态变化回调（同步到 SwiftData）
@@ -1255,17 +1362,9 @@ struct UserInfoCapsule: View {
             if isMyself {
                 // 显示本机用户
                 if let localUser = userProfileManager.localUserProfile {
-                    capsuleContent(
-                        nickname: localUser.nickname,
-                        oneCode: localUser.name,
-                        phone: localUser.phone,
-                        iconName: nil,
-                        onTap: {
-                            navigationCoordinator.path.append(Route.myView)
-                        }
-                    )
+                    capsuleContentForMyself(localUser: localUser)
                 } else {
-                    capsuleContent(nickname: "我", iconName: nil, onTap: {})
+                    capsuleContentSimple(nickname: "我", iconName: nil, onTap: {})
                 }
             } else {
                 // 显示他人用户 - 根据加载状态显示不同 UI
@@ -1277,12 +1376,48 @@ struct UserInfoCapsule: View {
         }
     }
 
+    // MARK: - 本机用户胶囊（使用真实头像）
+
+    @ViewBuilder
+    private func capsuleContentForMyself(localUser: LocalUserProfile) -> some View {
+        // 获取本机用户头像
+        let avatarImage: Image = {
+            if let uiImage = userProfileManager.avatarImage {
+                return Image(uiImage: uiImage)
+            } else {
+                return Image("例子")
+            }
+        }()
+
+        HStack(spacing: 8) {
+            AvatarView_s(
+                isEnabled: true,
+                profileImage: avatarImage,
+                borderThickness: 2
+            )
+
+            // 只显示用户名
+            Text(localUser.nickname)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .onTapGesture {
+            navigationCoordinator.path.append(Route.myView)
+        }
+    }
+
+    // MARK: - 他人用户胶囊渲染
+
     @ViewBuilder
     private func renderOtherUserCapsule() -> some View {
         if PreviewHarness.enabled {
-            capsuleContent(
+            capsuleContentSimple(
                 nickname: "测试用户",
-                oneCode: "TEST001",
                 iconName: "person.crop.circle.fill",
                 onTap: {}
             )
@@ -1297,25 +1432,17 @@ struct UserInfoCapsule: View {
 
         switch state {
         case .idle, .loading:
-            capsuleContent(nickname: "加载中...", iconName: nil, onTap: {})
+            capsuleContentSimple(nickname: "加载中...", iconName: nil, onTap: {})
 
         case .loaded:
             if let otherUser = userProfileManager.otherUserProfile, otherUser.id == userId {
-                capsuleContent(
-                    nickname: otherUser.nickname ?? "陌生人",
-                    oneCode: otherUser.name,
-                    phone: otherUser.phone,
-                    iconName: nil,
-                    onTap: {
-                        navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
-                    }
-                )
+                capsuleContentForOther(otherUser: otherUser)
             } else {
-                capsuleContent(nickname: "陌生人", iconName: "person.fill.questionmark", onTap: {})
+                capsuleContentSimple(nickname: "陌生人", iconName: "person.fill.questionmark", onTap: {})
             }
 
         case .error:
-            capsuleContent(
+            capsuleContentSimple(
                 nickname: "加载失败",
                 iconName: "exclamationmark.triangle.fill",
                 onTap: {
@@ -1325,10 +1452,64 @@ struct UserInfoCapsule: View {
         }
     }
 
+    // MARK: - 他人用户胶囊（从网络加载头像）
+
     @ViewBuilder
-    private func capsuleContent(nickname: String, oneCode: String? = nil, phone: String? = nil, iconName: String?, onTap: @escaping () -> Void) -> some View {
+    private func capsuleContentForOther(otherUser: UserFullInfoModel) -> some View {
         HStack(spacing: 8) {
-            // 如果有错误图标，显示图标；否则显示头像
+            // 从网络加载头像
+            if let photoPath = otherUser.photo,
+               let photoURL = URL(string: photoPath) {
+                AsyncImage(url: photoURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        AvatarView_s(
+                            isEnabled: true,
+                            profileImage: image,
+                            borderThickness: 2
+                        )
+                    case .failure, .empty:
+                        AvatarView_s(
+                            isEnabled: true,
+                            profileImage: Image("例子"),
+                            borderThickness: 2
+                        )
+                    @unknown default:
+                        AvatarView_s(
+                            isEnabled: true,
+                            profileImage: Image("例子"),
+                            borderThickness: 2
+                        )
+                    }
+                }
+            } else {
+                AvatarView_s(
+                    isEnabled: true,
+                    profileImage: Image("例子"),
+                    borderThickness: 2
+                )
+            }
+
+            // 只显示用户名
+            Text(otherUser.nickname ?? "陌生人")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .onTapGesture {
+            navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
+        }
+    }
+
+    // MARK: - 简化版胶囊（用于加载中、错误状态）
+
+    @ViewBuilder
+    private func capsuleContentSimple(nickname: String, iconName: String?, onTap: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
             if let iconName = iconName {
                 Image(systemName: iconName)
                     .font(.system(size: 14))
@@ -1341,27 +1522,10 @@ struct UserInfoCapsule: View {
                 )
             }
 
-            // 用户昵称和 OneCode（使用 VStack）
-            VStack(alignment: .leading, spacing: 2) {
-                Text(nickname)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-
-                // OneCode 显示逻辑：如果 oneCode == phone，隐私保护显示占位符
-                let displayCode: String = {
-                    guard let code = oneCode else { return "⬛️⬛️⬛️⬛️" }
-                    if let phone = phone, code == phone {
-                        return "⬛️⬛️⬛️⬛️"  // 隐私保护：与手机号相同时隐藏
-                    }
-                    return code
-                }()
-
-                Text("OneCode: \(displayCode)")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
+            Text(nickname)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .lineLimit(1)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -1372,17 +1536,14 @@ struct UserInfoCapsule: View {
         }
     }
 
+    // MARK: - 辅助方法
+
     private func loadUserIfNeeded() {
         guard !isMyself else { return }
 
-        // 检查当前状态，如果已加载或正在加载，则不重复加载
         let currentState = userProfileManager.userLoadingStates[Int(userId)] ?? .idle
-        if case .loaded = currentState {
-            return
-        }
-        if case .loading = currentState {
-            return
-        }
+        if case .loaded = currentState { return }
+        if case .loading = currentState { return }
 
         Task {
             do {

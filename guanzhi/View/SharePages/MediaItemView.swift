@@ -37,6 +37,7 @@ struct MediaItemView: View {
     var thumbnailImage: UIImage?
     var currentIndex: Int? = nil  // 当前项的索引
     var selectedIndex: Int? = nil  // 当前选中的索引
+    var totalMediaCount: Int = 1  // 媒体总数（用于页数指示器）
     @State private var isPlayingLivePhoto: Bool = false // 控制 Live Photo 的播放
     @State private var isLongPressActive: Bool = false // 长按手势是否正在进行
     @State private var longPressWorkItem: DispatchWorkItem? = nil
@@ -84,6 +85,19 @@ struct MediaItemView: View {
                                                     .padding(.horizontal)
                                             }
                                             Spacer()
+                                            // 页数指示器（右上角，与实况图标对称）
+                                            if totalMediaCount > 1, let current = currentIndex {
+                                                Text("\(current + 1)/\(totalMediaCount)")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(
+                                                        Capsule()
+                                                            .fill(Color.black.opacity(0.5))
+                                                    )
+                                                    .padding(.horizontal)
+                                            }
                                         }
                                         .padding(.top, 20)
                                         Spacer()
@@ -283,7 +297,7 @@ struct MediaItemView: View {
                                         .scaledToFit() // ✅ 使用 fit 模式
                                         .opacity(mediaItemWrapper.coverShouldShow ? 1 : 0)
                                         .overlay(
-                                            // ✅ 实况图标
+                                            // ✅ 实况图标 + 页数指示器
                                             VStack {
                                                 HStack {
                                                     if mediaItemWrapper.coverShouldShow {
@@ -291,6 +305,19 @@ struct MediaItemView: View {
                                                             .padding(.horizontal)
                                                     }
                                                     Spacer()
+                                                    // 页数指示器（右上角，与实况图标对称）
+                                                    if totalMediaCount > 1, let current = currentIndex {
+                                                        Text("\(current + 1)/\(totalMediaCount)")
+                                                            .font(.system(size: 12, weight: .semibold))
+                                                            .foregroundColor(.white)
+                                                            .padding(.horizontal, 8)
+                                                            .padding(.vertical, 4)
+                                                            .background(
+                                                                Capsule()
+                                                                    .fill(Color.black.opacity(0.5))
+                                                            )
+                                                            .padding(.horizontal)
+                                                    }
                                                 }
                                                 .padding(.top, 20)
                                                 Spacer()

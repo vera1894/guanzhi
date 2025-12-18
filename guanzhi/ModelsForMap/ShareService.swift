@@ -170,6 +170,27 @@ final class ShareService {
         }
     }
 
+    /// 记录分享浏览（用于褪色度计算）
+    /// - Parameter shareId: 分享ID
+    /// - Note: 此接口用于上报用户浏览行为，后端会根据浏览数据计算褪色度
+    func recordShareView(shareId: Int64) async throws {
+        let data = try await OTONetwork.request(
+            .recordShareView(shareId: shareId)
+        )
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
+
+        // 允许 respCode != 0 的情况（比如后端还没实现），不抛出错误
+        #if DEBUG
+        if response.respCode == 0 {
+            print("✅ [ShareService] recordShareView 成功: shareId=\(shareId)")
+        } else {
+            print("⚠️ [ShareService] recordShareView 返回非0: respCode=\(response.respCode), msg=\(response.respMsg ?? "无")")
+        }
+        #endif
+    }
+
     // MARK: - 贴纸系统 API
 
     /// 获取贴纸可用性列表
