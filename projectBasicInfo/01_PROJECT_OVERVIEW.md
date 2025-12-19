@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v1.2
-**最后更新**: 2025-12-15
+**文档版本**: v1.3
+**最后更新**: 2025-12-19
 
 ---
 
@@ -135,11 +135,17 @@ npm run build
 
 ### 4. 贴纸配额系统（Sticker Quota）
 
-统一的贴纸（Sticker）概念，包含 vote（赞同/无感）和 tag（秘境/真秀等）：
+统一的贴纸（Sticker）概念，包含 vote（赞同/无感）和 tag（秘境/珍馐等）：
 
 **核心规则**：
 - 任何贴纸对同一条分享、同一用户，只允许使用一次，不可撤回
 - vote 类贴纸（LIKE/NEUTRAL）互斥，tag 类贴纸独立
+
+**iOS 客户端实现**：
+- 贴纸定义位于 `guanzhi/View/Features/StickerKit/Models/StickerDefinition.swift`
+- **贴纸名称（displayName）目前是前端硬编码**，未从服务器获取
+- 当前所有贴纸名称均为 2 个中文字符（赞同、无感、秘境、珍馐、玩趣、踩坑、猫猫、朝圣、日出、集市）
+- TODO：后续可改为从服务器 API 获取贴纸名称（API 已返回 `stickerName` 字段）
 
 **配额计算**：
 ```

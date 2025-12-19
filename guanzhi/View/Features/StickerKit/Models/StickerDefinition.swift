@@ -127,7 +127,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "like"),
         kind: .like,
         displayName: "赞同",
-        assetKind: .image(name: "stickers-good"),
+        assetKind: .image(name: "stickers-like"),
         priority: 100,
         meta: [:]
     )
@@ -138,7 +138,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "neutral"),
         kind: .neutral,
         displayName: "无感",
-        assetKind: .image(name: "stickers-good"),  // ⚠️ 临时改为图片，排查崩溃
+        assetKind: .image(name: "stickers-neutral"),  // ⚠️ 临时改为图片，排查崩溃
         priority: 80,
         meta: [:]
     )
@@ -154,7 +154,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "mijing"),
         kind: .mijing,
         displayName: "秘境",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 70,
         meta: ["tagCode": "MIJING"]
     )
@@ -163,8 +163,8 @@ extension StickerDefinition {
     static let stickerZhenxiu = StickerDefinition(
         stickerID: StickerID(rawValue: "zhenxiu"),
         kind: .zhenxiu,
-        displayName: "珍馐",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        displayName: "珍馐美味",
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 69,
         meta: ["tagCode": "ZHENXIU"]
     )
@@ -173,8 +173,8 @@ extension StickerDefinition {
     static let stickerWanqu = StickerDefinition(
         stickerID: StickerID(rawValue: "wanqu"),
         kind: .wanqu,
-        displayName: "玩趣",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        displayName: "有点儿意思",
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 68,
         meta: ["tagCode": "WANQU"]
     )
@@ -183,8 +183,8 @@ extension StickerDefinition {
     static let stickerCaikeng = StickerDefinition(
         stickerID: StickerID(rawValue: "caikeng"),
         kind: .caikeng,
-        displayName: "踩坑",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        displayName: "踩坑预警！",
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 67,
         meta: ["tagCode": "CAIKENG"]
     )
@@ -193,8 +193,8 @@ extension StickerDefinition {
     static let stickerMaomao = StickerDefinition(
         stickerID: StickerID(rawValue: "maomao"),
         kind: .maomao,
-        displayName: "猫猫",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        displayName: "猫猫出没",
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 66,
         meta: ["tagCode": "MAOMAO"]
     )
@@ -203,8 +203,8 @@ extension StickerDefinition {
     static let stickerChaosheng = StickerDefinition(
         stickerID: StickerID(rawValue: "chaosheng"),
         kind: .chaosheng,
-        displayName: "朝圣",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        displayName: "朝圣点",
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 65,
         meta: ["tagCode": "CHAOSHENG"]
     )
@@ -213,8 +213,8 @@ extension StickerDefinition {
     static let stickerRichu = StickerDefinition(
         stickerID: StickerID(rawValue: "richu"),
         kind: .richu,
-        displayName: "日出",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        displayName: "日出点",
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 64,
         meta: ["tagCode": "RICHU"]
     )
@@ -224,7 +224,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "jishi"),
         kind: .jishi,
         displayName: "集市",
-        assetKind: .image(name: "stickers-good"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
         priority: 63,
         meta: ["tagCode": "JISHI"]
     )

@@ -352,7 +352,7 @@ struct ShareDetailsCardView: View {
             text: text,
             maxLines: 2,
             font: UIFont(name: "PingFangSC-Regular", size: 16) ?? .systemFont(ofSize: 16),
-            textColor: UIColor(named: "color-black") ?? .black,
+            textColor: .white,
             viewMoreText: " ·查看更多",
             viewMoreColor: UIColor(named: "color-primary") ?? .systemBlue
         )
