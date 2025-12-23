@@ -12,6 +12,7 @@ import UIKit
 enum RequestMethod: String {
     case get = "GET"
     case post = "POST"
+    case delete = "DELETE"
 }
 
 struct OTOResponseModel<T: Codable>: Codable {
@@ -92,6 +93,22 @@ enum OTORequest {
     case fetchStickerAvailability(shareId: Int64)
     /// 使用贴纸
     case useSticker(shareId: Int64, stickerId: String)
+
+    // MARK: - 评论系统 API
+    /// 获取评论列表
+    case fetchComments(shareId: Int64, order: String, offset: Int, limit: Int)
+    /// 获取回复列表
+    case fetchReplies(commentId: Int64, offset: Int, limit: Int)
+    /// 发表评论/回复
+    case createComment(shareId: Int64, content: String, parentId: Int64?, replyToUserId: Int64?)
+    /// 删除评论
+    case deleteComment(commentId: Int64)
+    /// 点赞评论
+    case likeComment(commentId: Int64)
+    /// 取消点赞评论
+    case unlikeComment(commentId: Int64)
+    /// 获取评论上下文（精准定位）
+    case getCommentContext(commentId: Int64)
 }
 
 extension OTORequest {
@@ -307,6 +324,78 @@ extension OTORequest {
                     path: "/api/shares/\(shareId)/stickers/use",
                     method: .post,
                     param: ["stickerId": stickerId]
+                )
+
+            // MARK: - 评论系统 API
+
+            // 获取评论列表
+            case .fetchComments(let shareId, let order, let offset, let limit):
+                return .init(
+                    path: "/api/shares/\(shareId)/comments",
+                    method: .get,
+                    param: [
+                        "order": order,
+                        "offset": offset,
+                        "limit": limit
+                    ]
+                )
+
+            // 获取回复列表
+            case .fetchReplies(let commentId, let offset, let limit):
+                return .init(
+                    path: "/api/comments/\(commentId)/replies",
+                    method: .get,
+                    param: [
+                        "offset": offset,
+                        "limit": limit
+                    ]
+                )
+
+            // 发表评论/回复
+            case .createComment(let shareId, let content, let parentId, let replyToUserId):
+                var param: [String: Any] = ["content": content]
+                if let parentId = parentId {
+                    param["parentId"] = parentId
+                }
+                if let replyToUserId = replyToUserId {
+                    param["replyToUserId"] = replyToUserId
+                }
+                return .init(
+                    path: "/api/shares/\(shareId)/comments",
+                    method: .post,
+                    param: param
+                )
+
+            // 删除评论
+            case .deleteComment(let commentId):
+                return .init(
+                    path: "/api/comments/\(commentId)",
+                    method: .delete,
+                    param: [:]
+                )
+
+            // 点赞评论
+            case .likeComment(let commentId):
+                return .init(
+                    path: "/api/comments/\(commentId)/like",
+                    method: .post,
+                    param: [:]
+                )
+
+            // 取消点赞评论
+            case .unlikeComment(let commentId):
+                return .init(
+                    path: "/api/comments/\(commentId)/like",
+                    method: .delete,
+                    param: [:]
+                )
+
+            // 获取评论上下文（精准定位）
+            case .getCommentContext(let commentId):
+                return .init(
+                    path: "/api/comments/\(commentId)/context",
+                    method: .get,
+                    param: [:]
                 )
 
             //备用的

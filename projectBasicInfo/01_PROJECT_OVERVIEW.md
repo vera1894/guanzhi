@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v1.3
-**最后更新**: 2025-12-19
+**文档版本**: v1.6
+**最后更新**: 2025-12-23
 
 ---
 
@@ -133,17 +133,97 @@ npm run build
 - 积分累计可升级等级
 - 等级影响贴标签额度等权益
 
-### 4. 贴纸配额系统（Sticker Quota）
+### 4. 贴纸系统（Sticker System）
 
-统一的贴纸（Sticker）概念，包含 vote（赞同/无感）和 tag（秘境/珍馐等）：
+统一的贴纸（Sticker）系统，所有贴纸（包括原 vote 类的赞同/无感和 tag 类的秘境/珍馐等）现在都使用相同的技术实现。
+
+**重要变更（2025-12-22）**：
+- 旧投票系统（`share_vote` 表 + `guanzhi.agree_count/neutral_count`）**已完全废弃**
+- 所有贴纸数据统一存储在 `share_sticker_action` 表
+- 贴纸统计仅从 `share_sticker_action` 表获取，不再累加旧投票数据
+- iOS 客户端已完全移除对旧投票系统的依赖
 
 **核心规则**：
 - 任何贴纸对同一条分享、同一用户，只允许使用一次，不可撤回
-- vote 类贴纸（LIKE/NEUTRAL）互斥，tag 类贴纸独立
+- 每个用户对每条分享只能使用一个贴纸（互斥）
+- 投票贴纸（赞同/无感）也遵循此规则，两者互斥
 
-**iOS 客户端实现**：
-- 贴纸定义位于 `guanzhi/View/Features/StickerKit/Models/StickerDefinition.swift`
-- **贴纸名称（displayName）目前是前端硬编码**，未从服务器获取
+#### iOS 客户端实现架构
+
+**核心文件**：
+```
+guanzhi/View/Features/StickerKit/
+├── Models/
+│   ├── StickerKind.swift           # 贴纸种类枚举（统一标识）
+│   ├── StickerDefinition.swift     # 贴纸视觉定义（图标、名称、优先级）
+│   ├── StickerAvailability.swift   # 贴纸可用性模型（从服务器获取）
+│   └── StickerSummaryItem.swift    # 贴纸统计项
+├── Views/
+│   ├── StickerFieldView.swift      # 底部贴纸队列（SpriteKit）
+│   ├── StickerSummaryBar.swift     # 顶部贴纸统计条
+│   ├── UsedStickerStatusBar.swift  # "已使用贴纸"状态条
+│   └── StickerThumbnail.swift      # 贴纸缩略图
+└── SpriteKit/
+    └── StickerScene.swift          # 贴纸拖动交互场景
+
+guanzhi/View/SharePages/
+├── ShareInteractionViewModel.swift  # 贴纸交互核心 ViewModel
+└── ShareDetailView.swift            # 分享详情页
+```
+
+**核心 ViewModel：`ShareInteractionViewModel`**
+
+关键属性（2025-12-22 重构后）：
+```swift
+// ✅ 使用中
+@Published var currentUserSticker: UsedStickerInfo?  // 当前用户已使用的贴纸
+@Published var stickerSummaries: [StickerSummaryItem] = []  // 贴纸统计列表
+@Published var stickerAvailabilities: [StickerAvailability] = []  // 服务器返回的可用性
+@Published var visibleStickerDefinitions: [StickerDefinition] = []  // 可见贴纸队列
+
+// ⚠️ 已废弃（保留兼容）
+@Published var voteState: VoteState = .none  // 使用 currentUserSticker 替代
+private var _agreeCount: Int = 0  // 使用 stickerSummaries 替代
+private var _neutralCount: Int = 0  // 使用 stickerSummaries 替代
+```
+
+关键方法：
+```swift
+// 统一贴纸使用入口（所有贴纸类型）
+func useSticker(_ kind: StickerKind)
+
+// 从服务器加载贴纸可用性
+func loadStickerAvailability(shareId: Int64) async
+
+// 重建可见贴纸队列（应用互斥规则）
+func rebuildVisibleStickerDefinitions()
+
+// 重建贴纸统计列表
+func rebuildStickerSummaries()
+```
+
+**数据流程**：
+```
+1. 进入分享详情页
+   ↓
+2. initialize(share:) - 重置所有状态
+   ↓
+3. loadStickerAvailability(shareId:) - 从服务器获取可用性
+   ↓
+4. applyStickerAvailability(_:) - 应用数据
+   ├── 设置 currentUserSticker（如果 alreadyApplied=true）
+   ├── 构建 availableStickerKinds
+   └── 调用 rebuildVisibleStickerDefinitions() 和 rebuildStickerSummaries()
+   ↓
+5. UI 更新
+   ├── 顶部：StickerSummaryBar（显示 stickerSummaries）
+   ├── 底部：StickerFieldView（显示 visibleStickerDefinitions）
+   │   └── 或 UsedStickerStatusBar（如果 currentUserSticker != nil）
+   └── 右侧：InteractionOverlayView（显示点赞按钮）
+```
+
+**贴纸名称配置**：
+- **贴纸名称（displayName）目前是前端硬编码**，位于 `StickerDefinition.swift`
 - 当前所有贴纸名称均为 2 个中文字符（赞同、无感、秘境、珍馐、玩趣、踩坑、猫猫、朝圣、日出、集市）
 - TODO：后续可改为从服务器 API 获取贴纸名称（API 已返回 `stickerName` 字段）
 
@@ -167,7 +247,29 @@ npm run build
 - 数据库唯一约束保证去重和互斥
 - 04:00 定时任务应用待生效配置
 
-### 5. 管理后台
+### 5. 评论系统（Comment System）
+
+**状态**：规划中（2025-12-23）
+
+支持分享的评论与回复功能：
+
+**核心功能**：
+- 一级评论 + 二级回复（含"回复 @B"语义）
+- 评论点赞
+- 三种排序：默认热度、最新、最多点赞
+- 评论长度限制（1-230 字符）
+- 频率限制：同一分享 10 秒 1 条；全局每天最多 200 条
+- 回复触发站内通知 + 极光推送
+
+**重要规则**：
+- **无地理位置限制**：用户可在任意位置评论（不再需要在分享附近）
+- 一级评论删除后，其二级回复继续展示
+- 热度参数可配置（存入 fade_config 表）
+- 回复、点赞对分享产生积分（接入后台配置）
+
+**相关文档**：`projectBasicInfo/logs/2025-12-22-comment-system-design-cc.md`
+
+### 6. 管理后台
 
 - 褪色曲线模拟器（核心功能）
 - 褪色规则配置
@@ -289,17 +391,23 @@ npm run build
 
 ## 数据库核心表
 
-| 表名 | 用途 |
-|------|------|
-| `user` | 用户信息 |
-| `share` / `guanzhi` | 分享内容 |
-| `fade_config` | 褪色配置 |
-| `points_rule` | 积分规则 |
-| `level_definition` | 等级定义（含 daily_multiplier 配额倍率）|
-| `tag_definition` | 贴纸定义（含 min_level_code、base_daily_limit）|
-| `share_sticker_action` | 贴纸使用记录（事实来源表）|
-| `sticker_level_quota_override` | 等级-贴纸限额覆盖配置 |
-| `admin_operation_log` | 管理操作日志 |
+| 表名 | 用途 | 状态 |
+|------|------|------|
+| `user` | 用户信息 | 使用中 |
+| `share` / `guanzhi` | 分享内容 | 使用中 |
+| `fade_config` | 褪色配置 | 使用中 |
+| `points_rule` | 积分规则 | 使用中 |
+| `level_definition` | 等级定义（含 daily_multiplier 配额倍率）| 使用中 |
+| `tag_definition` | 贴纸定义（含 min_level_code、base_daily_limit）| 使用中 |
+| `share_sticker_action` | 贴纸使用记录（**唯一事实来源**）| 使用中 |
+| `sticker_level_quota_override` | 等级-贴纸限额覆盖配置 | 使用中 |
+| `share_view_log` | 分享浏览记录 | 使用中 |
+| `admin_operation_log` | 管理操作日志 | 使用中 |
+| `share_vote` | ~~旧投票记录~~ | **已废弃** |
+
+**废弃字段**（2025-12-22）：
+- `guanzhi.agree_count` - 旧投票系统赞同计数，不再使用
+- `guanzhi.neutral_count` - 旧投票系统无感计数，不再使用
 
 ---
 

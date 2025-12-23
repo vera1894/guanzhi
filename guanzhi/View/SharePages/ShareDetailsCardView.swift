@@ -17,11 +17,15 @@ struct ShareDetailsCardView: View {
     @Binding var dragOffset: CGFloat
     @State private var scrollPosition: CGPoint = .zero
     @Binding var cardDragIsActive: Bool
-    
+
     @State private var isLoadingUser: Bool = false
     @State private var loadUserError: String?
     @State private var topPadding: Double = 0.01
     @State private var showDragIndicator: Bool = false  // 拖动指示条延迟显示
+
+    // MARK: - 评论系统
+    @StateObject private var commentViewModel = CommentViewModel()
+    @FocusState private var isInputFocused: Bool
     
     private var localUser: LocalUserProfile {
         return userProfileManager.localUserProfile!
@@ -49,7 +53,7 @@ struct ShareDetailsCardView: View {
                     
                     ScrollView {
                         VStack {
-                            
+
                             // 用户信息区域
 //                            if isAuthorMyself(share.userId) {
 //                                // 显示本机用户
@@ -78,8 +82,8 @@ struct ShareDetailsCardView: View {
 //                                    Text("加载中或无数据")
 //                                }
 //                            }
-                            
-                            
+
+
                             VStack(alignment: .leading, spacing: Constants.spacingSpacingXs) {
                                 //分享内容
                                 if isFullScreen {
@@ -93,7 +97,7 @@ struct ShareDetailsCardView: View {
                                     // 收起状态：最多2行 + "·查看更多"
                                     collapsedContentView(text: share.data)
                                 }
-                                
+
                                 // 次级信息
 //                                HStack {
 //    //                                Text("#FB80765·2023.02.12 12:22")
@@ -103,7 +107,7 @@ struct ShareDetailsCardView: View {
 //                                        .foregroundColor(Color("text-deepgray"))
 //                                    Spacer()
 //                                }
-                                
+
                                 // 位置信息
                                 if isFullScreen {
                                     HStack{
@@ -123,25 +127,20 @@ struct ShareDetailsCardView: View {
                                         .buttonStyle(ButtonStyle_capsuleHugPrimary_s(isEnabled: true))
                                     }
                                 }
-                                
-                                
+
+
                             } //主题内容
                             .padding(.horizontal, Constants.spacingSpacingM)
                             .padding(.bottom, Constants.spacingSpacingXs)
-                            
-                            
-                            
-//                            //评论区
-//                            ForEach(0..<20, id: \.self) { i in
-//                                Text("评论内容 \(i)")
-//                                    .font(.system(size: 20))
-//                                    .foregroundColor(.black)
-//                                    .frame(maxWidth: .infinity, alignment: .leading)
-//                                    .id(i)
-//                            }
-//                            .padding()
-//                            
-//                            Spacer()
+
+                            // MARK: - 评论区
+                            if isFullScreen {
+                                Divider()
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 12)
+
+                                CommentSectionView(viewModel: commentViewModel)
+                            }
                         }
                         .background(GeometryReader { geometry in
                             Color.clear
@@ -163,7 +162,12 @@ struct ShareDetailsCardView: View {
                             isAtTop = false
                         }
                     }
-                    
+
+                    // MARK: - 底部评论输入栏（仅展开状态显示）
+                    if isFullScreen {
+                        CommentInputBar(viewModel: commentViewModel, isFocused: $isInputFocused)
+                    }
+
                 }
                 .background(
                     Group {
@@ -179,7 +183,7 @@ struct ShareDetailsCardView: View {
                 )
                 .frame(maxWidth: .infinity)
                 .scrollDisabled(!isFullScreen || !cardDragIsActive)
-                
+
                 HStack {
                     Color.clear
                         .frame(width: 25)
@@ -233,11 +237,36 @@ struct ShareDetailsCardView: View {
                             showDragIndicator = true
                         }
                     }
+                    // 展开时加载评论
+                    if commentViewModel.comments.isEmpty {
+                        Task {
+                            await commentViewModel.loadComments(reset: true)
+                        }
+                    }
                 } else {
                     // 收起时：立即隐藏指示条
                     withAnimation(.easeInOut(duration: 0.1)) {
                         showDragIndicator = false
                     }
+                    // 收起时退出输入焦点
+                    isInputFocused = false
+                }
+            }
+            // 监听分享变化，绑定评论 ViewModel
+            .onChange(of: searchViewModel.selectedShare?.id) { oldId, newId in
+                if let shareId = newId, shareId != oldId {
+                    commentViewModel.bind(to: shareId)
+                    if isFullScreen {
+                        Task {
+                            await commentViewModel.loadComments(reset: true)
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                // 初始化绑定
+                if let shareId = searchViewModel.selectedShare?.id {
+                    commentViewModel.bind(to: shareId)
                 }
             }
         }

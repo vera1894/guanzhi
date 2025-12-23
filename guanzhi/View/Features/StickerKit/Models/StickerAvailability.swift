@@ -163,6 +163,12 @@ enum StickerUseError: Error, LocalizedError {
     /// 今日配额已用完
     case quotaExhausted(kind: StickerKind)
 
+    /// 已经使用过贴纸（每个分享只能使用一个贴纸）
+    /// - Parameters:
+    ///   - usedKind: 已使用的贴纸种类
+    ///   - usedName: 已使用的贴纸名称（来自服务器）
+    case alreadyUsed(usedKind: StickerKind?, usedName: String?)
+
     /// 网络错误
     case networkError(underlying: Error)
 
@@ -178,6 +184,11 @@ enum StickerUseError: Error, LocalizedError {
             return "\"\(kind.displayName)\"贴纸需要更高等级才能使用"
         case .quotaExhausted(let kind):
             return "\"\(kind.displayName)\"今日使用次数已达上限"
+        case .alreadyUsed(_, let usedName):
+            if let name = usedName {
+                return "本条分享已使用过「\(name)」贴纸"
+            }
+            return "本条分享已使用过贴纸"
         case .networkError:
             return "网络连接失败，请稍后重试"
         case .serverError(_, let message):

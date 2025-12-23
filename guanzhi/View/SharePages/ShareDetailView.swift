@@ -134,6 +134,10 @@ private let kStickerQueueToCardSpacing: CGFloat = 32
 /// 卡片收起时的 Y 偏移 = screenHeight * (1 - kBottomCardCollapsedRatio)
 private let kBottomCardCollapsedRatio: CGFloat = 0.08
 
+/// 已使用贴纸状态条距离屏幕底部的距离（像素）
+/// 调整此值可以改变状态条的垂直位置
+private let kUsedStickerStatusBarBottomPadding: CGFloat = 60
+
 struct ShareDetailView: View {
 
     // MARK: - 环境与依赖
@@ -533,44 +537,10 @@ struct ShareDetailView: View {
         // │  - 使用区域在屏幕正中心                                               │
         // │  - 只有底部区域响应触摸，上方区域穿透                                  │
         // │  - 通过 isShowShareDetailsCard 控制显隐                              │
+        // │  - 如果已使用贴纸，显示状态条替代贴纸队列                             │
         // └─────────────────────────────────────────────────────────────────────┘
         .overlay {
-            GeometryReader { geo in
-                // ✅ 粒子效果使用区域：屏幕正中心（SwiftUI 坐标系）
-                let useZoneSize = CGSize(width: geo.size.width - 80, height: 120)
-                let customFrame = CGRect(
-                    x: 40,
-                    y: (geo.size.height - useZoneSize.height) / 2,  // 屏幕垂直居中
-                    width: useZoneSize.width,
-                    height: useZoneSize.height
-                )
-
-                // ✅ 贴纸队列位置计算（SpriteKit 坐标系，Y 轴向上）
-                // 底部卡片收起时占屏幕底部 10%，所以卡片顶部在 SpriteKit 中的 Y = screenHeight * 0.1
-                // 贴纸队列最底部 = 底部卡片顶部 + 间距
-                let bottomCardTopY = geo.size.height * kBottomCardCollapsedRatio
-                let stickerQueueBottomY = bottomCardTopY + kStickerQueueToCardSpacing
-
-                StickerFieldView(
-                    stickers: interactionViewModel.visibleStickerDefinitions,  // 动态贴纸列表（应用互斥逻辑）
-                    onUseSticker: { sticker in
-                        handleStickerUse(sticker)
-                    },
-                    stickerLoadingState: interactionViewModel.stickerLoadingState,  // 传入加载状态
-                    onRetryLoad: {
-                        // 用户点击重试按钮
-                        retryStickerLoad()
-                    },
-                    showBackground: false,
-                    showUseZoneHint: false,
-                    customUseZoneFrame: customFrame,  // 传入自定义使用区域（SwiftUI 坐标）
-                    queueBottomY: stickerQueueBottomY,  // 动态计算的贴纸队列位置
-                    touchAreaHeight: 250,    // 只在底部 250pt 区域响应触摸，上方区域穿透
-                    enableAutoScroll: false  // 关闭自动轮播，节省性能
-                )
-            }
-            .opacity(isShowShareDetailsCard ? 1 : 0)
-            .allowsHitTesting(isShowShareDetailsCard)
+            stickerOverlayContent
         }
 
         // ┌─────────────────────────────────────────────────────────────────────┐
@@ -901,6 +871,64 @@ struct ShareDetailView: View {
     private var shareStateKey: String {
         guard let share = searchViewModel.selectedShare else { return "nil" }
         return "\(share.id)"
+    }
+
+    /// 贴纸层内容（抽取为独立属性以简化 body 表达式）
+    @ViewBuilder
+    private var stickerOverlayContent: some View {
+        GeometryReader { geo in
+            if let usedSticker = interactionViewModel.currentUserSticker {
+                // 已使用贴纸：显示状态条
+                usedStickerStatusView(usedSticker: usedSticker, geo: geo)
+            } else {
+                // 未使用贴纸：显示贴纸队列
+                stickerFieldContent(geo: geo)
+            }
+        }
+        .opacity(isShowShareDetailsCard ? 1 : 0)
+        .allowsHitTesting(isShowShareDetailsCard && interactionViewModel.currentUserSticker == nil)
+    }
+
+    /// 已使用贴纸状态条视图
+    @ViewBuilder
+    private func usedStickerStatusView(usedSticker: UsedStickerInfo, geo: GeometryProxy) -> some View {
+        VStack {
+            Spacer()
+            UsedStickerStatusBar(usedSticker: usedSticker)
+                .padding(.bottom, kUsedStickerStatusBarBottomPadding)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// 贴纸队列视图
+    @ViewBuilder
+    private func stickerFieldContent(geo: GeometryProxy) -> some View {
+        let useZoneSize = CGSize(width: geo.size.width - 80, height: 120)
+        let customFrame = CGRect(
+            x: 40,
+            y: (geo.size.height - useZoneSize.height) / 2,
+            width: useZoneSize.width,
+            height: useZoneSize.height
+        )
+        let bottomCardTopY = geo.size.height * kBottomCardCollapsedRatio
+        let stickerQueueBottomY = bottomCardTopY + kStickerQueueToCardSpacing
+
+        StickerFieldView(
+            stickers: interactionViewModel.visibleStickerDefinitions,
+            onUseSticker: { sticker in
+                handleStickerUse(sticker)
+            },
+            stickerLoadingState: interactionViewModel.stickerLoadingState,
+            onRetryLoad: {
+                retryStickerLoad()
+            },
+            showBackground: false,
+            showUseZoneHint: false,
+            customUseZoneFrame: customFrame,
+            queueBottomY: stickerQueueBottomY,
+            touchAreaHeight: 250,
+            enableAutoScroll: false
+        )
     }
 
     // MARK: - ═══════════════════════════════════════════════════════════════════

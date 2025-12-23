@@ -73,6 +73,28 @@ enum StickerLoadingConfig {
     static let requestTimeoutSeconds: Double = 10.0
 }
 
+// MARK: - 已使用贴纸信息
+
+/// 用户在当前分享上已使用的贴纸信息
+/// 用于显示"已使用了「xx」贴纸"的状态条
+struct UsedStickerInfo: Equatable {
+    /// 贴纸种类
+    let kind: StickerKind
+
+    /// 贴纸显示名称（优先使用服务器返回的名称）
+    let name: String
+
+    /// 贴纸图标 URL（可选，用于显示服务器端图标）
+    let iconURL: URL?
+
+    /// 便捷初始化（使用本地定义的名称）
+    init(kind: StickerKind, name: String? = nil, iconURL: URL? = nil) {
+        self.kind = kind
+        self.name = name ?? kind.displayName
+        self.iconURL = iconURL
+    }
+}
+
 /// 分享互动 ViewModel（点赞、打卡等）
 ///
 /// 关键特性：
@@ -85,20 +107,43 @@ enum StickerLoadingConfig {
 class ShareInteractionViewModel: ObservableObject {
     // MARK: - Published State
 
-    /// 当前投票状态（核心状态，所有派生属性基于此）
+    /// ⚠️ 已废弃：当前投票状态（保留兼容，实际使用 currentUserSticker）
     @Published var voteState: VoteState = .none
 
-    /// 赞同数
-    @Published var agreeCount: Int = 0
+    /// ⚠️ 已废弃：赞同数（保留兼容）
+    /// 现在应该从 stickerSummaries 获取，但为了 InteractionOverlayView 兼容性保留
+    @Published private var _agreeCount: Int = 0
 
-    /// 无感数（当前版本不显示，仅同步服务器数据）
-    @Published var neutralCount: Int = 0
+    /// 赞同数（从贴纸统计获取）
+    var agreeCount: Int {
+        // 优先从 stickerSummaries 获取
+        if let likeSummary = stickerSummaries.first(where: { $0.kind == .like }) {
+            return likeSummary.count
+        }
+        // 回退到本地追踪值
+        return _agreeCount
+    }
+
+    /// ⚠️ 已废弃：无感数（保留兼容）
+    @Published private var _neutralCount: Int = 0
+
+    /// 无感数（从贴纸统计获取）
+    var neutralCount: Int {
+        if let neutralSummary = stickerSummaries.first(where: { $0.kind == .neutral }) {
+            return neutralSummary.count
+        }
+        return _neutralCount
+    }
 
     /// 动画状态
     @Published var isAnimating: Bool = false
 
     /// 错误消息
     @Published var errorMessage: String? = nil
+
+    /// 当前用户在此分享上已使用的贴纸（nil 表示未使用过任何贴纸）
+    /// 当此值非 nil 时，底部贴纸队列应隐藏，改为显示"已使用了「xx」贴纸"状态条
+    @Published var currentUserSticker: UsedStickerInfo? = nil
 
     /// 贴纸统计列表（用于顶部展示条）
     @Published var stickerSummaries: [StickerSummaryItem] = []
@@ -144,11 +189,25 @@ class ShareInteractionViewModel: ObservableObject {
 
     // MARK: - Computed Properties（派生属性）
 
-    /// 是否已点赞（只读，派生自 voteState）
-    var isLiked: Bool { voteState == .agree }
+    /// 是否已点赞（只读，派生自 currentUserSticker）
+    /// 优先使用 currentUserSticker，回退到 voteState（兼容旧数据）
+    var isLiked: Bool {
+        if let sticker = currentUserSticker {
+            return sticker.kind == .like
+        }
+        // 兼容：初始化时可能还没有 currentUserSticker，但有 voteState
+        return voteState == .agree
+    }
 
-    /// 是否已无感（只读，派生自 voteState）
-    var isNeutral: Bool { voteState == .neutral }
+    /// 是否已无感（只读，派生自 currentUserSticker）
+    /// 优先使用 currentUserSticker，回退到 voteState（兼容旧数据）
+    var isNeutral: Bool {
+        if let sticker = currentUserSticker {
+            return sticker.kind == .neutral
+        }
+        // 兼容：初始化时可能还没有 currentUserSticker，但有 voteState
+        return voteState == .neutral
+    }
 
     // MARK: - Private State
 
@@ -168,25 +227,22 @@ class ShareInteractionViewModel: ObservableObject {
     /// 初始化状态（从 Share 对象加载）
     /// - Parameters:
     ///   - share: 分享对象
-    ///   - onStateChanged: 状态变化回调 (shareId, voteState, agreeCount, neutralCount)
+    ///   - onStateChanged: 状态变化回调 (shareId, voteState, agreeCount, neutralCount) - 已废弃，保留兼容
     func initialize(share: Share, onStateChanged: ((Int64, VoteState, Int, Int) -> Void)? = nil) {
         self.currentShareId = share.id
-        self.agreeCount = share.agreeCount
-        self.neutralCount = share.neutralCount
 
-        // ✅ 从后端数据恢复状态
-        if let userVoteType = share.currentUserVoteType {
-            self.voteState = VoteState(rawValue: userVoteType) ?? .none
-        } else {
-            self.voteState = .none
-        }
+        // ✅ 重置所有状态（不再依赖旧的 share.agreeCount/neutralCount/currentUserVoteType）
+        // 所有状态都将从 loadStickerAvailability API 获取
+        self._agreeCount = 0
+        self._neutralCount = 0
+        self.voteState = .none
 
         self.onStateChanged = onStateChanged
 
-        // 保存原始值，用于失败回滚
-        self.originalVoteState = self.voteState
-        self.originalAgreeCount = self.agreeCount
-        self.originalNeutralCount = self.neutralCount
+        // 保存原始值（已废弃，保留兼容）
+        self.originalVoteState = .none
+        self.originalAgreeCount = 0
+        self.originalNeutralCount = 0
 
         // 重置错误和动画状态
         self.errorMessage = nil
@@ -195,16 +251,17 @@ class ShareInteractionViewModel: ObservableObject {
         // ✅ 重置本地标签统计（切换分享时需要清空）
         self.localTagStickerCounts = [:]
 
+        // ✅ 重置已使用贴纸状态（切换分享时需要清空，等待服务器数据）
+        self.currentUserSticker = nil
+
+        // ✅ 重置贴纸统计（等待从服务器加载）
+        self.stickerSummaries = []
+
         #if DEBUG
         print("📊 [ShareInteraction] 初始化:")
         print("   - shareId: \(share.id)")
-        print("   - share.currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
-        print("   - 解析后 voteState: \(voteState)")
-        print("   - agreeCount: \(agreeCount)")
+        print("   - 所有状态已重置，等待从贴纸 API 加载")
         #endif
-
-        // 构建贴纸统计列表
-        rebuildStickerSummaries()
 
         // ✅ 重建可见贴纸队列（应用互斥逻辑）
         // 注意：此时 availableStickerKinds 可能还未计算，但 rebuildVisibleStickerDefinitions 会处理空集合情况
@@ -213,21 +270,33 @@ class ShareInteractionViewModel: ObservableObject {
 
     // MARK: - Actions
 
-    /// 切换点赞状态（乐观更新 + 后台同步）
+    /// 切换点赞状态
+    /// 现在统一使用贴纸 API（不再使用旧的 vote API）
     func toggleLike() {
-        vote(to: .agree)
+        // ✅ 统一使用贴纸系统
+        useSticker(.like)
     }
 
-    /// 切换无感状态（当前版本不调用，预留接口）
+    /// 切换无感状态
+    /// 现在统一使用贴纸 API（不再使用旧的 vote API）
     func toggleNeutral() {
-        vote(to: .neutral)
+        // ✅ 统一使用贴纸系统
+        useSticker(.neutral)
     }
 
     /// 统一投票入口（供外部调用）
-    /// 所有入口（底部贴纸拖动、右侧按钮、顶部展示条）都应该通过这个方法更新
+    /// 现在统一使用贴纸 API（不再使用旧的 vote API）
     func setVote(_ targetState: VoteState) {
-        vote(to: targetState)
+        // ✅ 转换为贴纸调用
+        if let kind = StickerKind.from(voteState: targetState) {
+            useSticker(kind)
+        }
     }
+
+    // MARK: - Deprecated Vote Methods（已废弃，保留向后兼容）
+
+    /// ⚠️ 已废弃：核心投票逻辑
+    /// 此方法保留用于向后兼容，新代码请使用 useSticker(_:)
 
     // MARK: - Private Methods
 
@@ -299,6 +368,18 @@ class ShareInteractionViewModel: ObservableObject {
                 self.originalAgreeCount = self.agreeCount
                 self.originalNeutralCount = self.neutralCount
 
+                // ✅ 如果投票成功（非取消状态），设置已使用贴纸状态
+                if newState != .none {
+                    let voteStickerKind: StickerKind = newState == .agree ? .like : .neutral
+                    // 使用 StickerDefinition 的 displayName 保持与贴纸列表一致
+                    let definition = StickerDefinition.definition(for: voteStickerKind)
+                    self.currentUserSticker = UsedStickerInfo(
+                        kind: voteStickerKind,
+                        name: definition.displayName,
+                        iconURL: nil
+                    )
+                }
+
                 // 7. 通知外层更新
                 self.onStateChanged?(shareId, self.voteState, self.agreeCount, self.neutralCount)
 
@@ -332,14 +413,15 @@ class ShareInteractionViewModel: ObservableObject {
         }
     }
 
-    /// 更新本地状态（乐观更新）
+    /// ⚠️ 已废弃：更新本地状态（乐观更新）
+    /// 此方法保留用于向后兼容旧的 vote(to:) 方法
     private func updateLocalState(from oldState: VoteState, to newState: VoteState) {
         // 先撤销旧状态的计数
         switch oldState {
         case .agree:
-            agreeCount -= 1
+            _agreeCount -= 1
         case .neutral:
-            neutralCount -= 1
+            _neutralCount -= 1
         case .none:
             break
         }
@@ -347,9 +429,9 @@ class ShareInteractionViewModel: ObservableObject {
         // 再应用新状态的计数
         switch newState {
         case .agree:
-            agreeCount += 1
+            _agreeCount += 1
         case .neutral:
-            neutralCount += 1
+            _neutralCount += 1
         case .none:
             break
         }
@@ -363,24 +445,14 @@ class ShareInteractionViewModel: ObservableObject {
     }
 
     /// 重建贴纸统计列表
-    /// 从当前的 agreeCount / neutralCount / localTagStickerCounts 构建 StickerSummaryItem 数组
-    /// 调用时机：初始化、投票状态变化后、使用标签贴纸后
+    /// 从 localStickerCounts 构建 StickerSummaryItem 数组
+    /// 调用时机：初始化、贴纸使用后
+    /// 注意：统计数据应该从服务器获取，本地只做临时追踪
     private func rebuildStickerSummaries() {
         var items: [StickerSummaryItem] = []
 
-        // 添加赞同贴纸统计（如果有）
-        if agreeCount > 0 {
-            items.append(StickerSummaryItem(kind: .like, count: agreeCount))
-        }
-
-        // 添加无感贴纸统计（如果有）
-        if neutralCount > 0 {
-            items.append(StickerSummaryItem(kind: .neutral, count: neutralCount))
-        }
-
-        // ✅ 添加标签贴纸统计（本地追踪）
-        // TODO: 后续从后端返回的分享详情中获取全局统计
-        for (kind, count) in localTagStickerCounts where count > 0 {
+        // ✅ 从本地统计构建（包括投票贴纸和标签贴纸）
+        for (kind, count) in localStickerCounts where count > 0 {
             items.append(StickerSummaryItem(kind: kind, count: count))
         }
 
@@ -390,18 +462,41 @@ class ShareInteractionViewModel: ObservableObject {
 
         #if DEBUG
         print("📊 [ShareInteraction] 重建贴纸统计:")
-        print("   - agreeCount: \(agreeCount), neutralCount: \(neutralCount)")
-        print("   - localTagCounts: \(localTagStickerCounts.map { "\($0.key.displayName):\($0.value)" })")
+        print("   - localStickerCounts: \(localStickerCounts.map { "\($0.key.displayName):\($0.value)" })")
         print("   - summaries: \(stickerSummaries.map { "\($0.displayName)(\($0.count))" })")
         #endif
     }
 
-    /// 回滚到指定状态
+    // MARK: - 本地贴纸统计（统一追踪）
+
+    /// 本地贴纸统计（包括投票贴纸和标签贴纸）
+    /// key: StickerKind, value: 使用次数
+    /// 数据来源：从 stickerAvailabilities 的 alreadyApplied 初始化，使用贴纸后更新
+    private var localStickerCounts: [StickerKind: Int] {
+        var counts: [StickerKind: Int] = [:]
+
+        // 从 stickerAvailabilities 中提取已使用的贴纸统计
+        for avail in stickerAvailabilities where avail.alreadyApplied {
+            counts[avail.kind, default: 0] += 1
+        }
+
+        // 合并本地标签统计（临时追踪，用于刚使用但未刷新的情况）
+        for (kind, count) in localTagStickerCounts {
+            // 只有当 stickerAvailabilities 中没有该贴纸时才添加
+            if counts[kind] == nil {
+                counts[kind] = count
+            }
+        }
+
+        return counts
+    }
+
+    /// 回滚到指定状态（已废弃，保留兼容）
     private func rollback(to state: VoteState) async {
         await MainActor.run {
             self.voteState = state
-            self.agreeCount = self.originalAgreeCount
-            self.neutralCount = self.originalNeutralCount
+            self._agreeCount = self.originalAgreeCount
+            self._neutralCount = self.originalNeutralCount
             self.isAnimating = false
 
             // 重建贴纸统计列表和可见贴纸队列
@@ -409,7 +504,7 @@ class ShareInteractionViewModel: ObservableObject {
             self.rebuildVisibleStickerDefinitions()
 
             #if DEBUG
-            print("🔄 [ShareInteraction] 回滚: voteState=\(state), agreeCount=\(agreeCount)")
+            print("🔄 [ShareInteraction] 回滚: voteState=\(state)")
             #endif
         }
     }
@@ -456,23 +551,26 @@ class ShareInteractionViewModel: ObservableObject {
         computeAvailableStickerKinds(userTaggingAllowance: allowance)
     }
 
-    /// 重建可见贴纸队列（应用投票规则）
-    /// 调用时机：初始化、投票状态变化、权限变化
+    /// 重建可见贴纸队列（应用贴纸使用规则）
+    /// 调用时机：初始化、贴纸使用后、权限变化
     ///
-    /// 投票贴纸规则（模拟真实贴纸，贴上就撕不下来）：
-    /// - 未投票：显示"赞同"和"无感"两个选项
-    /// - 已投票：两个投票贴纸都消失（无法取消投票）
+    /// 贴纸规则（模拟真实贴纸，贴上就撕不下来）：
+    /// - 未使用过贴纸：显示所有可用贴纸
+    /// - 已使用过贴纸：所有贴纸队列隐藏（UI 层显示"已使用"状态条）
+    /// - 投票贴纸特殊规则：使用一个后，另一个也消失（互斥）
     func rebuildVisibleStickerDefinitions() {
         var visible = availableStickerKinds
 
-        // ✅ 投票规则：一旦投票，两个投票贴纸都消失
-        // 贴纸贴上就撕不下来，无法取消投票
-        if voteState == .none {
-            // 未投票：确保两个投票贴纸都存在
-            visible.insert(.like)
-            visible.insert(.neutral)
-        } else {
-            // 已投票（agree 或 neutral）：两个投票贴纸都移除
+        // ✅ 检查是否已使用过任何贴纸
+        let hasUsedSticker = currentUserSticker != nil
+
+        // ✅ 检查是否已使用过投票贴纸（基于 stickerAvailabilities 的 alreadyApplied）
+        let hasUsedVoteSticker = stickerAvailabilities.contains { avail in
+            avail.kind.isVoteType && avail.alreadyApplied
+        }
+
+        // ✅ 投票规则：一旦使用投票贴纸，两个投票贴纸都消失
+        if hasUsedVoteSticker || (currentUserSticker?.kind.isVoteType == true) {
             visible.remove(.like)
             visible.remove(.neutral)
         }
@@ -484,9 +582,10 @@ class ShareInteractionViewModel: ObservableObject {
 
         #if DEBUG
         print("📊 [ShareInteraction] 重建可见贴纸队列:")
-        print("   - voteState: \(voteState)")
+        print("   - currentUserSticker: \(currentUserSticker?.name ?? "nil")")
+        print("   - hasUsedVoteSticker: \(hasUsedVoteSticker)")
         print("   - available: \(availableStickerKinds.map { $0.rawValue })")
-        print("   - visible(after vote rule): \(visible.map { $0.rawValue })")
+        print("   - visible: \(visible.map { $0.rawValue })")
         print("   - visibleDefinitions: \(visibleStickerDefinitions.map { $0.displayName })")
         #endif
     }
@@ -533,15 +632,12 @@ class ShareInteractionViewModel: ObservableObject {
             for avail in availabilities {
                 print("   - [\(avail.kind.rawValue)] \(avail.kind.displayName):")
                 print("       unlocked=\(avail.unlocked), canUse=\(avail.canUse)")
+                print("       alreadyApplied=\(avail.alreadyApplied)")  // ← 关键诊断信息
                 print("       dailyLimit=\(avail.dailyLimit?.description ?? "nil"), remainingToday=\(avail.remainingToday?.description ?? "nil")")
-                print("       group=\(avail.group?.rawValue ?? "nil")")
             }
-            // 特别检查珍馐是否存在
-            if availabilities.contains(where: { $0.kind == .zhenxiu }) {
-                print("🔍 [ShareInteraction] ✅ 珍馐贴纸存在于返回列表中")
-            } else {
-                print("🔍 [ShareInteraction] ⚠️ 珍馐贴纸 **不在** 返回列表中！后端未返回该贴纸。")
-            }
+            // 统计 alreadyApplied=true 的数量
+            let appliedCount = availabilities.filter { $0.alreadyApplied }.count
+            print("🔍 [ShareInteraction] alreadyApplied=true 的贴纸数量: \(appliedCount) / \(availabilities.count)")
             #endif
 
         } catch {
@@ -605,30 +701,65 @@ class ShareInteractionViewModel: ObservableObject {
         // ✅ 重置并重建本地标签统计（基于服务器的 alreadyApplied 数据）
         localTagStickerCounts = [:]
 
+        // ✅ 查找用户是否已对此分享使用过任何贴纸
+        var usedSticker: UsedStickerInfo? = nil
+
+        // ✅ 检查是否已使用过投票贴纸
+        var hasUsedVoteSticker = false
+
         for avail in availabilities {
             if avail.canUse {
                 available.insert(avail.kind)
             }
 
-            // ✅ 如果标签贴纸已使用过（alreadyApplied=true），添加到本地统计
-            // 这样重新进入分享时也能在统计看板中看到
-            if avail.kind.isTagType && avail.alreadyApplied {
-                localTagStickerCounts[avail.kind, default: 0] += 1
+            // ✅ 如果贴纸已使用过（alreadyApplied=true）
+            if avail.alreadyApplied {
+                // 记录已使用的贴纸（只记录第一个，因为每个分享只能用一个贴纸）
+                if usedSticker == nil {
+                    // 使用 StickerDefinition 的 displayName 保持与贴纸列表一致
+                    let definition = StickerDefinition.definition(for: avail.kind)
+                    usedSticker = UsedStickerInfo(
+                        kind: avail.kind,
+                        name: definition.displayName,
+                        iconURL: nil  // TODO: 后续从服务器获取 iconURL
+                    )
+                }
+
+                // ✅ 检查是否使用过投票贴纸
+                if avail.kind.isVoteType {
+                    hasUsedVoteSticker = true
+                }
+
+                // 如果是标签贴纸，添加到本地统计（用于统计看板）
+                if avail.kind.isTagType {
+                    localTagStickerCounts[avail.kind, default: 0] += 1
+                }
             }
         }
 
-        // 确保投票类贴纸始终存在（即使服务器未返回）
-        // 这是业务规则：投票对所有用户开放
-        available.insert(.like)
-        available.insert(.neutral)
+        // ✅ 设置已使用贴纸状态
+        currentUserSticker = usedSticker
+
+        // ✅ 投票类贴纸处理：
+        // - 如果已使用过投票贴纸：两个投票贴纸都不可用（互斥规则）
+        // - 如果未使用过：确保两个投票贴纸都可用（投票对所有用户开放）
+        if hasUsedVoteSticker {
+            available.remove(.like)
+            available.remove(.neutral)
+        } else {
+            available.insert(.like)
+            available.insert(.neutral)
+        }
 
         availableStickerKinds = available
 
         #if DEBUG
         print("📊 [ShareInteraction] 应用服务器可用性:")
         print("   - 服务器返回: \(availabilities.count) 种贴纸")
+        print("   - hasUsedVoteSticker: \(hasUsedVoteSticker)")
         print("   - 可用: \(available.map { $0.rawValue })")
         print("   - 已使用的标签: \(localTagStickerCounts.map { "\($0.key.displayName):\($0.value)" })")
+        print("   - currentUserSticker: \(usedSticker?.name ?? "nil")")
         #endif
 
         // 重建可见贴纸队列和统计看板
@@ -661,15 +792,9 @@ class ShareInteractionViewModel: ObservableObject {
 
     /// 使用贴纸（统一入口）
     /// - Parameter kind: 贴纸种类
-    /// - Note: 投票类贴纸走 vote API，标签类贴纸走 sticker use API
+    /// - Note: 所有贴纸（包括投票类）统一走 sticker use API
     func useSticker(_ kind: StickerKind) {
-        // 投票类贴纸：使用现有的 vote 逻辑
-        if let voteState = kind.asVoteState {
-            setVote(voteState)
-            return
-        }
-
-        // 标签类贴纸：使用新的贴纸 API
+        // ✅ 统一使用贴纸 API（不再区分投票类和标签类）
         guard let shareId = currentShareId else {
             #if DEBUG
             print("⚠️ [ShareInteraction] 使用贴纸失败：shareId 为空")
@@ -695,7 +820,8 @@ class ShareInteractionViewModel: ObservableObject {
         errorMessage = nil
 
         #if DEBUG
-        print("🎯 [ShareInteraction] 使用标签贴纸: \(kind.displayName) (backendId: \(kind.backendId))")
+        let typeDesc = kind.isVoteType ? "投票" : "标签"
+        print("🎯 [ShareInteraction] 使用\(typeDesc)贴纸: \(kind.displayName) (backendId: \(kind.backendId))")
         #endif
 
         // 后台调用 API
@@ -711,6 +837,37 @@ class ShareInteractionViewModel: ObservableObject {
                     print("✅ [ShareInteraction] 贴纸使用成功: \(kind.displayName)")
                     print("   - remainingToday: \(response.remainingToday?.description ?? "nil")")
                     #endif
+
+                    // ✅ 设置已使用贴纸状态（立即切换到"已使用"状态条）
+                    // 使用 StickerDefinition 的 displayName 保持与贴纸列表一致
+                    let definition = StickerDefinition.definition(for: kind)
+                    self.currentUserSticker = UsedStickerInfo(
+                        kind: kind,
+                        name: definition.displayName,
+                        iconURL: nil
+                    )
+
+                    // ✅ 投票贴纸特殊处理：更新计数和动画
+                    if kind.isVoteType {
+                        // 触发动画
+                        self.isAnimating = true
+
+                        // 乐观更新本地计数（用于 UI 立即响应）
+                        if kind == .like {
+                            self._agreeCount += 1
+                        } else if kind == .neutral {
+                            self._neutralCount += 1
+                        }
+
+                        // 0.5秒后重置动画状态
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                            self.isAnimating = false
+                        }
+                    }
+
+                    // 重建统计看板（所有贴纸类型都需要）
+                    self.rebuildStickerSummaries()
 
                     // 更新本地可用性数据
                     if let newRemaining = response.remainingToday {
@@ -735,6 +892,20 @@ class ShareInteractionViewModel: ObservableObject {
                 #if DEBUG
                 print("❌ [ShareInteraction] 贴纸使用错误: \(error.localizedDescription)")
                 #endif
+
+                // ✅ 特殊处理：STICKER_ALREADY_USED 错误 - 切换到"已使用"状态
+                if case .alreadyUsed(let usedKind, let usedName) = error {
+                    // 使用服务器返回的已使用贴纸信息
+                    if let kind = usedKind {
+                        // 使用 StickerDefinition 的 displayName 保持与贴纸列表一致
+                        let definition = StickerDefinition.definition(for: kind)
+                        self.currentUserSticker = UsedStickerInfo(
+                            kind: kind,
+                            name: usedName ?? definition.displayName,
+                            iconURL: nil
+                        )
+                    }
+                }
 
             } catch {
                 // 网络或其他错误
@@ -767,21 +938,29 @@ class ShareInteractionViewModel: ObservableObject {
             )
             stickerAvailabilities[index] = updated
 
-            // ✅ 标签类贴纸：使用后从可用列表中移除（每个分享只能用一次）
-            // 投票类贴纸不移除（可以切换投票状态）
-            if kind.isTagType {
-                availableStickerKinds.remove(kind)
-                rebuildVisibleStickerDefinitions()
+            // ✅ 所有贴纸使用后都从可用列表中移除（每个分享只能用一次贴纸）
+            availableStickerKinds.remove(kind)
 
-                // ✅ 更新本地标签统计并刷新统计看板
-                localTagStickerCounts[kind, default: 0] += 1
-                rebuildStickerSummaries()
-
-                #if DEBUG
-                print("📊 [ShareInteraction] 标签贴纸已使用，从队列移除: \(kind.displayName)")
-                print("   - 本地统计更新: \(kind.displayName) count=\(localTagStickerCounts[kind] ?? 0)")
-                #endif
+            // ✅ 投票类贴纸：两个互斥，使用一个后另一个也移除
+            if kind.isVoteType {
+                availableStickerKinds.remove(.like)
+                availableStickerKinds.remove(.neutral)
             }
+
+            rebuildVisibleStickerDefinitions()
+
+            // ✅ 更新本地统计并刷新统计看板
+            if kind.isTagType {
+                localTagStickerCounts[kind, default: 0] += 1
+            }
+            rebuildStickerSummaries()
+
+            #if DEBUG
+            print("📊 [ShareInteraction] 贴纸已使用，从队列移除: \(kind.displayName)")
+            if kind.isTagType {
+                print("   - 本地标签统计更新: \(kind.displayName) count=\(localTagStickerCounts[kind] ?? 0)")
+            }
+            #endif
 
             #if DEBUG
             print("📊 [ShareInteraction] 更新本地可用性: \(kind.displayName) remaining=\(remainingToday), alreadyApplied=true")
