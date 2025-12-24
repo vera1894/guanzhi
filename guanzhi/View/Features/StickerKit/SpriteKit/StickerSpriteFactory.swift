@@ -53,7 +53,8 @@ enum StickerSpriteFactory {
     ///   - stickerSize: 贴纸尺寸
     /// - Returns: 配置好的 SKLabelNode
     private static func createLabel(for definition: StickerDefinition, stickerSize: CGSize) -> SKLabelNode {
-        let label = SKLabelNode(text: definition.displayName)
+        let displayName = definition.dynamicDisplayName  // 使用动态名称
+        let label = SKLabelNode(text: displayName)
 
         // 字体设置
         label.fontName = "PingFangSC-Medium"
@@ -72,7 +73,7 @@ enum StickerSpriteFactory {
 
         // 添加阴影效果增强可读性
         // 通过创建一个背景标签实现简单的阴影
-        let shadowLabel = SKLabelNode(text: definition.displayName)
+        let shadowLabel = SKLabelNode(text: displayName)
         shadowLabel.fontName = "PingFangSC-Medium"
         shadowLabel.fontSize = 12
         shadowLabel.fontColor = UIColor.black.withAlphaComponent(0.5)

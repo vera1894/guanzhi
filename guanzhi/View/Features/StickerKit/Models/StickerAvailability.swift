@@ -181,9 +181,9 @@ enum StickerUseError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .levelLocked(let kind):
-            return "\"\(kind.displayName)\"贴纸需要更高等级才能使用"
+            return "\"\(kind.dynamicDisplayName)\"贴纸需要更高等级才能使用"
         case .quotaExhausted(let kind):
-            return "\"\(kind.displayName)\"今日使用次数已达上限"
+            return "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限"
         case .alreadyUsed(_, let usedName):
             if let name = usedName {
                 return "本条分享已使用过「\(name)」贴纸"

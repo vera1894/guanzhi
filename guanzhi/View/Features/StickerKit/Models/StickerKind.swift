@@ -88,6 +88,12 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
         }
     }
 
+    /// 动态显示名称
+    /// 优先使用服务器返回的名称，回退到硬编码默认值
+    var dynamicDisplayName: String {
+        StickerNameService.shared.getName(for: tagCode, default: displayName)
+    }
+
     /// 默认优先级（数值越大越靠前）
     /// 用于贴纸队列排序
     var defaultPriority: Int {

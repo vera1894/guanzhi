@@ -54,7 +54,7 @@ struct StickerDefinition: Identifiable, Hashable {
     /// 贴纸种类（统一 ID，链接后端与前端）
     let kind: StickerKind
 
-    /// 显示名称
+    /// 显示名称（硬编码默认值）
     let displayName: String
 
     /// 资源类型
@@ -65,6 +65,14 @@ struct StickerDefinition: Identifiable, Hashable {
 
     /// 扩展元数据（如绑定的互动类型）
     let meta: [String: String]
+
+    // MARK: - Dynamic Name
+
+    /// 动态显示名称
+    /// 优先使用服务器返回的名称，回退到硬编码默认值
+    var dynamicDisplayName: String {
+        StickerNameService.shared.getName(for: kind.tagCode, default: displayName)
+    }
 
     // MARK: - Hashable
 

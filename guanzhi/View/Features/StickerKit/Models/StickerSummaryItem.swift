@@ -34,7 +34,7 @@ struct StickerSummaryItem: Identifiable, Hashable {
     init(kind: StickerKind, count: Int) {
         let definition = StickerDefinition.definition(for: kind)
         self.kind = kind
-        self.displayName = definition.displayName
+        self.displayName = definition.dynamicDisplayName  // 使用动态名称
         self.count = count
         self.definition = definition
     }

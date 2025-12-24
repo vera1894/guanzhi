@@ -103,6 +103,7 @@
 		FF769B5B2D6D9C0600321540 /* CustomImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B5A2D6D9C0600321540 /* CustomImagePicker.swift */; };
 		FF769B5D2D6D9C3500321540 /* Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B5C2D6D9C3500321540 /* Crop.swift */; };
 		FF769B612D7D730A00321540 /* AccountManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B602D7D730A00321540 /* AccountManagementView.swift */; };
+		FF774DA92EFBE97800EE691E /* StickerNameService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF774DA82EFBE97800EE691E /* StickerNameService.swift */; };
 		FF84D7BF2D3E35C10060F060 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7BE2D3E35C10060F060 /* ShareService.swift */; };
 		FF84D7C32D40DE190060F060 /* OtherUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */; };
 		FF84D7C52D45DA5C0060F060 /* OthersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C42D45DA4F0060F060 /* OthersView.swift */; };
@@ -260,6 +261,7 @@
 		FF769B5A2D6D9C0600321540 /* CustomImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomImagePicker.swift; sourceTree = "<group>"; };
 		FF769B5C2D6D9C3500321540 /* Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crop.swift; sourceTree = "<group>"; };
 		FF769B602D7D730A00321540 /* AccountManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountManagementView.swift; sourceTree = "<group>"; };
+		FF774DA82EFBE97800EE691E /* StickerNameService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerNameService.swift; sourceTree = "<group>"; };
 		FF84D7BE2D3E35C10060F060 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfile.swift; sourceTree = "<group>"; };
 		FF84D7C42D45DA4F0060F060 /* OthersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OthersView.swift; sourceTree = "<group>"; };
@@ -744,6 +746,7 @@
 		FF9DB7942EEA4FF600374E02 /* StickerKit */ = {
 			isa = PBXGroup;
 			children = (
+				FF774DA82EFBE97800EE691E /* StickerNameService.swift */,
 				60B298577800CEABDA87998D /* Particles */,
 				FF9DB78A2EEA4FF600374E02 /* Models */,
 				FF9DB78C2EEA4FF600374E02 /* Motion */,
@@ -986,6 +989,7 @@
 				FF99ECDC2EFA3CAF0080AE71 /* CommentInputBar.swift in Sources */,
 				FF650F5A2ED7D962001437AB /* ShareDetailView.swift in Sources */,
 				FFAC90612C78848300FA7374 /* CameraModel.swift in Sources */,
+				FF774DA92EFBE97800EE691E /* StickerNameService.swift in Sources */,
 				FF6BC4E12C7C188300423660 /* CameraPreview.swift in Sources */,
 				D13FFDEF2BAF1F26007E1970 /* NicknameTextField.swift in Sources */,
 				FF84D7BF2D3E35C10060F060 /* ShareService.swift in Sources */,

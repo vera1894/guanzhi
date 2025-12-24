@@ -104,12 +104,13 @@ final class StickerTextureCache {
 
     /// 创建纹理
     private func createTexture(for definition: StickerDefinition, size: CGSize) -> SKTexture {
+        let dynamicName = definition.dynamicDisplayName  // 使用动态名称
         switch definition.assetKind {
         case .image(let name):
             if let image = UIImage(named: name) {
                 return SKTexture(image: renderWithFrame(image: image, size: size))
             }
-            return createPlaceholderTexture(size: size, label: definition.displayName)
+            return createPlaceholderTexture(size: size, label: dynamicName)
 
         case .systemSymbol(let name):
             let config = UIImage.SymbolConfiguration(pointSize: size.width * 0.45, weight: .semibold)
@@ -117,7 +118,7 @@ final class StickerTextureCache {
                 .withTintColor(.systemOrange, renderingMode: .alwaysOriginal) {
                 return SKTexture(image: renderWithFrame(symbolImage: symbolImage, size: size))
             }
-            return createPlaceholderTexture(size: size, label: definition.displayName)
+            return createPlaceholderTexture(size: size, label: dynamicName)
 
         case .svg(let name):
             // TODO: 对接 SVG 渲染管线

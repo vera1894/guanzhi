@@ -75,10 +75,10 @@ struct UsedStickerInfo: Equatable {
     /// 贴纸图标 URL（可选，用于显示服务器端图标）
     let iconURL: URL?
 
-    /// 便捷初始化（使用本地定义的名称）
+    /// 便捷初始化（使用动态名称）
     init(kind: StickerKind, name: String? = nil, iconURL: URL? = nil) {
         self.kind = kind
-        self.name = name ?? kind.displayName
+        self.name = name ?? kind.dynamicDisplayName  // 使用动态名称
         self.iconURL = iconURL
     }
 }
@@ -410,7 +410,7 @@ class ShareInteractionViewModel: ObservableObject {
                     let definition = StickerDefinition.definition(for: avail.kind)
                     usedSticker = UsedStickerInfo(
                         kind: avail.kind,
-                        name: definition.displayName,
+                        name: definition.dynamicDisplayName,  // 使用动态名称
                         iconURL: nil
                     )
                 }
@@ -464,12 +464,12 @@ class ShareInteractionViewModel: ObservableObject {
         // 检查可用性
         if let availability = getAvailability(for: kind) {
             if !availability.unlocked {
-                errorMessage = "\"\(kind.displayName)\"贴纸需要更高等级才能使用"
+                errorMessage = "\"\(kind.dynamicDisplayName)\"贴纸需要更高等级才能使用"
                 clearErrorAfterDelay()
                 return
             }
             if availability.isQuotaExhausted {
-                errorMessage = "\"\(kind.displayName)\"今日使用次数已达上限"
+                errorMessage = "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限"
                 clearErrorAfterDelay()
                 return
             }
@@ -497,7 +497,7 @@ class ShareInteractionViewModel: ObservableObject {
                     let definition = StickerDefinition.definition(for: kind)
                     self.currentUserSticker = UsedStickerInfo(
                         kind: kind,
-                        name: definition.displayName,
+                        name: definition.dynamicDisplayName,  // 使用动态名称
                         iconURL: nil
                     )
 
@@ -536,7 +536,7 @@ class ShareInteractionViewModel: ObservableObject {
                         let definition = StickerDefinition.definition(for: kind)
                         self.currentUserSticker = UsedStickerInfo(
                             kind: kind,
-                            name: usedName ?? definition.displayName,
+                            name: usedName ?? definition.dynamicDisplayName,  // 使用动态名称
                             iconURL: nil
                         )
                     }

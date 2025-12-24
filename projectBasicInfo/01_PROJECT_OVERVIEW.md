@@ -1,6 +1,6 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v1.9
+**文档版本**: v2.0
 **最后更新**: 2025-12-24
 
 ---
@@ -228,10 +228,20 @@ func rebuildStickerSummaries()
    └── 右侧：InteractionOverlayView（显示点赞按钮）
 ```
 
-**贴纸名称配置**：
-- **贴纸名称（displayName）目前是前端硬编码**，位于 `StickerDefinition.swift`
-- 当前所有贴纸名称均为 2 个中文字符（赞同、无感、秘境、珍馐、玩趣、踩坑、猫猫、朝圣、日出、集市）
-- TODO：后续可改为从服务器 API 获取贴纸名称（API 已返回 `stickerName` 字段）
+**贴纸名称动态加载**（2025-12-24 实现）：
+- 贴纸名称支持从服务器动态获取，通过 `StickerNameService` 管理
+- API：`GET /api/config/sticker-names`（无需登录）
+- 缓存策略：ETag + 24 小时本地缓存
+- 回退机制：网络失败时使用硬编码默认值
+- 使用方式：`StickerKind.dynamicDisplayName` 或 `StickerDefinition.dynamicDisplayName`
+
+**相关文件**：
+```
+StickerKit/Services/StickerNameService.swift  # 名称服务（API + 缓存）
+StickerKit/Models/StickerKind.swift           # dynamicDisplayName 属性
+StickerKit/Models/StickerDefinition.swift     # dynamicDisplayName 属性
+guanzhiApp.swift                              # App 启动时预加载
+```
 
 **配额计算**：
 ```

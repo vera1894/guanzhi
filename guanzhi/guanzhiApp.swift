@@ -20,8 +20,10 @@ struct guanzhiApp: App {
     @StateObject var navigationCoordinator = NavigationCoordinator()
 
     init() {
-            _ = CoordinateConverter.shared
-        }
+        _ = CoordinateConverter.shared
+        // 预加载贴纸名称（异步，不阻塞启动）
+        StickerNameService.shared.preload()
+    }
     
     var body: some Scene {
         WindowGroup {
