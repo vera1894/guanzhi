@@ -11,6 +11,7 @@ import SwiftUI
 struct CommentCellView: View {
     let comment: CommentViewData
     @ObservedObject var viewModel: CommentViewModel
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -31,7 +32,7 @@ struct CommentCellView: View {
     @ViewBuilder
     private var normalContent: some View {
         HStack(alignment: .top, spacing: 12) {
-            // 头像
+            // 头像（可点击导航到用户主页）
             AsyncImage(url: URL(string: comment.userAvatar ?? "")) { phase in
                 switch phase {
                 case .success(let image):
@@ -54,6 +55,9 @@ struct CommentCellView: View {
                 Circle()
                     .stroke(Color.gray.opacity(0.2), lineWidth: 1)
             )
+            .onTapGesture {
+                navigateToUserProfile(userId: comment.userId)
+            }
 
             VStack(alignment: .leading, spacing: 6) {
                 // 用户名 + 作者标识
@@ -133,6 +137,18 @@ struct CommentCellView: View {
                     replyPreviewSection
                 }
             }
+        }
+    }
+
+    // MARK: - 导航到用户主页
+    private func navigateToUserProfile(userId: Int64) {
+        let currentUserId = Int64(OTOLoginStatusManager.shared.getUserID())
+        if userId == currentUserId {
+            // 自己的头像 → 个人中心
+            navigationCoordinator.path.append(Route.myView)
+        } else {
+            // 他人的头像 → 他人主页
+            navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
         }
     }
 
@@ -222,40 +238,97 @@ struct ReplyPreviewView: View {
     let reply: ReplyViewData
     @ObservedObject var viewModel: CommentViewModel
     let parentId: Int64
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+
+    /// 是否是分享作者
+    private var isAuthor: Bool {
+        reply.userId == viewModel.shareAuthorId
+    }
+
+    /// 是否显示"回复 @xxx"（仅回复二级评论时显示）
+    /// 服务端逻辑：回复一级评论时 replyToUserId 为 null，回复二级评论时才有值
+    private var shouldShowReplyTo: Bool {
+        return reply.replyToUserId != nil
+    }
 
     var body: some View {
         if reply.displayStatus != .normal {
             // 删除/违规的回复
-            Text(reply.statusText ?? "该回复不可用")
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
-                .italic()
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 28, height: 28)
+                Text(reply.statusText ?? "该回复不可用")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .italic()
+                Spacer()
+            }
         } else {
-            VStack(alignment: .leading, spacing: 4) {
-                // 回复内容
-                HStack(alignment: .top, spacing: 0) {
-                    Text(reply.userNickname ?? "匿名用户")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color("color-black"))
+            HStack(alignment: .top, spacing: 8) {
+                // 头像（可点击导航到用户主页）
+                AsyncImage(url: URL(string: reply.userAvatar ?? "")) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure, .empty:
+                        Image("例子")
+                            .resizable()
+                            .scaledToFill()
+                    @unknown default:
+                        Image("例子")
+                            .resizable()
+                            .scaledToFill()
+                    }
+                }
+                .frame(width: 28, height: 28)
+                .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+                .onTapGesture {
+                    navigateToUserProfile(userId: reply.userId)
+                }
 
-                    if let replyToName = reply.replyToUserNickname {
-                        Text(" 回复 ")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                        Text("@\(replyToName)")
+                VStack(alignment: .leading, spacing: 4) {
+                    // 第一行：用户名 + 作者角标
+                    HStack(spacing: 6) {
+                        Text(reply.userNickname ?? "匿名用户")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color("color-primary"))
+                            .foregroundColor(Color("color-black"))
+
+                        if isAuthor {
+                            Text("作者")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(Color("color-primary"))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Color("color-primary").opacity(0.1)
+                                )
+                                .cornerRadius(4)
+                        }
                     }
 
-                    Text("：")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+                    // 第二行：回复内容（可能带"回复 @xxx"）
+                    HStack(alignment: .top, spacing: 0) {
+                        if shouldShowReplyTo, let replyToName = reply.replyToUserNickname {
+                            Text("回复 ")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                            Text("@\(replyToName) ")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(Color("color-primary"))
+                        }
 
-                    Text(reply.content ?? "")
-                        .font(.system(size: 13))
-                        .foregroundColor(Color("color-black"))
-                }
-                .lineLimit(2)
+                        Text(reply.content ?? "")
+                            .font(.system(size: 13))
+                            .foregroundColor(Color("color-black"))
+                    }
+                    .lineLimit(2)
 
                 // 操作栏
                 HStack(spacing: 12) {
@@ -289,7 +362,7 @@ struct ReplyPreviewView: View {
 
                     // 回复按钮
                     Button(action: {
-                        // 找到父评论
+                        // 找到父评论（一级评论，用于本地列表更新）
                         if let parentComment = viewModel.comments.first(where: { $0.id == parentId }) {
                             viewModel.enterReplyMode(
                                 to: parentComment,
@@ -297,7 +370,8 @@ struct ReplyPreviewView: View {
                                     id: reply.userId,
                                     nickname: reply.userNickname,
                                     avatar: reply.userAvatar
-                                )
+                                ),
+                                replyToCommentId: reply.id  // 被回复的二级评论ID
                             )
                         }
                     }) {
@@ -321,8 +395,21 @@ struct ReplyPreviewView: View {
                         }
                     }
                 }
-            }
+                } // VStack
+            } // HStack
             .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: - 导航到用户主页
+    private func navigateToUserProfile(userId: Int64) {
+        let currentUserId = Int64(OTOLoginStatusManager.shared.getUserID())
+        if userId == currentUserId {
+            // 自己的头像 → 个人中心
+            navigationCoordinator.path.append(Route.myView)
+        } else {
+            // 他人的头像 → 他人主页
+            navigationCoordinator.path.append(Route.othersView(userId: Int(userId)))
         }
     }
 }

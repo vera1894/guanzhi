@@ -30,6 +30,8 @@ struct CommentViewData: Identifiable, Codable {
     let userNickname: String?
     let userAvatar: String?
     let parentId: Int64?
+    let replyToUserId: Int64?          // 新增：被回复的用户ID（用于新建评论返回值）
+    let replyToUserNickname: String?   // 新增：被回复的用户昵称
     let content: String?
     var status: Int            // 需要可修改（删除时更新）
     var statusText: String?    // "该评论已删除" / "该评论已违规"
@@ -60,6 +62,7 @@ struct CommentViewData: Identifiable, Codable {
     // CodingKeys 排除本地状态字段
     enum CodingKeys: String, CodingKey {
         case id, shareId, userId, userNickname, userAvatar, parentId
+        case replyToUserId, replyToUserNickname // 新增
         case content, status, statusText, likeCount, replyCount
         case isAuthor, liked, createdAt, repliesPreview
     }
@@ -72,6 +75,8 @@ struct CommentViewData: Identifiable, Codable {
         userNickname = try container.decodeIfPresent(String.self, forKey: .userNickname)
         userAvatar = try container.decodeIfPresent(String.self, forKey: .userAvatar)
         parentId = try container.decodeIfPresent(Int64.self, forKey: .parentId)
+        replyToUserId = try container.decodeIfPresent(Int64.self, forKey: .replyToUserId) // 新增
+        replyToUserNickname = try container.decodeIfPresent(String.self, forKey: .replyToUserNickname) // 新增
         content = try container.decodeIfPresent(String.self, forKey: .content)
         status = try container.decode(Int.self, forKey: .status)
         statusText = try container.decodeIfPresent(String.self, forKey: .statusText)
@@ -96,6 +101,8 @@ struct CommentViewData: Identifiable, Codable {
         try container.encodeIfPresent(userNickname, forKey: .userNickname)
         try container.encodeIfPresent(userAvatar, forKey: .userAvatar)
         try container.encodeIfPresent(parentId, forKey: .parentId)
+        try container.encodeIfPresent(replyToUserId, forKey: .replyToUserId) // 新增
+        try container.encodeIfPresent(replyToUserNickname, forKey: .replyToUserNickname) // 新增
         try container.encodeIfPresent(content, forKey: .content)
         try container.encode(status, forKey: .status)
         try container.encodeIfPresent(statusText, forKey: .statusText)
@@ -109,7 +116,8 @@ struct CommentViewData: Identifiable, Codable {
 
     // 用于本地创建（乐观更新）
     init(id: Int64, shareId: Int64, userId: Int64, userNickname: String?, userAvatar: String?,
-         parentId: Int64?, content: String?, status: Int, statusText: String?,
+         parentId: Int64?, replyToUserId: Int64? = nil, replyToUserNickname: String? = nil, // 新增
+         content: String?, status: Int, statusText: String?,
          likeCount: Int, replyCount: Int, isAuthor: Bool?, liked: Bool, createdAt: String,
          repliesPreview: [ReplyViewData]? = nil) {
         self.id = id
@@ -118,6 +126,8 @@ struct CommentViewData: Identifiable, Codable {
         self.userNickname = userNickname
         self.userAvatar = userAvatar
         self.parentId = parentId
+        self.replyToUserId = replyToUserId // 新增
+        self.replyToUserNickname = replyToUserNickname // 新增
         self.content = content
         self.status = status
         self.statusText = statusText

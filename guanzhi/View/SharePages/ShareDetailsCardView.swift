@@ -254,8 +254,8 @@ struct ShareDetailsCardView: View {
             }
             // 监听分享变化，绑定评论 ViewModel
             .onChange(of: searchViewModel.selectedShare?.id) { oldId, newId in
-                if let shareId = newId, shareId != oldId {
-                    commentViewModel.bind(to: shareId)
+                if let share = searchViewModel.selectedShare, share.id != oldId {
+                    commentViewModel.bind(to: share.id, authorId: share.userId)
                     if isFullScreen {
                         Task {
                             await commentViewModel.loadComments(reset: true)
@@ -264,9 +264,10 @@ struct ShareDetailsCardView: View {
                 }
             }
             .onAppear {
-                // 初始化绑定
-                if let shareId = searchViewModel.selectedShare?.id {
-                    commentViewModel.bind(to: shareId)
+                // 初始化绑定（仅当尚未绑定该分享时）
+                if let share = searchViewModel.selectedShare,
+                   commentViewModel.shareId != share.id {
+                    commentViewModel.bind(to: share.id, authorId: share.userId)
                 }
             }
         }

@@ -10,6 +10,7 @@ import SwiftUI
 
 struct CommentSectionView: View {
     @ObservedObject var viewModel: CommentViewModel
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @State private var showSortPicker = false
 
     var body: some View {

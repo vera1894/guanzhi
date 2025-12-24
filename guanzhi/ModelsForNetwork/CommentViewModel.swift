@@ -21,8 +21,9 @@ class CommentViewModel: ObservableObject {
 
     // MARK: - 回复模式状态
     @Published var isReplyMode: Bool = false
-    @Published var replyTarget: CommentViewData?      // 回复的目标一级评论
+    @Published var replyTarget: CommentViewData?      // 回复的目标一级评论（用于本地列表更新）
     @Published var replyToUser: CommentUserSummary?   // 回复的具体用户（可能是二级回复作者）
+    @Published var replyToCommentId: Int64?           // 被回复的评论ID（发送给服务端，用于判断是回复一级还是二级）
 
     // MARK: - 输入状态
     @Published var inputText: String = ""
@@ -37,13 +38,15 @@ class CommentViewModel: ObservableObject {
 
     // MARK: - 所属分享
     private(set) var shareId: Int64 = 0
+    private(set) var shareAuthorId: Int64 = 0
 
     // MARK: - 方法
 
     /// 初始化（绑定到分享）
-    func bind(to shareId: Int64) {
-        print("🔗 [CommentViewModel] bind(to: \(shareId))")
+    func bind(to shareId: Int64, authorId: Int64 = 0) {
+        print("🔗 [CommentViewModel] bind(to: \(shareId), authorId: \(authorId))")
         self.shareId = shareId
+        self.shareAuthorId = authorId
         self.comments = []
         self.currentOffset = 0
         self.hasMoreComments = true
@@ -162,7 +165,7 @@ class CommentViewModel: ObservableObject {
             let newComment = try await CommentService.shared.createComment(
                 shareId: shareId,
                 content: inputText,
-                parentId: replyTarget?.id,
+                parentId: replyToCommentId,  // 使用被回复的评论ID（一级或二级）
                 replyToUserId: replyToUser?.id
             )
 
@@ -176,13 +179,16 @@ class CommentViewModel: ObservableObject {
                 comments.insert(mutableComment, at: 0)
             } else if let parentIndex = comments.firstIndex(where: { $0.id == replyTarget?.id }) {
                 // 二级回复：添加到父评论的回复列表
+                // ✅ 修正：直接使用服务端返回的 newComment 中的 replyToUserId
+                // 服务端已经处理好了 converge 逻辑，如果 replyToUserId != nil，说明是回复了某人
+                
                 let reply = ReplyViewData(
                     id: newComment.id,
                     userId: newComment.userId,
                     userNickname: newComment.userNickname,
                     userAvatar: newComment.userAvatar,
-                    replyToUserId: replyToUser?.id,
-                    replyToUserNickname: replyToUser?.nickname,
+                    replyToUserId: newComment.replyToUserId,
+                    replyToUserNickname: newComment.replyToUserNickname,
                     content: newComment.content,
                     status: 0,
                     statusText: nil,
@@ -289,7 +295,11 @@ class CommentViewModel: ObservableObject {
     }
 
     /// 进入回复模式
-    func enterReplyMode(to comment: CommentViewData, replyToUser: CommentUserSummary? = nil) {
+    /// - Parameters:
+    ///   - comment: 目标一级评论（用于本地列表更新）
+    ///   - replyToUser: 被回复的用户信息
+    ///   - replyToCommentId: 被回复的评论ID（一级或二级评论的ID，发送给服务端）
+    func enterReplyMode(to comment: CommentViewData, replyToUser: CommentUserSummary? = nil, replyToCommentId: Int64? = nil) {
         isReplyMode = true
         replyTarget = comment
         self.replyToUser = replyToUser ?? CommentUserSummary(
@@ -297,6 +307,8 @@ class CommentViewModel: ObservableObject {
             nickname: comment.userNickname,
             avatar: comment.userAvatar
         )
+        // 如果没有指定 replyToCommentId，默认使用一级评论的 ID
+        self.replyToCommentId = replyToCommentId ?? comment.id
     }
 
     /// 退出回复模式
@@ -304,6 +316,7 @@ class CommentViewModel: ObservableObject {
         isReplyMode = false
         replyTarget = nil
         replyToUser = nil
+        replyToCommentId = nil
     }
 
     /// 切换排序
