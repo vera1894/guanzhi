@@ -148,28 +148,6 @@ final class ShareService {
         }
     }
 
-    /// 对分享进行投票
-    /// - Parameters:
-    ///   - shareId: 分享ID
-    ///   - voteType: 投票类型 (1=赞同, 0=无感, -1=取消)
-    /// - Returns: 空结果（成功/失败）
-    func voteShare(shareId: Int64, voteType: Int) async throws {
-        let data = try await OTONetwork.request(
-            .voteShare(shareId: shareId, voteType: voteType)
-        )
-
-        let decoder = JSONDecoder()
-        let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
-
-        guard response.respCode == 0 else {
-            throw NSError(
-                domain: "ShareService",
-                code: response.respCode,
-                userInfo: [NSLocalizedDescriptionKey: response.respMsg ?? "投票失败"]
-            )
-        }
-    }
-
     /// 记录分享浏览（用于褪色度计算）
     /// - Parameter shareId: 分享ID
     /// - Note: 此接口用于上报用户浏览行为，后端会根据浏览数据计算褪色度

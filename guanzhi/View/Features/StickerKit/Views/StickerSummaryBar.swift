@@ -108,11 +108,12 @@ struct StickerThumbnail: View {
     let definition: StickerDefinition
     var size: CGFloat = 24
 
-    /// 文字回退的背景颜色（根据贴纸类型变化）
+    /// 文字回退的背景颜色（根据贴纸种类变化）
     private var textFallbackBackgroundColor: Color {
-        if definition.kind.isVoteType {
+        switch definition.kind {
+        case .like, .neutral:
             return Color.orange.opacity(0.3)
-        } else {
+        default:
             return Color.blue.opacity(0.3)
         }
     }

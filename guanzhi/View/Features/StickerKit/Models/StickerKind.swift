@@ -7,28 +7,26 @@
 //  贴纸种类枚举 - 统一后端 ID 与前端视觉配置的链接点
 //
 //  重要约束：
-//  - 投票类 (like/neutral) 对所有用户开放，互斥
-//  - 标签类 case 必须严格对齐后端 tag_definition 表，不私自增删
-//  - 使用 asVoteState 进行映射，避免 like/agree 命名混用
+//  - 所有贴纸统一使用标签系统（tag_definition 表）
+//  - case 必须严格对齐后端 tag_definition 表，不私自增删
+//  - 每个用户对每条分享的每种贴纸只能使用一次
 //
 
 import Foundation
 
 /// 贴纸种类枚举
-/// - 后端负责：贴纸种类的业务含义、是否计数、是否互斥
+/// - 后端负责：贴纸种类的业务含义、是否计数、配额限制
 /// - 前端负责：同一个 ID 对应的图标、文案、优先级、动效等视觉和交互
 enum StickerKind: String, CaseIterable, Codable, Hashable {
 
-    // MARK: - 投票类（互斥，对所有用户开放）
+    // MARK: - 贴纸定义
+    // ⚠️ 以下 case 必须与 admin-web 配置的 tag_definition 表一一对应
 
-    /// 赞同/点赞 - 对应后端 voteType=1
+    /// 赞同 - tagCode: LIKE
     case like
 
-    /// 无感 - 对应后端 voteType=0
+    /// 无感 - tagCode: NEUTRAL
     case neutral
-
-    // MARK: - 标签类（基于用户权限，必须与后端 TagDefinition 严格对齐）
-    // ⚠️ 以下 case 必须与 admin-web 配置的 tag_definition 表一一对应
 
     /// 秘境 - tagCode: MIJING
     case mijing
@@ -56,42 +54,12 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
 
     // MARK: - 属性
 
-    /// 是否为投票类贴纸（互斥组）
-    /// 投票类贴纸：like 和 neutral 互斥，用户只能选一个
-    var isVoteType: Bool {
-        self == .like || self == .neutral
-    }
-
-    /// 是否为标签类贴纸
-    /// 标签类贴纸：基于用户等级权限，可以贴多个
-    var isTagType: Bool {
-        !isVoteType
-    }
-
-    /// 是否需要持久化到服务器
-    /// 投票类和标签类都需要持久化
-    var isPersistable: Bool {
-        // 所有类型都需要持久化（投票类走 vote 接口，标签类走 tag 接口）
-        true
-    }
-
-    /// 转换为 VoteState（仅投票类有效）
-    /// 统一映射入口，避免在代码中混用 like/agree
-    var asVoteState: VoteState? {
+    /// 对应后端 tagCode
+    /// 用于调用贴纸 API: POST /api/shares/{shareId}/stickers/use
+    var tagCode: String {
         switch self {
-        case .like:
-            return .agree
-        case .neutral:
-            return .neutral
-        default:
-            return nil
-        }
-    }
-
-    /// 对应后端 tagCode（仅标签类有效）
-    /// 用于调用标签 API: POST /api/guan/share/tag
-    var tagCode: String? {
-        switch self {
+        case .like:      return "LIKE"
+        case .neutral:   return "NEUTRAL"
         case .mijing:    return "MIJING"
         case .zhenxiu:   return "ZHENXIU"
         case .wanqu:     return "WANQU"
@@ -100,12 +68,11 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
         case .chaosheng: return "CHAOSHENG"
         case .richu:     return "RICHU"
         case .jishi:     return "JISHI"
-        default:         return nil
         }
     }
 
-    /// 显示名称
-    /// 用于 UI 展示和文字回退
+    /// 显示名称（硬编码兜底）
+    /// 用于 UI 展示和文字回退，优先使用服务器返回的名称
     var displayName: String {
         switch self {
         case .like:      return "赞同"
@@ -176,20 +143,7 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
 
     // MARK: - 静态方法
 
-    /// 从 VoteState 反向获取对应的 StickerKind
-    /// 用于从投票状态构建贴纸统计
-    static func from(voteState: VoteState) -> StickerKind? {
-        switch voteState {
-        case .agree:
-            return .like
-        case .neutral:
-            return .neutral
-        case .none:
-            return nil
-        }
-    }
-
-    /// 从 tagCode 创建（仅标签类）
+    /// 从 tagCode 创建
     /// 用于从后端数据构建贴纸
     static func from(tagCode: String) -> StickerKind? {
         allCases.first { $0.tagCode == tagCode }
@@ -198,26 +152,6 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
     /// 从后端 stickerId 创建（推荐使用 init?(backendId:)）
     static func from(backendId: String) -> StickerKind? {
         StickerKind(backendId: backendId)
-    }
-
-    /// 所有投票类贴纸
-    static var voteTypes: [StickerKind] {
-        allCases.filter { $0.isVoteType }
-    }
-
-    /// 所有标签类贴纸
-    static var tagTypes: [StickerKind] {
-        allCases.filter { $0.isTagType }
-    }
-}
-
-// MARK: - 兼容性别名（保持旧代码可用）
-
-extension StickerKind {
-    /// 兼容旧代码的 voteState 属性
-    /// 建议使用 asVoteState 以保持命名一致性
-    var voteState: VoteState? {
-        asVoteState
     }
 }
 
@@ -260,32 +194,5 @@ enum UserLevelConfig {
     /// - Returns: 是否有权限
     static func canTag(for levelCode: String?) -> Bool {
         getTaggingAllowance(for: levelCode) > 0
-    }
-
-    // MARK: - 便捷方法
-
-    /// 计算用户可用的贴纸种类
-    /// - Parameters:
-    ///   - levelCode: 用户等级代码
-    ///   - activeTagCodes: 启用的标签列表（空集合表示全部启用）
-    /// - Returns: 可用的贴纸种类集合
-    static func computeAvailableKinds(
-        for levelCode: String?,
-        activeTagCodes: Set<String> = []
-    ) -> Set<StickerKind> {
-        // 投票类对所有人开放
-        var available: Set<StickerKind> = [.like, .neutral]
-
-        // 有标签权限时，添加启用的标签类贴纸
-        if canTag(for: levelCode) {
-            let tagKinds = StickerKind.tagTypes.filter { kind in
-                guard let tagCode = kind.tagCode else { return false }
-                // 空集合表示全部启用
-                return activeTagCodes.isEmpty || activeTagCodes.contains(tagCode)
-            }
-            available.formUnion(tagKinds)
-        }
-
-        return available
     }
 }

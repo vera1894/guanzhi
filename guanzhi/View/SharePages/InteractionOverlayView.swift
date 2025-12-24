@@ -11,7 +11,6 @@ struct InteractionOverlayView: View {
     // MARK: - Properties
 
     let share: Share
-    let onVoteStateChanged: ((Int64, VoteState, Int, Int) -> Void)?
 
     /// 外部传入的 ViewModel（用于与其他组件共享状态）
     @ObservedObject var viewModel: ShareInteractionViewModel
@@ -19,17 +18,15 @@ struct InteractionOverlayView: View {
     // MARK: - Initializer
 
     /// 使用外部传入的 ViewModel（推荐，用于状态共享）
-    init(share: Share, viewModel: ShareInteractionViewModel, onVoteStateChanged: ((Int64, VoteState, Int, Int) -> Void)? = nil) {
+    init(share: Share, viewModel: ShareInteractionViewModel) {
         self.share = share
         self.viewModel = viewModel
-        self.onVoteStateChanged = onVoteStateChanged
     }
 
     /// 兼容旧接口：自动创建内部 ViewModel（用于独立使用场景）
-    init(share: Share, onVoteStateChanged: ((Int64, VoteState, Int, Int) -> Void)? = nil) {
+    init(share: Share) {
         self.share = share
         self.viewModel = ShareInteractionViewModel()
-        self.onVoteStateChanged = onVoteStateChanged
     }
 
     // MARK: - Body
@@ -126,7 +123,7 @@ struct InteractionOverlayView: View {
     // MARK: - Private Methods
 
     private func initializeViewModel() {
-        viewModel.initialize(share: share, onStateChanged: onVoteStateChanged)
+        viewModel.initialize(share: share)
     }
 
     /// 格式化计数（超过 9999 显示 9999+）
@@ -179,11 +176,6 @@ struct ErrorToast: View {
     ZStack {
         Color.black.ignoresSafeArea()
 
-        InteractionOverlayView(
-            share: testShare,
-            onVoteStateChanged: { shareId, voteState, agreeCount, neutralCount in
-                print("状态变化: shareId=\(shareId), voteState=\(voteState), agreeCount=\(agreeCount)")
-            }
-        )
+        InteractionOverlayView(share: testShare)
     }
 }

@@ -1,6 +1,6 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v1.8
+**文档版本**: v1.9
 **最后更新**: 2025-12-24
 
 ---
@@ -139,16 +139,20 @@ npm run build
 
 **注意**：文档中提到的具体贴纸名称（如秘境、珍馐、玩趣等）仅作为参考示例。实际贴纸的名称、数量可通过管理后台随时增删和修改，以服务器 `tag_definition` 表中的配置为准。
 
-**重要变更（2025-12-22）**：
+**重要变更（2025-12-22/24）**：
 - 旧投票系统（`share_vote` 表 + `guanzhi.agree_count/neutral_count`）**已完全废弃**
 - 所有贴纸数据统一存储在 `share_sticker_action` 表
 - 贴纸统计仅从 `share_sticker_action` 表获取，不再累加旧投票数据
-- iOS 客户端已完全移除对旧投票系统的依赖
+- iOS 客户端已完全移除对旧投票系统的依赖：
+  - 移除 `VoteState` 枚举及相关属性
+  - 移除 `voteShare` API 和 `ShareService.voteShare()` 方法
+  - 移除 `StickerKind.isVoteType` / `isTagType` 属性
+  - 所有贴纸统一使用 `tagCode` 标识
 
 **核心规则**：
 - 任何贴纸对同一条分享、同一用户，只允许使用一次，不可撤回
 - 每个用户对每条分享只能使用一个贴纸（互斥）
-- 投票贴纸（赞同/无感）也遵循此规则，两者互斥
+- 所有贴纸（包括赞同、无感）遵循统一的互斥规则，无特殊处理
 
 #### iOS 客户端实现架构
 
@@ -175,19 +179,19 @@ guanzhi/View/SharePages/
 
 **核心 ViewModel：`ShareInteractionViewModel`**
 
-关键属性（2025-12-22 重构后）：
+关键属性（2025-12-24 更新）：
 ```swift
-// ✅ 使用中
 @Published var currentUserSticker: UsedStickerInfo?  // 当前用户已使用的贴纸
 @Published var stickerSummaries: [StickerSummaryItem] = []  // 贴纸统计列表
 @Published var stickerAvailabilities: [StickerAvailability] = []  // 服务器返回的可用性
 @Published var visibleStickerDefinitions: [StickerDefinition] = []  // 可见贴纸队列
-
-// ⚠️ 已废弃（保留兼容）
-@Published var voteState: VoteState = .none  // 使用 currentUserSticker 替代
-private var _agreeCount: Int = 0  // 使用 stickerSummaries 替代
-private var _neutralCount: Int = 0  // 使用 stickerSummaries 替代
 ```
+
+**已移除的过时代码（2025-12-24）**：
+- `VoteState` 枚举 - 已删除
+- `voteState` 属性 - 已删除
+- `_agreeCount` / `_neutralCount` 私有属性 - 已删除
+- `voteShare` API - 已删除
 
 关键方法：
 ```swift

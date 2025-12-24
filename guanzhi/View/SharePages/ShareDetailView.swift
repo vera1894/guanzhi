@@ -743,7 +743,7 @@ struct ShareDetailView: View {
                     print("   - 初始化前 loadingState: \(interactionViewModel.stickerLoadingState)")
                     print("   - 初始化前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
                     #endif
-                    interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
+                    interactionViewModel.initialize(share: share)
 
                     #if DEBUG
                     print("   - 初始化后 loadingState: \(interactionViewModel.stickerLoadingState)")
@@ -943,7 +943,7 @@ struct ShareDetailView: View {
         print("   - currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
         print("   - agreeCount: \(share.agreeCount)")
         #endif
-        interactionViewModel.initialize(share: share, onStateChanged: makeStateChangedCallback())
+        interactionViewModel.initialize(share: share)
 
         // ✅ 重新加载贴纸可用性（异步）
         Task {
@@ -997,21 +997,6 @@ struct ShareDetailView: View {
 
         Task {
             await interactionViewModel.retryStickerAvailability(shareId: share.id)
-        }
-    }
-
-    /// 创建状态变化回调（同步到 SwiftData）
-    private func makeStateChangedCallback() -> (Int64, VoteState, Int, Int) -> Void {
-        return { [weak searchViewModel] shareId, voteState, agreeCount, neutralCount in
-            Task { @MainActor in
-                guard let vm = searchViewModel,
-                      let currentShare = vm.selectedShare,
-                      currentShare.id == shareId else { return }
-                currentShare.agreeCount = agreeCount
-                currentShare.currentUserVoteType = voteState.rawValue
-                currentShare.neutralCount = neutralCount
-                try? vm.context.save()
-            }
         }
     }
 

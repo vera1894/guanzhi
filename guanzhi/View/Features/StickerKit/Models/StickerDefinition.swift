@@ -252,8 +252,8 @@ extension StickerDefinition {
     /// 兼容旧代码：mockBolt（已移除，返回 like 作为占位）
     static var mockBolt: StickerDefinition { stickerLike }
 
-    /// 兼容旧代码：所有投票类贴纸（按优先级排序）
+    /// 兼容旧代码：所有贴纸（按优先级排序）
     static var mockAll: [StickerDefinition] {
-        StickerKind.voteTypes.map { definition(for: $0) }.sorted { $0.priority > $1.priority }
+        StickerKind.allCases.map { definition(for: $0) }.sorted { $0.priority > $1.priority }
     }
 }

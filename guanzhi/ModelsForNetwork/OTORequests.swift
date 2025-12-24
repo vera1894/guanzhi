@@ -84,7 +84,6 @@ enum OTORequest {
     case updateUserPlatform(newPlatform: String)
     case updateUserPhoto(newPhoto: String)
     case deleteShare(id: Int)
-    case voteShare(shareId: Int64, voteType: Int)
     /// 记录分享浏览（用于褪色度计算）
     case recordShareView(shareId: Int64)
 
@@ -289,18 +288,7 @@ extension OTORequest {
                     param: ["id": id]
                 )
 
-            // ✅ 新增：投票（点赞/无感/取消）
-            case .voteShare(let shareId, let voteType):
-                return .init(
-                    path: "/api/guan/share/vote",
-                    method: .post,
-                    param: [
-                        "shareId": shareId,
-                        "voteType": voteType
-                    ]
-                )
-
-            // ✅ 新增：记录分享浏览（用于褪色度计算）
+            // 记录分享浏览（用于褪色度计算）
             case .recordShareView(let shareId):
                 return .init(
                     path: "/api/shares/\(shareId)/view",
