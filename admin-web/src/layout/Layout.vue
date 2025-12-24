@@ -32,6 +32,11 @@
           <el-menu-item index="/config/level">等级定义管理</el-menu-item>
           <el-menu-item index="/config/tag">标签定义管理</el-menu-item>
         </el-sub-menu>
+
+        <el-menu-item index="/inspector/query">
+          <el-icon><Search /></el-icon>
+          <span>综合查询</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     

@@ -51,7 +51,13 @@ const routes = [
       {
         path: 'inspector',
         name: 'Inspector',
+        redirect: '/inspector/query',
         children: [
+          {
+            path: 'query',
+            name: 'ComprehensiveQuery',
+            component: () => import('../views/inspector/ComprehensiveQuery.vue')
+          },
           {
             path: 'user',
             name: 'UserDetail',
