@@ -1,6 +1,6 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v1.7
+**文档版本**: v1.8
 **最后更新**: 2025-12-24
 
 ---
@@ -278,7 +278,7 @@ func rebuildStickerSummaries()
 - 积分规则配置
 - 等级定义管理（配额倍率、待生效配置）
 - 贴纸定义管理（解锁等级、基础限额、待生效配置）
-- 用户/分享查询工具
+- **综合查询**（2025-12-24 新增）：支持按用户ID或分享ID查询所有关联数据明细
 
 ---
 
@@ -316,8 +316,15 @@ func rebuildStickerSummaries()
 /stickers/**        # 贴纸 API（需登录）
 /shares/**          # 分享操作 API（需登录）
 /api/admin/**       # 管理后台 API（需 ADMIN 权限）
-/admin/inspector/** # 查询工具 API
+/admin/inspector/** # 查询工具 API（含综合查询）
 ```
+
+### 综合查询 API（2025-12-24 新增）
+
+| 接口 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 分享完整详情 | GET | `/admin/inspector/share/{shareId}/detail` | 返回分享信息+评论/贴纸/打卡/浏览/举报明细 |
+| 用户完整详情 | GET | `/admin/inspector/user/{userId}/detail` | 返回用户信息+分享/评论/贴纸/打卡/奖章明细 |
 
 ### iOS App 贴纸相关 API
 
