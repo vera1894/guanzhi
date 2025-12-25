@@ -39,7 +39,33 @@ struct CommentSectionView: View {
                 .padding(.horizontal, 16)
 
             // 评论列表
-            if viewModel.comments.isEmpty && !viewModel.isLoading {
+            if viewModel.error != nil && viewModel.comments.isEmpty && !viewModel.isLoading {
+                // 加载失败状态
+                VStack(spacing: 12) {
+                    Image(systemName: "wifi.exclamationmark")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary.opacity(0.5))
+                    Text("获取评论失败")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                    Button(action: {
+                        Task {
+                            viewModel.error = nil
+                            await viewModel.loadComments(reset: true)
+                        }
+                    }) {
+                        Text("点击重试")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color("color-primary"))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color("color-primary").opacity(0.1))
+                            .cornerRadius(8)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+            } else if viewModel.comments.isEmpty && !viewModel.isLoading {
                 // 空状态
                 VStack(spacing: 12) {
                     Image(systemName: "bubble.left.and.bubble.right")

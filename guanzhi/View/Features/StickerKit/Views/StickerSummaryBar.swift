@@ -19,8 +19,14 @@ struct StickerSummaryBar: View {
     /// 最大显示数量（超出显示 ...）
     var maxVisibleItems: Int = 4
 
+    /// 加载状态
+    var loadingState: StickerLoadingState = .loaded
+
     /// 点击时的回调
     var onTap: () -> Void = {}
+
+    /// 重试回调
+    var onRetry: () -> Void = {}
 
     // MARK: - Computed Properties
 
@@ -38,21 +44,65 @@ struct StickerSummaryBar: View {
 
     var body: some View {
         Group {
-            if items.isEmpty {
-                // 空状态：显示占位提示
-                emptyStateView
-            } else {
-                // 有数据：横向排列贴纸统计
-                contentView
+            switch loadingState {
+            case .loading, .idle:
+                // 加载中状态
+                loadingStateView
+            case .failed:
+                // 加载失败状态
+                errorStateView
+            case .loaded:
+                if items.isEmpty {
+                    // 空状态：显示占位提示
+                    emptyStateView
+                } else {
+                    // 有数据：横向排列贴纸统计
+                    contentView
+                }
             }
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            onTap()
+            if case .failed = loadingState {
+                onRetry()
+            } else {
+                onTap()
+            }
         }
     }
 
     // MARK: - Subviews
+
+    /// 加载中状态视图
+    private var loadingStateView: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.6)))
+                .scaleEffect(0.8)
+            Text("加载贴纸中...")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
+    /// 错误状态视图
+    private var errorStateView: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundColor(.orange.opacity(0.8))
+            Text("获取贴纸失败")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+            Text("点击重试")
+                .font(.caption)
+                .foregroundColor(Color("color-primary"))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
 
     /// 空状态视图
     private var emptyStateView: some View {

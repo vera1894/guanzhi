@@ -517,8 +517,12 @@ struct ShareDetailView: View {
                     StickerSummaryBar(
                         items: interactionViewModel.stickerSummaries,
                         maxVisibleItems: 4,
+                        loadingState: interactionViewModel.stickerLoadingState,
                         onTap: {
                             interactionViewModel.isShowingStickerSummaryOverlay = true
+                        },
+                        onRetry: {
+                            retryStickerLoad()
                         }
                     )
 //                    .padding(.top, 8)
@@ -1395,7 +1399,9 @@ struct UserInfoCapsule: View {
                 if let localUser = userProfileManager.localUserProfile {
                     capsuleContentForMyself(localUser: localUser)
                 } else {
-                    capsuleContentSimple(nickname: "我", iconName: nil, onTap: {})
+                    // 降级：使用缓存的昵称，最后才用"我"
+                    let cachedName = userProfileManager.getCachedNickname() ?? "我"
+                    capsuleContentSimple(nickname: cachedName, iconName: nil, onTap: {})
                 }
             } else {
                 // 显示他人用户 - 根据加载状态显示不同 UI

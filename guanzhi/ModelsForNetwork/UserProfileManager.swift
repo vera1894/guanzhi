@@ -161,6 +161,21 @@ class UserProfileManager: ObservableObject {
         return (try? context.fetch(descriptor))?.first
     }
 
+    // MARK: - 获取缓存的用户昵称（降级方案）
+    /// 当 localUserProfile 为 nil 时，尝试从 SwiftData 获取缓存的昵称
+    func getCachedNickname() -> String? {
+        // 优先使用内存中的 localUserProfile
+        if let nickname = localUserProfile?.nickname, !nickname.isEmpty {
+            return nickname
+        }
+        // 降级：从 SwiftData 缓存中读取
+        let userId = OTOLoginStatusManager.shared.getUserID()
+        if let cachedUser = findLocalUserInSwiftData(userId: userId) {
+            return cachedUser.nickname.isEmpty ? nil : cachedUser.nickname
+        }
+        return nil
+    }
+
     // MARK: - 判断是否是当前登录的 userId
     private func isCurrentLoggedUser(userId: Int) -> Bool {
         // 你可以对比 OTOLoginStatusManager.shared.getUserID() == userId

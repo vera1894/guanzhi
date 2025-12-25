@@ -377,10 +377,11 @@ class ShareInteractionViewModel: ObservableObject {
             } else {
                 await MainActor.run {
                     #if DEBUG
-                    print("❌ [ShareInteraction] 达到最大重试次数，降级使用本地权限计算")
+                    print("❌ [ShareInteraction] 达到最大重试次数，保持失败状态供用户手动重试")
                     #endif
-                    self.fallbackToLocalAvailability()
-                    self.stickerLoadingState = .loaded
+                    // 保持 .failed 状态，让 UI 显示错误提示和重试按钮
+                    // 不再自动降级为 .loaded，避免用户无法感知加载失败
+                    self.stickerLoadingState = .failed(retryCount: newRetryCount)
                 }
             }
         }
