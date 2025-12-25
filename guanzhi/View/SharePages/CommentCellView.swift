@@ -12,6 +12,7 @@ struct CommentCellView: View {
     let comment: CommentViewData
     @ObservedObject var viewModel: CommentViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var toastManager: ToastManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -114,7 +115,19 @@ struct CommentCellView: View {
                     if comment.canDelete {
                         Menu {
                             Button(role: .destructive) {
-                                Task { await viewModel.deleteComment(id: comment.id) }
+                                Task {
+                                    let success = await viewModel.deleteComment(id: comment.id)
+                                    if success {
+                                        toastManager.show(ToastItem(style: .notificationOnly(
+                                            title: "评论已删除",
+                                            symbol: "checkmark.circle.fill",
+                                            tint: .green,
+                                            isUserInteractionEnabled: false,
+                                            timing: .short,
+                                            isAutoClose: true
+                                        )))
+                                    }
+                                }
                             } label: {
                                 Label("删除", systemImage: "trash")
                             }
@@ -216,6 +229,7 @@ struct ReplyPreviewView: View {
     @ObservedObject var viewModel: CommentViewModel
     let parentId: Int64
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var toastManager: ToastManager
 
     /// 是否是分享作者
     private var isAuthor: Bool {
@@ -349,7 +363,19 @@ struct ReplyPreviewView: View {
                     if reply.canDelete {
                         Menu {
                             Button(role: .destructive) {
-                                Task { await viewModel.deleteComment(id: reply.id) }
+                                Task {
+                                    let success = await viewModel.deleteComment(id: reply.id)
+                                    if success {
+                                        toastManager.show(ToastItem(style: .notificationOnly(
+                                            title: "回复已删除",
+                                            symbol: "checkmark.circle.fill",
+                                            tint: .green,
+                                            isUserInteractionEnabled: false,
+                                            timing: .short,
+                                            isAutoClose: true
+                                        )))
+                                    }
+                                }
                             } label: {
                                 Label("删除", systemImage: "trash")
                             }

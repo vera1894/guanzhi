@@ -257,5 +257,61 @@ dd079df chore: 更新后端子模块引用
 
 **iOS 前端** (待提交):
 - 修改 `CommentModels.swift`: `CommentContextResponse` 字段改为可选
-- 修改 `CommentViewModel.swift`: `navigateToComment` 返回删除提示标志
-- 修改 `CommentCellView.swift`: 移除删除占位符显示逻辑
+- 修改 `CommentViewModel.swift`: `navigateToComment` 返回删除提示标志；`deleteComment` 直接从列表移除并返回成功标志
+- 修改 `CommentCellView.swift`: 移除删除占位符显示逻辑；添加删除成功 Toast 提示
+
+### 4. 删除交互优化
+
+**变更**: 删除评论后即时反馈
+
+```swift
+// CommentViewModel.swift
+@discardableResult
+func deleteComment(id: Int64) async -> Bool {
+    do {
+        try await CommentService.shared.deleteComment(commentId: id)
+
+        // 直接从列表中移除（带动画）
+        if let index = comments.firstIndex(where: { $0.id == id }) {
+            withAnimation(.easeOut(duration: 0.25)) {
+                _ = comments.remove(at: index)
+            }
+        } else {
+            // 删除二级回复
+            for i in comments.indices {
+                if let replyIndex = comments[i].loadedReplies.firstIndex(where: { $0.id == id }) {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        comments[i].loadedReplies.remove(at: replyIndex)
+                        comments[i].replyCount = max(0, comments[i].replyCount - 1)
+                    }
+                    break
+                }
+            }
+        }
+        return true
+    } catch {
+        self.error = error.localizedDescription
+        return false
+    }
+}
+
+// CommentCellView.swift - 删除成功后显示 Toast
+Task {
+    let success = await viewModel.deleteComment(id: comment.id)
+    if success {
+        toastManager.show(ToastItem(style: .notificationOnly(
+            title: "评论已删除",
+            symbol: "checkmark.circle.fill",
+            tint: .green,
+            isUserInteractionEnabled: false,
+            timing: .short,
+            isAutoClose: true
+        )))
+    }
+}
+```
+
+**效果**:
+- 删除后评论/回复立即从列表消失（带 0.25s 淡出动画）
+- 显示绿色 Toast 提示"评论已删除"或"回复已删除"
+- 二级回复删除后自动更新父评论的 `replyCount`

@@ -215,26 +215,34 @@ class CommentViewModel: ObservableObject {
     }
 
     /// 删除评论
-    func deleteComment(id: Int64) async {
+    /// 返回值表示是否删除成功（用于显示提示）
+    @discardableResult
+    func deleteComment(id: Int64) async -> Bool {
         do {
             try await CommentService.shared.deleteComment(commentId: id)
 
-            // 更新本地状态为已删除
+            // 直接从列表中移除（带动画）
             if let index = comments.firstIndex(where: { $0.id == id }) {
-                comments[index].status = CommentStatus.deleted.rawValue
-                comments[index].statusText = "该评论已删除"
+                // 删除一级评论
+                withAnimation(.easeOut(duration: 0.25)) {
+                    _ = comments.remove(at: index)
+                }
             } else {
-                // 可能是回复
+                // 删除二级回复
                 for i in comments.indices {
                     if let replyIndex = comments[i].loadedReplies.firstIndex(where: { $0.id == id }) {
-                        comments[i].loadedReplies[replyIndex].status = CommentStatus.deleted.rawValue
-                        comments[i].loadedReplies[replyIndex].statusText = "该评论已删除"
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            comments[i].loadedReplies.remove(at: replyIndex)
+                            comments[i].replyCount = max(0, comments[i].replyCount - 1)
+                        }
                         break
                     }
                 }
             }
+            return true
         } catch {
             self.error = error.localizedDescription
+            return false
         }
     }
 
