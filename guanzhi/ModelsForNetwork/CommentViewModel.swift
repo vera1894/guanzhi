@@ -329,17 +329,25 @@ class CommentViewModel: ObservableObject {
     // MARK: - 精准定位
 
     /// 从通知跳转：精准定位到指定评论
-    func navigateToComment(commentId: Int64) async {
+    /// 返回值表示是否需要显示"评论已删除"提示
+    @discardableResult
+    func navigateToComment(commentId: Int64) async -> Bool {
         do {
             let context = try await CommentService.shared.getCommentContext(commentId: commentId)
 
             // 更新 shareId
             self.shareId = context.shareId
 
-            if context.position.isFirstLevel {
+            // 评论已删除：comment 和 position 为 null
+            guard let position = context.position, context.comment != nil else {
+                // 降级：加载评论第一页，提示用户评论已删除
+                await loadComments(reset: true)
+                return true  // 需要显示提示
+            }
+
+            if position.isFirstLevel {
                 // 一级评论：计算页码并加载
-                let page = context.position.index / pageSize
-                // let offset = page * pageSize
+                let page = position.index / pageSize
 
                 // 重置并加载到正确的页
                 comments = []
@@ -353,7 +361,7 @@ class CommentViewModel: ObservableObject {
                 // 标记需要高亮的评论
                 highlightCommentId = commentId
 
-            } else if let parentId = context.position.parentId {
+            } else if let parentId = position.parentId {
                 // 二级回复：先定位父评论，再展开回复
                 await loadComments(reset: true)
 
@@ -363,11 +371,14 @@ class CommentViewModel: ObservableObject {
                 }
             }
 
+            return false  // 正常跳转，无需提示
+
         } catch {
             // 降级策略：打开分享详情 → 加载第一页评论 → 滚动到评论区顶部
             print("⚠️ 精准定位失败，使用降级策略: \(error.localizedDescription)")
             await loadComments(reset: true)
             self.error = nil  // 不显示错误，静默降级
+            return false
         }
     }
 

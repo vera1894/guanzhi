@@ -170,10 +170,10 @@ struct ReplyViewData: Identifiable, Codable {
 
 // MARK: - 评论上下文（精准定位用）
 struct CommentContextResponse: Codable {
-    let comment: CommentViewData
+    let comment: CommentViewData?        // 可选：评论已删除时为 null
     let parentComment: CommentViewData?
     let shareId: Int64
-    let position: CommentPositionInfo
+    let position: CommentPositionInfo?   // 可选：评论已删除时为 null
 }
 
 struct CommentPositionInfo: Codable {

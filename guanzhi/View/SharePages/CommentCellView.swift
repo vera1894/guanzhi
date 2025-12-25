@@ -15,14 +15,8 @@ struct CommentCellView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 判断状态
-            if comment.displayStatus != .normal {
-                // 删除/违规占位
-                deletedPlaceholder
-            } else {
-                // 正常评论
-                normalContent
-            }
+            // 后端已过滤删除的评论，直接显示正常内容
+            normalContent
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -152,23 +146,6 @@ struct CommentCellView: View {
         }
     }
 
-    // MARK: - 删除/违规占位
-    @ViewBuilder
-    private var deletedPlaceholder: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 40, height: 40)
-
-            Text(comment.statusText ?? "该评论不可用")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary)
-                .italic()
-
-            Spacer()
-        }
-    }
-
     // MARK: - 回复预览区
     @ViewBuilder
     private var replyPreviewSection: some View {
@@ -252,20 +229,8 @@ struct ReplyPreviewView: View {
     }
 
     var body: some View {
-        if reply.displayStatus != .normal {
-            // 删除/违规的回复
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 28, height: 28)
-                Text(reply.statusText ?? "该回复不可用")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                    .italic()
-                Spacer()
-            }
-        } else {
-            HStack(alignment: .top, spacing: 8) {
+        // 后端已过滤删除的回复，直接显示正常内容
+        HStack(alignment: .top, spacing: 8) {
                 // 头像（可点击导航到用户主页）
                 AsyncImage(url: URL(string: reply.userAvatar ?? "")) { phase in
                     switch phase {
@@ -398,7 +363,6 @@ struct ReplyPreviewView: View {
                 } // VStack
             } // HStack
             .padding(.vertical, 4)
-        }
     }
 
     // MARK: - 导航到用户主页

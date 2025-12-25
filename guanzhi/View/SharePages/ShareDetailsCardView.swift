@@ -252,6 +252,12 @@ struct ShareDetailsCardView: View {
                     isInputFocused = false
                 }
             }
+            // 监听回复模式变化，自动聚焦输入框
+            .onChange(of: commentViewModel.isReplyMode) { _, isReplyMode in
+                if isReplyMode {
+                    isInputFocused = true
+                }
+            }
             // 监听分享变化，绑定评论 ViewModel
             .onChange(of: searchViewModel.selectedShare?.id) { oldId, newId in
                 if let share = searchViewModel.selectedShare, share.id != oldId {

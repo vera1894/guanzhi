@@ -4,6 +4,9 @@
 **执行者**: Claude Code
 **相关文件**:
 - `Server/onettoo/src/main/java/com/cloud/onettoo/modules/service/impl/ShareCommentServiceImpl.java`
+- `guanzhi/ModelsForNetwork/CommentModels.swift`
+- `guanzhi/ModelsForNetwork/CommentViewModel.swift`
+- `guanzhi/View/SharePages/CommentCellView.swift`
 
 ## 需求背景
 
@@ -142,6 +145,104 @@ if response.comment == nil {
 
 ---
 
+## iOS 前端实现
+
+### 1. `CommentModels.swift` - 数据模型更新
+
+**变更**: `CommentContextResponse` 的 `comment` 和 `position` 改为可选类型
+
+```swift
+// 修改前
+struct CommentContextResponse: Codable {
+    let comment: CommentViewData
+    let parentComment: CommentViewData?
+    let shareId: Int64
+    let position: CommentPositionInfo
+}
+
+// 修改后
+struct CommentContextResponse: Codable {
+    let comment: CommentViewData?        // 可选：评论已删除时为 null
+    let parentComment: CommentViewData?
+    let shareId: Int64
+    let position: CommentPositionInfo?   // 可选：评论已删除时为 null
+}
+```
+
+### 2. `CommentViewModel.swift` - 跳转逻辑更新
+
+**变更**: `navigateToComment` 方法增加删除评论处理，返回 `Bool` 表示是否需要显示提示
+
+```swift
+/// 从通知跳转：精准定位到指定评论
+/// 返回值表示是否需要显示"评论已删除"提示
+@discardableResult
+func navigateToComment(commentId: Int64) async -> Bool {
+    do {
+        let context = try await CommentService.shared.getCommentContext(commentId: commentId)
+        self.shareId = context.shareId
+
+        // 评论已删除：comment 和 position 为 null
+        guard let position = context.position, context.comment != nil else {
+            await loadComments(reset: true)
+            return true  // 需要显示提示
+        }
+
+        // ... 正常跳转逻辑 ...
+        return false
+    } catch {
+        // 降级策略
+        await loadComments(reset: true)
+        return false
+    }
+}
+```
+
+### 3. `CommentCellView.swift` - 移除删除占位符
+
+**变更**: 移除一级评论和二级回复的删除占位符显示逻辑
+
+```swift
+// 修改前：一级评论
+var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+        if comment.displayStatus != .normal {
+            deletedPlaceholder  // 删除/违规占位
+        } else {
+            normalContent
+        }
+    }
+}
+
+// 修改后：直接显示正常内容
+var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+        // 后端已过滤删除的评论，直接显示正常内容
+        normalContent
+    }
+}
+```
+
+```swift
+// 修改前：二级回复 (ReplyPreviewView)
+var body: some View {
+    if reply.displayStatus != .normal {
+        // 删除/违规的回复占位符
+        HStack(spacing: 8) { ... }
+    } else {
+        HStack(alignment: .top, spacing: 8) { ... }
+    }
+}
+
+// 修改后：直接显示正常内容
+var body: some View {
+    // 后端已过滤删除的回复，直接显示正常内容
+    HStack(alignment: .top, spacing: 8) { ... }
+}
+```
+
+---
+
 ## Git 提交
 
 **后端** (`Server/onettoo` - Zaptain 分支):
@@ -153,3 +254,8 @@ if response.comment == nil {
 ```
 dd079df chore: 更新后端子模块引用
 ```
+
+**iOS 前端** (待提交):
+- 修改 `CommentModels.swift`: `CommentContextResponse` 字段改为可选
+- 修改 `CommentViewModel.swift`: `navigateToComment` 返回删除提示标志
+- 修改 `CommentCellView.swift`: 移除删除占位符显示逻辑
