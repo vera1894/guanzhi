@@ -26,6 +26,7 @@ struct ShareDetailsCardView: View {
     // MARK: - 评论系统
     @StateObject private var commentViewModel = CommentViewModel()
     @FocusState private var isInputFocused: Bool
+    @State private var shouldFocusOnExpand: Bool = false  // 展开后是否需要聚焦输入框
 
     // MARK: - 交互按钮（贴纸/评论）
     @ObservedObject var interactionViewModel: ShareInteractionViewModel
@@ -259,6 +260,14 @@ struct ShareDetailsCardView: View {
                             await commentViewModel.loadComments(reset: true)
                         }
                     }
+                    // ✅ 如果需要聚焦输入框（从收起状态点击输入框展开）
+                    if shouldFocusOnExpand {
+                        // 延迟聚焦，等待动画完成
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            isInputFocused = true
+                            shouldFocusOnExpand = false
+                        }
+                    }
                 } else {
                     // 收起时：立即隐藏指示条
                     withAnimation(.easeInOut(duration: 0.1)) {
@@ -266,6 +275,7 @@ struct ShareDetailsCardView: View {
                     }
                     // 收起时退出输入焦点
                     isInputFocused = false
+                    shouldFocusOnExpand = false
                 }
             }
             // 监听回复模式变化，自动聚焦输入框
@@ -415,8 +425,9 @@ struct ShareDetailsCardView: View {
     @ViewBuilder
     private func collapsedInputBar(share: Share) -> some View {
         HStack(spacing: 12) {
-            // 输入框（点击展开评论卡片）
+            // 输入框（点击展开评论卡片并聚焦）
             Button {
+                shouldFocusOnExpand = true  // 展开后聚焦输入框
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isFullScreen = true
                 }
