@@ -729,7 +729,13 @@ struct ShareDetailView: View {
 
                     InteractionOverlayView(
                         share: share,
-                        viewModel: interactionViewModel
+                        viewModel: interactionViewModel,
+                        onCommentTap: {
+                            // 展开评论卡片到全屏
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                isFullScreen = true
+                            }
+                        }
                     )
                     .opacity(shouldShow ? 1 : 0)
                     .allowsHitTesting(shouldShow)

@@ -15,18 +15,30 @@ struct InteractionOverlayView: View {
     /// 外部传入的 ViewModel（用于与其他组件共享状态）
     @ObservedObject var viewModel: ShareInteractionViewModel
 
+    /// 点击评论按钮的回调
+    var onCommentTap: (() -> Void)?
+
+    // MARK: - Computed Properties
+
+    /// 贴纸总数（所有类型贴纸数量之和）
+    private var totalStickerCount: Int {
+        viewModel.stickerSummaries.reduce(0) { $0 + $1.count }
+    }
+
     // MARK: - Initializer
 
     /// 使用外部传入的 ViewModel（推荐，用于状态共享）
-    init(share: Share, viewModel: ShareInteractionViewModel) {
+    init(share: Share, viewModel: ShareInteractionViewModel, onCommentTap: (() -> Void)? = nil) {
         self.share = share
         self.viewModel = viewModel
+        self.onCommentTap = onCommentTap
     }
 
     /// 兼容旧接口：自动创建内部 ViewModel（用于独立使用场景）
     init(share: Share) {
         self.share = share
         self.viewModel = ShareInteractionViewModel()
+        self.onCommentTap = nil
     }
 
     // MARK: - Body
@@ -35,14 +47,14 @@ struct InteractionOverlayView: View {
         HStack {
             Spacer()
 
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 Spacer()
 
-                // ✅ 贴纸切换按钮（原点赞按钮已弃用）
+                // ✅ 贴纸切换按钮
                 stickerToggleButton
 
-                // TODO: 打卡按钮
-                // TODO: 评论按钮
+                // ✅ 评论按钮
+                commentButton
             }
             .padding(.trailing, 16)
             .padding(.bottom, 140)  // 避开底部 sheet
@@ -72,6 +84,7 @@ struct InteractionOverlayView: View {
     /// 贴纸切换按钮
     /// - 空心图标 = 未使用贴纸状态
     /// - 填充图标 = 已使用贴纸状态
+    /// - 显示贴纸总数
     private var stickerToggleButton: some View {
         Button {
             // 震动反馈
@@ -80,16 +93,64 @@ struct InteractionOverlayView: View {
 
             viewModel.toggleStickerPanel()
         } label: {
-            Image(systemName: viewModel.currentUserSticker != nil
-                ? "sparkles.rectangle.stack.fill"  // 已使用贴纸，填充图标
-                : "sparkles.rectangle.stack")      // 未使用贴纸，空心图标
-                .font(.system(size: 32))
-                .foregroundStyle(.white)
-                // 面板显示时的视觉反馈
-                .opacity(viewModel.isStickerPanelVisible ? 0.6 : 1.0)
-                .animation(.easeInOut(duration: 0.15), value: viewModel.isStickerPanelVisible)
+            VStack(spacing: 4) {
+                Image(systemName: viewModel.currentUserSticker != nil
+                    ? "sparkles.rectangle.stack.fill"  // 已使用贴纸，填充图标
+                    : "sparkles.rectangle.stack")      // 未使用贴纸，空心图标
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
+
+                // 贴纸总数
+                if totalStickerCount > 0 {
+                    Text(formatCount(totalStickerCount))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+            }
+            // 面板显示时的视觉反馈
+            .opacity(viewModel.isStickerPanelVisible ? 0.6 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: viewModel.isStickerPanelVisible)
         }
         .buttonStyle(ButtonStyle_LikeControl())
+    }
+
+    /// 评论按钮
+    /// - 显示评论总数
+    private var commentButton: some View {
+        Button {
+            // 震动反馈
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+
+            onCommentTap?()
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: "bubble.right")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
+
+                // 评论总数
+                if share.commentCount > 0 {
+                    Text(formatCount(share.commentCount))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .buttonStyle(ButtonStyle_LikeControl())
+    }
+
+    // MARK: - Helper Methods
+
+    /// 格式化数量显示（超过999显示999+，超过9999显示1w+）
+    private func formatCount(_ count: Int) -> String {
+        if count >= 10000 {
+            return "\(count / 10000)w+"
+        } else if count >= 1000 {
+            return "999+"
+        } else {
+            return "\(count)"
+        }
     }
 
     // MARK: - Private Methods
