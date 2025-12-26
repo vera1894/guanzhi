@@ -38,13 +38,8 @@ struct InteractionOverlayView: View {
             VStack(spacing: 16) {
                 Spacer()
 
-                // ✅ 当前版本：只显示点赞按钮
-                likeButton
-
-                // ⚠️ 未来版本：无感按钮（暂不显示）
-                // if shouldShowNeutralButton {
-                //     neutralButton
-                // }
+                // ✅ 贴纸切换按钮（原点赞按钮已弃用）
+                stickerToggleButton
 
                 // TODO: 打卡按钮
                 // TODO: 评论按钮
@@ -74,64 +69,33 @@ struct InteractionOverlayView: View {
 
     // MARK: - Subviews
 
-    private var likeButton: some View {
-        VStack(spacing: 4) {
-            Button {
-                // 震动反馈（iOS 10+）
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
+    /// 贴纸切换按钮
+    /// - 空心图标 = 未使用贴纸状态
+    /// - 填充图标 = 已使用贴纸状态
+    private var stickerToggleButton: some View {
+        Button {
+            // 震动反馈
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
 
-                viewModel.toggleLike()
-            } label: {
-                Image(systemName: viewModel.isLiked ? "heart.circle.fill" : "heart.circle")
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color(viewModel.isLiked ? Color("color-primary") : Color(.white)))
-                    // ✅ 弹簧动画
-                    .scaleEffect(viewModel.isAnimating ? 1.3 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.isAnimating)
-            }
-            .buttonStyle(ButtonStyle_LikeControl())
-
-            // 点赞数
-            Text(formatCount(viewModel.agreeCount))
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 2)
-                // ✅ 数字变化动画
-                .animation(.easeInOut(duration: 0.2), value: viewModel.agreeCount)
+            viewModel.toggleStickerPanel()
+        } label: {
+            Image(systemName: viewModel.currentUserSticker != nil
+                ? "sparkles.rectangle.stack.fill"  // 已使用贴纸，填充图标
+                : "sparkles.rectangle.stack")      // 未使用贴纸，空心图标
+                .font(.system(size: 32))
+                .foregroundStyle(.white)
+                // 面板显示时的视觉反馈
+                .opacity(viewModel.isStickerPanelVisible ? 0.6 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: viewModel.isStickerPanelVisible)
         }
+        .buttonStyle(ButtonStyle_LikeControl())
     }
-
-    // ⚠️ 未来版本：无感按钮（预留）
-    // private var neutralButton: some View {
-    //     VStack(spacing: 4) {
-    //         Button {
-    //             let generator = UIImpactFeedbackGenerator(style: .medium)
-    //             generator.impactOccurred()
-    //             viewModel.toggleNeutral()
-    //         } label: {
-    //             Image(systemName: viewModel.isNeutral ? "hand.thumbsdown.fill" : "hand.thumbsdown")
-    //                 .font(.system(size: 36))
-    //                 .foregroundStyle(viewModel.isNeutral ? .orange : .white)
-    //         }
-    //         Text(formatCount(viewModel.neutralCount))
-    //             .font(.system(size: 14, weight: .medium))
-    //             .foregroundColor(.white)
-    //     }
-    // }
 
     // MARK: - Private Methods
 
     private func initializeViewModel() {
         viewModel.initialize(share: share)
-    }
-
-    /// 格式化计数（超过 9999 显示 9999+）
-    private func formatCount(_ count: Int) -> String {
-        if count > 9999 {
-            return "9999+"
-        }
-        return "\(count)"
     }
 }
 

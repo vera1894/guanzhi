@@ -138,6 +138,12 @@ private let kBottomCardCollapsedRatio: CGFloat = 0.08
 /// 调整此值可以改变状态条的垂直位置
 private let kUsedStickerStatusBarBottomPadding: CGFloat = 60
 
+/// 贴纸面板渐变区域高度（从透明到黑色的过渡区域）
+private let kStickerPanelGradientHeight: CGFloat = 200
+
+/// 贴纸面板内容区域基础高度（不含安全区域）
+private let kStickerPanelContentBaseHeight: CGFloat = 150
+
 struct ShareDetailView: View {
 
     // MARK: - 环境与依赖
@@ -536,15 +542,24 @@ struct ShareDetailView: View {
         )
 
         // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🎨 贴纸交互层 Overlay (SpriteKit)                                   │
-        // │  - 底部贴纸队列（可拖动使用）                                         │
-        // │  - 使用区域在屏幕正中心                                               │
-        // │  - 只有底部区域响应触摸，上方区域穿透                                  │
-        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
-        // │  - 如果已使用贴纸，显示状态条替代贴纸队列                             │
+        // │  🎨 贴纸面板覆层 Overlay                                              │
+        // │  - 默认隐藏，点击右侧按钮显示                                         │
+        // │  - 包含渐变背景（透明→黑色）和贴纸队列/已使用状态                      │
+        // │  - 点击上方透明区域可收起                                             │
+        // │  - 使用 opacity 保持 SpriteKit 常驻，避免重复创建                     │
+        // │  - zIndex(2) 确保覆盖在底部详情卡片之上                               │
         // └─────────────────────────────────────────────────────────────────────┘
         .overlay {
-            stickerOverlayContent
+            // 获取屏幕高度用于滑动动画
+            let screenHeight = UIScreen.main.bounds.height
+            let isVisible = interactionViewModel.isStickerPanelVisible && isShowShareDetailsCard
+
+            stickerPanelOverlay
+                .zIndex(2)  // ✅ zIndex 放在 overlay 内容上
+                // ✅ 使用 offset 动画代替 opacity，避免黑色背景淡出时闪烁
+                .offset(y: isVisible ? 0 : screenHeight)
+                .allowsHitTesting(isVisible)
+                .animation(.easeInOut(duration: 0.25), value: isVisible)
         }
 
         // ┌─────────────────────────────────────────────────────────────────────┐
@@ -653,8 +668,12 @@ struct ShareDetailView: View {
                 .frame(width: screenWidth, height: isFullScreen ? expandedHeight : screenHeight)
                 // 展开时：顶部安全区下方；收起时：距底部 10%
                 .offset(y: isFullScreen ? topSafeArea + dragOffset : screenHeight * 0.9 + dragOffset)
-                .opacity(isShowShareDetailsCard ? 1 : 0)
-                .allowsHitTesting(isShowShareDetailsCard)
+                // ✅ 贴纸面板展开时隐藏评论卡片（避免层级冲突）
+                // 使用 offset 动画：贴纸面板展开时向下移出，收起时恢复
+                .offset(y: interactionViewModel.isStickerPanelVisible ? UIScreen.main.bounds.height * 0.15 : 0)
+                .opacity(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible ? 1 : 0)
+                .allowsHitTesting(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible)
+                .animation(.easeInOut(duration: 0.25), value: interactionViewModel.isStickerPanelVisible)
                 // 点击展开（仅收起状态）
                 .onTapGesture {
                     if !isFullScreen {
@@ -696,20 +715,25 @@ struct ShareDetailView: View {
         // MARK: - 👍 右侧互动按钮 Overlay
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │  👍 右侧互动按钮 Overlay                                             │
-        // │  - 点赞/无感按钮                                                     │
+        // │  - 贴纸切换按钮                                                      │
         // │  - 使用共享的 interactionViewModel                                   │
-        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
+        // │  - 隐藏条件：UI隐藏 / 贴纸面板展开 / 评论区全屏展开                    │
         // └─────────────────────────────────────────────────────────────────────┘
         .overlay(
             Group {
                 if let share = searchViewModel.selectedShare {
+                    // 显示条件：UI可见 && 贴纸面板未展开 && 评论区未全屏
+                    let shouldShow = isShowShareDetailsCard
+                        && !interactionViewModel.isStickerPanelVisible
+                        && !isFullScreen
+
                     InteractionOverlayView(
                         share: share,
                         viewModel: interactionViewModel
                     )
-                    .opacity(isShowShareDetailsCard ? 1 : 0)
-                    .allowsHitTesting(isShowShareDetailsCard)
-                    .animation(.easeInOut(duration: 0.25), value: isShowShareDetailsCard)
+                    .opacity(shouldShow ? 1 : 0)
+                    .allowsHitTesting(shouldShow)
+                    .animation(.easeInOut(duration: 0.25), value: shouldShow)
                 }
             }
         )
@@ -863,6 +887,27 @@ struct ShareDetailView: View {
             #endif
             reinitializeInteractionViewModel()
         }
+
+        // ┌─────────────────────────────────────────────────────────────────────┐
+        // │  🎯 交互闭环：贴纸使用成功后自动收起面板                               │
+        // │  - 当 currentUserSticker 从 nil 变为有值时，延迟收起面板              │
+        // │  - 延迟 0.8s 让用户看到使用成功的反馈                                 │
+        // └─────────────────────────────────────────────────────────────────────┘
+        .onChange(of: interactionViewModel.currentUserSticker?.kind) { oldKind, newKind in
+            // 只在「从无到有」时触发收起（新使用贴纸）
+            if oldKind == nil && newKind != nil {
+                #if DEBUG
+                print("🎯 [ShareDetailView] 贴纸使用成功，0.8s 后自动收起面板")
+                #endif
+
+                // 延迟收起面板，让用户看到使用成功的反馈
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        interactionViewModel.isStickerPanelVisible = false
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - ═══════════════════════════════════════════════════════════════════
@@ -877,7 +922,133 @@ struct ShareDetailView: View {
         return "\(share.id)"
     }
 
+    /// 贴纸面板覆层（包含渐变背景 + 贴纸队列/已使用状态）
+    /// - 默认隐藏，点击右侧按钮显示
+    /// - 点击上方透明区域可收起
+    /// - 使用 opacity 保持 SpriteKit 常驻
+    /// - ⚠️ 关键：StickerFieldView 必须覆盖全屏才能正确响应拖动
+    @ViewBuilder
+    private var stickerPanelOverlay: some View {
+        // 获取底部安全区域高度
+        let bottomSafeArea = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.bottom ?? 0
+
+        let contentHeight = kStickerPanelContentBaseHeight + bottomSafeArea
+        let totalPanelHeight = kStickerPanelGradientHeight + contentHeight
+
+        GeometryReader { geo in
+            ZStack {
+                // ═══════════════════════════════════════════════════════════════
+                // 层1：全屏点击关闭区域（点击任何空白区域都关闭面板）
+                // ═══════════════════════════════════════════════════════════════
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            interactionViewModel.isStickerPanelVisible = false
+                        }
+                    }
+
+                // ═══════════════════════════════════════════════════════════════
+                // 层2：底部渐变背景（纯视觉，点击也关闭）
+                // ═══════════════════════════════════════════════════════════════
+                VStack(spacing: 0) {
+                    Spacer()
+
+                    // 渐变区域（透明 → 黑色）
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black.opacity(0),
+                            Color.black.opacity(0.6),
+                            Color.black
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: kStickerPanelGradientHeight)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            interactionViewModel.isStickerPanelVisible = false
+                        }
+                    }
+
+                    // 贴纸内容区域背景（黑色，点击也关闭）
+                    Color.black
+                        .frame(height: contentHeight)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                interactionViewModel.isStickerPanelVisible = false
+                            }
+                        }
+                }
+
+                // ═══════════════════════════════════════════════════════════════
+                // 层3：贴纸内容（全屏覆盖，响应拖动，不响应点击）
+                // ═══════════════════════════════════════════════════════════════
+                if let usedSticker = interactionViewModel.currentUserSticker {
+                    // 已使用贴纸：显示状态条
+                    VStack {
+                        Spacer()
+                        UsedStickerStatusBar(usedSticker: usedSticker)
+                            .padding(.bottom, kUsedStickerStatusBarBottomPadding)
+                    }
+                    .allowsHitTesting(false)  // 点击穿透到下层关闭
+                } else {
+                    // 未使用贴纸：显示贴纸队列（全屏覆盖）
+                    stickerFieldForPanel(geo: geo, bottomSafeArea: bottomSafeArea, totalPanelHeight: totalPanelHeight)
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    /// 贴纸面板中的贴纸队列视图
+    /// ⚠️ 关键：必须覆盖整个 geo 区域，贴纸才能拖动到中央使用区域
+    @ViewBuilder
+    private func stickerFieldForPanel(geo: GeometryProxy, bottomSafeArea: CGFloat, totalPanelHeight: CGFloat) -> some View {
+        // 使用区域：屏幕中央偏上
+        let useZoneSize = CGSize(width: geo.size.width - 80, height: 120)
+        let customFrame = CGRect(
+            x: 40,
+            y: (geo.size.height - useZoneSize.height) / 2 - 50,
+            width: useZoneSize.width,
+            height: useZoneSize.height
+        )
+
+        // ✅ 贴纸队列底部位置（SpriteKit 坐标系，Y轴从底部向上）
+        // 与原 stickerFieldContent 方法保持一致
+        let bottomCardTopY = geo.size.height * kBottomCardCollapsedRatio  // 底部卡片顶部 = 屏幕高度 * 8%
+        let queueBottomY = bottomCardTopY + kStickerQueueToCardSpacing    // 队列底部 = 卡片顶部 + 间距
+
+        StickerFieldView(
+            stickers: interactionViewModel.visibleStickerDefinitions,
+            onUseSticker: { sticker in
+                handleStickerUse(sticker)
+            },
+            onTapBackground: {
+                // ✅ 点击背景时关闭贴纸面板
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    interactionViewModel.isStickerPanelVisible = false
+                }
+            },
+            stickerLoadingState: interactionViewModel.stickerLoadingState,
+            onRetryLoad: {
+                retryStickerLoad()
+            },
+            showBackground: false,
+            showUseZoneHint: true,  // ✅ 显示使用区域提示
+            customUseZoneFrame: customFrame,
+            queueBottomY: queueBottomY,
+            touchAreaHeight: geo.size.height,  // ✅ 全屏响应触摸
+            enableAutoScroll: false
+        )
+    }
+
     /// 贴纸层内容（抽取为独立属性以简化 body 表达式）
+    /// ⚠️ 已弃用：现在使用 stickerPanelOverlay
     @ViewBuilder
     private var stickerOverlayContent: some View {
         GeometryReader { geo in

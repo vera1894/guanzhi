@@ -48,6 +48,14 @@ private let kMinVelocityThreshold: CGFloat = 8
 protocol StickerSceneDelegate: AnyObject {
     /// 当用户成功使用一个贴纸时调用
     func stickerScene(_ scene: StickerScene, didUse sticker: StickerDefinition)
+
+    /// 当用户点击空白区域（非贴纸拖拽、非滚动）时调用
+    func stickerSceneDidTapBackground(_ scene: StickerScene)
+}
+
+// 提供默认实现，使其可选
+extension StickerSceneDelegate {
+    func stickerSceneDidTapBackground(_ scene: StickerScene) {}
 }
 
 // MARK: - StickerScene
@@ -992,18 +1000,36 @@ final class StickerScene: SKScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        endInteraction()
+        let endLocation = touches.first?.location(in: self)
+        endInteraction(endLocation: endLocation)
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        endInteraction()
+        endInteraction(endLocation: nil)
     }
 
     // MARK: - 结束交互
 
-    private func endInteraction() {
+    private func endInteraction(endLocation: CGPoint?) {
         // 记录是否是贴纸拖拽模式
         let wasDraggingSticker = draggingNode != nil
+
+        // ✅ 检测是否是简单点击（没有拖动贴纸、没有滚动、触摸位置变化很小）
+        let isTap: Bool = {
+            guard !wasDraggingSticker,
+                  !interactionModeDecided,
+                  let start = touchStartLocation,
+                  let end = endLocation else {
+                return false
+            }
+            let distance = hypot(end.x - start.x, end.y - start.y)
+            return distance < 10  // 移动距离小于 10pt 视为点击
+        }()
+
+        // 如果是简单点击，通知代理
+        if isTap {
+            stickerDelegate?.stickerSceneDidTapBackground(self)
+        }
 
         // 处理贴纸拖拽结束
         if let node = draggingNode {

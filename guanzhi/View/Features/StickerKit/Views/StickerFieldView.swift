@@ -29,6 +29,9 @@ struct StickerFieldView: View {
     /// 使用贴纸的回调
     var onUseSticker: (StickerDefinition) -> Void
 
+    /// 点击背景（空白区域）的回调
+    var onTapBackground: (() -> Void)? = nil
+
     /// 贴纸加载状态（用于显示 loading/error UI）
     var stickerLoadingState: StickerLoadingState = .loaded
 
@@ -39,7 +42,28 @@ struct StickerFieldView: View {
     var showBackground: Bool = true
 
     /// 是否显示使用区域提示框（默认 true）
+    /// ⚠️ 提示只在用户使用贴纸少于5次时显示
     var showUseZoneHint: Bool = true
+
+    // MARK: - 使用次数统计（用于控制提示显示）
+
+    /// UserDefaults 键名：贴纸使用次数
+    private static let kStickerUseCountKey = "StickerFieldView.stickerUseCount"
+
+    /// 最大显示提示的次数阈值
+    private static let kMaxHintShowCount = 5
+
+    /// 检查是否应该显示使用提示
+    private static var shouldShowHint: Bool {
+        let count = UserDefaults.standard.integer(forKey: kStickerUseCountKey)
+        return count < kMaxHintShowCount
+    }
+
+    /// 增加使用次数
+    private static func incrementUseCount() {
+        let count = UserDefaults.standard.integer(forKey: kStickerUseCountKey)
+        UserDefaults.standard.set(count + 1, forKey: kStickerUseCountKey)
+    }
 
     /// 使用区域在场景中的位置（可外部传入，默认自动计算）
     /// 当嵌入到其他视图中时，可以通过此属性指定使用区域
@@ -138,13 +162,18 @@ struct StickerFieldView: View {
                     }
                 }
 
-                // 使用区域 overlay（仅在加载成功且有贴纸时显示）
-                if showUseZoneHint && stickerLoadingState == .loaded && !stickers.isEmpty {
-                    useZoneOverlay
-                        .frame(height: 110)
-                        .padding(.top, 100)
-                        .padding(.horizontal, 40)
-                        .background(useZoneGeometryReader(rootProxy: proxy))
+                // 使用区域提示（仅在加载成功、有贴纸、且使用次数<5次时显示）
+                if showUseZoneHint && stickerLoadingState == .loaded && !stickers.isEmpty && Self.shouldShowHint {
+                    // 使用 customUseZoneFrame 定位到屏幕中央
+                    if let frame = customUseZoneFrame {
+                        useZoneHintText
+                            .position(x: frame.midX, y: frame.midY)
+                    } else {
+                        // 默认位置：屏幕中央偏上
+                        useZoneHintText
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(y: -size.height * 0.15)
+                    }
                 }
 
                 // 调试信息
@@ -195,7 +224,7 @@ struct StickerFieldView: View {
         #endif
 
         // 创建 Coordinator 并设置代理
-        let newCoordinator = Coordinator(onUseSticker: onUseSticker)
+        let newCoordinator = Coordinator(onUseSticker: onUseSticker, onTapBackground: onTapBackground)
         sceneHolder.scene.stickerDelegate = newCoordinator
         sceneHolder.scene.motionManager = enableAutoScroll ? motionManager : nil
         sceneHolder.scene.queueBottomY = queueBottomY
@@ -408,28 +437,12 @@ struct StickerFieldView: View {
         }
     }
 
-    /// 使用区域 overlay
-    private var useZoneOverlay: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.primary.opacity(0.03))
-
-            RoundedRectangle(cornerRadius: 24)
-                .strokeBorder(
-                    style: StrokeStyle(lineWidth: 2, dash: [12, 8])
-                )
-                .foregroundStyle(Color.secondary.opacity(0.4))
-
-            VStack(spacing: 8) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(.secondary.opacity(0.6))
-
-                Text("拖动贴纸到这里使用")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-        }
+    /// 使用区域提示（简洁样式，无边框）
+    private var useZoneHintText: some View {
+        Text("拖动贴纸到此处使用")
+            .font(.system(size: 15, weight: .medium))
+            .foregroundColor(.white.opacity(0.5))
+            .allowsHitTesting(false)  // 不阻挡触摸
     }
 
     // MARK: - 预加载
@@ -527,13 +540,21 @@ struct StickerFieldView: View {
 
     private class Coordinator: StickerSceneDelegate {
         let onUseSticker: (StickerDefinition) -> Void
+        let onTapBackground: (() -> Void)?
 
-        init(onUseSticker: @escaping (StickerDefinition) -> Void) {
+        init(onUseSticker: @escaping (StickerDefinition) -> Void, onTapBackground: (() -> Void)?) {
             self.onUseSticker = onUseSticker
+            self.onTapBackground = onTapBackground
         }
 
         func stickerScene(_ scene: StickerScene, didUse sticker: StickerDefinition) {
+            // ✅ 增加使用次数（用于控制提示显示）
+            StickerFieldView.incrementUseCount()
             onUseSticker(sticker)
+        }
+
+        func stickerSceneDidTapBackground(_ scene: StickerScene) {
+            onTapBackground?()
         }
     }
 }

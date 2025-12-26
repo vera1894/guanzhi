@@ -110,6 +110,9 @@ class ShareInteractionViewModel: ObservableObject {
     /// 是否显示贴纸统计覆层
     @Published var isShowingStickerSummaryOverlay: Bool = false
 
+    /// 是否显示贴纸面板（底部贴纸队列或已使用状态）
+    @Published var isStickerPanelVisible: Bool = false
+
     /// 用户可用的贴纸种类（基于权限，已过滤 isActive）
     @Published var availableStickerKinds: Set<StickerKind> = []
 
@@ -187,6 +190,7 @@ class ShareInteractionViewModel: ObservableObject {
         self.localStickerCounts = [:]
         self.currentUserSticker = nil
         self.stickerSummaries = []
+        self.isStickerPanelVisible = false
 
         #if DEBUG
         print("📊 [ShareInteraction] 初始化:")
@@ -199,6 +203,11 @@ class ShareInteractionViewModel: ObservableObject {
     }
 
     // MARK: - Actions
+
+    /// 切换贴纸面板显示状态
+    func toggleStickerPanel() {
+        isStickerPanelVisible.toggle()
+    }
 
     /// 使用赞同贴纸
     func toggleLike() {
