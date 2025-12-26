@@ -648,13 +648,17 @@ struct ShareDetailView: View {
         .overlay(
             GeometryReader { _ in
                 // ✅ 修复：直接从 UIApplication 获取安全区，避免 ignoresSafeArea 影响
-                let topSafeArea = UIApplication.shared.connectedScenes
+                let safeAreaInsets = UIApplication.shared.connectedScenes
                     .compactMap { $0 as? UIWindowScene }
-                    .first?.windows.first?.safeAreaInsets.top ?? 0
+                    .first?.windows.first?.safeAreaInsets ?? .zero
+                let topSafeArea = safeAreaInsets.top
+                let bottomSafeArea = safeAreaInsets.bottom
                 let screenHeight = UIScreen.main.bounds.height
                 let screenWidth = UIScreen.main.bounds.width
                 // 展开时的卡片高度：屏幕高度减去顶部安全区
                 let expandedHeight = screenHeight - topSafeArea
+                // 收起时的 offset：留出底部安全区空间
+                let collapsedOffset = screenHeight * 0.9 - bottomSafeArea
 
                 ShareDetailsCardView(
                     isFullScreen: $isFullScreen,
@@ -671,8 +675,8 @@ struct ShareDetailView: View {
                 .zIndex(1)
                 // 展开时高度限制在安全区下方；收起时使用全屏高度
                 .frame(width: screenWidth, height: isFullScreen ? expandedHeight : screenHeight)
-                // 展开时：顶部安全区下方；收起时：距底部 10%
-                .offset(y: isFullScreen ? topSafeArea + dragOffset : screenHeight * 0.9 + dragOffset)
+                // 展开时：顶部安全区下方；收起时：距底部 10% 并留出底部安全区
+                .offset(y: isFullScreen ? topSafeArea + dragOffset : collapsedOffset + dragOffset)
                 // ✅ 贴纸面板展开时隐藏评论卡片（避免层级冲突）
                 // 使用 offset 动画：贴纸面板展开时向下移出，收起时恢复
                 .offset(y: interactionViewModel.isStickerPanelVisible ? UIScreen.main.bounds.height * 0.15 : 0)
