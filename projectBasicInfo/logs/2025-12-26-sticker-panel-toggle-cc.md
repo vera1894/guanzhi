@@ -211,3 +211,65 @@ private let kStickerPanelContentBaseHeight: CGFloat = 150
 2. 在 `StickerScene.endInteraction` 中检测简单点击（移动距离<10pt）
 3. 在 `StickerFieldView` 中新增 `onTapBackground` 回调参数
 4. 在 `ShareDetailView.stickerFieldForPanel` 中传入关闭面板的回调
+
+---
+
+## 后续优化（2025-12-26 下午）
+
+### 问题11：点击空白处关闭贴纸面板时屏幕闪黑
+**现象**：静态照片加载完成后，点击关闭贴纸面板时图像会闪黑一下
+**原因分析**：
+- `withAnimation` 创建全局动画事务，影响整个视图树
+- `MediaItemView` 的 `UIImage(data:)` 在动画期间被重新评估导致闪烁
+**修复**：移除所有关闭贴纸面板处的 `withAnimation`，依赖 `.animation(_, value:)` 修饰符
+**涉及位置**：
+- ShareDetailView.swift 第906行：贴纸使用成功后自动收起
+- ShareDetailView.swift 第953行：全屏点击关闭区域
+- ShareDetailView.swift 第975行：渐变区域点击关闭
+- ShareDetailView.swift 第984行：黑色内容区域点击关闭
+- ShareDetailView.swift 第1034行：StickerFieldView背景点击关闭
+
+### 功能12：添加评论按钮并显示贴纸/评论数量
+**需求**：给贴纸按钮增加评论按钮，显示各自的数量
+**实现**：
+- `InteractionOverlayView.swift`：
+  - 添加评论按钮（SF Symbol: `bubble.right`）
+  - 贴纸按钮下方显示贴纸总数（所有类型之和）
+  - 评论按钮下方显示评论总数
+  - 添加 `onCommentTap` 回调参数
+  - 添加 `formatCount` 方法（999+/1w+ 格式化）
+- `ShareDetailView.swift`：点击评论按钮展开评论卡片到全屏
+
+### 功能13：将贴纸/评论按钮移至评论卡片内
+**需求**：右侧悬浮按钮移到评论卡片折叠状态的输入栏中
+**架构变更**：
+```
+[旧] 右侧悬浮 InteractionOverlayView
+     ├── 贴纸按钮
+     └── 评论按钮
+
+[新] ShareDetailsCardView 折叠状态
+     └── HStack: [输入框"展开说说..."] + [贴纸🔢] + [评论🔢]
+```
+**修改的文件**：
+- `ShareDetailsCardView.swift`：
+  - 添加 `interactionViewModel` 和 `onStickerTap` 参数
+  - 新增 `collapsedInputBar` 视图（输入框 + 按钮）
+  - 新增 `totalStickerCount` 计算属性和 `formatCount` 方法
+- `CommentInputBar.swift`：placeholder 改为 "展开说说..."
+- `ShareDetailView.swift`：移除 `InteractionOverlayView`
+
+### 问题14：折叠状态输入栏紧贴屏幕底部
+**修复**：调整卡片收起时的 offset，减去底部安全区高度
+```swift
+let collapsedOffset = screenHeight * 0.9 - bottomSafeArea
+```
+
+### 问题15：点击收起状态输入框没有弹出键盘
+**修复**：
+- 添加 `shouldFocusOnExpand` 状态标志
+- 点击收起状态输入框时设置标志为 true
+- 卡片展开后延迟 0.35s 聚焦真正的输入框
+
+### 问题16：展开/收起状态输入框位置不一致
+**修复**：展开状态 CommentInputBar 添加 `.padding(.bottom, 24)` 与收起状态对齐

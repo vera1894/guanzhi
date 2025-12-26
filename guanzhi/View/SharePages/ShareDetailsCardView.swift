@@ -183,7 +183,7 @@ struct ShareDetailsCardView: View {
                     // MARK: - 底部评论输入栏（仅展开状态显示）
                     if isFullScreen {
                         CommentInputBar(viewModel: commentViewModel, isFocused: $isInputFocused)
-                            .padding(.bottom, 8)  // 与收起状态输入栏底部间距一致
+                            .padding(.bottom, 24)  // 与收起状态输入栏底部间距一致
                     }
 
                 }
