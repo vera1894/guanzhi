@@ -139,9 +139,14 @@ struct ShareDetailsCardView: View {
 
                             // MARK: - 折叠状态输入栏（含贴纸/评论按钮）
                             if !isFullScreen {
+                                // 获取底部安全区高度
+                                let bottomSafeArea = UIApplication.shared.connectedScenes
+                                    .compactMap { $0 as? UIWindowScene }
+                                    .first?.windows.first?.safeAreaInsets.bottom ?? 0
+
                                 collapsedInputBar(share: share)
                                     .padding(.horizontal, Constants.spacingSpacingM)
-                                    .padding(.bottom, Constants.spacingSpacingXs)
+                                    .padding(.bottom, bottomSafeArea + 8)  // 安全区 + 额外间距
                             }
 
                             // MARK: - 评论区
