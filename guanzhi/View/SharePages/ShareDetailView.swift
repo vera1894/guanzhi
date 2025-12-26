@@ -901,10 +901,9 @@ struct ShareDetailView: View {
                 #endif
 
                 // 延迟收起面板，让用户看到使用成功的反馈
+                // ✅ 修复黑色闪烁：不使用 withAnimation，依赖 .animation 修饰符
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        interactionViewModel.isStickerPanelVisible = false
-                    }
+                    interactionViewModel.isStickerPanelVisible = false
                 }
             }
         }
@@ -946,11 +945,11 @@ struct ShareDetailView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         #if DEBUG
-                        print("🔍 [DEBUG] 贴纸面板关闭 - 使用 withAnimation")
+                        print("🔍 [DEBUG] 贴纸面板关闭 - 不使用 withAnimation")
                         #endif
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            interactionViewModel.isStickerPanelVisible = false
-                        }
+                        // ✅ 修复黑色闪烁：不使用 withAnimation，改用 .animation 修饰符
+                        // withAnimation 会创建全局事务，影响 MediaItemView 中的 Image 渲染
+                        interactionViewModel.isStickerPanelVisible = false
                     }
 
                 // ═══════════════════════════════════════════════════════════════
@@ -972,9 +971,8 @@ struct ShareDetailView: View {
                     .frame(height: kStickerPanelGradientHeight)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            interactionViewModel.isStickerPanelVisible = false
-                        }
+                        // ✅ 修复黑色闪烁：不使用 withAnimation
+                        interactionViewModel.isStickerPanelVisible = false
                     }
 
                     // 贴纸内容区域背景（黑色，点击也关闭）
@@ -982,9 +980,8 @@ struct ShareDetailView: View {
                         .frame(height: contentHeight)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                interactionViewModel.isStickerPanelVisible = false
-                            }
+                            // ✅ 修复黑色闪烁：不使用 withAnimation
+                            interactionViewModel.isStickerPanelVisible = false
                         }
                 }
 
@@ -1033,9 +1030,8 @@ struct ShareDetailView: View {
             },
             onTapBackground: {
                 // ✅ 点击背景时关闭贴纸面板
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    interactionViewModel.isStickerPanelVisible = false
-                }
+                // ✅ 修复黑色闪烁：不使用 withAnimation
+                interactionViewModel.isStickerPanelVisible = false
             },
             stickerLoadingState: interactionViewModel.stickerLoadingState,
             onRetryLoad: {
