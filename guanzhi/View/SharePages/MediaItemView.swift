@@ -62,7 +62,7 @@ struct MediaItemView: View {
         #if DEBUG
         let _ = print("🔄 MediaItemView[\(currentIndex ?? -1)] body 重新渲染, isPlayingLivePhoto: \(isPlayingLivePhoto), isSelected: \(isCurrentlySelected)")
         #endif
-        
+
         Group {
             if let mediaItem = mediaItemWrapper.mediaItem {
                 if let photo = mediaItem as? Photo {
@@ -71,6 +71,10 @@ struct MediaItemView: View {
                         ProcessingView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if let uiImage = UIImage(data: photo.data) {
+                        // 🔍 DEBUG: 检测 Image 创建时机
+                        #if DEBUG
+                        let _ = print("🖼️ MediaItemView[\(currentIndex ?? -1)] 静态照片 Image 创建/刷新")
+                        #endif
                         // 动态照片或静态照片（统一处理）
                         ZStack {
                             Image(uiImage: uiImage)

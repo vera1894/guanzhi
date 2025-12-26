@@ -945,6 +945,9 @@ struct ShareDetailView: View {
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        #if DEBUG
+                        print("🔍 [DEBUG] 贴纸面板关闭 - 使用 withAnimation")
+                        #endif
                         withAnimation(.easeInOut(duration: 0.25)) {
                             interactionViewModel.isStickerPanelVisible = false
                         }
