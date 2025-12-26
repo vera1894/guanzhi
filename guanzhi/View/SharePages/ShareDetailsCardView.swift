@@ -26,6 +26,10 @@ struct ShareDetailsCardView: View {
     // MARK: - 评论系统
     @StateObject private var commentViewModel = CommentViewModel()
     @FocusState private var isInputFocused: Bool
+
+    // MARK: - 交互按钮（贴纸/评论）
+    @ObservedObject var interactionViewModel: ShareInteractionViewModel
+    var onStickerTap: (() -> Void)?  // 点击贴纸按钮的回调
     
     private var localUser: LocalUserProfile {
         return userProfileManager.localUserProfile!
@@ -132,6 +136,13 @@ struct ShareDetailsCardView: View {
                             } //主题内容
                             .padding(.horizontal, Constants.spacingSpacingM)
                             .padding(.bottom, Constants.spacingSpacingXs)
+
+                            // MARK: - 折叠状态输入栏（含贴纸/评论按钮）
+                            if !isFullScreen {
+                                collapsedInputBar(share: share)
+                                    .padding(.horizontal, Constants.spacingSpacingM)
+                                    .padding(.bottom, Constants.spacingSpacingXs)
+                            }
 
                             // MARK: - 评论区
                             if isFullScreen {
@@ -395,6 +406,88 @@ struct ShareDetailsCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// 折叠状态的输入栏（输入框 + 贴纸按钮 + 评论按钮）
+    @ViewBuilder
+    private func collapsedInputBar(share: Share) -> some View {
+        HStack(spacing: 12) {
+            // 输入框（点击展开评论卡片）
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isFullScreen = true
+                }
+            } label: {
+                HStack {
+                    Text("展开说说...")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.15))
+                .cornerRadius(16)
+            }
+
+            // 贴纸按钮
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                onStickerTap?()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: interactionViewModel.currentUserSticker != nil
+                        ? "sparkles.rectangle.stack.fill"
+                        : "sparkles.rectangle.stack")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white)
+
+                    if totalStickerCount > 0 {
+                        Text(formatCount(totalStickerCount))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+
+            // 评论按钮
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isFullScreen = true
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.right")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white)
+
+                    if share.commentCount > 0 {
+                        Text(formatCount(share.commentCount))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+        }
+    }
+
+    /// 贴纸总数
+    private var totalStickerCount: Int {
+        interactionViewModel.stickerSummaries.reduce(0) { $0 + $1.count }
+    }
+
+    /// 格式化数量显示
+    private func formatCount(_ count: Int) -> String {
+        if count >= 10000 {
+            return "\(count / 10000)w+"
+        } else if count >= 1000 {
+            return "999+"
+        } else {
+            return "\(count)"
+        }
+    }
+
         @ViewBuilder
         private func userProfileSectionForMine(localUser: LocalUserProfile) -> some View {
             // 获取本机用户头像
@@ -490,10 +583,16 @@ struct BlurView: UIViewRepresentable {
 }
 
 #Preview {
-    ShareDetailsCardView(isFullScreen: .constant(false), isAtTop: .constant(true), dragOffset: .constant(0), cardDragIsActive: .constant(true))
-        .environmentObject(SearchViewModel())
-        .environmentObject(UserProfileManager())
-        .environmentObject(NavigationCoordinator())
+    ShareDetailsCardView(
+        isFullScreen: .constant(false),
+        isAtTop: .constant(true),
+        dragOffset: .constant(0),
+        cardDragIsActive: .constant(true),
+        interactionViewModel: ShareInteractionViewModel()
+    )
+    .environmentObject(SearchViewModel())
+    .environmentObject(UserProfileManager())
+    .environmentObject(NavigationCoordinator())
 }
 
 

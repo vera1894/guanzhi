@@ -660,7 +660,12 @@ struct ShareDetailView: View {
                     isFullScreen: $isFullScreen,
                     isAtTop: $isAtTop,
                     dragOffset: $dragOffset,
-                    cardDragIsActive: $cardDragIsActive
+                    cardDragIsActive: $cardDragIsActive,
+                    interactionViewModel: interactionViewModel,
+                    onStickerTap: {
+                        // 显示贴纸面板
+                        interactionViewModel.isStickerPanelVisible = true
+                    }
                 )
                 .environmentObject(searchViewModel)
                 .zIndex(1)
@@ -712,37 +717,11 @@ struct ShareDetailView: View {
             .ignoresSafeArea()
         )
 
-        // MARK: - 👍 右侧互动按钮 Overlay
+        // MARK: - 👍 右侧互动按钮已移至评论卡片内
         // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  👍 右侧互动按钮 Overlay                                             │
-        // │  - 贴纸切换按钮                                                      │
-        // │  - 使用共享的 interactionViewModel                                   │
-        // │  - 隐藏条件：UI隐藏 / 贴纸面板展开 / 评论区全屏展开                    │
+        // │  贴纸和评论按钮已整合到 ShareDetailsCardView 的折叠状态输入栏中        │
+        // │  InteractionOverlayView 不再使用                                     │
         // └─────────────────────────────────────────────────────────────────────┘
-        .overlay(
-            Group {
-                if let share = searchViewModel.selectedShare {
-                    // 显示条件：UI可见 && 贴纸面板未展开 && 评论区未全屏
-                    let shouldShow = isShowShareDetailsCard
-                        && !interactionViewModel.isStickerPanelVisible
-                        && !isFullScreen
-
-                    InteractionOverlayView(
-                        share: share,
-                        viewModel: interactionViewModel,
-                        onCommentTap: {
-                            // 展开评论卡片到全屏
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isFullScreen = true
-                            }
-                        }
-                    )
-                    .opacity(shouldShow ? 1 : 0)
-                    .allowsHitTesting(shouldShow)
-                    .animation(.easeInOut(duration: 0.25), value: shouldShow)
-                }
-            }
-        )
         .background(Color.black.ignoresSafeArea())
 
         // ┌─────────────────────────────────────────────────────────────────────┐

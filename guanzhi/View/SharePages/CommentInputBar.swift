@@ -110,7 +110,7 @@ struct CommentInputBar: View {
                     // 输入框
                     HStack {
                         TextField(
-                            viewModel.isReplyMode ? "回复..." : "发表评论...",
+                            viewModel.isReplyMode ? "回复..." : "展开说说...",
                             text: $viewModel.inputText,
                             axis: .vertical
                         )
@@ -211,7 +211,7 @@ struct CommentInputBarSimple: View {
                     // 输入框
                     HStack {
                         TextField(
-                            viewModel.isReplyMode ? "回复..." : "发表评论...",
+                            viewModel.isReplyMode ? "回复..." : "展开说说...",
                             text: $viewModel.inputText,
                             axis: .vertical
                         )
