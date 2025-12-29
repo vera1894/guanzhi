@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MapKit
+import UserNotifications
 
 struct SearchView: View {
     
@@ -360,13 +361,38 @@ struct SearchView: View {
                 ))
                 toastManager.show(newItem)
             }
+
+            // 登录后请求通知权限并注册 APNs
+            if OTOLoginStatusManager.shared.isLoggedIn {
+                await requestNotificationPermission()
+            }
         }
         
     }
     
     
     // MARK: - Functions
-    
+
+    /// 请求通知权限并注册 APNs
+    private func requestNotificationPermission() async {
+        let center = UNUserNotificationCenter.current()
+
+        do {
+            let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
+            if granted {
+                print("✅ 通知权限已授权")
+                // 在主线程注册 APNs
+                await MainActor.run {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            } else {
+                print("⚠️ 用户拒绝通知权限")
+            }
+        } catch {
+            print("❌ 请求通知权限失败: \(error.localizedDescription)")
+        }
+    }
+
     private func showNotification() {
         if appState.isPushedGuanzhi {
             let newItem = ToastItem(style: .notificationOnly(
