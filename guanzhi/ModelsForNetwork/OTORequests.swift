@@ -12,6 +12,7 @@ import UIKit
 enum RequestMethod: String {
     case get = "GET"
     case post = "POST"
+    case put = "PUT"
     case delete = "DELETE"
 }
 
@@ -108,6 +109,14 @@ enum OTORequest {
     case unlikeComment(commentId: Int64)
     /// 获取评论上下文（精准定位）
     case getCommentContext(commentId: Int64)
+
+    // MARK: - 设备管理 API (推送通知)
+    /// 注册设备
+    case registerDevice(deviceToken: String, bundleId: String, deviceId: String?, deviceName: String?, deviceModel: String?, osVersion: String?, appVersion: String?, environment: String?)
+    /// 更新设备 Token
+    case updateDeviceToken(oldToken: String, newToken: String)
+    /// 设备登出
+    case logoutDevice(deviceToken: String)
 }
 
 extension OTORequest {
@@ -384,6 +393,57 @@ extension OTORequest {
                     path: "/api/comments/\(commentId)/context",
                     method: .get,
                     param: [:]
+                )
+
+            // MARK: - 设备管理 API (推送通知)
+
+            // 注册设备
+            case .registerDevice(let deviceToken, let bundleId, let deviceId, let deviceName, let deviceModel, let osVersion, let appVersion, let environment):
+                var param: [String: Any] = [
+                    "deviceToken": deviceToken,
+                    "bundleId": bundleId
+                ]
+                if let deviceId = deviceId {
+                    param["deviceId"] = deviceId
+                }
+                if let deviceName = deviceName {
+                    param["deviceName"] = deviceName
+                }
+                if let deviceModel = deviceModel {
+                    param["deviceModel"] = deviceModel
+                }
+                if let osVersion = osVersion {
+                    param["osVersion"] = osVersion
+                }
+                if let appVersion = appVersion {
+                    param["appVersion"] = appVersion
+                }
+                if let environment = environment {
+                    param["environment"] = environment
+                }
+                return .init(
+                    path: "/device/register",
+                    method: .post,
+                    param: param
+                )
+
+            // 更新设备 Token
+            case .updateDeviceToken(let oldToken, let newToken):
+                return .init(
+                    path: "/device/token",
+                    method: .put,
+                    param: [
+                        "oldToken": oldToken,
+                        "newToken": newToken
+                    ]
+                )
+
+            // 设备登出
+            case .logoutDevice(let deviceToken):
+                return .init(
+                    path: "/device/logout",
+                    method: .delete,
+                    param: ["deviceToken": deviceToken]
                 )
 
             //备用的

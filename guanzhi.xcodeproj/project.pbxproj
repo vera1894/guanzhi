@@ -262,6 +262,7 @@
 		FF769B5C2D6D9C3500321540 /* Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crop.swift; sourceTree = "<group>"; };
 		FF769B602D7D730A00321540 /* AccountManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountManagementView.swift; sourceTree = "<group>"; };
 		FF774DA82EFBE97800EE691E /* StickerNameService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerNameService.swift; sourceTree = "<group>"; };
+		FF8422632F02090800259D64 /* guanzhi.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = guanzhi.entitlements; sourceTree = "<group>"; };
 		FF84D7BE2D3E35C10060F060 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfile.swift; sourceTree = "<group>"; };
 		FF84D7C42D45DA4F0060F060 /* OthersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OthersView.swift; sourceTree = "<group>"; };
@@ -458,6 +459,7 @@
 		D1CE06172B526930001303F2 /* guanzhi */ = {
 			isa = PBXGroup;
 			children = (
+				FF8422632F02090800259D64 /* guanzhi.entitlements */,
 				FF650F5D2ED7F9E2001437AB /* 项目信息记录 */,
 				D1093C2E2B669795008553A3 /* Info.plist */,
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
@@ -1149,6 +1151,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = guanzhi/guanzhi.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"guanzhi/Preview Content\"";
@@ -1184,6 +1187,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = guanzhi/guanzhi.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"guanzhi/Preview Content\"";

@@ -92,15 +92,19 @@ enum Route: Hashable, Codable { //用于页面导航
     case settingView
     case shareDetailView(annotationID: String)
     case editProfileView
-    case accountManagementView  // 添加新的路由选项
-    
+    case accountManagementView
+    /// 从推送通知跳转到分享详情并定位评论
+    case shareComment(shareId: Int64, commentId: Int64)
+
     // 定义用于编码和解码的键
     enum CodingKeys: String, CodingKey {
         case type
         case annotationID
         case userId
+        case shareId
+        case commentId
     }
-    
+
     // 定义一个类型枚举，用于区分不同的 case
     enum RouteType: String, Codable {
         case myView
@@ -108,7 +112,8 @@ enum Route: Hashable, Codable { //用于页面导航
         case settingView
         case shareDetailView
         case editProfileView
-        case accountManagementView  // 添加新的类型
+        case accountManagementView
+        case shareComment
     }
     
     // 实现 Encodable 协议
@@ -127,11 +132,15 @@ enum Route: Hashable, Codable { //用于页面导航
             try container.encode(annotationID, forKey: .annotationID)
         case .editProfileView:
             try container.encode(RouteType.editProfileView, forKey: .type)
-        case .accountManagementView:  // 添加新的 case
+        case .accountManagementView:
             try container.encode(RouteType.accountManagementView, forKey: .type)
+        case .shareComment(let shareId, let commentId):
+            try container.encode(RouteType.shareComment, forKey: .type)
+            try container.encode(shareId, forKey: .shareId)
+            try container.encode(commentId, forKey: .commentId)
         }
     }
-    
+
     // 实现 Decodable 协议
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -149,8 +158,12 @@ enum Route: Hashable, Codable { //用于页面导航
             self = .shareDetailView(annotationID: annotationID)
         case .editProfileView:
             self = .editProfileView
-        case .accountManagementView:  // 添加新的 case
+        case .accountManagementView:
             self = .accountManagementView
+        case .shareComment:
+            let shareId = try container.decode(Int64.self, forKey: .shareId)
+            let commentId = try container.decode(Int64.self, forKey: .commentId)
+            self = .shareComment(shareId: shareId, commentId: commentId)
         }
     }
 }

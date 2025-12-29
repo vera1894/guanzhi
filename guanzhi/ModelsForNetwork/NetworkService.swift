@@ -31,16 +31,16 @@ struct OTONetwork {
             }
             print("完整 URL: \(url.absoluteString)")
             
-            // ✅ GET 请求：参数放 URL 查询字符串；POST 请求：参数放 Body
+            // ✅ GET/DELETE 请求：参数放 URL 查询字符串；POST/PUT 请求：参数放 Body
             var finalURL = url
-            if req.request.method == .get && !req.request.param.isEmpty {
+            if (req.request.method == .get || req.request.method == .delete) && !req.request.param.isEmpty {
                 var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                 components?.queryItems = req.request.param.map { key, value in
                     URLQueryItem(name: key, value: "\(value)")
                 }
                 if let urlWithQuery = components?.url {
                     finalURL = urlWithQuery
-                    print("📎 GET 请求 URL（含查询参数）: \(finalURL.absoluteString)")
+                    print("📎 \(req.request.method.rawValue) 请求 URL（含查询参数）: \(finalURL.absoluteString)")
                 }
             }
 
@@ -55,8 +55,8 @@ struct OTONetwork {
                 print("⚠️ 未登录或没有 Token")
             }
 
-            // ✅ 只有 POST 请求才设置 httpBody
-            if req.request.method == .post && !req.request.param.isEmpty {
+            // ✅ POST/PUT 请求设置 httpBody
+            if (req.request.method == .post || req.request.method == .put) && !req.request.param.isEmpty {
                 request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
             }
 

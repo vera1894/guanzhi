@@ -78,6 +78,10 @@ struct SettingView: View {
         .navigationBarBackButtonHidden(true)
         .alert("提醒", isPresented: $isLoggingout, actions: {
             Button {
+                // 注销设备推送（异步，不阻塞退出流程）
+                Task {
+                    await DeviceService.shared.logoutDevice()
+                }
                 appState.isShowingSearchView = true
                 OTOLoginStatusManager.shared.logout()
                 navigationCoordinator.path = NavigationPath()

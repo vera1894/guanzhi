@@ -7,9 +7,107 @@
 
 import os
 import SwiftUI
+import UserNotifications
+
+// MARK: - AppDelegate (推送通知处理)
+
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // 设置通知中心代理
+        UNUserNotificationCenter.current().delegate = self
+
+        // 检查是否从推送通知冷启动
+        if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any],
+           let deepLink = notification["deepLink"] as? String {
+            print("🚀 App 从推送通知冷启动，Deep Link: \(deepLink)")
+            DeviceService.shared.cachePendingDeepLink(deepLink)
+        }
+
+        return true
+    }
+
+    // MARK: - 推送通知注册
+
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("📱 APNs 注册成功，Device Token: \(token)")
+
+        // 检查是否有旧 token 需要更新
+        if let oldToken = DeviceService.shared.getCachedDeviceToken(), oldToken != token {
+            // Token 变化，需要更新
+            Task {
+                do {
+                    try await DeviceService.shared.updateDeviceToken(oldToken: oldToken, newToken: token)
+                } catch {
+                    print("❌ 更新设备 Token 失败: \(error)")
+                }
+            }
+        } else {
+            // 新 Token 或首次注册
+            Task {
+                do {
+                    try await DeviceService.shared.registerDevice(deviceToken: token)
+                } catch {
+                    print("❌ 注册设备失败: \(error)")
+                }
+            }
+        }
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("❌ APNs 注册失败: \(error.localizedDescription)")
+    }
+
+    // MARK: - 前台收到通知
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let userInfo = notification.request.content.userInfo
+        print("📬 前台收到通知: \(userInfo)")
+
+        // 前台显示 Banner、Badge 和 Sound
+        completionHandler([.banner, .badge, .sound])
+    }
+
+    // MARK: - 点击通知
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        print("👆 用户点击通知: \(userInfo)")
+
+        if let deepLink = userInfo["deepLink"] as? String {
+            print("🔗 处理 Deep Link: \(deepLink)")
+            // 发送通知让 App 处理
+            NotificationCenter.default.post(
+                name: .handleDeepLink,
+                object: nil,
+                userInfo: ["deepLink": deepLink]
+            )
+        }
+
+        completionHandler()
+    }
+}
+
+// MARK: - Notification Name Extension
+
+extension Notification.Name {
+    static let handleDeepLink = Notification.Name("handleDeepLink")
+}
+
+// MARK: - Main App
 
 @main
 struct guanzhiApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @Environment(\.colorScheme) var colorScheme
     @State var appState = AppStateModel()
     @StateObject var locationManager = LocationManager()
@@ -24,7 +122,7 @@ struct guanzhiApp: App {
         // 预加载贴纸名称（异步，不阻塞启动）
         StickerNameService.shared.preload()
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ZStack{
@@ -64,10 +162,17 @@ struct guanzhiApp: App {
                                 .environmentObject(searchViewModel)
                                 .environmentObject(navigationCoordinator)
                                 .environmentObject(userProfileManager)
-//                                .matchedGeometryEffect(id: "sharedElement\(annotationID)", in: globalAnimationNamespace)
                         case .accountManagementView:
                             AccountManagementView()
                                 .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                        case .shareComment(let shareId, let commentId):
+                            // 从推送通知跳转，复用分享详情页
+                            // TODO: 后续可传递 commentId 用于高亮定位
+                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: globalAnimationNamespace, annotationID: "\(shareId)")
+                                .environment(appState)
+                                .environmentObject(searchViewModel)
                                 .environmentObject(navigationCoordinator)
                                 .environmentObject(userProfileManager)
                         }
@@ -79,11 +184,85 @@ struct guanzhiApp: App {
                 .environmentObject(userProfileManager)
                 .environmentObject(navigationCoordinator)
                 .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self])
-                
+
                 GlobalToastContainerView()
             }
             .environmentObject(toastManager)
             .ignoresSafeArea()
+            // Deep Link 处理
+            .onOpenURL { url in
+                handleDeepLink(url)
+            }
+            // 接收来自推送通知的 Deep Link
+            .onReceive(NotificationCenter.default.publisher(for: .handleDeepLink)) { notification in
+                if let deepLink = notification.userInfo?["deepLink"] as? String,
+                   let url = URL(string: deepLink) {
+                    handleDeepLink(url)
+                }
+            }
+            // 处理冷启动时缓存的 Deep Link
+            .onAppear {
+                handlePendingDeepLink()
+                // TODO: 清除 Badge（临时方案）
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
+        }
+    }
+
+    // MARK: - Deep Link 处理
+
+    private func handleDeepLink(_ url: URL) {
+        print("🔗 处理 Deep Link: \(url.absoluteString)")
+
+        guard url.scheme == "guanzhi" else {
+            print("⚠️ 未知的 URL Scheme: \(url.scheme ?? "nil")")
+            return
+        }
+
+        // 检查用户是否已登录
+        guard OTOLoginStatusManager.shared.isLoggedIn else {
+            print("⚠️ 用户未登录，缓存 Deep Link 待登录后处理")
+            DeviceService.shared.cachePendingDeepLink(url.absoluteString)
+            return
+        }
+
+        // 解析 Deep Link
+        // 格式: guanzhi://share/{shareId}/comment/{commentId}
+        guard url.host == "share" else {
+            print("⚠️ 不支持的 Deep Link host: \(url.host ?? "nil")")
+            return
+        }
+
+        let pathComponents = url.pathComponents
+        // pathComponents: ["/", "{shareId}", "comment", "{commentId}"]
+
+        if pathComponents.count >= 2,
+           let shareId = Int64(pathComponents[1]) {
+
+            if pathComponents.count >= 4,
+               pathComponents[2] == "comment",
+               let commentId = Int64(pathComponents[3]) {
+                // 跳转到分享详情并定位评论
+                print("📍 导航到分享 \(shareId)，评论 \(commentId)")
+                navigationCoordinator.path.append(Route.shareComment(shareId: shareId, commentId: commentId))
+            } else {
+                // 只跳转到分享详情
+                print("📍 导航到分享 \(shareId)")
+                navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(shareId)"))
+            }
+        }
+    }
+
+    /// 处理冷启动时缓存的 Deep Link
+    private func handlePendingDeepLink() {
+        if let pendingDeepLink = DeviceService.shared.getPendingDeepLink(),
+           let url = URL(string: pendingDeepLink) {
+            print("🔗 处理冷启动缓存的 Deep Link: \(pendingDeepLink)")
+            // 延迟处理，确保 UI 已初始化
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                handleDeepLink(url)
+            }
+            DeviceService.shared.clearPendingDeepLink()
         }
     }
 }
