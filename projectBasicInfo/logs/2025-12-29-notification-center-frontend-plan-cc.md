@@ -1,9 +1,10 @@
 # 前端推送中台任务规划
 
-**文档版本**: v2
+**文档版本**: v3 (含调研结果)
 **创建日期**: 2025-12-29
+**更新日期**: 2025-12-29
 **角色**: 前端开发 (Claude Code - iOS)
-**状态**: 规划完成，待实施
+**状态**: 调研完成，待实施
 
 ---
 
@@ -72,21 +73,185 @@ App 冷启动 → 保存 deepLink 到 pendingDeepLink
 
 ---
 
-## 五、前置调研任务
+## 五、前置调研结果
 
-在开工前需了解现有项目：
+### 5.1 调研总览
 
-| 调研项 | 目的 |
-|--------|------|
-| 网络层封装 | 确定如何调用后端 API（`APIClient`/`GuanzhiService`） |
-| 登录态管理 | 确定如何判断用户已登录、获取 userId |
-| 导航系统 | 了解 `NavigationCoordinator` 实现，确定如何新增路由 |
-| 现有 URL 处理 | 检查是否已有 `onOpenURL` 或 `SceneDelegate` 处理逻辑 |
-| 本地存储方式 | 确定 deviceToken/deviceId 存储位置（UserDefaults/Keychain） |
+| 调研项 | 状态 | 关键发现 |
+|--------|------|---------|
+| 网络层封装 | ✅ 完成 | `OTONetwork.request()` + `OTORequest` 枚举模式 |
+| 登录态管理 | ✅ 完成 | `OTOLoginStatusManager` 单例管理 Token 和登录状态 |
+| 导航系统 | ✅ 完成 | `NavigationStack` + `Route` 枚举 + `NavigationCoordinator` |
+| URL/Deep Link | ✅ 完成 | **目前未实现**，需新增 |
+| 本地存储 | ✅ 完成 | `UserDefaults` (Token/UserID) + `SwiftData` (用户信息) |
+
+### 5.2 网络层封装
+
+**核心文件**：
+- `/guanzhi/ModelsForNetwork/NetworkService.swift` - OTONetwork 核心请求类
+- `/guanzhi/ModelsForNetwork/OTORequests.swift` - API 端点枚举定义
+
+**使用方式**：
+```swift
+// 1. 在 OTORequests.swift 中添加新的 case
+enum OTORequest {
+    case registerDevice(deviceToken: String, bundleId: String, deviceId: String?, ...)
+}
+
+extension OTORequest {
+    var request: OTORequestBaseModel {
+        case .registerDevice(let deviceToken, let bundleId, let deviceId, ...):
+            return .init(
+                path: "/device/register",
+                method: .post,
+                param: ["deviceToken": deviceToken, "bundleId": bundleId, ...]
+            )
+    }
+}
+
+// 2. 调用方式
+let data = try await OTONetwork.request(.registerDevice(...))
+let response = try JSONDecoder().decode(OTOResponseModel<T>.self, from: data)
+```
+
+**Token 自动注入**：`NetworkService.swift` 会自动从 `OTOLoginStatusManager` 获取 Token 并添加到请求头。
+
+### 5.3 登录态管理
+
+**核心文件**：`/guanzhi/ModelsForNetwork/UserLoginModel.swift`
+
+**关键类**：`OTOLoginStatusManager` (单例)
+
+```swift
+// 检查登录状态
+if OTOLoginStatusManager.shared.isLoggedIn {
+    // 用户已登录
+}
+
+// 获取 Token
+let token = OTOLoginStatusManager.shared.getToken()
+
+// 获取用户 ID
+let userId = OTOLoginStatusManager.shared.getUserID()
+
+// 登出
+OTOLoginStatusManager.shared.logout()
+```
+
+**登出位置**：`/guanzhi/View/MyPages/SettingView.swift` - 需在此处添加设备注销逻辑
+
+### 5.4 导航系统
+
+**核心文件**：
+- `/guanzhi/AppStateModel.swift` - Route 枚举定义 + NavigationCoordinator
+- `/guanzhi/guanzhiApp.swift` - NavigationStack 配置
+
+**现有 Route 枚举**：
+```swift
+enum Route: Hashable, Codable {
+    case myView
+    case othersView(userId: Int)
+    case settingView
+    case shareDetailView(annotationID: String)  // ← 可复用
+    case editProfileView
+    case accountManagementView
+}
+```
+
+**跳转方式**：
+```swift
+// 跳转到分享详情
+navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(shareId)"))
+
+// 返回
+navigationCoordinator.path.removeLast()
+```
+
+**分享详情页**：`/guanzhi/View/SharePages/ShareDetailView.swift`
+- 参数：`annotationID: String` (分享 ID)
+- 数据加载：`searchViewModel.loadShareDetail(for: shareId)`
+
+### 5.5 URL/Deep Link 处理
+
+**当前状态**：**完全缺失**
+
+**需要添加**：
+
+1. **Info.plist 配置**：
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>guanzhi</string>
+        </array>
+    </dict>
+</array>
+```
+
+2. **guanzhiApp.swift 添加 onOpenURL**：
+```swift
+.onOpenURL { url in
+    handleDeepLink(url)
+}
+```
+
+3. **新增 Route case**：
+```swift
+case shareComment(shareId: Int64, commentId: Int64)
+```
+
+### 5.6 本地存储
+
+**存储方式**：`UserDefaults.standard`
+
+**现有 Key**：
+- `loginTokenKey` - 认证 Token
+- `"userId"` - 用户 ID
+
+**建议添加**：
+```swift
+// deviceToken 存储
+UserDefaults.standard.set(deviceToken, forKey: "apnsDeviceToken")
+UserDefaults.standard.string(forKey: "apnsDeviceToken")
+```
 
 ---
 
-## 六、任务优先级与 TODO 标记
+## 六、实施建议
+
+基于调研结果，建议按以下顺序实施：
+
+| 顺序 | 任务 | 需修改的文件 |
+|------|------|-------------|
+| 1 | 添加设备注册 API 定义 | `OTORequests.swift` |
+| 2 | 创建 DeviceService | 新建 `DeviceService.swift` |
+| 3 | 添加 URL Scheme 配置 | `Info.plist` |
+| 4 | 添加 onOpenURL 处理 | `guanzhiApp.swift` |
+| 5 | 扩展 Route 枚举 | `AppStateModel.swift` |
+| 6 | 实现推送通知处理 | `guanzhiApp.swift` 或新建 AppDelegate |
+| 7 | 登出时注销设备 | `SettingView.swift` |
+
+---
+
+## 七、关键文件索引
+
+| 文件 | 路径 | 用途 |
+|------|------|------|
+| **NetworkService.swift** | `/guanzhi/ModelsForNetwork/` | 网络请求核心 |
+| **OTORequests.swift** | `/guanzhi/ModelsForNetwork/` | API 端点定义 |
+| **UserLoginModel.swift** | `/guanzhi/ModelsForNetwork/` | 登录状态管理 |
+| **AppStateModel.swift** | `/guanzhi/` | Route 枚举 + NavigationCoordinator |
+| **guanzhiApp.swift** | `/guanzhi/` | App 入口，需添加 onOpenURL |
+| **Info.plist** | `/guanzhi/` | 需添加 URL Scheme |
+| **ShareDetailView.swift** | `/guanzhi/View/SharePages/` | 分享详情页 |
+| **SettingView.swift** | `/guanzhi/View/MyPages/` | 登出逻辑，需添加设备注销 |
+| **SearchViewModel.swift** | `/guanzhi/ModelsForMap/` | 分享数据加载 |
+
+---
+
+## 八、任务优先级与 TODO 标记
 
 | 任务 | 优先级 | 状态 |
 |------|--------|------|
@@ -98,7 +263,7 @@ App 冷启动 → 保存 deepLink 到 pendingDeepLink
 
 ---
 
-## 七、后端 API 参考
+## 九、后端 API 参考
 
 ### 设备注册
 ```
@@ -156,7 +321,7 @@ guanzhi://share/{shareId}/comment/{commentId}
 
 ---
 
-## 八、产品决策待确认
+## 十、产品决策待确认
 
 | 问题 | 选项 | 建议 |
 |------|------|------|
@@ -166,4 +331,4 @@ guanzhi://share/{shareId}/comment/{commentId}
 
 **文档结束**
 
-下一步：开始前置调研工作，了解现有项目结构。
+下一步：开始实施前端推送功能。
