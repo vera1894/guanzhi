@@ -88,12 +88,8 @@ class DeviceService {
         let osVersion = device.systemVersion
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
 
-        // 判断环境（DEBUG 为 sandbox，否则为 production）
-        #if DEBUG
-        let environment = "sandbox"
-        #else
+        // APNs 环境：始终使用 production
         let environment = "production"
-        #endif
 
         print("📱 DeviceService: 开始注册设备...")
         print("   Token: \(deviceToken.prefix(20))...")
