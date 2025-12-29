@@ -9,6 +9,13 @@
 import Foundation
 import UIKit
 
+/// 设备 API 响应模型（后端返回 code/msg/data 格式）
+struct DeviceApiResponse<T: Codable>: Codable {
+    let code: Int
+    let msg: String?
+    let data: T?
+}
+
 /// 设备服务 - 管理 APNs 设备注册
 class DeviceService {
     static let shared = DeviceService()
@@ -106,16 +113,17 @@ class DeviceService {
             ))
 
             let decoder = JSONDecoder()
-            let response = try decoder.decode(OTOResponseModel<String?>.self, from: data)
+            let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
 
-            if response.respCode == 200 || response.respCode == 0 {
+            if response.code == 200 {
                 print("✅ DeviceService: 设备注册成功")
             } else {
-                print("❌ DeviceService: 设备注册失败 - \(response.respMsg ?? "未知错误")")
-                throw OTONetworkError.customError(response.respMsg ?? "设备注册失败")
+                print("❌ DeviceService: 设备注册失败 - \(response.msg ?? "未知错误")")
+                throw OTONetworkError.customError(response.msg ?? "设备注册失败")
             }
         } catch {
             print("❌ DeviceService: 设备注册异常 - \(error.localizedDescription)")
+            print("❌ 错误详情: \(error)")
             throw error
         }
     }
@@ -141,17 +149,18 @@ class DeviceService {
             ))
 
             let decoder = JSONDecoder()
-            let response = try decoder.decode(OTOResponseModel<String?>.self, from: data)
+            let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
 
-            if response.respCode == 200 || response.respCode == 0 {
+            if response.code == 200 {
                 cacheDeviceToken(newToken)
                 print("✅ DeviceService: 设备 Token 更新成功")
             } else {
-                print("❌ DeviceService: Token 更新失败 - \(response.respMsg ?? "未知错误")")
-                throw OTONetworkError.customError(response.respMsg ?? "Token 更新失败")
+                print("❌ DeviceService: Token 更新失败 - \(response.msg ?? "未知错误")")
+                throw OTONetworkError.customError(response.msg ?? "Token 更新失败")
             }
         } catch {
             print("❌ DeviceService: Token 更新异常 - \(error.localizedDescription)")
+            print("❌ 错误详情: \(error)")
             throw error
         }
     }
@@ -169,15 +178,16 @@ class DeviceService {
             let data = try await OTONetwork.request(.logoutDevice(deviceToken: deviceToken))
 
             let decoder = JSONDecoder()
-            let response = try decoder.decode(OTOResponseModel<String?>.self, from: data)
+            let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
 
-            if response.respCode == 200 || response.respCode == 0 {
+            if response.code == 200 {
                 print("✅ DeviceService: 设备注销成功")
             } else {
-                print("⚠️ DeviceService: 设备注销返回非成功状态 - \(response.respMsg ?? "")")
+                print("⚠️ DeviceService: 设备注销返回非成功状态 - \(response.msg ?? "")")
             }
         } catch {
             print("⚠️ DeviceService: 设备注销异常（忽略）- \(error.localizedDescription)")
+            print("⚠️ 错误详情: \(error)")
         }
 
         // 无论成功与否，都清除本地缓存
