@@ -422,7 +422,7 @@ extension OTORequest {
                     param["environment"] = environment
                 }
                 return .init(
-                    path: "/device/register",
+                    path: "/api/device/register",
                     method: .post,
                     param: param
                 )
@@ -430,7 +430,7 @@ extension OTORequest {
             // 更新设备 Token
             case .updateDeviceToken(let oldToken, let newToken):
                 return .init(
-                    path: "/device/token",
+                    path: "/api/device/token",
                     method: .put,
                     param: [
                         "oldToken": oldToken,
@@ -441,7 +441,7 @@ extension OTORequest {
             // 设备登出
             case .logoutDevice(let deviceToken):
                 return .init(
-                    path: "/device/logout",
+                    path: "/api/device/logout",
                     method: .delete,
                     param: ["deviceToken": deviceToken]
                 )
