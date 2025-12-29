@@ -9,11 +9,11 @@
 import Foundation
 import UIKit
 
-/// 设备 API 响应模型（后端返回 code/msg/data 格式）
+/// 设备 API 响应模型（后端返回 respCode/respMsg/datas 格式）
 struct DeviceApiResponse<T: Codable>: Codable {
-    let code: Int
-    let msg: String?
-    let data: T?
+    let respCode: Int
+    let respMsg: String?
+    let datas: T?
 }
 
 /// 设备服务 - 管理 APNs 设备注册
@@ -117,11 +117,11 @@ class DeviceService {
             let decoder = JSONDecoder()
             let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
 
-            if response.code == 200 {
+            if response.respCode == 0 || response.respCode == 200 {
                 print("✅ DeviceService: 设备注册成功")
             } else {
-                print("❌ DeviceService: 设备注册失败 - \(response.msg ?? "未知错误")")
-                throw OTONetworkError.customError(response.msg ?? "设备注册失败")
+                print("❌ DeviceService: 设备注册失败 - \(response.respMsg ?? "未知错误")")
+                throw OTONetworkError.customError(response.respMsg ?? "设备注册失败")
             }
         } catch {
             print("❌ DeviceService: 设备注册异常 - \(error.localizedDescription)")
@@ -153,12 +153,12 @@ class DeviceService {
             let decoder = JSONDecoder()
             let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
 
-            if response.code == 200 {
+            if response.respCode == 0 || response.respCode == 200 {
                 cacheDeviceToken(newToken)
                 print("✅ DeviceService: 设备 Token 更新成功")
             } else {
-                print("❌ DeviceService: Token 更新失败 - \(response.msg ?? "未知错误")")
-                throw OTONetworkError.customError(response.msg ?? "Token 更新失败")
+                print("❌ DeviceService: Token 更新失败 - \(response.respMsg ?? "未知错误")")
+                throw OTONetworkError.customError(response.respMsg ?? "Token 更新失败")
             }
         } catch {
             print("❌ DeviceService: Token 更新异常 - \(error.localizedDescription)")
@@ -182,10 +182,10 @@ class DeviceService {
             let decoder = JSONDecoder()
             let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
 
-            if response.code == 200 {
+            if response.respCode == 0 || response.respCode == 200 {
                 print("✅ DeviceService: 设备注销成功")
             } else {
-                print("⚠️ DeviceService: 设备注销返回非成功状态 - \(response.msg ?? "")")
+                print("⚠️ DeviceService: 设备注销返回非成功状态 - \(response.respMsg ?? "")")
             }
         } catch {
             print("⚠️ DeviceService: 设备注销异常（忽略）- \(error.localizedDescription)")
