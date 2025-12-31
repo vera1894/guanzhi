@@ -42,6 +42,13 @@
 		D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */; };
 		DB6F08A47BD540E5AB665F26 /* StickerSummaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1EC928C3DB4102AEED623C /* StickerSummaryItem.swift */; };
 		E979AE900B14459C87BA8313 /* StickerAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC24F21D1512454D951EC14F /* StickerAvailability.swift */; };
+		CC01A0022F0388820001CC01 /* NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01A0012F0388820001CC01 /* NotificationModels.swift */; };
+		CC01B0022F0388820001CC01 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01B0012F0388820001CC01 /* NotificationService.swift */; };
+		CC01C0022F0388820001CC01 /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01C0012F0388820001CC01 /* MessagesView.swift */; };
+		CC01D0022F0388820001CC01 /* MessageTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01D0012F0388820001CC01 /* MessageTabBar.swift */; };
+		CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01E0012F0388820001CC01 /* MessageRowView.swift */; };
+		CC01F0022F0388820001CC01 /* NotificationBadgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */; };
+		CC01H0022F0388820001CC01 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */; };
 		FF0025902D3754F10056C5C6 /* UserTimelineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00258F2D3754F10056C5C6 /* UserTimelineViewModel.swift */; };
 		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		FF1A50232CA0F5DB00596DBD /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1A50222CA0F5D500596DBD /* LocationService.swift */; };
@@ -96,6 +103,7 @@
 		FF6BC4F92C7C2DE600423660 /* SwitchCameraButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1502C787A6500AF7086 /* SwitchCameraButton.swift */; };
 		FF6BC4FA2C7C2DE600423660 /* ThumbnailButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD14E2C787A6500AF7086 /* ThumbnailButton.swift */; };
 		FF6BC4FC2C7C6A3000423660 /* AppStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6BC4FB2C7C6A3000423660 /* AppStateModel.swift */; };
+		FF6C0DBF2F02887300CC0C8C /* DeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6C0DBE2F02887300CC0C8C /* DeviceService.swift */; };
 		FF6C38AD2D549956006966A7 /* MainMapContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6C38AC2D549956006966A7 /* MainMapContent.swift */; };
 		FF769B4F2D66DF1400321540 /* EditNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B4E2D66DF1400321540 /* EditNameView.swift */; };
 		FF769B512D68631300321540 /* EditOneCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B502D68631300321540 /* EditOneCodeView.swift */; };
@@ -170,6 +178,13 @@
 		B8825604927B4EEC93E0264E /* StickerKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerKind.swift; sourceTree = "<group>"; };
 		BF04D7B541F8EA61A15C6461 /* Pods-guanzhi.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-guanzhi.debug.xcconfig"; path = "Target Support Files/Pods-guanzhi/Pods-guanzhi.debug.xcconfig"; sourceTree = "<group>"; };
 		CC24F21D1512454D951EC14F /* StickerAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerAvailability.swift; sourceTree = "<group>"; };
+		CC01A0012F0388820001CC01 /* NotificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationModels.swift; sourceTree = "<group>"; };
+		CC01B0012F0388820001CC01 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		CC01C0012F0388820001CC01 /* MessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesView.swift; sourceTree = "<group>"; };
+		CC01D0012F0388820001CC01 /* MessageTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageTabBar.swift; sourceTree = "<group>"; };
+		CC01E0012F0388820001CC01 /* MessageRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRowView.swift; sourceTree = "<group>"; };
+		CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBadgeManager.swift; sourceTree = "<group>"; };
+		CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D1093C2F2B6A7D99008553A3 /* ShareListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareListView.swift; sourceTree = "<group>"; };
 		D1093C312B6A819A008553A3 /* ShareSingleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSingleView.swift; sourceTree = "<group>"; };
@@ -254,6 +269,7 @@
 		FF6BC4EF2C7C18CC00423660 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
 		FF6BC4F02C7C18CC00423660 /* CaptureExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureExtensions.swift; sourceTree = "<group>"; };
 		FF6BC4FB2C7C6A3000423660 /* AppStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateModel.swift; sourceTree = "<group>"; };
+		FF6C0DBE2F02887300CC0C8C /* DeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceService.swift; sourceTree = "<group>"; };
 		FF6C38AC2D549956006966A7 /* MainMapContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapContent.swift; sourceTree = "<group>"; };
 		FF769B4E2D66DF1400321540 /* EditNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditNameView.swift; sourceTree = "<group>"; };
 		FF769B502D68631300321540 /* EditOneCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditOneCodeView.swift; sourceTree = "<group>"; };
@@ -365,6 +381,7 @@
 				FF84D7C42D45DA4F0060F060 /* OthersView.swift */,
 				D1093C312B6A819A008553A3 /* ShareSingleView.swift */,
 				D1F67AB22B8A193A00292FEB /* SettingView.swift */,
+				CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */,
 				FF769B602D7D730A00321540 /* AccountManagementView.swift */,
 				FF769B5F2D7D67BB00321540 /* EditProfile */,
 			);
@@ -404,6 +421,17 @@
 			path = UIElement;
 			sourceTree = "<group>";
 		};
+		CC01G0012F0388820001CC01 /* MessagePages */ = {
+			isa = PBXGroup;
+			children = (
+				CC01C0012F0388820001CC01 /* MessagesView.swift */,
+				CC01D0012F0388820001CC01 /* MessageTabBar.swift */,
+				CC01E0012F0388820001CC01 /* MessageRowView.swift */,
+				CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */,
+			);
+			path = MessagePages;
+			sourceTree = "<group>";
+		};
 		D19912002B529285002A711A /* View */ = {
 			isa = PBXGroup;
 			children = (
@@ -412,6 +440,7 @@
 				D13FFDD32BAB36D3007E1970 /* LoginViews */,
 				D13FFDC92B90CA7A007E1970 /* FrontPages */,
 				FF6C38AB2D549932006966A7 /* MapPages */,
+				CC01G0012F0388820001CC01 /* MessagePages */,
 				D13FFDCE2B9DEF58007E1970 /* MyPages */,
 				D17042C12B5429EA005683D2 /* UIElement */,
 				D19912062B52972B002A711A /* TagView.swift */,
@@ -587,6 +616,9 @@
 		FF5D240A2D23929000C1D463 /* ModelsForNetwork */ = {
 			isa = PBXGroup;
 			children = (
+				CC01A0012F0388820001CC01 /* NotificationModels.swift */,
+				CC01B0012F0388820001CC01 /* NotificationService.swift */,
+				FF6C0DBE2F02887300CC0C8C /* DeviceService.swift */,
 				FF99ECD12EFA3C8E0080AE71 /* CommentModels.swift */,
 				FF99ECD22EFA3C8E0080AE71 /* CommentService.swift */,
 				FF99ECD32EFA3C8E0080AE71 /* CommentViewModel.swift */,
@@ -941,6 +973,14 @@
 				FF9DB7962EEA4FF600374E02 /* StickerPage.swift in Sources */,
 				FF9DB7972EEA4FF600374E02 /* StickerScene.swift in Sources */,
 				FF9DB7982EEA4FF600374E02 /* StickerSpriteFactory.swift in Sources */,
+				FF6C0DBF2F02887300CC0C8C /* DeviceService.swift in Sources */,
+				CC01A0022F0388820001CC01 /* NotificationModels.swift in Sources */,
+				CC01B0022F0388820001CC01 /* NotificationService.swift in Sources */,
+				CC01C0022F0388820001CC01 /* MessagesView.swift in Sources */,
+				CC01D0022F0388820001CC01 /* MessageTabBar.swift in Sources */,
+				CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */,
+				CC01F0022F0388820001CC01 /* NotificationBadgeManager.swift in Sources */,
+				CC01H0022F0388820001CC01 /* NotificationSettingsView.swift in Sources */,
 				FF9DB7992EEA4FF600374E02 /* StickerFieldView.swift in Sources */,
 				FF9DB79A2EEA4FF600374E02 /* StickerDefinition.swift in Sources */,
 				B7BE2E3D2F3D4738B2F72670 /* StickerKind.swift in Sources */,

@@ -115,7 +115,8 @@ class DeviceService {
             ))
 
             let decoder = JSONDecoder()
-            let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
+            // datas 可能是数字或 null，使用 Int? 解析
+            let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
 
             if response.respCode == 0 || response.respCode == 200 {
                 print("✅ DeviceService: 设备注册成功")
@@ -151,7 +152,8 @@ class DeviceService {
             ))
 
             let decoder = JSONDecoder()
-            let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
+            // datas 可能是数字或 null
+            let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
 
             if response.respCode == 0 || response.respCode == 200 {
                 cacheDeviceToken(newToken)
@@ -180,7 +182,8 @@ class DeviceService {
             let data = try await OTONetwork.request(.logoutDevice(deviceToken: deviceToken))
 
             let decoder = JSONDecoder()
-            let response = try decoder.decode(DeviceApiResponse<String?>.self, from: data)
+            // datas 可能是数字或 null
+            let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
 
             if response.respCode == 0 || response.respCode == 200 {
                 print("✅ DeviceService: 设备注销成功")

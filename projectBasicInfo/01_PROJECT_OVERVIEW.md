@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v2.0
-**最后更新**: 2025-12-24
+**文档版本**: v2.4
+**最后更新**: 2025-12-31（通知中台 V2.0 已部署）
 
 ---
 
@@ -285,7 +285,149 @@ guanzhiApp.swift                              # App 启动时预加载
 
 **相关文档**：`projectBasicInfo/logs/2025-12-22-comment-system-design-cc.md`
 
-### 6. 管理后台
+### 6. 通知中台（Notification Center）
+
+**状态**：V2.0 已完成（2025-12-31）
+
+完整的推送通知和消息中心系统，支持 iOS 原生 APNs 推送、应用内消息页面、后台可配置和频率控制。
+
+| 版本 | 功能 | 状态 |
+|------|------|------|
+| V1.0 | 基础推送、消息页面、Deep Link | 已完成 |
+| V1.5 | 事件配置、模板管理、用户偏好、频率控制 | 已完成 |
+| V2.0 | 管理通知、褪色提醒、用户升级通知 | 已完成 |
+
+#### 6.1 推送通知（APNs）
+
+**核心功能**：
+- 设备 Token 注册与管理
+- 多种通知类型推送
+- Deep Link 支持（从推送跳转到对应分享/评论）
+- 登录/登出时自动注册/注销设备
+
+**支持的通知类型**（共 12 种）：
+| 类型 | 说明 | 触发场景 |
+|------|------|----------|
+| `NEW_COMMENT` | 新评论 | 别人评论了你的分享 |
+| `COMMENT_REPLY` | 评论回复 | 别人回复了你的评论 |
+| `COMMENT_LIKE` | 评论点赞 | 别人点赞了你的评论 |
+| `STICKER_RECEIVED` | 收到贴纸 | 别人给你的分享贴了贴纸 |
+| `SYSTEM` | 系统通知 | 官方公告、账号相关 |
+| `LEVEL_UP` | 用户升级 | 用户等级提升时 |
+| `USER_WARNED` | 用户被警告 | 管理员警告用户时 |
+| `USER_FROZEN` | 用户被冻结 | 管理员冻结账户时 |
+| `SHARE_REMOVED` | 分享被删除 | 分享因违规被删除时 |
+| `REPORT_RESULT` | 举报处理结果 | 举报被处理后通知举报人 |
+| `FADE_WARNING` | 分享即将褪色 | 分享褪色度达到90%时 |
+| `FADE_COMPLETE` | 分享已褪色 | 分享完全褪色消失时 |
+
+**APNs 环境**：
+- DEBUG 模式：`sandbox`（开发环境）
+- RELEASE 模式：`production`（生产环境）
+
+#### 6.2 消息页面（MessagesView）
+
+**核心文件**：
+```
+guanzhi/View/MessagePages/
+├── MessagesView.swift              # 消息主页面 + ViewModel
+├── MessageTabBar.swift             # 分类 Tab 组件
+├── MessageRowView.swift            # 单条消息行组件
+└── NotificationBadgeManager.swift  # 全局红点管理器
+
+guanzhi/ModelsForNetwork/
+├── NotificationService.swift       # 通知 API 服务
+└── NotificationModels.swift        # 通知数据模型
+```
+
+**页面功能**：
+- 消息分类 Tab（互动/系统）
+- 消息列表（分页加载、下拉刷新）
+- 未读红点（显示未读数量，>999 显示 999+）
+- 点击消息跳转到对应分享/评论
+- 标记已读（点击自动标记）
+- 全部已读（更多菜单中）
+
+**全局红点管理**：
+```swift
+// NotificationBadgeManager - 全局单例
+@MainActor
+class NotificationBadgeManager: ObservableObject {
+    static let shared = NotificationBadgeManager()
+    @Published var unreadCount: Int = 0
+
+    func refresh() async  // 刷新未读数
+}
+
+// 触发刷新
+NotificationCenter.default.post(name: .refreshUnreadBadge, object: nil)
+```
+
+#### 6.3 后端 API
+
+| 接口 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 注册设备 | POST | `/api/device/register` | 注册设备 Token |
+| 注销设备 | POST | `/api/device/logout` | 登出时注销设备 |
+| 通知列表 | GET | `/api/notifications` | 分页获取通知 |
+| 未读数量 | GET | `/api/notifications/unread-count` | 获取未读数 |
+| 标记已读 | PUT | `/api/notifications/{id}/read` | 标记单条已读 |
+| 全部已读 | PUT | `/api/notifications/read-all` | 标记全部已读 |
+
+#### 6.4 Deep Link 格式
+
+```
+guanzhi://share/{shareId}/comment/{commentId}  # 跳转到分享评论
+guanzhi://share/{shareId}                      # 跳转到分享详情
+```
+
+#### 6.5 通知名称定义
+
+```swift
+extension Notification.Name {
+    static let handleDeepLink = Notification.Name("handleDeepLink")
+    static let openMessagesPage = Notification.Name("openMessagesPage")
+    static let refreshUnreadBadge = Notification.Name("refreshUnreadBadge")
+}
+```
+
+#### 6.6 V1.5 后台可配置功能（2025-12-30）
+
+**新增数据库表**：
+| 表名 | 用途 |
+|------|------|
+| `notification_event_config` | 事件配置（启用开关、频率限制、模板） |
+| `notification_template` | 多渠道通知模板（支持变量替换） |
+| `user_notification_preference` | 用户通知偏好设置 |
+
+**核心服务**：
+| 服务 | 功能 |
+|------|------|
+| `NotificationEventConfigService` | 事件配置管理，启动时加载到内存缓存 |
+| `NotificationTemplateService` | 模板渲染，支持 `{{variableName}}` 变量替换 |
+| `UserNotificationPreferenceService` | 用户偏好查询和管理 |
+| `NotificationRateLimitService` | Redis 滑动窗口限流，防止通知轰炸 |
+
+**频率控制配置**：
+| 事件 | 频率限制 | 冷却时间 |
+|------|----------|----------|
+| 评论回复 | 20次/小时 | 30秒 |
+| 评论点赞 | 30次/小时 | 60秒 |
+| 新评论 | 20次/小时 | 30秒 |
+| 收到贴纸 | 15次/小时 | 60秒 |
+| 系统通知 | 无限制 | 无 |
+
+**新增 API**：
+| 接口 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 获取偏好 | GET | `/api/notifications/preferences` | 获取用户通知偏好 |
+| 更新偏好 | PUT | `/api/notifications/preferences` | 批量更新偏好设置 |
+
+**相关文档**：
+- V1.0：`projectBasicInfo/logs/2025-12-30-notification-center-ios-v1-complete-cc.md`
+- V1.5：`projectBasicInfo/logs/2025-12-30-notification-center-v1.5-complete-cc.md`
+
+### 7. 管理后台
 
 - 褪色曲线模拟器（核心功能）
 - 褪色规则配置
@@ -329,8 +471,94 @@ guanzhiApp.swift                              # App 启动时预加载
 /guan/**            # 分享业务 API（需登录）
 /stickers/**        # 贴纸 API（需登录）
 /shares/**          # 分享操作 API（需登录）
+/device/**          # 设备管理 API（推送通知，需登录）
+/notifications/**   # 通知 API（需登录）
 /api/admin/**       # 管理后台 API（需 ADMIN 权限）
 /admin/inspector/** # 查询工具 API（含综合查询）
+```
+
+### 设备管理 API（2025-12-29 新增）
+
+| 接口 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 注册设备 | POST | `/api/device/register` | 注册设备 Token 用于推送 |
+| 注销设备 | POST | `/api/device/logout` | 登出时注销设备 |
+
+**注册设备请求**：
+```json
+{
+  "deviceToken": "ae5ded893711615b7c17...",
+  "bundleId": "com.onettoo",
+  "deviceId": "CEFC11EF-BB81-4AFD-9FA3-AF3293FB80AE",
+  "deviceName": "iPhone",
+  "deviceModel": "iPhone16,2",
+  "osVersion": "18.1",
+  "appVersion": "1.0",
+  "environment": "sandbox"  // sandbox 或 production
+}
+```
+
+**注册设备响应**：
+```json
+{
+  "respCode": 0,
+  "respMsg": "success",
+  "datas": 1  // 注意：返回数字类型
+}
+```
+
+### 通知 API（2025-12-30 新增）
+
+| 接口 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 通知列表 | GET | `/api/notifications` | 分页获取，支持 category/status 筛选 |
+| 未读数量 | GET | `/api/notifications/unread-count` | 返回各分类和总未读数 |
+| 标记单条已读 | PUT | `/api/notifications/{id}/read` | 标记指定通知已读 |
+| 全部已读 | PUT | `/api/notifications/read-all` | 标记所有通知已读 |
+
+**通知列表请求参数**：
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| category | String | 可选，筛选分类（interaction/system）|
+| status | String | 可选，筛选状态（UNREAD/READ）|
+| page | Int | 页码，从 1 开始 |
+| size | Int | 每页数量 |
+
+**通知列表响应**：
+```json
+{
+  "respCode": 0,
+  "datas": {
+    "total": 25,
+    "list": [
+      {
+        "id": 123,
+        "type": "COMMENT_REPLY",
+        "content": "张三 回复了你: 这个地方太美了！",
+        "shareId": 456,
+        "commentId": 789,
+        "fromUserId": 11,
+        "fromUserName": "张三",
+        "fromUserAvatar": "avatar.jpg",
+        "status": "UNREAD",
+        "createdAt": 1703923200000,
+        "deepLink": "guanzhi://share/456/comment/789"
+      }
+    ]
+  }
+}
+```
+
+**未读数量响应**：
+```json
+{
+  "respCode": 0,
+  "datas": {
+    "interaction": 10,
+    "system": 2,
+    "total": 12
+  }
+}
 ```
 
 ### 综合查询 API（2025-12-24 新增）
@@ -426,6 +654,11 @@ guanzhiApp.swift                              # App 启动时预加载
 | `sticker_level_quota_override` | 等级-贴纸限额覆盖配置 | 使用中 |
 | `share_view_log` | 分享浏览记录 | 使用中 |
 | `admin_operation_log` | 管理操作日志 | 使用中 |
+| `notification` | 通知消息记录 | 使用中（2025-12-30 新增）|
+| `device` | 设备 Token 注册 | 使用中（2025-12-29 新增）|
+| `notification_event_config` | 通知事件配置（V1.5）| 使用中（2025-12-30 新增）|
+| `notification_template` | 通知模板（V1.5）| 使用中（2025-12-30 新增）|
+| `user_notification_preference` | 用户通知偏好（V1.5）| 使用中（2025-12-30 新增）|
 | `share_vote` | ~~旧投票记录~~ | **已废弃** |
 
 **废弃字段**（2025-12-22）：
@@ -460,6 +693,9 @@ guanzhiApp.swift                              # App 启动时预加载
 | V1进度总结 | `重要项目信息/V1项目进度总结.md` | 管理后台开发进度 |
 | 部署指南 | `后端升级设计文档/docs/server-deployment-guide.md` | 服务器部署步骤 |
 | 后端API文档 | `Server/onettoo/BACKEND_API_MODELS.md` | API 接口说明 |
+| 通知中台V1.0 | `projectBasicInfo/logs/2025-12-30-notification-center-ios-v1-complete-cc.md` | 基础推送+消息页面 |
+| 通知中台V1.5 | `projectBasicInfo/logs/2025-12-30-notification-center-v1.5-complete-cc.md` | 后台可配置+频率控制 |
+| 通知中台V2.0 | `projectBasicInfo/logs/2025-12-31-notification-v2-events-cc.md` | 管理通知+褪色提醒 |
 
 ---
 

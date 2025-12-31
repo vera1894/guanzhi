@@ -123,6 +123,13 @@ class SearchViewModel: ObservableObject {
     //保存分享数据到数据库
     func saveSharesToDatabase(shares: [ResponsedShare]) async {
         print("开始保存分享数据，数量: \(shares.count)")
+
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.saveSharesToDatabase: context 为 nil，跳过保存")
+            return
+        }
+
         for share in shares {
             // 创建 FetchDescriptor，用于查找数据库中是否已存在该分享
             let shareId = Int64(share.id)
@@ -231,6 +238,11 @@ class SearchViewModel: ObservableObject {
     
     // 更新分享的媒体文件
     func updateMediaFiles(for share: Share) async {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.updateMediaFiles: context 为 nil，跳过")
+            return
+        }
         // 获取现有的媒体文件
         let shareId = share.id
         let fetchDescriptor = FetchDescriptor<MediaFile>(
@@ -268,6 +280,11 @@ class SearchViewModel: ObservableObject {
     
     //解析并存储媒体文件
     func saveMediaFiles(for share: Share) async {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.saveMediaFiles: context 为 nil，跳过")
+            return
+        }
         let mediaPaths = share.imagePaths
         var mediaFilesDict: [String: (photo: MediaFile?, video: MediaFile?, thumbnail: MediaFile?)] = [:]
 
@@ -647,6 +664,11 @@ class SearchViewModel: ObservableObject {
     
     //获取地图显示区域对应的分享标注
     func getSharesInRegion(_ region: MKCoordinateRegion) -> [Share] {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.getSharesInRegion: context 为 nil，跳过")
+            return []
+        }
         // 获取 GCJ-02 坐标系的区域边界
         let minLat = region.center.latitude - region.span.latitudeDelta / 2
         let maxLat = region.center.latitude + region.span.latitudeDelta / 2
@@ -761,6 +783,11 @@ class SearchViewModel: ObservableObject {
     
     //获取分享的缩略图 URL
     func getThumbnailURL(for share: Share) -> URL? {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.getThumbnailURL: context 为 nil")
+            return nil
+        }
         let shareId = share.id
         let thumbnailTypeString = MediaType.thumbnail.rawValue
         // 首先查找缩略图媒体文件
@@ -831,10 +858,15 @@ class SearchViewModel: ObservableObject {
     
     // 在点击标注后，加载缩略图的源文件（原始图片或视频）
     func loadSourceImage(for shareId: Int64) {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.loadSourceImage: context 为 nil，跳过")
+            return
+        }
         // 获取源文件的媒体类型
         let photoTypeString = MediaType.photo.rawValue
         let livePhotoTypeString = MediaType.livePhoto.rawValue
-        
+
         let mediaFetchDescriptor = FetchDescriptor<MediaFile>(
             predicate: #Predicate { mediaFile in
                 mediaFile.shareId == shareId &&
@@ -930,6 +962,11 @@ class SearchViewModel: ObservableObject {
     
     // 新增：从本地数据库加载数据并更新 UI
     private func loadFromLocal(shareId: Int64) -> Bool {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.loadFromLocal: context 为 nil")
+            return false
+        }
         let fetchDescriptor = FetchDescriptor<Share>(
             predicate: #Predicate { $0.id == shareId },
             sortBy: []
@@ -1125,6 +1162,11 @@ class SearchViewModel: ObservableObject {
             
             // 在主线程上更新 mediaFile 对象
             await MainActor.run {
+                // 安全检查：确保 context 已初始化
+                guard self.context != nil else {
+                    print("⚠️ SearchViewModel.downloadMediaFile: context 为 nil，跳过保存")
+                    return
+                }
                 // 检查 mediaFile 是否还在 context 中（可能已被删除）
                 guard !mediaFile.isDeleted else {
                     print("媒体文件已被删除，跳过保存")
@@ -1286,6 +1328,11 @@ class SearchViewModel: ObservableObject {
     // 创建媒体项，返回 MediaItemProtocol
     @MainActor
     func createMediaItem(from mediaItemWrapper: MediaItemWrapper) -> MediaItemProtocol? {
+        // 安全检查：确保 context 已初始化（用于可能的 context.save 调用）
+        guard context != nil else {
+            print("⚠️ SearchViewModel.createMediaItem: context 为 nil，跳过")
+            return nil
+        }
         if let photoFile = mediaItemWrapper.photoFile, photoFile.type != .thumbnail, let photoLocalURL = photoFile.localURL {
             print("创建媒体项，照片文件已下载，本地 URL：\(photoLocalURL)")
 
@@ -1401,6 +1448,11 @@ class SearchViewModel: ObservableObject {
     
     // 删除分享及其关联的媒体文件
     func deleteShare(shareId: Int64) {
+        // 安全检查：确保 context 已初始化
+        guard context != nil else {
+            print("⚠️ SearchViewModel.deleteShare: context 为 nil，跳过")
+            return
+        }
         let fetchDescriptor = FetchDescriptor<Share>(
             predicate: #Predicate { $0.id == shareId },
             sortBy: []

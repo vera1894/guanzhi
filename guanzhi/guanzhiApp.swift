@@ -70,6 +70,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let userInfo = notification.request.content.userInfo
         print("📬 前台收到通知: \(userInfo)")
 
+        // 通知红点管理器刷新未读数
+        NotificationCenter.default.post(name: .refreshUnreadBadge, object: nil)
+
         // 前台显示 Banner、Badge 和 Sound
         completionHandler([.banner, .badge, .sound])
     }
@@ -82,13 +85,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let userInfo = response.notification.request.content.userInfo
         print("👆 用户点击通知: \(userInfo)")
 
-        if let deepLink = userInfo["deepLink"] as? String {
+        if let deepLink = userInfo["deepLink"] as? String, !deepLink.isEmpty {
             print("🔗 处理 Deep Link: \(deepLink)")
             // 发送通知让 App 处理
             NotificationCenter.default.post(
                 name: .handleDeepLink,
                 object: nil,
                 userInfo: ["deepLink": deepLink]
+            )
+        } else {
+            // 没有 deepLink（如系统消息），跳转到消息页面
+            print("📬 没有 Deep Link，跳转到消息页面")
+            NotificationCenter.default.post(
+                name: .openMessagesPage,
+                object: nil
             )
         }
 
@@ -100,6 +110,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
 extension Notification.Name {
     static let handleDeepLink = Notification.Name("handleDeepLink")
+    static let openMessagesPage = Notification.Name("openMessagesPage")
+    static let refreshUnreadBadge = Notification.Name("refreshUnreadBadge")
 }
 
 // MARK: - Main App
@@ -168,13 +180,20 @@ struct guanzhiApp: App {
                                 .environmentObject(navigationCoordinator)
                                 .environmentObject(userProfileManager)
                         case .shareComment(let shareId, let commentId):
-                            // 从推送通知跳转，复用分享详情页
-                            // TODO: 后续可传递 commentId 用于高亮定位
-                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: globalAnimationNamespace, annotationID: "\(shareId)")
+                            // 从推送通知跳转，传递 commentId 用于高亮定位
+                            ShareDetailView(searchViewModel: searchViewModel, animationNamespace: globalAnimationNamespace, annotationID: "\(shareId)", highlightCommentId: commentId)
                                 .environment(appState)
                                 .environmentObject(searchViewModel)
                                 .environmentObject(navigationCoordinator)
                                 .environmentObject(userProfileManager)
+                        case .messagesView:
+                            MessagesView()
+                                .environment(appState)
+                                .environmentObject(navigationCoordinator)
+                                .environmentObject(userProfileManager)
+                        case .notificationSettingsView:
+                            NotificationSettingsView()
+                                .environmentObject(navigationCoordinator)
                         }
                     }
                 }
@@ -199,6 +218,10 @@ struct guanzhiApp: App {
                    let url = URL(string: deepLink) {
                     handleDeepLink(url)
                 }
+            }
+            // 接收打开消息页面的通知
+            .onReceive(NotificationCenter.default.publisher(for: .openMessagesPage)) { _ in
+                openMessagesPage()
             }
             // 处理冷启动时缓存的 Deep Link
             .onAppear {
@@ -263,6 +286,21 @@ struct guanzhiApp: App {
                 handleDeepLink(url)
             }
             DeviceService.shared.clearPendingDeepLink()
+        }
+    }
+
+    /// 打开消息页面
+    private func openMessagesPage() {
+        // 检查用户是否已登录
+        guard OTOLoginStatusManager.shared.isLoggedIn else {
+            print("⚠️ 用户未登录，无法打开消息页面")
+            return
+        }
+
+        print("📬 打开消息页面")
+        // 延迟确保 UI 已准备好
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            navigationCoordinator.path.append(Route.messagesView)
         }
     }
 }

@@ -117,6 +117,20 @@ enum OTORequest {
     case updateDeviceToken(oldToken: String, newToken: String)
     /// 设备登出
     case logoutDevice(deviceToken: String)
+
+    // MARK: - 通知 API
+    /// 获取通知列表
+    case getNotifications(category: String?, status: String?, page: Int, size: Int)
+    /// 获取未读数量
+    case getUnreadCount
+    /// 标记单条已读
+    case markNotificationRead(id: Int64)
+    /// 标记全部已读
+    case markAllNotificationsRead
+    /// 获取通知偏好设置
+    case getNotificationPreferences
+    /// 更新通知偏好设置
+    case updateNotificationPreferences(globalPushEnabled: Bool?, preferences: [PreferenceUpdateItem]?)
 }
 
 extension OTORequest {
@@ -444,6 +458,79 @@ extension OTORequest {
                     path: "/api/device/logout",
                     method: .delete,
                     param: ["deviceToken": deviceToken]
+                )
+
+            // MARK: - 通知 API
+
+            // 获取通知列表
+            case .getNotifications(let category, let status, let page, let size):
+                var param: [String: Any] = [
+                    "page": page,
+                    "size": size
+                ]
+                if let category = category {
+                    param["category"] = category
+                }
+                if let status = status {
+                    param["status"] = status
+                }
+                return .init(
+                    path: "/api/notifications",
+                    method: .get,
+                    param: param
+                )
+
+            // 获取未读数量
+            case .getUnreadCount:
+                return .init(
+                    path: "/api/notifications/unread-count",
+                    method: .get,
+                    param: [:]
+                )
+
+            // 标记单条已读
+            case .markNotificationRead(let id):
+                return .init(
+                    path: "/api/notifications/\(id)/read",
+                    method: .put,
+                    param: [:]
+                )
+
+            // 标记全部已读
+            case .markAllNotificationsRead:
+                return .init(
+                    path: "/api/notifications/read-all",
+                    method: .put,
+                    param: [:]
+                )
+
+            // 获取通知偏好设置
+            case .getNotificationPreferences:
+                return .init(
+                    path: "/api/notifications/preferences",
+                    method: .get,
+                    param: [:]
+                )
+
+            // 更新通知偏好设置
+            case .updateNotificationPreferences(let globalPushEnabled, let preferences):
+                var param: [String: Any] = [:]
+                if let globalPushEnabled = globalPushEnabled {
+                    param["globalPushEnabled"] = globalPushEnabled
+                }
+                if let preferences = preferences {
+                    param["preferences"] = preferences.map { pref in
+                        [
+                            "eventCode": pref.eventCode,
+                            "pushEnabled": pref.pushEnabled,
+                            "inAppEnabled": pref.inAppEnabled
+                        ]
+                    }
+                }
+                return .init(
+                    path: "/api/notifications/preferences",
+                    method: .put,
+                    param: param
                 )
 
             //备用的

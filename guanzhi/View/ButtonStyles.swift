@@ -110,7 +110,7 @@ struct ButtonStyles: View {
             .buttonStyle(ButtonStyle_m())
             
             Button{
-                //提醒按钮-圆形
+                //消息按钮-圆形
             }label: {
                 Image("icon-notification")
             }
@@ -163,6 +163,16 @@ struct ButtonStyles: View {
                     .foregroundStyle(Color(isLiked ? Color("color-primary") : Color(.white) ))
             }
             .buttonStyle(ButtonStyle_LikeControl())
+            
+            Button{
+                //消息按钮-圆形
+            }label: {
+                Image("icon-notification")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+            }
+            .buttonStyle(ButtonStyle_l())
         }
         
         
@@ -349,6 +359,17 @@ struct ButtonStyle_m: ButtonStyle {
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
             .frame(width: 32, height: 32)
+            .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
+            .brightness(configuration.isPressed ? -0.2 : 0)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct ButtonStyle_l: ButtonStyle {
+
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .frame(width: 40, height: 40)
             .shadow(color: configuration.isPressed ? Color.clear : Color("color-primary"), radius: 0, x: 2, y:4)
             .brightness(configuration.isPressed ? -0.2 : 0)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)

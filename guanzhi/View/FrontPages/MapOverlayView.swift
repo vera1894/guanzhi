@@ -43,6 +43,27 @@ struct MapOverlayView: View {
                 profileImage: avatarImage,
                 borderThickness: 4
             ))
+            .padding(.bottom, 6)
+            
+            Button{
+                // 消息按钮 - 跳转到消息中心
+                navigationCoordinator.path.append(Route.messagesView)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                    appState.isShowingSearchView = false
+                }
+            }label: {
+                ZStack(alignment: .topTrailing) {
+                    Image("icon-notification")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 46, height: 46)
+
+                    // 未读红点（由 NotificationBadgeManager 驱动）
+                    NotificationBadge()
+                        .offset(x: 4, y: -4)
+                }
+            }
+            .buttonStyle(ButtonStyle_l())
             
 //            Button {
 //                print("定位按钮被点击")

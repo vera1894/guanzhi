@@ -1,7 +1,7 @@
 # AI Agent 使用规则
 
-**文档版本**: v1.0
-**最后更新**: 2025-12-08
+**文档版本**: v1.1
+**最后更新**: 2025-12-31
 
 ---
 
@@ -13,7 +13,8 @@
 2. **`01_PROJECT_OVERVIEW.md`** - 了解项目整体结构和技术栈
 3. **`02_CONNECTIONS.private.md`** - 了解服务器连接信息（如需部署）
 4. **`03_CREDENTIALS.private.md`** - 了解凭证信息（如需认证）
-5. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
+5. **`99_SERVER_OPERATIONS_RULES.md`** - 服务器操作规则（**服务器操作前必读**）
+6. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
 
 ---
 
@@ -82,6 +83,7 @@ guanzhi/                          # 项目根目录（Monorepo）
 │   ├── 01_PROJECT_OVERVIEW.md   # 项目概述
 │   ├── 02_CONNECTIONS.private.md # 连接信息（敏感）
 │   ├── 03_CREDENTIALS.private.md # 凭证信息（敏感）
+│   ├── 99_SERVER_OPERATIONS_RULES.md # 服务器操作规则
 │   └── logs/                     # 操作日志
 │
 ├── guanzhi/                      # iOS 客户端（SwiftUI）
@@ -97,6 +99,7 @@ guanzhi/                          # 项目根目录（Monorepo）
 
 | 任务 | 关键信息来源 |
 |------|-------------|
+| 服务器操作 | `99_SERVER_OPERATIONS_RULES.md`、`02_CONNECTIONS.private.md` |
 | 部署 admin-web | `02_CONNECTIONS.private.md`、`logs/` 下的部署日志 |
 | 后端开发 | `Server/onettoo/`、`重要项目信息/项目结构说明.md` |
 | iOS 开发 | `guanzhi/`、根目录 `CLAUDE.md` |

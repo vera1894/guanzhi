@@ -15,6 +15,7 @@ struct SettingView: View {
     
     var items = [
         "账号与绑定",
+        "通知设置",
         "用户协议与隐私政策",
         "清理缓存",
         "退出登录",
@@ -106,6 +107,8 @@ struct SettingView: View {
         switch item {
         case "账号与绑定":
             navigationCoordinator.path.append(Route.accountManagementView)
+        case "通知设置":
+            navigationCoordinator.path.append(Route.notificationSettingsView)
         case "用户协议与隐私政策":
             showAgreement = true  // 显示用户协议 sheet
         case "清理缓存":

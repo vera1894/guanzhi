@@ -153,6 +153,7 @@ struct ShareDetailView: View {
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     var animationNamespace: Namespace.ID
     var annotationID: String                        // 当前分享的 ID（从导航传入）
+    var highlightCommentId: Int64? = nil            // 需要高亮的评论 ID（从推送通知跳转时传入）
 
     // MARK: - UI 显隐控制状态
 
@@ -665,6 +666,7 @@ struct ShareDetailView: View {
                     isAtTop: $isAtTop,
                     dragOffset: $dragOffset,
                     cardDragIsActive: $cardDragIsActive,
+                    highlightCommentId: highlightCommentId,
                     interactionViewModel: interactionViewModel,
                     onStickerTap: {
                         // 显示贴纸面板

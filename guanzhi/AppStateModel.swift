@@ -95,6 +95,10 @@ enum Route: Hashable, Codable { //用于页面导航
     case accountManagementView
     /// 从推送通知跳转到分享详情并定位评论
     case shareComment(shareId: Int64, commentId: Int64)
+    /// 消息中心页面
+    case messagesView
+    /// 通知设置页面
+    case notificationSettingsView
 
     // 定义用于编码和解码的键
     enum CodingKeys: String, CodingKey {
@@ -114,6 +118,8 @@ enum Route: Hashable, Codable { //用于页面导航
         case editProfileView
         case accountManagementView
         case shareComment
+        case messagesView
+        case notificationSettingsView
     }
     
     // 实现 Encodable 协议
@@ -138,6 +144,10 @@ enum Route: Hashable, Codable { //用于页面导航
             try container.encode(RouteType.shareComment, forKey: .type)
             try container.encode(shareId, forKey: .shareId)
             try container.encode(commentId, forKey: .commentId)
+        case .messagesView:
+            try container.encode(RouteType.messagesView, forKey: .type)
+        case .notificationSettingsView:
+            try container.encode(RouteType.notificationSettingsView, forKey: .type)
         }
     }
 
@@ -164,6 +174,10 @@ enum Route: Hashable, Codable { //用于页面导航
             let shareId = try container.decode(Int64.self, forKey: .shareId)
             let commentId = try container.decode(Int64.self, forKey: .commentId)
             self = .shareComment(shareId: shareId, commentId: commentId)
+        case .messagesView:
+            self = .messagesView
+        case .notificationSettingsView:
+            self = .notificationSettingsView
         }
     }
 }

@@ -28,6 +28,10 @@ struct ShareDetailsCardView: View {
     @FocusState private var isInputFocused: Bool
     @State private var shouldFocusOnExpand: Bool = false  // 展开后是否需要聚焦输入框
 
+    /// 需要高亮定位的评论 ID（从推送通知跳转时传入）
+    var highlightCommentId: Int64? = nil
+    @State private var hasScrolledToHighlight: Bool = false  // 防止重复滚动
+
     // MARK: - 交互按钮（贴纸/评论）
     @ObservedObject var interactionViewModel: ShareInteractionViewModel
     var onStickerTap: (() -> Void)?  // 点击贴纸按钮的回调
@@ -297,16 +301,33 @@ struct ShareDetailsCardView: View {
                 }
             }
             .onAppear {
-                // 初始化绑定（仅当尚未绑定该分享时）
-                if let share = searchViewModel.selectedShare,
-                   commentViewModel.shareId != share.id {
-                    commentViewModel.bind(to: share.id, authorId: share.userId)
-                }
+                handleOnAppear()
             }
         }
-        
+
     }
-    
+
+    // MARK: - Helper Methods
+
+    /// 处理视图出现
+    private func handleOnAppear() {
+        // 初始化绑定（仅当尚未绑定该分享时）
+        if let share = searchViewModel.selectedShare,
+           commentViewModel.shareId != share.id {
+            commentViewModel.bind(to: share.id, authorId: share.userId)
+        }
+
+        // 如果有需要高亮的评论 ID，自动展开并加载
+        if let commentId = highlightCommentId, !hasScrolledToHighlight {
+            isFullScreen = true
+            Task {
+                // 导航到目标评论（会自动加载并高亮）
+                let _ = await commentViewModel.navigateToComment(commentId: commentId)
+                hasScrolledToHighlight = true
+            }
+        }
+    }
+
     func openNavigationApp(destination: CLLocationCoordinate2D) {
         // 先设置状态，让遮罩出现（使用 withAnimation 统一动画节拍）
         withAnimation {

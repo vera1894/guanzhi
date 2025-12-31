@@ -1,9 +1,10 @@
 # 通知中台 + 推送系统规划文档
 
-**文档版本**: v3.1
+**文档版本**: v4.0
 **创建日期**: 2025-12-29
+**更新日期**: 2025-12-31
 **角色**: 后端架构师 + 通知中台设计师 (Claude Code)
-**状态**: 规划完成，待实施
+**状态**: ✅ V2.0 已部署 (2025-12-31)
 
 ---
 
@@ -118,37 +119,44 @@
 
 ## 三、通知事件目录
 
-### 3.1 核心交互事件（P0 优先级）
+### 3.1 核心交互事件（P0 优先级）✅ 全部完成
 
 | 事件标识 | 触发场景 | 接收者 | 当前状态 |
 |---------|---------|--------|---------|
-| `share_new_comment` | 分享收到新评论 | 分享作者 | **缺失** |
-| `comment_reply` | 评论被回复 | 被回复者 | 已有（需迁移） |
-| `comment_like` | 评论被点赞 | 评论作者 | 已有（需迁移） |
-| `sticker_received` | 分享收到贴纸 | 分享作者 | 需新增 |
+| `NEW_COMMENT` | 分享收到新评论 | 分享作者 | ✅ 已实现 |
+| `COMMENT_REPLY` | 评论被回复 | 被回复者 | ✅ 已实现 |
+| `COMMENT_LIKE` | 评论被点赞 | 评论作者 | ✅ 已实现 |
+| `STICKER_RECEIVED` | 分享收到贴纸 | 分享作者 | ✅ 已实现 |
 
-### 3.2 社交激励事件（P1 优先级）
-
-| 事件标识 | 触发场景 | 接收者 | 当前状态 |
-|---------|---------|--------|---------|
-| `share_checkin` | 分享被打卡 | 分享作者 | 需新增 |
-| `level_up` | 用户升级 | 升级用户 | 需新增 |
-| `medal_earned` | 获得徽章 | 获得用户 | 需新增 |
-
-### 3.3 管理通知事件（P2 优先级）
+### 3.2 社交激励事件（P1 优先级）🔄 部分完成
 
 | 事件标识 | 触发场景 | 接收者 | 当前状态 |
 |---------|---------|--------|---------|
-| `user_warned` | 被警告 | 被警告用户 | 需新增 |
-| `user_frozen` | 被冻结 | 被冻结用户 | 需新增 |
-| `share_removed_illegal` | 分享被删除 | 分享作者 | 需新增 |
-| `report_result` | 举报处理结果 | 举报人 | 需新增 |
+| `share_checkin` | 分享被打卡 | 分享作者 | ⏸️ 暂缓（iOS 无 UI） |
+| `LEVEL_UP` | 用户升级 | 升级用户 | ✅ 已实现 |
+| `medal_earned` | 获得徽章 | 获得用户 | ⏸️ 暂缓（iOS 无 UI） |
 
-### 3.4 系统事件（P3 优先级）
+### 3.3 管理通知事件（P2 优先级）✅ 全部完成
 
 | 事件标识 | 触发场景 | 接收者 | 当前状态 |
 |---------|---------|--------|---------|
-| `system_announcement` | 系统公告 | 全体用户 | 需新增 |
+| `USER_WARNED` | 被警告 | 被警告用户 | ✅ 已实现 |
+| `USER_FROZEN` | 被冻结 | 被冻结用户 | ✅ 已实现 |
+| `SHARE_REMOVED` | 分享被删除 | 分享作者 | ✅ 已实现 |
+| `REPORT_RESULT` | 举报处理结果 | 举报人 | ✅ 已实现 |
+
+### 3.4 系统事件（P3 优先级）✅ 全部完成
+
+| 事件标识 | 触发场景 | 接收者 | 当前状态 |
+|---------|---------|--------|---------|
+| `SYSTEM` | 系统公告 | 全体/指定用户 | ✅ 已实现 |
+
+### 3.5 褪色提醒事件（新增）✅ 已完成
+
+| 事件标识 | 触发场景 | 接收者 | 当前状态 |
+|---------|---------|--------|---------|
+| `FADE_WARNING` | 分享褪色度达90% | 分享作者 | ✅ 已实现 |
+| `FADE_COMPLETE` | 分享完全褪色 | 分享作者 | ✅ 已实现 |
 
 ---
 
@@ -671,64 +679,61 @@ public class ApnsPushService {
 | V1.5 | 体验优化 | 管理后台 | 后台可配置，无需改代码 |
 | V2.0 | 功能扩展 | P1/P2 事件 | 社交激励 + 管理通知 |
 
-### 10.2 MVP 阶段（预计 1-2 周）
+### 10.2 MVP 阶段 ✅ 已完成 (2025-12-29)
 
 **目标**: 跑通 APNs 推送完整链路
 
 **范围**:
-- [ ] user_device 表 + 基础 CRUD
-- [ ] 设备注册 API（单设备即可）
-- [ ] APNs 推送服务（hardcode 配置）
-- [ ] comment_reply 事件（最简单的通知）
-- [ ] iOS 端接收并显示通知
+- [x] user_device 表 + 基础 CRUD
+- [x] 设备注册 API（单设备即可）
+- [x] APNs 推送服务（Pushy 库实现）
+- [x] comment_reply 事件（最简单的通知）
+- [x] iOS 端接收并显示通知
 
-**不包含**:
-- 通知记录表（MVP 只管推，不管存）
-- 管理后台
-- 模板系统
-- 频率控制
-- 用户偏好
-
-**验收标准**:
-1. iOS 能注册 Device Token 到后端
-2. A 回复 B 的评论后，B 的 iPhone 收到推送
-3. 点击推送能打开 App
-
-### 10.3 V1.0 阶段
+### 10.3 V1.0 阶段 ✅ 已完成 (2025-12-30)
 
 **目标**: P0 事件全覆盖 + 基础存储
 
 **新增范围**:
-- [ ] notification 表 + 通知记录
-- [ ] notification_event_config 表（代码初始化配置）
-- [ ] 4 个 P0 事件全部实现
-  - share_new_comment
-  - comment_reply
-  - comment_like
-  - sticker_received
-- [ ] 通知列表 API
-- [ ] 未读数 API
-- [ ] Badge 同步
+- [x] notification 表 + 通知记录
+- [x] notification_event_config 表（代码初始化配置）
+- [x] 4 个 P0 事件全部实现
+  - [x] NEW_COMMENT (分享收到新评论)
+  - [x] COMMENT_REPLY (评论被回复)
+  - [x] COMMENT_LIKE (评论被点赞)
+  - [x] STICKER_RECEIVED (收到贴纸)
+- [x] 通知列表 API
+- [x] 未读数 API
+- [x] Badge 同步
 
-### 10.4 V1.5 阶段
+### 10.4 V1.5 阶段 ✅ 已完成 (2025-12-30)
 
 **目标**: 管理后台可配置
 
 **新增范围**:
-- [ ] notification_template 表
-- [ ] 管理后台 - 事件配置页面
-- [ ] 管理后台 - 模板编辑页面
-- [ ] 频率控制实现
-- [ ] 用户通知偏好
+- [x] notification_template 表
+- [x] 管理后台 - 事件配置页面
+- [x] 管理后台 - 模板编辑页面
+- [x] 频率控制实现
+- [x] 用户通知偏好
 
-### 10.5 V2.0 阶段
+### 10.5 V2.0 阶段 ✅ 全部完成 (2025-12-31 已部署)
 
 **目标**: 功能扩展
 
-**新增范围**:
-- [ ] P1 社交激励事件（share_checkin, level_up, medal_earned）
-- [ ] P2 管理通知事件（user_warned, user_frozen 等）
-- [ ] P3 系统公告
+**已实现范围**:
+- [x] LEVEL_UP (用户升级) - 集成到 UserServiceImpl.updateUserLevel
+- [x] USER_WARNED (用户被警告) - 集成到 AdminController.updateUserStatus
+- [x] USER_FROZEN (用户被冻结) - 集成到 AdminController.updateUserStatus
+- [x] SHARE_REMOVED (分享被删除) - 集成到 AdminController.markShare + processReport
+- [x] REPORT_RESULT (举报处理结果) - 集成到 AdminController.processReport
+- [x] FADE_WARNING (分享即将褪色) - 集成到 FadeScoreTask (90%阈值)
+- [x] FADE_COMPLETE (分享已褪色) - 集成到 FadeScoreTask (100%时触发)
+- [x] SYSTEM (系统公告) - AdminController.sendSystemNotification 已存在
+
+**暂不实现（待 iOS 前端支持）**:
+- [ ] share_checkin (分享被打卡) - iOS 端尚无打卡 UI
+- [ ] medal_earned (获得徽章) - iOS 端尚无徽章展示 UI
 
 ### 10.6 延后实现（GPT 建议）
 

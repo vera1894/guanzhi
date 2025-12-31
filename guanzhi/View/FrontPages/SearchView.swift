@@ -333,13 +333,25 @@ struct SearchView: View {
                 }
 
             // 初始化用户信息和头像
-            let myUserId = OTOLoginStatusManager.shared.getUserID()
             Task {
                 do {
-                    try await userProfileManager.fetchUserFullInfo(userId: myUserId)
-                    // 确保在主线程初始化头像
-                    await MainActor.run {
-                        userProfileManager.initializeAvatar()
+                    var myUserId = OTOLoginStatusManager.shared.getUserID()
+
+                    // 如果已登录但 userId 为 0，先从后端获取用户信息并保存 userId
+                    if myUserId == 0 && OTOLoginStatusManager.shared.isLoggedIn {
+                        print("⚠️ SearchView: userId 为 0，尝试从后端获取...")
+                        myUserId = try await fetchAndSaveCurrentUserId()
+                    }
+
+                    // 只有 userId 有效时才获取完整用户信息
+                    if myUserId > 0 {
+                        try await userProfileManager.fetchUserFullInfo(userId: myUserId)
+                        // 确保在主线程初始化头像
+                        await MainActor.run {
+                            userProfileManager.initializeAvatar()
+                        }
+                    } else {
+                        print("⚠️ SearchView: 无法获取有效的 userId")
                     }
                 } catch {
                     print("在 SearchView 里拉取本机用户信息报错：\(error)")
@@ -372,6 +384,25 @@ struct SearchView: View {
     
     
     // MARK: - Functions
+
+    /// 从后端获取当前用户 ID 并保存到本地
+    /// 用于处理登录后 userId 未正确保存的情况
+    private func fetchAndSaveCurrentUserId() async throws -> Int {
+        let data = try await OTONetwork.request(.userInfo)
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(OTOResponseModel<dataModel>.self, from: data)
+
+        guard response.respCode == 0, let datas = response.datas, let userId = datas.id, userId > 0 else {
+            throw NSError(domain: "SearchView", code: -1, userInfo: [
+                NSLocalizedDescriptionKey: response.respMsg ?? "获取用户信息失败"
+            ])
+        }
+
+        // 保存 userId 到 OTOLoginStatusManager
+        OTOLoginStatusManager.shared.setUserID(userId)
+        print("✅ SearchView: 成功获取并保存 userId: \(userId)")
+        return userId
+    }
 
     /// 请求通知权限并注册 APNs
     private func requestNotificationPermission() async {
