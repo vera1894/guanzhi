@@ -14,10 +14,13 @@ struct MessagesView: View {
 
     @StateObject private var viewModel = MessagesViewModel()
     @State private var showMoreMenu = false
+    @State private var selectedSystemMessage: NotificationMessage? = nil
 
-    /// 是否有未读消息
+    /// 当前分类是否有未读消息
     private var hasUnreadMessages: Bool {
-        (viewModel.unreadCounts?.total ?? 0) > 0
+        let count = viewModel.unreadCounts?.count(for: viewModel.selectedCategory) ?? 0
+        print("📬 hasUnreadMessages 检查: 分类=\(viewModel.selectedCategory.rawValue), 未读数=\(count)")
+        return count > 0
     }
 
     var body: some View {
@@ -25,7 +28,8 @@ struct MessagesView: View {
             // 分类 Tab
             MessageTabBar(
                 selectedCategory: $viewModel.selectedCategory,
-                unreadCounts: viewModel.unreadCounts
+                unreadCounts: viewModel.unreadCounts,
+                hasUnreadByCategory: viewModel.hasUnreadByCategory
             )
             .padding(.horizontal)
             .padding(.top, 8)
@@ -131,12 +135,11 @@ struct MessagesView: View {
         }
         .navigationBarBackButtonHidden(true)
         .confirmationDialog("更多操作", isPresented: $showMoreMenu, titleVisibility: .hidden) {
-            Button("全部已读") {
+            Button("全部标为已读") {
                 Task {
                     await viewModel.markAllAsRead()
                 }
             }
-            .disabled(!hasUnreadMessages)
             Button("取消", role: .cancel) {}
         }
         .onAppear {
@@ -154,22 +157,46 @@ struct MessagesView: View {
                 await viewModel.refresh()
             }
         }
+        // 系统消息详情 Sheet
+        .sheet(item: $selectedSystemMessage) { message in
+            SystemMessageDetailView(message: message)
+        }
     }
 
     // MARK: - 消息点击处理
 
     private func handleMessageTap(_ message: NotificationMessage) {
+        print("📬 点击消息: id=\(message.id), type=\(message.type), deepLink=\(message.deepLink ?? "nil"), shareId=\(message.shareId ?? -1)")
+
         // 标记已读
         Task {
             await viewModel.markAsRead(message)
         }
 
-        // 解析 Deep Link 并导航
-        if let deepLink = message.deepLink, let url = URL(string: deepLink) {
-            handleDeepLink(url)
+        // 判断跳转方式
+        if let deepLink = message.deepLink, !deepLink.isEmpty, let url = URL(string: deepLink) {
+            // 检查是否为系统通知的 deepLink（guanzhi://notifications）
+            if url.host == "notifications" || url.host == "notification" {
+                // 系统消息 - 显示详情 Sheet
+                print("📬 系统通知 deepLink，显示详情 Sheet")
+                selectedSystemMessage = message
+            } else if url.host == "share" {
+                // 分享相关的 Deep Link
+                print("📬 使用 Deep Link 导航: \(deepLink)")
+                handleDeepLink(url)
+            } else {
+                // 其他未知 deepLink - 显示详情 Sheet
+                print("📬 未知 deepLink 类型，显示详情 Sheet")
+                selectedSystemMessage = message
+            }
         } else if let shareId = message.shareId {
-            // 默认跳转到分享详情
+            // 跳转到分享详情
+            print("📬 跳转到分享详情: \(shareId)")
             navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(shareId)"))
+        } else {
+            // 系统消息（无 deepLink 和 shareId）- 显示详情 Sheet
+            print("📬 显示系统消息详情 Sheet")
+            selectedSystemMessage = message
         }
     }
 
@@ -220,6 +247,9 @@ class MessagesViewModel: ObservableObject {
     /// 聚合后的展示消息列表
     @Published var displayableMessages: [DisplayableMessage] = []
 
+    /// 各分类是否有未读消息（从消息列表计算）
+    @Published var hasUnreadByCategory: [MessageCategory: Bool] = [:]
+
     private var currentPage = 1
     private let pageSize = 20
 
@@ -246,6 +276,9 @@ class MessagesViewModel: ObservableObject {
         currentPage = 1
         hasMore = true
         isLoading = true
+        // 立即清空旧数据，让 UI 显示 loading 状态
+        messages = []
+        displayableMessages = []
 
         do {
             let data = try await NotificationService.shared.getNotifications(
@@ -297,14 +330,17 @@ class MessagesViewModel: ObservableObject {
 
             // 更新本地状态
             if let index = messages.firstIndex(where: { $0.id == message.id }) {
-                // 创建一个已读版本的消息（因为 struct 是值类型）
-                var updatedMessages = messages
-                // 由于 NotificationMessage 是不可变的，我们需要刷新列表或本地修改
-                // 这里简单处理：标记后刷新未读数
+                messages[index] = message.asRead()
+                print("📬 本地更新消息 \(message.id) 为已读")
+                // 重新聚合以更新 hasUnreadByCategory
+                aggregateMessages()
             }
 
             // 刷新未读数
             await loadUnreadCounts()
+
+            // 刷新全局红点
+            await NotificationBadgeManager.shared.refresh()
         } catch {
             print("❌ 标记已读失败: \(error)")
         }
@@ -313,12 +349,19 @@ class MessagesViewModel: ObservableObject {
     // MARK: - 全部已读
 
     func markAllAsRead() async {
+        print("📬 开始标记全部已读，分类: \(selectedCategory.rawValue)")
         do {
-            try await NotificationService.shared.markAllAsRead()
+            // 只标记当前分类的通知为已读
+            try await NotificationService.shared.markAllAsRead(category: selectedCategory.rawValue)
+            print("✅ 标记全部已读 API 调用成功")
 
             // 刷新列表和未读数
             await refresh()
             await loadUnreadCounts()
+
+            // 刷新全局红点
+            await NotificationBadgeManager.shared.refresh()
+            print("✅ 全部已读完成，列表已刷新")
         } catch {
             print("❌ 全部已读失败: \(error)")
         }
@@ -327,15 +370,30 @@ class MessagesViewModel: ObservableObject {
     // MARK: - 批量标记已读（用于聚合消息）
 
     func markAsReadBatch(_ ids: [Int64]) async {
+        var hasUpdates = false
         for id in ids {
             do {
                 try await NotificationService.shared.markAsRead(id: id)
+                // 更新本地状态
+                if let index = messages.firstIndex(where: { $0.id == id }) {
+                    messages[index] = messages[index].asRead()
+                    hasUpdates = true
+                }
             } catch {
                 print("❌ 标记已读失败 (id=\(id)): \(error)")
             }
         }
+
+        if hasUpdates {
+            // 重新聚合以更新 hasUnreadByCategory
+            aggregateMessages()
+        }
+
         // 刷新未读数
         await loadUnreadCounts()
+
+        // 刷新全局红点
+        await NotificationBadgeManager.shared.refresh()
     }
 
     // MARK: - 聚合消息
@@ -344,11 +402,24 @@ class MessagesViewModel: ObservableObject {
     private func aggregateMessages() {
         var result: [DisplayableMessage] = []
 
+        // 计算各分类是否有未读消息（从所有消息中计算）
+        var unreadByCategory: [MessageCategory: Bool] = [:]
+        for category in MessageCategory.allCases {
+            let hasUnread = messages.contains { $0.type.category == category && $0.isUnread }
+            unreadByCategory[category] = hasUnread
+        }
+        hasUnreadByCategory = unreadByCategory
+        print("📬 各分类未读状态: 互动=\(unreadByCategory[.interaction] ?? false), 系统=\(unreadByCategory[.system] ?? false)")
+
+        // 前端按分类过滤（备用方案，以防后端未正确过滤）
+        let filteredMessages = messages.filter { $0.type.category == selectedCategory }
+        print("📬 消息过滤: 原始 \(messages.count) 条，当前分类 \(selectedCategory.rawValue)，过滤后 \(filteredMessages.count) 条")
+
         // 按 shareId 分组贴纸通知
         var stickersByShare: [Int64: [NotificationMessage]] = [:]
         var otherMessages: [NotificationMessage] = []
 
-        for msg in messages {
+        for msg in filteredMessages {
             if msg.type == .stickerReceived, let shareId = msg.shareId {
                 stickersByShare[shareId, default: []].append(msg)
             } else {
@@ -379,6 +450,68 @@ class MessagesViewModel: ObservableObject {
 
         displayableMessages = result
         print("📬 消息聚合完成: 原始 \(messages.count) 条 → 展示 \(result.count) 条")
+    }
+}
+
+// MARK: - 系统消息详情视图
+
+struct SystemMessageDetailView: View {
+    let message: NotificationMessage
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // 图标和标题
+                    HStack(spacing: 12) {
+                        Image("AppLogo")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 48, height: 48)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color("color-primary").opacity(0.2), lineWidth: 1)
+                            )
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(message.type.titleFormat(userName: nil))
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(Color("color-black"))
+
+                            Text(message.formattedTime)
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.bottom, 8)
+
+                    Divider()
+
+                    // 消息内容
+                    Text(message.content)
+                        .font(.system(size: 16))
+                        .foregroundColor(Color("color-black"))
+                        .lineSpacing(6)
+
+                    Spacer(minLength: 40)
+                }
+                .padding(20)
+            }
+            .navigationTitle("系统消息")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                    .foregroundColor(Color("color-primary"))
+                }
+            }
+        }
     }
 }
 

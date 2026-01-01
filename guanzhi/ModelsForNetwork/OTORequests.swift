@@ -125,8 +125,8 @@ enum OTORequest {
     case getUnreadCount
     /// 标记单条已读
     case markNotificationRead(id: Int64)
-    /// 标记全部已读
-    case markAllNotificationsRead
+    /// 标记全部已读（可选指定分类）
+    case markAllNotificationsRead(category: String?)
     /// 获取通知偏好设置
     case getNotificationPreferences
     /// 更新通知偏好设置
@@ -496,12 +496,16 @@ extension OTORequest {
                     param: [:]
                 )
 
-            // 标记全部已读
-            case .markAllNotificationsRead:
+            // 标记全部已读（可选指定分类）
+            case .markAllNotificationsRead(let category):
+                var param: [String: Any] = [:]
+                if let category = category {
+                    param["category"] = category
+                }
                 return .init(
                     path: "/api/notifications/read-all",
                     method: .put,
-                    param: [:]
+                    param: param
                 )
 
             // 获取通知偏好设置

@@ -226,8 +226,10 @@ struct guanzhiApp: App {
             // 处理冷启动时缓存的 Deep Link
             .onAppear {
                 handlePendingDeepLink()
-                // TODO: 清除 Badge（临时方案）
-                UIApplication.shared.applicationIconBadgeNumber = 0
+                // 触发 NotificationBadgeManager 初始化并刷新未读数
+                Task {
+                    await NotificationBadgeManager.shared.refresh()
+                }
             }
         }
     }

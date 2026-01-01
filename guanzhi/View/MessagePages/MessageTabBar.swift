@@ -10,14 +10,19 @@ import SwiftUI
 struct MessageTabBar: View {
     @Binding var selectedCategory: MessageCategory
     let unreadCounts: UnreadCount?
+    /// 各分类是否有未读消息（从消息列表计算）
+    var hasUnreadByCategory: [MessageCategory: Bool] = [:]
 
     var body: some View {
         HStack(spacing: 24) {
             ForEach(MessageCategory.allCases, id: \.self) { category in
+                // 优先使用 API 返回的分类未读数，否则使用从消息列表计算的结果
+                let apiCount = unreadCounts?.count(for: category) ?? 0
+                let hasUnread = apiCount > 0 || (hasUnreadByCategory[category] ?? false)
                 MessageTabItem(
                     category: category,
                     isSelected: selectedCategory == category,
-                    unreadCount: unreadCounts?.count(for: category) ?? 0
+                    hasUnread: hasUnread
                 ) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedCategory = category
@@ -35,7 +40,7 @@ struct MessageTabBar: View {
 struct MessageTabItem: View {
     let category: MessageCategory
     let isSelected: Bool
-    let unreadCount: Int
+    let hasUnread: Bool
     let action: () -> Void
 
     var body: some View {
@@ -47,11 +52,11 @@ struct MessageTabItem: View {
                 Text(category.title)
                     .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
 
-                // 未读数
-                if unreadCount > 0 {
-                    Text("(\(formatCount(unreadCount)))")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color("color-primary"))
+                // 未读红点（有未读时始终显示）
+                if hasUnread {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
                 }
             }
             .foregroundColor(isSelected ? Color("color-black") : .gray)
@@ -64,13 +69,6 @@ struct MessageTabItem: View {
         }
         .buttonStyle(.plain)
     }
-
-    private func formatCount(_ count: Int) -> String {
-        if count > 999 {
-            return "999+"
-        }
-        return "\(count)"
-    }
 }
 
 // MARK: - Preview
@@ -79,17 +77,20 @@ struct MessageTabItem: View {
     VStack {
         MessageTabBar(
             selectedCategory: .constant(.interaction),
-            unreadCounts: UnreadCount(interaction: 12, system: 2, total: 14)
+            unreadCounts: UnreadCount(interaction: 12, system: 2, total: 14),
+            hasUnreadByCategory: [.interaction: true, .system: true]
         )
 
         MessageTabBar(
             selectedCategory: .constant(.system),
-            unreadCounts: UnreadCount(interaction: 0, system: 1000, total: 1000)
+            unreadCounts: nil,
+            hasUnreadByCategory: [.interaction: true, .system: false]
         )
 
         MessageTabBar(
             selectedCategory: .constant(.interaction),
-            unreadCounts: nil
+            unreadCounts: nil,
+            hasUnreadByCategory: [:]
         )
     }
     .padding()

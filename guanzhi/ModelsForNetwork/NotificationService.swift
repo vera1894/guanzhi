@@ -62,6 +62,11 @@ class NotificationService {
 
         let data = try await OTONetwork.request(.getUnreadCount)
 
+        // 打印原始响应用于调试
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("📬 NotificationService: 原始响应 = \(jsonString)")
+        }
+
         let decoder = JSONDecoder()
         let response = try decoder.decode(UnreadCountResponse.self, from: data)
 
@@ -95,10 +100,12 @@ class NotificationService {
     }
 
     /// 标记全部通知已读
-    func markAllAsRead() async throws {
-        print("📬 NotificationService: 标记全部通知已读...")
+    /// - Parameter category: 分类（nil 表示全部，"interaction" 互动，"system" 系统）
+    func markAllAsRead(category: String? = nil) async throws {
+        let categoryDesc = category ?? "全部"
+        print("📬 NotificationService: 标记\(categoryDesc)通知已读...")
 
-        let data = try await OTONetwork.request(.markAllNotificationsRead)
+        let data = try await OTONetwork.request(.markAllNotificationsRead(category: category))
 
         let decoder = JSONDecoder()
         let response = try decoder.decode(NotificationActionResponse.self, from: data)
@@ -108,7 +115,7 @@ class NotificationService {
             throw OTONetworkError.customError(response.respMsg ?? "标记全部已读失败")
         }
 
-        print("✅ NotificationService: 全部通知已标记为已读")
+        print("✅ NotificationService: \(categoryDesc)通知已标记为已读")
     }
 
     // MARK: - 通知偏好设置 (V1.5)

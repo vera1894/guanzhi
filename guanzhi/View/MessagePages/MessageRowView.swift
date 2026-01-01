@@ -61,8 +61,8 @@ struct MessageRowView: View {
 
     @ViewBuilder
     private var avatarView: some View {
-        if message.type == .system {
-            // 系统消息使用 App Logo
+        if message.type.usesSystemIcon {
+            // 系统类消息使用 App Logo（包括 V2.0 的升级/警告/褪色等）
             Image("AppLogo")
                 .resizable()
                 .scaledToFill()
@@ -344,8 +344,8 @@ struct AggregatedStickerRowView: View {
                 fromUserId: 11,
                 fromUserName: "张三",
                 fromUserAvatar: nil,
-                status: "UNREAD",
-                createdAt: Int64(Date().timeIntervalSince1970 * 1000) - 180000,
+                statusCode: 0,  // 0 = UNREAD
+                createdAtDate: Date().addingTimeInterval(-180),
                 deepLink: "guanzhi://share/123/comment/456"
             )
         ) {
@@ -365,8 +365,8 @@ struct AggregatedStickerRowView: View {
                 fromUserId: 22,
                 fromUserName: "李四",
                 fromUserAvatar: nil,
-                status: "READ",
-                createdAt: Int64(Date().timeIntervalSince1970 * 1000) - 3600000,
+                statusCode: 1,  // 1 = READ
+                createdAtDate: Date().addingTimeInterval(-3600),
                 deepLink: "guanzhi://share/789"
             )
         ) {
@@ -386,8 +386,8 @@ struct AggregatedStickerRowView: View {
                 fromUserId: nil,
                 fromUserName: nil,
                 fromUserAvatar: nil,
-                status: "UNREAD",
-                createdAt: Int64(Date().timeIntervalSince1970 * 1000) - 86400000,
+                statusCode: 0,  // 0 = UNREAD
+                createdAtDate: Date().addingTimeInterval(-86400),
                 deepLink: nil
             )
         ) {

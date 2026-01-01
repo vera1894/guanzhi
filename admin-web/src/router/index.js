@@ -23,6 +23,11 @@ const routes = [
         component: () => import('../views/FadeSimulation.vue')
       },
       {
+        path: 'notification',
+        name: 'SystemNotification',
+        component: () => import('../views/SystemNotification.vue')
+      },
+      {
         path: 'config',
         name: 'Config',
         children: [
@@ -45,6 +50,16 @@ const routes = [
             path: 'tag',
             name: 'TagDefinition',
             component: () => import('../views/config/TagDefinition.vue')
+          },
+          {
+            path: 'notification-events',
+            name: 'NotificationEventConfig',
+            component: () => import('../views/notification/EventConfig.vue')
+          },
+          {
+            path: 'notification-templates',
+            name: 'NotificationTemplateConfig',
+            component: () => import('../views/notification/TemplateConfig.vue')
           }
         ]
       },

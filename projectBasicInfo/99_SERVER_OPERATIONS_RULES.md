@@ -40,7 +40,41 @@ bash start.sh
 - 通过 SSM 重新创建 `start.sh`（会破坏特殊字符）
 - 在其他目录执行启动脚本
 
-### 规则 4：图片目录
+### 规则 4：Nginx API 代理配置
+
+**重要**：管理后台前端（admin-web）使用 `/api` 前缀发送请求，但后端 Controller 没有 `/api` 前缀。
+
+**正确的 Nginx 代理配置**：
+```nginx
+# ✓ 正确：去掉 /api 前缀
+location /api/admin/ {
+    proxy_pass http://127.0.0.1:8085/admin/;  # 注意：去掉了 /api
+}
+
+location /api/user/ {
+    proxy_pass http://127.0.0.1:8085/user/;   # 注意：去掉了 /api
+}
+
+# ✗ 错误：保留 /api 前缀（会导致 404）
+location /api/admin/ {
+    proxy_pass http://127.0.0.1:8085/api/admin/;  # 错误！后端没有 /api 路径
+}
+```
+
+**后端 Controller 路径与 Nginx 代理对应关系**：
+| 后端路径 | 前端请求 | Nginx 代理目标 |
+|---------|---------|---------------|
+| `/admin/**` | `/api/admin/**` | `http://127.0.0.1:8085/admin/` |
+| `/user/**` | `/api/user/**` | `http://127.0.0.1:8085/user/` |
+| `/admin/inspector/**` | `/admin/inspector/**` | `http://127.0.0.1:8085/admin/inspector/` |
+
+**常见错误排查**：
+- 如果前端报 404 错误，首先检查 Nginx 代理配置是否正确去掉了 `/api` 前缀
+- 查看后端日志：`No mapping for POST /api/xxx` 说明 Nginx 没有正确去掉 `/api`
+
+---
+
+### 规则 5：图片目录
 
 **当前图片存储路径：**
 

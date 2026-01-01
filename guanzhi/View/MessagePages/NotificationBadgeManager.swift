@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 import UIKit
+import UserNotifications
 
 /// 全局未读消息红点管理器
 @MainActor
@@ -26,6 +27,8 @@ class NotificationBadgeManager: ObservableObject {
     private let foregroundRefreshInterval: TimeInterval = 30
 
     private init() {
+        print("📬 NotificationBadgeManager: 初始化")
+
         // 首次加载
         Task {
             await refresh()
@@ -61,8 +64,22 @@ class NotificationBadgeManager: ObservableObject {
             unreadCount = counts.total
             lastRefreshTime = Date()
             print("📬 NotificationBadgeManager: 刷新成功，未读数=\(counts.total)")
+
+            // 更新 App 图标 badge
+            updateAppIconBadge(counts.total)
         } catch {
             print("❌ NotificationBadgeManager: 获取未读数失败 - \(error)")
+        }
+    }
+
+    /// 更新 App 图标角标
+    private func updateAppIconBadge(_ count: Int) {
+        UNUserNotificationCenter.current().setBadgeCount(count) { error in
+            if let error = error {
+                print("❌ NotificationBadgeManager: 设置 App 图标 badge 失败 - \(error)")
+            } else {
+                print("📬 NotificationBadgeManager: App 图标 badge 已设置为 \(count)")
+            }
         }
     }
 
@@ -87,6 +104,7 @@ class NotificationBadgeManager: ObservableObject {
 
     func clearCount() {
         unreadCount = 0
+        updateAppIconBadge(0)
     }
 
     // MARK: - 定时刷新
@@ -108,9 +126,10 @@ class NotificationBadgeManager: ObservableObject {
 
 /// 显示未读消息数量的红点组件
 struct NotificationBadge: View {
-    @ObservedObject private var manager = NotificationBadgeManager.shared
+    @ObservedObject var manager: NotificationBadgeManager = .shared
 
     var body: some View {
+        let _ = print("📬 NotificationBadge: 渲染，unreadCount=\(manager.unreadCount)")
         if manager.unreadCount > 0 {
             ZStack {
                 Circle()

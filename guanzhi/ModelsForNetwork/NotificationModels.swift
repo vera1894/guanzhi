@@ -9,10 +9,10 @@ import Foundation
 
 // MARK: - 消息分类
 
-/// 消息分类（rawValue 用英文，UI 用 title）
+/// 消息分类（rawValue 用大写英文匹配后端，UI 用 title）
 enum MessageCategory: String, CaseIterable, Codable {
-    case interaction  // 互动消息
-    case system       // 系统消息
+    case interaction = "INTERACTION"  // 互动消息
+    case system = "SYSTEM"            // 系统消息
 
     var title: String {
         switch self {
@@ -33,20 +33,34 @@ enum MessageCategory: String, CaseIterable, Codable {
 
 /// 通知类型（与后端 NotificationDO.TYPE_* 对应）
 enum NotificationType: String, Codable {
+    // V1.0 类型
     case commentReply = "COMMENT_REPLY"
     case commentLike = "COMMENT_LIKE"
     case newComment = "NEW_COMMENT"
     case stickerReceived = "STICKER_RECEIVED"
     case system = "SYSTEM"
+
+    // V2.0 类型
+    case levelUp = "LEVEL_UP"               // 用户升级
+    case userWarned = "USER_WARNED"         // 用户被警告
+    case userFrozen = "USER_FROZEN"         // 用户被冻结
+    case shareRemoved = "SHARE_REMOVED"     // 分享被删除
+    case reportResult = "REPORT_RESULT"     // 举报处理结果
+    case fadeWarning = "FADE_WARNING"       // 分享即将褪色
+    case fadeComplete = "FADE_COMPLETE"     // 分享已褪色
+
     case unknown = "UNKNOWN"
 
     /// 所属分类
     var category: MessageCategory {
         switch self {
-        case .system:
-            return .system
-        default:
+        // 互动消息
+        case .commentReply, .commentLike, .newComment, .stickerReceived:
             return .interaction
+        // 系统消息
+        case .system, .levelUp, .userWarned, .userFrozen, .shareRemoved,
+             .reportResult, .fadeWarning, .fadeComplete, .unknown:
+            return .system
         }
     }
 
@@ -54,6 +68,7 @@ enum NotificationType: String, Codable {
     func titleFormat(userName: String?, stickerName: String? = nil) -> String {
         let name = userName ?? "用户"
         switch self {
+        // V1.0 类型
         case .commentReply:
             return "\(name) 回复了你"
         case .commentLike:
@@ -65,8 +80,35 @@ enum NotificationType: String, Codable {
             return "\(name) 给你贴了「\(sticker)」"
         case .system:
             return "系统通知"
+
+        // V2.0 类型
+        case .levelUp:
+            return "恭喜升级"
+        case .userWarned:
+            return "账号警告"
+        case .userFrozen:
+            return "账号冻结"
+        case .shareRemoved:
+            return "内容被移除"
+        case .reportResult:
+            return "举报处理结果"
+        case .fadeWarning:
+            return "观之即将褪色"
+        case .fadeComplete:
+            return "观之已褪色"
+
         case .unknown:
             return "通知"
+        }
+    }
+
+    /// 是否需要特殊图标（非用户头像）
+    var usesSystemIcon: Bool {
+        switch self {
+        case .commentReply, .commentLike, .newComment, .stickerReceived:
+            return false
+        default:
+            return true
         }
     }
 
@@ -89,18 +131,114 @@ struct NotificationMessage: Identifiable, Codable {
     let fromUserId: Int?
     let fromUserName: String?
     let fromUserAvatar: String?
-    let status: String           // "UNREAD" / "READ"
-    let createdAt: Int64         // 毫秒时间戳（后端原始值）
+    let statusCode: Int          // 0 = UNREAD, 1 = READ
+    let createdAtDate: Date      // 解析后的日期
     let deepLink: String?
+
+    /// 自定义解码（处理后端特殊格式）
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(Int64.self, forKey: .id)
+        type = try container.decode(NotificationType.self, forKey: .type)
+        content = try container.decode(String.self, forKey: .content)
+        shareId = try container.decodeIfPresent(Int64.self, forKey: .shareId)
+        commentId = try container.decodeIfPresent(Int64.self, forKey: .commentId)
+        fromUserId = try container.decodeIfPresent(Int.self, forKey: .fromUserId)
+        fromUserName = try container.decodeIfPresent(String.self, forKey: .fromUserName)
+        fromUserAvatar = try container.decodeIfPresent(String.self, forKey: .fromUserAvatar)
+        deepLink = try container.decodeIfPresent(String.self, forKey: .deepLink)
+
+        // 解析 status（后端返回数字 0/1）
+        statusCode = try container.decode(Int.self, forKey: .status)
+
+        // 解析 createdAt（后端返回 [year, month, day, hour, minute, second] 数组）
+        let dateArray = try container.decode([Int].self, forKey: .createdAt)
+        createdAtDate = NotificationMessage.parseLocalDateTime(dateArray)
+    }
+
+    /// 解析 Java LocalDateTime 数组格式
+    private static func parseLocalDateTime(_ arr: [Int]) -> Date {
+        guard arr.count >= 5 else { return Date() }
+        var components = DateComponents()
+        components.year = arr[0]
+        components.month = arr[1]
+        components.day = arr[2]
+        components.hour = arr[3]
+        components.minute = arr[4]
+        components.second = arr.count > 5 ? arr[5] : 0
+        components.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        return Calendar.current.date(from: components) ?? Date()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, type, content, shareId, commentId
+        case fromUserId, fromUserName, fromUserAvatar
+        case status, createdAt, deepLink
+    }
+
+    /// 编码（Encodable 协议要求）
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encode(content, forKey: .content)
+        try container.encodeIfPresent(shareId, forKey: .shareId)
+        try container.encodeIfPresent(commentId, forKey: .commentId)
+        try container.encodeIfPresent(fromUserId, forKey: .fromUserId)
+        try container.encodeIfPresent(fromUserName, forKey: .fromUserName)
+        try container.encodeIfPresent(fromUserAvatar, forKey: .fromUserAvatar)
+        try container.encode(statusCode, forKey: .status)
+        // 转换为数组格式
+        let calendar = Calendar.current
+        let components = calendar.dateComponents(in: TimeZone(identifier: "Asia/Shanghai")!, from: createdAtDate)
+        let dateArray = [
+            components.year ?? 2025,
+            components.month ?? 1,
+            components.day ?? 1,
+            components.hour ?? 0,
+            components.minute ?? 0,
+            components.second ?? 0
+        ]
+        try container.encode(dateArray, forKey: .createdAt)
+        try container.encodeIfPresent(deepLink, forKey: .deepLink)
+    }
+
+    /// 内部初始化器（用于 Preview 和测试）
+    init(
+        id: Int64,
+        type: NotificationType,
+        content: String,
+        shareId: Int64? = nil,
+        commentId: Int64? = nil,
+        fromUserId: Int? = nil,
+        fromUserName: String? = nil,
+        fromUserAvatar: String? = nil,
+        statusCode: Int,
+        createdAtDate: Date,
+        deepLink: String? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.content = content
+        self.shareId = shareId
+        self.commentId = commentId
+        self.fromUserId = fromUserId
+        self.fromUserName = fromUserName
+        self.fromUserAvatar = fromUserAvatar
+        self.statusCode = statusCode
+        self.createdAtDate = createdAtDate
+        self.deepLink = deepLink
+    }
 
     /// 转换为 Date（UI 展示用）
     var date: Date {
-        Date(timeIntervalSince1970: TimeInterval(createdAt) / 1000)
+        createdAtDate
     }
 
     /// 是否未读
     var isUnread: Bool {
-        status == "UNREAD"
+        statusCode == 0
     }
 
     /// 格式化的时间显示
@@ -137,6 +275,23 @@ struct NotificationMessage: Identifiable, Codable {
             return URL(string: "\(Constants.BASE_HOST)\(avatar)")
         }
     }
+
+    /// 创建已读版本
+    func asRead() -> NotificationMessage {
+        return NotificationMessage(
+            id: id,
+            type: type,
+            content: content,
+            shareId: shareId,
+            commentId: commentId,
+            fromUserId: fromUserId,
+            fromUserName: fromUserName,
+            fromUserAvatar: fromUserAvatar,
+            statusCode: 1,  // 1 = READ
+            createdAtDate: createdAtDate,
+            deepLink: deepLink
+        )
+    }
 }
 
 // MARK: - 未读数统计
@@ -147,6 +302,13 @@ struct UnreadCount: Codable {
     let system: Int?       // 系统消息未读数
     let total: Int         // 总未读数
 
+    /// 内部初始化器（用于 Preview 和测试）
+    init(interaction: Int? = nil, system: Int? = nil, total: Int) {
+        self.interaction = interaction
+        self.system = system
+        self.total = total
+    }
+
     /// 获取指定分类的未读数
     func count(for category: MessageCategory) -> Int {
         switch category {
@@ -155,6 +317,49 @@ struct UnreadCount: Codable {
         case .system:
             return system ?? 0
         }
+    }
+
+    /// 自定义解码（兼容后端可能返回不同字段名的情况）
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // 尝试小写和大写字段名
+        if let val = try container.decodeIfPresent(Int.self, forKey: .interaction) {
+            interaction = val
+        } else if let val = try container.decodeIfPresent(Int.self, forKey: .INTERACTION) {
+            interaction = val
+        } else {
+            interaction = nil
+        }
+
+        if let val = try container.decodeIfPresent(Int.self, forKey: .system) {
+            system = val
+        } else if let val = try container.decodeIfPresent(Int.self, forKey: .SYSTEM) {
+            system = val
+        } else {
+            system = nil
+        }
+
+        // 优先取 total，如果没有则取 count，最后计算
+        if let totalValue = try container.decodeIfPresent(Int.self, forKey: .total) {
+            total = totalValue
+        } else if let countValue = try container.decodeIfPresent(Int.self, forKey: .count) {
+            total = countValue
+        } else {
+            total = (interaction ?? 0) + (system ?? 0)
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case interaction, system, total, count
+        case INTERACTION, SYSTEM  // 大写版本
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(interaction, forKey: .interaction)
+        try container.encodeIfPresent(system, forKey: .system)
+        try container.encode(total, forKey: .total)
     }
 }
 

@@ -22,6 +22,11 @@
           <span>褪色模拟器</span>
         </el-menu-item>
 
+        <el-menu-item index="/notification">
+          <el-icon><Bell /></el-icon>
+          <span>系统通知</span>
+        </el-menu-item>
+
         <el-sub-menu index="/config">
           <template #title>
             <el-icon><Setting /></el-icon>
@@ -31,6 +36,8 @@
           <el-menu-item index="/config/points">积分规则配置</el-menu-item>
           <el-menu-item index="/config/level">等级定义管理</el-menu-item>
           <el-menu-item index="/config/tag">标签定义管理</el-menu-item>
+          <el-menu-item index="/config/notification-events">通知事件配置</el-menu-item>
+          <el-menu-item index="/config/notification-templates">通知模板管理</el-menu-item>
         </el-sub-menu>
 
         <el-menu-item index="/inspector/query">
