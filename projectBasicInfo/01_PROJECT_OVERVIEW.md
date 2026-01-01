@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v2.4
-**最后更新**: 2025-12-31（通知中台 V2.0 已部署）
+**文档版本**: v2.5
+**最后更新**: 2026-01-01（消息页面 UI 优化）
 
 ---
 
@@ -341,12 +341,14 @@ guanzhi/ModelsForNetwork/
 ```
 
 **页面功能**：
-- 消息分类 Tab（互动/系统）
-- 消息列表（分页加载、下拉刷新）
+- 消息分类 Tab（互动/系统），选中/未选中状态均显示红点
+- 消息列表（分页加载、下拉刷新、切换分类立即 loading）
 - 未读红点（显示未读数量，>999 显示 999+）
 - 点击消息跳转到对应分享/评论
-- 标记已读（点击自动标记）
+- 系统消息详情 Sheet（点击系统消息弹出详情页）
+- 标记已读（点击自动标记，本地状态即时更新）
 - 全部已读（更多菜单中）
+- 贴纸消息聚合（同一分享的多个贴纸通知合并显示）
 
 **全局红点管理**：
 ```swift
@@ -696,6 +698,7 @@ extension Notification.Name {
 | 通知中台V1.0 | `projectBasicInfo/logs/2025-12-30-notification-center-ios-v1-complete-cc.md` | 基础推送+消息页面 |
 | 通知中台V1.5 | `projectBasicInfo/logs/2025-12-30-notification-center-v1.5-complete-cc.md` | 后台可配置+频率控制 |
 | 通知中台V2.0 | `projectBasicInfo/logs/2025-12-31-notification-v2-events-cc.md` | 管理通知+褪色提醒 |
+| 消息页面UI优化 | `projectBasicInfo/logs/2026-01-01-messages-page-ui-fixes-cc.md` | 红点/已读/详情页修复 |
 
 ---
 
