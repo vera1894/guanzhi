@@ -53,8 +53,12 @@ struct MyView: View {
                             Text("OneCode: \((localUser.name == localUser.phone) ? "⬛️⬛️⬛️⬛️" : (localUser.name ?? "⬛️⬛️⬛️⬛️"))")
                                 .font(.subheadline)
                                 .onTapGesture {
-                                    showNotification(message: "🔏 与手机号相同的OneCode会被隐藏") 
+                                    showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
                                 }
+                            // 用户等级
+                            Text("等级：「\(localUser.levelName)」")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
 
                         Spacer()
@@ -145,15 +149,11 @@ struct MyView: View {
         .onAppear {
             // 尝试加载缓存的头像
             userProfileManager.loadCachedAvatar()
-            
-            // 获取最新用户信息
+
+            // 懒加载用户信息：先从缓存加载，再从服务器刷新
             let userId = OTOLoginStatusManager.shared.getUserID()
             Task {
-                do {
-                    try await userProfileManager.fetchUserFullInfo(userId: userId)
-                } catch {
-                    print("获取本机用户信息失败: \(error)")
-                }
+                await userProfileManager.loadUserProfileWithCache(userId: userId)
             }
         }
         .onDisappear {
@@ -200,7 +200,9 @@ struct MyView_Previews: PreviewProvider {
             code: nil,
             createDate: nil,
             jpushId: nil,
-            titleDOS: nil
+            titleDOS: nil,
+            levelCode: "CHONGLANG",
+            pointsTotal: 100
         )
         // 3. 把它放进 manager
         manager.localUserProfile = mockLocalUser

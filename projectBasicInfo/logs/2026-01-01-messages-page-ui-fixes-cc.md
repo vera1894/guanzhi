@@ -170,8 +170,54 @@ func refresh() async {
 - [x] 点击消息后红点立即消失
 - [x] Tab 切换立即显示 loading 状态
 
-## 备注
+## 后端 API 修复 ✅ (2026-01-01)
 
-后端 API 存在以下问题（已在客户端做了兼容处理）：
-- `/api/notifications/unread-count` 只返回 `{"count":1}`，不返回 `interaction` 和 `system` 分类明细
-- 客户端通过从消息列表计算未读状态来解决此问题
+**问题**：
+- `/api/notifications` 不支持 `category` 参数过滤
+- `/api/notifications/unread-count` 只返回 `{"count":1}`，不返回分类明细
+
+**已修复**（同日后端部署）：
+
+1. **添加 `category` 参数到 `getNotifications` API**
+   - 请求：`GET /notifications?category=interaction` 或 `category=system`
+   - 可选值：`all`（默认）、`interaction`（互动类）、`system`（系统类）
+
+2. **修改 `getUnreadCount` 返回分类未读数**
+   - 旧格式：`{ "count": 5 }`
+   - 新格式：`{ "interaction": 3, "system": 2, "total": 5 }`
+
+3. **添加 `category` 参数到 `markAllAsRead` API**
+   - 请求：`PUT /notifications/read-all?category=interaction`
+   - 可以只标记某一类通知为已读
+
+**通知分类定义**：
+| 分类 | 包含的通知类型 |
+|------|---------------|
+| `interaction` | NEW_COMMENT, COMMENT_REPLY, COMMENT_LIKE, STICKER_RECEIVED |
+| `system` | SYSTEM, LEVEL_UP, USER_WARNED, USER_FROZEN, SHARE_REMOVED, REPORT_RESULT, FADE_WARNING, FADE_COMPLETE |
+
+## 时区问题修复 ✅ (2026-01-01)
+
+**问题**：通知时间显示比实际早 8 小时
+
+**根因分析**：
+| 文件 | 时区配置 | 结果 |
+|------|----------|------|
+| `CommentVO.java` | `@JsonFormat(timezone = "Asia/Shanghai")` ✅ | 正确返回北京时间 |
+| `NotificationVO.java` | 无时区配置 ❌ | 返回 UTC 时间数组 |
+
+**问题链**：
+1. 服务器时区为 UTC
+2. `NotificationVO.createdAt` 无 `@JsonFormat` 注解
+3. Jackson 将 `LocalDateTime` 序列化为 UTC 时间数组 `[2026, 1, 1, 7, 0, 0]`
+4. iOS 端假设是北京时间，导致时间早 8 小时
+
+**修复**：
+```java
+// NotificationVO.java
+@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Shanghai")
+private LocalDateTime createdAt;
+```
+
+**预防措施**：
+已在 `00_AGENT_RULES.md` 添加"Java 后端时间字段规范"章节，要求所有 VO/DTO 的 `LocalDateTime` 字段必须添加 `@JsonFormat` 注解并指定时区。

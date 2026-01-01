@@ -119,6 +119,48 @@ enum NotificationType: String, Codable {
     }
 }
 
+// MARK: - 时间格式化辅助
+
+/// 通知模块专用的时间格式化工具
+private enum NotificationDateHelper {
+    /// 格式化为相对时间显示
+    static func formatRelativeTime(_ date: Date) -> String {
+        let now = Date()
+        let interval = now.timeIntervalSince(date)
+
+        if interval < 0 {
+            return "刚刚"
+        } else if interval < 60 {
+            return "刚刚"
+        } else if interval < 3600 {
+            let minutes = Int(interval / 60)
+            return "\(minutes)分钟前"
+        } else if interval < 86400 {
+            let hours = Int(interval / 3600)
+            return "\(hours)小时前"
+        } else if interval < 86400 * 2 {
+            return "昨天"
+        } else if interval < 86400 * 7 {
+            let days = Int(interval / 86400)
+            return "\(days)天前"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MM-dd"
+            formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+            return formatter.string(from: date)
+        }
+    }
+
+    /// 格式化为北京时间字符串（用于编码）
+    static func formatToShanghaiString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.string(from: date)
+    }
+}
+
 // MARK: - 通知消息模型
 
 /// 通知消息（对应后端 NotificationVO）
@@ -152,13 +194,43 @@ struct NotificationMessage: Identifiable, Codable {
         // 解析 status（后端返回数字 0/1）
         statusCode = try container.decode(Int.self, forKey: .status)
 
-        // 解析 createdAt（后端返回 [year, month, day, hour, minute, second] 数组）
-        let dateArray = try container.decode([Int].self, forKey: .createdAt)
-        createdAtDate = NotificationMessage.parseLocalDateTime(dateArray)
+        // 解析 createdAt（后端返回 UTC 时间数组或字符串）
+        createdAtDate = NotificationMessage.parseCreatedAt(from: container)
     }
 
-    /// 解析 Java LocalDateTime 数组格式
-    private static func parseLocalDateTime(_ arr: [Int]) -> Date {
+    /// 解析 createdAt，支持字符串格式和数组格式
+    private static func parseCreatedAt(from container: KeyedDecodingContainer<CodingKeys>) -> Date {
+        // 尝试解析字符串格式
+        if let dateString = try? container.decode(String.self, forKey: .createdAt) {
+            return parseDateTimeString(dateString, timezone: "UTC")
+        }
+        // 尝试解析数组格式（后端返回 UTC 时间）
+        if let dateArray = try? container.decode([Int].self, forKey: .createdAt) {
+            return parseLocalDateTimeArray(dateArray, timezone: "UTC")
+        }
+        return Date()
+    }
+
+    /// 解析时间字符串
+    private static func parseDateTimeString(_ dateString: String, timezone: String) -> Date {
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone(identifier: timezone)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        if let date = formatter.date(from: dateString) { return date }
+
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+        if let date = formatter.date(from: dateString) { return date }
+
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let date = formatter.date(from: dateString) { return date }
+
+        return Date()
+    }
+
+    /// 解析时间数组（后端返回 UTC 时间）
+    private static func parseLocalDateTimeArray(_ arr: [Int], timezone: String) -> Date {
         guard arr.count >= 5 else { return Date() }
         var components = DateComponents()
         components.year = arr[0]
@@ -167,7 +239,7 @@ struct NotificationMessage: Identifiable, Codable {
         components.hour = arr[3]
         components.minute = arr[4]
         components.second = arr.count > 5 ? arr[5] : 0
-        components.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        components.timeZone = TimeZone(identifier: timezone)
         return Calendar.current.date(from: components) ?? Date()
     }
 
@@ -189,18 +261,9 @@ struct NotificationMessage: Identifiable, Codable {
         try container.encodeIfPresent(fromUserName, forKey: .fromUserName)
         try container.encodeIfPresent(fromUserAvatar, forKey: .fromUserAvatar)
         try container.encode(statusCode, forKey: .status)
-        // 转换为数组格式
-        let calendar = Calendar.current
-        let components = calendar.dateComponents(in: TimeZone(identifier: "Asia/Shanghai")!, from: createdAtDate)
-        let dateArray = [
-            components.year ?? 2025,
-            components.month ?? 1,
-            components.day ?? 1,
-            components.hour ?? 0,
-            components.minute ?? 0,
-            components.second ?? 0
-        ]
-        try container.encode(dateArray, forKey: .createdAt)
+        // 转换为字符串格式
+        let dateString = NotificationDateHelper.formatToShanghaiString(createdAtDate)
+        try container.encode(dateString, forKey: .createdAt)
         try container.encodeIfPresent(deepLink, forKey: .deepLink)
     }
 
@@ -243,27 +306,7 @@ struct NotificationMessage: Identifiable, Codable {
 
     /// 格式化的时间显示
     var formattedTime: String {
-        let now = Date()
-        let interval = now.timeIntervalSince(date)
-
-        if interval < 60 {
-            return "刚刚"
-        } else if interval < 3600 {
-            let minutes = Int(interval / 60)
-            return "\(minutes)分钟前"
-        } else if interval < 86400 {
-            let hours = Int(interval / 3600)
-            return "\(hours)小时前"
-        } else if interval < 86400 * 2 {
-            return "昨天"
-        } else if interval < 86400 * 7 {
-            let days = Int(interval / 86400)
-            return "\(days)天前"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM-dd"
-            return formatter.string(from: date)
-        }
+        NotificationDateHelper.formatRelativeTime(date)
     }
 
     /// 头像 URL
@@ -560,27 +603,7 @@ struct AggregatedStickerNotification: Identifiable {
 
     /// 格式化的时间显示
     var formattedTime: String {
-        let now = Date()
-        let interval = now.timeIntervalSince(latestTime)
-
-        if interval < 60 {
-            return "刚刚"
-        } else if interval < 3600 {
-            let minutes = Int(interval / 60)
-            return "\(minutes)分钟前"
-        } else if interval < 86400 {
-            let hours = Int(interval / 3600)
-            return "\(hours)小时前"
-        } else if interval < 86400 * 2 {
-            return "昨天"
-        } else if interval < 86400 * 7 {
-            let days = Int(interval / 86400)
-            return "\(days)天前"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM-dd"
-            return formatter.string(from: latestTime)
-        }
+        NotificationDateHelper.formatRelativeTime(latestTime)
     }
 
     /// 第一个用户的头像 URL

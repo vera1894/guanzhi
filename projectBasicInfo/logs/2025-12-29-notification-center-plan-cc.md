@@ -1,10 +1,10 @@
 # 通知中台 + 推送系统规划文档
 
-**文档版本**: v4.0
+**文档版本**: v4.1
 **创建日期**: 2025-12-29
-**更新日期**: 2025-12-31
+**更新日期**: 2026-01-01
 **角色**: 后端架构师 + 通知中台设计师 (Claude Code)
-**状态**: ✅ V2.0 已部署 (2025-12-31)
+**状态**: ✅ V2.1 已部署 (2026-01-01) - 添加分类过滤
 
 ---
 
@@ -482,11 +482,21 @@ Authorization: Bearer {jwt_token}
 
 #### 7.2.1 获取通知列表
 ```
-GET /api/v1/notifications?page=1&size=20&status=unread
+GET /api/v1/notifications?page=1&size=20&status=unread&category=interaction
 Authorization: Bearer {jwt_token}
 ```
 
-**认证要求**: 必须认证，仅返回当前用户的通知
+**请求参数**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| page | int | 否 | 页码，默认 1 |
+| size | int | 否 | 每页数量，默认 20 |
+| status | string | 否 | 状态筛选：all（默认）/unread/read |
+| category | string | 否 | 分类筛选：all（默认）/interaction/system |
+
+**分类定义**:
+- `interaction`: 互动类（NEW_COMMENT, COMMENT_REPLY, COMMENT_LIKE, STICKER_RECEIVED）
+- `system`: 系统类（SYSTEM, LEVEL_UP, USER_WARNED, USER_FROZEN, SHARE_REMOVED, REPORT_RESULT, FADE_WARNING, FADE_COMPLETE）
 
 #### 7.2.2 标记已读
 ```
@@ -496,14 +506,31 @@ Authorization: Bearer {jwt_token}
 
 #### 7.2.3 批量标记已读
 ```
-PUT /api/v1/notifications/read-all
+PUT /api/v1/notifications/read-all?category=interaction
 Authorization: Bearer {jwt_token}
 ```
+
+**请求参数**:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| category | string | 否 | 分类筛选：all（默认）/interaction/system |
 
 #### 7.2.4 获取未读数
 ```
 GET /api/v1/notifications/unread-count
 Authorization: Bearer {jwt_token}
+```
+
+**响应**:
+```json
+{
+  "respCode": 0,
+  "datas": {
+    "interaction": 3,
+    "system": 2,
+    "total": 5
+  }
+}
 ```
 
 ### 7.3 用户偏好 API

@@ -56,7 +56,11 @@ class UserProfileManager: ObservableObject {
                     jpushId: nil,
                     platform: "iOS",
                     photo: nil,
-                    titleDOS: []
+                    titleDOS: [],
+                    levelCode: "CHONGLANG",
+                    pointsTotal: 100,
+                    status: 0,
+                    role: "USER"
                 )
                 DispatchQueue.main.async {
                     self.otherUserProfile = mockProfile
@@ -132,6 +136,8 @@ class UserProfileManager: ObservableObject {
             existing.createDate = userInfo.createDate
             existing.jpushId = userInfo.jpushId
             existing.titleDOS = userInfo.titleDOS
+            existing.levelCode = userInfo.levelCode
+            existing.pointsTotal = userInfo.pointsTotal
         } else {
             // 新建
             let newUser = LocalUserProfile(
@@ -143,7 +149,9 @@ class UserProfileManager: ObservableObject {
                 code: userInfo.code,
                 createDate: userInfo.createDate,
                 jpushId: userInfo.jpushId,
-                titleDOS: userInfo.titleDOS
+                titleDOS: userInfo.titleDOS,
+                levelCode: userInfo.levelCode,
+                pointsTotal: userInfo.pointsTotal
             )
             context.insert(newUser)
         }
@@ -257,11 +265,40 @@ class UserProfileManager: ObservableObject {
     func initializeAvatar() {
         // 先尝试加载缓存
         loadCachedAvatar()
-        
+
         // 如果已经有用户信息且有头像路径，则加载头像
         if let profile = localUserProfile, let photoPath = profile.photo {
             Task {
                 await loadAndCacheAvatar(path: photoPath)
+            }
+        }
+    }
+
+    // MARK: - 从 SwiftData 加载缓存的用户信息（懒加载）
+    /// 优先从本地缓存加载用户信息，适用于网络不可用的场景
+    func loadCachedUserProfile() {
+        let userId = OTOLoginStatusManager.shared.getUserID()
+        if let cachedUser = findLocalUserInSwiftData(userId: userId) {
+            self.localUserProfile = cachedUser
+            print("📦 已从本地缓存加载用户信息，等级: \(cachedUser.levelName)")
+        }
+    }
+
+    // MARK: - 懒加载用户信息（先缓存后网络）
+    /// 先从本地缓存加载，然后尝试从服务器刷新
+    func loadUserProfileWithCache(userId: Int) async {
+        // 1. 先从缓存加载（立即显示）
+        loadCachedUserProfile()
+
+        // 2. 尝试从服务器刷新（后台更新）
+        do {
+            try await fetchUserFullInfo(userId: userId)
+        } catch {
+            // 网络失败时，如果缓存已加载则保持使用缓存
+            if localUserProfile != nil {
+                print("⚠️ 网络请求失败，使用本地缓存: \(error.localizedDescription)")
+            } else {
+                print("❌ 网络请求失败且无本地缓存: \(error.localizedDescription)")
             }
         }
     }

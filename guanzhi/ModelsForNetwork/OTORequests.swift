@@ -43,21 +43,45 @@ struct OTORequestBaseModel {
 struct UserFullInfoModel: Codable {
     let id: Int
     let createDate: Int64?
-    
+
     let code: String?
     let phone: String?
     let name: String?
     let nickname: String?
     let password: String?
-    
+
     let registerdate: Int64?
     let lastLoginTime: Int64?
-    
+
     let jpushId: String?
     let platform: String?
     let photo: String?
     let titleDOS: [TitleDO]?
+
+    // 用户等级相关字段
+    let levelCode: String?      // 等级代码：YOMIN, CHONGLANG, QIANSHUI, LANDONG, SHUIMU, DENGTA
+    let pointsTotal: Int?       // 总积分
+    let status: Int?            // 用户状态
+    let role: String?           // 用户角色
 } // 完整的用户信息结构
+
+// MARK: - 等级代码到名称的映射
+enum UserLevelMapping {
+    static let levelNames: [String: String] = [
+        "YOMIN": "游民",
+        "CHONGLANG": "冲浪",
+        "QIANSHUI": "潜水",
+        "LANDONG": "懒洞",
+        "SHUIMU": "水母",
+        "DENGTA": "灯塔"
+    ]
+
+    /// 根据等级代码获取等级名称
+    static func getName(for code: String?) -> String {
+        guard let code = code else { return "未知" }
+        return levelNames[code] ?? code
+    }
+}
 
 struct TitleDO: Codable {
     let condition: String?

@@ -21,7 +21,11 @@ class LocalUserProfile {
     var jpushId: String?
     var titleDOS: [TitleDO]?
 
-    init(id: Int, name: String, nickname: String, phone: String, photo: String?, code: String?, createDate: Int64?, jpushId: String?, titleDOS: [TitleDO]?) {
+    // 用户等级相关字段
+    var levelCode: String?      // 等级代码：YOMIN, CHONGLANG, QIANSHUI, LANDONG, SHUIMU, DENGTA
+    var pointsTotal: Int?       // 总积分
+
+    init(id: Int, name: String, nickname: String, phone: String, photo: String?, code: String?, createDate: Int64?, jpushId: String?, titleDOS: [TitleDO]?, levelCode: String? = nil, pointsTotal: Int? = nil) {
         self.id = id
         self.name = name
         self.nickname = nickname
@@ -31,6 +35,13 @@ class LocalUserProfile {
         self.createDate = createDate
         self.jpushId = jpushId
         self.titleDOS = titleDOS
+        self.levelCode = levelCode
+        self.pointsTotal = pointsTotal
+    }
+
+    /// 获取等级名称（中文）
+    var levelName: String {
+        UserLevelMapping.getName(for: levelCode)
     }
 }
 

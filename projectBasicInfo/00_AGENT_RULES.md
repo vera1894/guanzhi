@@ -1,7 +1,7 @@
 # AI Agent 使用规则
 
-**文档版本**: v1.1
-**最后更新**: 2025-12-31
+**文档版本**: v1.2
+**最后更新**: 2026-01-01
 
 ---
 
@@ -56,6 +56,69 @@
 - **不加多余功能**：用户没要求的功能不要加
 - **不删有用代码**：除非明确要求，否则不要删除现有功能
 
+### 5. 前后端时间处理规范
+
+**重要**：服务器时区为 UTC，iOS 客户端显示北京时间。时区处理不当会导致 8 小时偏差！
+
+#### 5.1 后端规范（Java）
+
+在 VO/DTO 中的 `LocalDateTime` 字段必须添加 `@JsonFormat` 注解：
+
+```java
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Shanghai")
+private LocalDateTime createdAt;
+```
+
+**后端检查清单**：
+- [ ] 导入 `com.fasterxml.jackson.annotation.JsonFormat`
+- [ ] 在所有 `LocalDateTime` 字段上添加 `@JsonFormat` 注解
+- [ ] 设置 `timezone = "Asia/Shanghai"`
+- [ ] 设置统一的日期格式 `pattern = "yyyy-MM-dd'T'HH:mm:ss"`
+
+#### 5.2 iOS 前端规范（Swift）
+
+**推荐做法**：在各模块中创建私有的时间处理 helper，参考 `NotificationModels.swift` 中的 `NotificationDateHelper`。
+
+```swift
+// 后端返回格式判断：
+// - 数组格式 [year, month, day, hour, minute, second] → 通常是 UTC 时间
+// - 字符串格式 "yyyy-MM-dd'T'HH:mm:ss" → 看后端是否有 @JsonFormat 注解
+
+// 解析 UTC 时间数组
+private static func parseLocalDateTimeArray(_ arr: [Int], timezone: String) -> Date {
+    guard arr.count >= 5 else { return Date() }
+    var components = DateComponents()
+    components.year = arr[0]
+    components.month = arr[1]
+    components.day = arr[2]
+    components.hour = arr[3]
+    components.minute = arr[4]
+    components.second = arr.count > 5 ? arr[5] : 0
+    components.timeZone = TimeZone(identifier: timezone)  // "UTC" 或 "Asia/Shanghai"
+    return Calendar.current.date(from: components) ?? Date()
+}
+
+// 格式化相对时间显示（参考 NotificationDateHelper.formatRelativeTime）
+```
+
+**iOS 检查清单**：
+- [ ] 明确后端返回的是 UTC 还是北京时间
+- [ ] 数组格式通常是 UTC（后端默认行为），使用 `TimeZone(identifier: "UTC")`
+- [ ] 字符串格式看后端 `@JsonFormat` 注解的 timezone 设置
+- [ ] 参考 `NotificationModels.swift` 中的实现模式
+
+#### 5.3 时区对照表
+
+| 后端配置 | 返回格式 | iOS 解析 timezone |
+|---------|---------|------------------|
+| 无 @JsonFormat | `[2026,1,1,8,0,0]` 数组 | `.utc` |
+| @JsonFormat timezone="Asia/Shanghai" | `"2026-01-01T16:00:00"` 字符串 | `.shanghai` |
+| @JsonFormat 无 timezone | `"2026-01-01T08:00:00"` 字符串 | `.utc` |
+
+**历史问题**：2026-01-01 发现 `NotificationVO.java` 缺少时区配置，导致 iOS 端显示时间早 8 小时。
+
 ---
 
 ## 敏感信息处理
@@ -104,6 +167,7 @@ guanzhi/                          # 项目根目录（Monorepo）
 | 后端开发 | `Server/onettoo/`、`重要项目信息/项目结构说明.md` |
 | iOS 开发 | `guanzhi/`、根目录 `CLAUDE.md` |
 | 查看历史操作 | `logs/` 目录 |
+| **时间处理** | **本文件第5节**、`guanzhi/ModelsForNetwork/NotificationModels.swift` 中的 `NotificationDateHelper` |
 
 ---
 
