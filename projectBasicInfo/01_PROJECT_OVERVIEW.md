@@ -265,7 +265,7 @@ guanzhiApp.swift                              # App 启动时预加载
 
 ### 5. 评论系统（Comment System）
 
-**状态**：规划中（2025-12-23）
+**状态**：已完成（2025-12-25），计数实时更新修复（2026-01-02）
 
 支持分享的评论与回复功能：
 
@@ -275,7 +275,8 @@ guanzhiApp.swift                              # App 启动时预加载
 - 三种排序：默认热度、最新、最多点赞
 - 评论长度限制（1-230 字符）
 - 频率限制：同一分享 10 秒 1 条；全局每天最多 200 条
-- 回复触发站内通知 + 极光推送
+- 回复触发站内通知 + APNs 推送
+- **评论计数实时更新**：发布/删除评论后按钮计数即时刷新
 
 **重要规则**：
 - **无地理位置限制**：用户可在任意位置评论（不再需要在分享附近）
@@ -283,7 +284,13 @@ guanzhiApp.swift                              # App 启动时预加载
 - 热度参数可配置（存入 fade_config 表）
 - 回复、点赞对分享产生积分（接入后台配置）
 
-**相关文档**：`projectBasicInfo/logs/2025-12-22-comment-system-design-cc.md`
+**iOS 实现要点**：
+- `CommentViewModel` 通过 `onCommentCountChanged` 回调通知计数变化
+- `ShareDetailsCardView` 接收回调并更新 `share.commentCount`
+
+**相关文档**：
+- `projectBasicInfo/logs/2025-12-22-comment-system-design-cc.md`
+- `projectBasicInfo/logs/2026-01-02-comment-count-realtime-fix-cc.md`
 
 ### 6. 通知中台（Notification Center）
 

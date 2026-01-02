@@ -40,6 +40,10 @@ class CommentViewModel: ObservableObject {
     private(set) var shareId: Int64 = 0
     private(set) var shareAuthorId: Int64 = 0
 
+    // MARK: - 评论计数变化回调
+    /// 评论数变化回调：delta 为变化量（+1 表示新增，-1 表示删除）
+    var onCommentCountChanged: ((Int) -> Void)?
+
     // MARK: - 方法
 
     /// 初始化（绑定到分享）
@@ -205,6 +209,9 @@ class CommentViewModel: ObservableObject {
             exitReplyMode()
             print("✅ [CommentViewModel] 评论发送成功!")
 
+            // 通知评论计数增加
+            onCommentCountChanged?(1)
+
         } catch {
             self.error = error.localizedDescription
             print("❌ [CommentViewModel] 发送失败: \(error.localizedDescription)")
@@ -227,6 +234,8 @@ class CommentViewModel: ObservableObject {
                 withAnimation(.easeOut(duration: 0.25)) {
                     _ = comments.remove(at: index)
                 }
+                // 通知评论计数减少
+                onCommentCountChanged?(-1)
             } else {
                 // 删除二级回复
                 for i in comments.indices {
@@ -235,6 +244,8 @@ class CommentViewModel: ObservableObject {
                             comments[i].loadedReplies.remove(at: replyIndex)
                             comments[i].replyCount = max(0, comments[i].replyCount - 1)
                         }
+                        // 通知评论计数减少
+                        onCommentCountChanged?(-1)
                         break
                     }
                 }

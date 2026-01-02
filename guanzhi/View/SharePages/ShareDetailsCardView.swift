@@ -293,6 +293,15 @@ struct ShareDetailsCardView: View {
             .onChange(of: searchViewModel.selectedShare?.id) { oldId, newId in
                 if let share = searchViewModel.selectedShare, share.id != oldId {
                     commentViewModel.bind(to: share.id, authorId: share.userId)
+
+                    // 设置评论计数变化回调
+                    commentViewModel.onCommentCountChanged = { [weak searchViewModel] delta in
+                        if let share = searchViewModel?.selectedShare {
+                            share.commentCount = max(0, share.commentCount + delta)
+                            print("📊 [ShareDetailsCardView] 评论计数更新: \(share.commentCount)")
+                        }
+                    }
+
                     if isFullScreen {
                         Task {
                             await commentViewModel.loadComments(reset: true)
@@ -315,6 +324,14 @@ struct ShareDetailsCardView: View {
         if let share = searchViewModel.selectedShare,
            commentViewModel.shareId != share.id {
             commentViewModel.bind(to: share.id, authorId: share.userId)
+
+            // 设置评论计数变化回调
+            commentViewModel.onCommentCountChanged = { [weak searchViewModel] delta in
+                if let share = searchViewModel?.selectedShare {
+                    share.commentCount = max(0, share.commentCount + delta)
+                    print("📊 [ShareDetailsCardView] 评论计数更新: \(share.commentCount)")
+                }
+            }
         }
 
         // 如果有需要高亮的评论 ID，自动展开并加载
