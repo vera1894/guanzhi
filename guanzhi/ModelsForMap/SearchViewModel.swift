@@ -962,8 +962,18 @@ class SearchViewModel: ObservableObject {
         )
         if let thumbnailMediaFile = try? context.fetch(thumbnailFetchDescriptor).first {
             if let localURL = thumbnailMediaFile.localURL {
-//                print("找到分享 ID \(shareId) 的本地缩略图")
-                return localURL
+                // 检查本地文件是否真实存在（iOS 可能已清理 Caches 目录）
+                if FileManager.default.fileExists(atPath: localURL.path) {
+//                    print("找到分享 ID \(shareId) 的本地缩略图")
+                    return localURL
+                } else {
+                    // 文件不存在，清除 localURL 并使用远程 URL
+                    print("⚠️ 缩略图缓存已失效，使用远程 URL: shareId=\(shareId)")
+                    thumbnailMediaFile.localURL = nil
+                    if let url = thumbnailMediaFile.url {
+                        return url
+                    }
+                }
             } else if let url = thumbnailMediaFile.url {
 //                print("找到分享 ID \(shareId) 的远程缩略图 URL")
                 return url
@@ -985,8 +995,18 @@ class SearchViewModel: ObservableObject {
 
         if let firstPhotoMediaFile = try? context.fetch(photoFetchDescriptor).first {
             if let localURL = firstPhotoMediaFile.localURL {
-                print("使用分享 ID \(shareId) 的第一张照片的本地 URL")
-                return localURL
+                // 检查本地文件是否真实存在（iOS 可能已清理 Caches 目录）
+                if FileManager.default.fileExists(atPath: localURL.path) {
+                    print("使用分享 ID \(shareId) 的第一张照片的本地 URL")
+                    return localURL
+                } else {
+                    // 文件不存在，清除 localURL 并使用远程 URL
+                    print("⚠️ 照片缓存已失效，使用远程 URL: shareId=\(shareId)")
+                    firstPhotoMediaFile.localURL = nil
+                    if let url = firstPhotoMediaFile.url {
+                        return url
+                    }
+                }
             } else if let url = firstPhotoMediaFile.url {
                 print("使用分享 ID \(shareId) 的第一张照片的远程 URL")
                 return url
