@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v2.6
-**最后更新**: 2026-01-01（通知 API 分类过滤功能）
+**文档版本**: v2.7
+**最后更新**: 2026-01-02（缩略图缓存失效修复）
 
 ---
 
@@ -64,6 +64,12 @@ guanzhi/                          # 项目根目录
 ```bash
 open guanzhi.xcworkspace
 ```
+
+**缓存管理注意事项**：
+- 媒体文件缓存存储在 `Library/Caches/` 目录
+- iOS 会在设备存储空间不足时**自动清理** Caches 目录
+- 代码中访问缓存文件时，**必须先验证文件存在性**（`FileManager.fileExists`）
+- 详见：`projectBasicInfo/logs/2026-01-02-thumbnail-cache-invalidation-fix-cc.md`
 
 ### Java 后端 (`Server/onettoo/`)
 
@@ -706,6 +712,7 @@ extension Notification.Name {
 | 通知中台V1.5 | `projectBasicInfo/logs/2025-12-30-notification-center-v1.5-complete-cc.md` | 后台可配置+频率控制 |
 | 通知中台V2.0 | `projectBasicInfo/logs/2025-12-31-notification-v2-events-cc.md` | 管理通知+褪色提醒 |
 | 消息页面UI优化 | `projectBasicInfo/logs/2026-01-01-messages-page-ui-fixes-cc.md` | 红点/已读/详情页修复 |
+| 缩略图缓存修复 | `projectBasicInfo/logs/2026-01-02-thumbnail-cache-invalidation-fix-cc.md` | iOS Caches 目录失效问题 |
 
 ---
 

@@ -52,6 +52,9 @@ protocol AppState: AnyObject {
     var uploadProgress: Double { get set }
     var useOverlayMode: Bool { get set }
     var didShowWelcomeToast: Bool { get set }
+    var isInShareDetailView: Bool { get set }  // 追踪是否在分享详情页（用于临时隐藏底部sheet）
+    var savedShowingSearchView: Bool? { get set }
+    var savedShowingResultCardView: Bool? { get set }
 }
 
 @Observable 
@@ -83,6 +86,11 @@ class AppStateModel: AppState {
     var showErrorAlert: Bool = false
     var useOverlayMode: Bool = false
     var didShowWelcomeToast: Bool = false
+    var isInShareDetailView: Bool = false  // 追踪是否在分享详情页（用于临时隐藏底部sheet）
+
+    // 保存进入分享详情前的 sheet 状态，用于返回时恢复
+    var savedShowingSearchView: Bool? = nil
+    var savedShowingResultCardView: Bool? = nil
 }
 
 

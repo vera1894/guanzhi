@@ -737,6 +737,15 @@ struct ShareDetailView: View {
         // │  - 加载贴纸可用性                                                    │
         // └─────────────────────────────────────────────────────────────────────┘
         .onAppear {
+            // 标记进入分享详情页
+            appState.isInShareDetailView = true
+
+            // 保存当前 sheet 状态，并关闭 sheet（避免覆盖在详情页上）
+            appState.savedShowingSearchView = appState.isShowingSearchView
+            appState.savedShowingResultCardView = appState.isShowingResultCardView
+            appState.isShowingSearchView = false
+            appState.isShowingResultCardView = false
+
             if PreviewHarness.enabled {
                 print("🔌 [PreviewHarness] Overriding login status for preview")
                 OTOLoginStatusManager.shared.__overrideForPreview(userId: 11)
@@ -802,11 +811,29 @@ struct ShareDetailView: View {
         // │  - 清理媒体下载数据                                                  │
         // └─────────────────────────────────────────────────────────────────────┘
         .onDisappear {
+            // 标记离开分享详情页
+            appState.isInShareDetailView = false
+
             if navigationCoordinator.path.isEmpty {
                 withAnimation(.easeInOut) {
-                    appState.isShowingSearchView = true
+                    // 恢复之前保存的 sheet 状态
+                    if let savedResultCard = appState.savedShowingResultCardView, savedResultCard {
+                        // 之前是地点名称 sheet，恢复它
+                        appState.isShowingResultCardView = true
+                        appState.isShowingSearchView = false
+                    } else if let savedSearch = appState.savedShowingSearchView, savedSearch {
+                        // 之前是搜索框 sheet，恢复它
+                        appState.isShowingSearchView = true
+                    } else {
+                        // 默认显示搜索框
+                        appState.isShowingSearchView = true
+                    }
                     appState.isShowingShowMarker = true
                 }
+                // 清除保存的状态
+                appState.savedShowingSearchView = nil
+                appState.savedShowingResultCardView = nil
+
                 searchViewModel.isUpdatingAnnotations = false
                 searchViewModel.selectedAnnotation = nil
                 searchViewModel.selectedAnnotationID = nil
