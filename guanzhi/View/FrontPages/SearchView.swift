@@ -220,6 +220,19 @@ struct SearchView: View {
                             }
 
                         }
+                        // MARK: - 网络错误提示
+                        .overlay(alignment: .top) {
+                            if searchViewModel.nearbySharesState.hasError {
+                                NetworkErrorBanner(
+                                    message: "加载失败",
+                                    onRetry: {
+                                        searchViewModel.refreshNearbyShares(reason: .manual)
+                                    }
+                                )
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                                .animation(.spring(response: 0.3), value: searchViewModel.nearbySharesState.hasError)
+                            }
+                        }
                         .sheet(isPresented: $appState.isShowingSearchView) { // 显示 SheetView
                             SheetView(
                                 currentDetent: $currentDetent,

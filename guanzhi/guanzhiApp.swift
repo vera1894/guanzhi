@@ -133,6 +133,8 @@ struct guanzhiApp: App {
         _ = CoordinateConverter.shared
         // 预加载贴纸名称（异步，不阻塞启动）
         StickerNameService.shared.preload()
+        // Gate 检查 #5：确保 NetworkMonitor 单例常驻，App 启动时初始化
+        _ = NetworkMonitor.shared
     }
 
     var body: some Scene {

@@ -49,6 +49,10 @@
 		CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01E0012F0388820001CC01 /* MessageRowView.swift */; };
 		CC01F0022F0388820001CC01 /* NotificationBadgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */; };
 		CC01H0022F0388820001CC01 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */; };
+		EA08C3971EB94B91940E3EC4 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FDC1146805F46359FD7DBEE /* NetworkMonitor.swift */; };
+		97430F02CE394BA5B4078E7E /* RetryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8392EA8FC04D4389B241F633 /* RetryCoordinator.swift */; };
+		57AC814A1F5D47F3A227CC0D /* DataLoadingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5CBB93F5C1492B9E396D6C /* DataLoadingState.swift */; };
+		6C06716BA98B4D46A00A477B /* NetworkErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800224C80CA34A3F91E77F28 /* NetworkErrorBanner.swift */; };
 		FF0025902D3754F10056C5C6 /* UserTimelineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00258F2D3754F10056C5C6 /* UserTimelineViewModel.swift */; };
 		FF05E4462B84CC1300F5D375 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		FF1A50232CA0F5DB00596DBD /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1A50222CA0F5D500596DBD /* LocationService.swift */; };
@@ -185,6 +189,10 @@
 		CC01E0012F0388820001CC01 /* MessageRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRowView.swift; sourceTree = "<group>"; };
 		CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBadgeManager.swift; sourceTree = "<group>"; };
 		CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		3FDC1146805F46359FD7DBEE /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		8392EA8FC04D4389B241F633 /* RetryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryCoordinator.swift; sourceTree = "<group>"; };
+		6F5CBB93F5C1492B9E396D6C /* DataLoadingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataLoadingState.swift; sourceTree = "<group>"; };
+		800224C80CA34A3F91E77F28 /* NetworkErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkErrorBanner.swift; sourceTree = "<group>"; };
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D1093C2F2B6A7D99008553A3 /* ShareListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareListView.swift; sourceTree = "<group>"; };
 		D1093C312B6A819A008553A3 /* ShareSingleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSingleView.swift; sourceTree = "<group>"; };
@@ -414,6 +422,7 @@
 		D17042C12B5429EA005683D2 /* UIElement */ = {
 			isa = PBXGroup;
 			children = (
+				800224C80CA34A3F91E77F28 /* NetworkErrorBanner.swift */,
 				FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */,
 				FF7B72EE2B9A04DB0045E866 /* NotificationStyles */,
 				FF7B72E82B99E6640045E866 /* TextfieldStyles */,
@@ -616,6 +625,9 @@
 		FF5D240A2D23929000C1D463 /* ModelsForNetwork */ = {
 			isa = PBXGroup;
 			children = (
+				3FDC1146805F46359FD7DBEE /* NetworkMonitor.swift */,
+				8392EA8FC04D4389B241F633 /* RetryCoordinator.swift */,
+				6F5CBB93F5C1492B9E396D6C /* DataLoadingState.swift */,
 				CC01A0012F0388820001CC01 /* NotificationModels.swift */,
 				CC01B0012F0388820001CC01 /* NotificationService.swift */,
 				FF6C0DBE2F02887300CC0C8C /* DeviceService.swift */,
@@ -981,6 +993,10 @@
 				CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */,
 				CC01F0022F0388820001CC01 /* NotificationBadgeManager.swift in Sources */,
 				CC01H0022F0388820001CC01 /* NotificationSettingsView.swift in Sources */,
+				EA08C3971EB94B91940E3EC4 /* NetworkMonitor.swift in Sources */,
+				97430F02CE394BA5B4078E7E /* RetryCoordinator.swift in Sources */,
+				57AC814A1F5D47F3A227CC0D /* DataLoadingState.swift in Sources */,
+				6C06716BA98B4D46A00A477B /* NetworkErrorBanner.swift in Sources */,
 				FF9DB7992EEA4FF600374E02 /* StickerFieldView.swift in Sources */,
 				FF9DB79A2EEA4FF600374E02 /* StickerDefinition.swift in Sources */,
 				B7BE2E3D2F3D4738B2F72670 /* StickerKind.swift in Sources */,

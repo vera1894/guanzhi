@@ -59,6 +59,18 @@ class SearchViewModel: ObservableObject {
     @Published var shareDeletedMessage: String? = nil // 分享已删除的提示消息
     @Published var showNavigationSheet: Bool = false // 导航应用选择弹窗状态
 
+    // MARK: - 网络重试机制
+    /// 附近分享加载状态
+    @Published var nearbySharesState: DataLoadingState<[Share]> = .idle
+    /// 分享详情加载状态
+    @Published var shareDetailState: DataLoadingState<Share> = .idle
+    /// 当前正在执行的获取任务（用于取消）
+    private var currentFetchTask: Task<Void, Never>?
+    private var currentDetailTask: Task<Void, Never>?
+    /// 网络恢复监听
+    private var networkRestoredCancellable: AnyCancellable?
+    private var networkChangedCancellable: AnyCancellable?
+
     // ✅ MediaItemWrapper 缓存，key 为 "shareId-prefix"，用于复用已有的 wrapper，避免重复创建导致视图重建
     private var mediaItemWrapperCache: [String: MediaItemWrapper] = [:]
 
@@ -91,33 +103,136 @@ class SearchViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
     }
     
-    //获取所有分享数据列表
-    func fetchAllShares(latitude: Double, longitude: Double) {
-        Task {
+    // MARK: - 网络重试机制方法
+
+    /// 设置网络恢复监听
+    func setupNetworkMonitoring() {
+        // 监听网络恢复
+        networkRestoredCancellable = NotificationCenter.default
+            .publisher(for: .networkRestored)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                // 附近分享：只在错误状态时自动重试
+                if self.nearbySharesState.hasError {
+                    print("📶 [SearchViewModel] 网络恢复，自动重试获取分享列表")
+                    self.refreshNearbyShares(reason: .networkRestored)
+                }
+                // 分享详情：只在错误状态时自动重试
+                if self.shareDetailState.hasError, let shareId = self.selectedShare?.id {
+                    print("📶 [SearchViewModel] 网络恢复，自动重试获取分享详情")
+                    self.fetchShareDetailFromServer(shareId: shareId, isBackground: false)
+                }
+            }
+
+        // 监听网络类型切换
+        networkChangedCancellable = NotificationCenter.default
+            .publisher(for: .networkChanged)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                // 附近分享：只在错误状态时自动重试
+                if self.nearbySharesState.hasError {
+                    print("📶 [SearchViewModel] 网络切换，自动重试获取分享列表")
+                    self.refreshNearbyShares(reason: .networkRestored)
+                }
+                // 分享详情：只在错误状态时自动重试
+                if self.shareDetailState.hasError, let shareId = self.selectedShare?.id {
+                    print("📶 [SearchViewModel] 网络切换，自动重试获取分享详情")
+                    self.fetchShareDetailFromServer(shareId: shareId, isBackground: false)
+                }
+            }
+    }
+
+    /// 刷新附近分享（带重试机制）
+    /// - Parameter reason: 刷新原因
+    func refreshNearbyShares(reason: RefreshReason) {
+        guard let location = locationManager?.currentLocation else {
+            print("⚠️ [SearchViewModel] 无法获取当前位置")
+            return
+        }
+
+        // 规范 2：如果已在加载中，直接返回
+        if case .loading = nearbySharesState { return }
+
+        // 取消旧任务
+        currentFetchTask?.cancel()
+
+        // P0 修复：Task 必须明确 @MainActor
+        currentFetchTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+
+            let key = RetryCoordinator.key(for: .nearbyShares(lat: location.latitude, lng: location.longitude))
+            let bypassCooldown = reason.shouldBypassCooldown
+
+            // 原子操作：检查并标记开始
+            guard await RetryCoordinator.shared.beginIfAllowed(
+                key: key,
+                bypassCooldown: bypassCooldown
+            ) else { return }
+
+            // P0 修复：使用 Task.detached 避免取消传播到 finish 调用
+            defer {
+                Task.detached { await RetryCoordinator.shared.finish(key: key) }
+            }
+
+            // P0 修复：保存前置状态，取消时可恢复
+            let prevState = self.nearbySharesState
+            self.nearbySharesState = .loading
+
             do {
-                print("🌍 SearchViewModel: 开始获取附近分享数据...")
-                print("📍 坐标: latitude=\(latitude), longitude=\(longitude)")
-                
+                print("🌍 [SearchViewModel] 开始获取附近分享数据...")
+                print("📍 坐标: latitude=\(location.latitude), longitude=\(location.longitude)")
+
                 let shareList = try await ShareService.shared.fetchNearbyShares(
-                    latitude: latitude,
-                    longitude: longitude,
-                    radius: 1000, //获取范围
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    radius: 1000,
                     size: -1
                 )
-                
-                print("✅ SearchViewModel: 成功获取 \(shareList.count) 条分享数据")
-                
-                // 跟原逻辑一样，把它存进 SwiftData
-                await saveSharesToDatabase(shares: shareList)
-                // 保存完再 getAnnotations() 或其他操作
+
+                // P0 修复：取消时恢复状态
+                if Task.isCancelled {
+                    self.nearbySharesState = prevState
+                    return
+                }
+
+                print("✅ [SearchViewModel] 成功获取 \(shareList.count) 条分享数据")
+
+                // 保存到 SwiftData
+                await self.saveSharesToDatabase(shares: shareList)
                 self.getAnnotations()
+
+                // 获取保存后的 Share 列表
+                let shares = self.getAllSharesFromDatabase()
+                self.nearbySharesState = .loaded(shares)
+
             } catch {
-                print("❌ SearchViewModel: 获取分享数据失败")
-                print("❌ 错误类型: \(type(of: error))")
-                print("❌ 错误信息: \(error.localizedDescription)")
-                print("❌ 错误详情: \(error)")
+                // P0 修复：取消时恢复状态
+                if Task.isCancelled {
+                    self.nearbySharesState = prevState
+                    return
+                }
+
+                print("❌ [SearchViewModel] 获取分享数据失败: \(error.localizedDescription)")
+                self.nearbySharesState = .error(error)
             }
         }
+    }
+
+    /// 从数据库获取所有分享
+    private func getAllSharesFromDatabase() -> [Share] {
+        guard context != nil else { return [] }
+        let fetchDescriptor = FetchDescriptor<Share>(sortBy: [SortDescriptor<Share>(\.createDate, order: .reverse)])
+        return (try? context.fetch(fetchDescriptor)) ?? []
+    }
+
+    //获取所有分享数据列表（保留原方法，内部调用新方法）
+    func fetchAllShares(latitude: Double, longitude: Double) {
+        // 设置网络监听（首次调用时）
+        if networkRestoredCancellable == nil {
+            setupNetworkMonitoring()
+        }
+        // 使用新的刷新方法
+        refreshNearbyShares(reason: .onAppear)
     }
     
     //保存分享数据到数据库
@@ -1042,53 +1157,147 @@ class SearchViewModel: ObservableObject {
         return true
     }
     
-    //从服务器获取分享详情
+    //从服务器获取分享详情（带重试机制）
     func fetchShareDetailFromServer(shareId: Int64, isBackground: Bool = false) {
-        Task {
+        // 取消旧任务
+        currentDetailTask?.cancel()
+
+        currentDetailTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+
+            let key = RetryCoordinator.key(for: .shareDetail(id: shareId))
+
+            // 原子操作：检查并标记开始
+            guard await RetryCoordinator.shared.beginIfAllowed(
+                key: key,
+                bypassCooldown: false
+            ) else { return }
+
+            // P0 修复：使用 Task.detached 避免取消传播
+            defer {
+                Task.detached { await RetryCoordinator.shared.finish(key: key) }
+            }
+
+            // 保存前置状态
+            let prevState = self.shareDetailState
+            if !isBackground {
+                self.shareDetailState = .loading
+            }
+
             do {
                 let detail = try await ShareService.shared.fetchShareDetail(shareId: shareId)
+
+                // 取消时恢复状态
+                if Task.isCancelled {
+                    self.shareDetailState = prevState
+                    return
+                }
 
                 // 检查分享是否已被删除
                 if detail.deleted == 1 {
                     // 分享已被删除
-                    await MainActor.run {
-                        // 从本地删除该分享
-                        self.deleteShare(shareId: shareId)
+                    // 从本地删除该分享
+                    self.deleteShare(shareId: shareId)
 
-                        // 从地图标注列表中移除
-                        if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
-                            self.annotations.remove(at: index)
-                        }
-
-                        // 设置标志，通知 UI 显示提示
-                        self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
-
-                        // ✅ 清除加载状态
-                        self.currentLoadingShareId = nil
+                    // 从地图标注列表中移除
+                    if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
+                        self.annotations.remove(at: index)
                     }
+
+                    // 设置标志，通知 UI 显示提示
+                    self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
+
+                    // 清除加载状态
+                    self.currentLoadingShareId = nil
+                    self.shareDetailState = .idle
                     return
                 }
 
                 // 把这个 detail 做 SwiftData 持久化
-                await saveSharesToDatabase(shares: [detail])
+                await self.saveSharesToDatabase(shares: [detail])
 
-                // ✅ 清除加载状态，允许重新加载（此时数据已在本地数据库）
-                await MainActor.run {
-                    // 重新从本地加载（刷新 UI）
-                    _ = self.loadFromLocal(shareId: shareId)
-                    if !isBackground {
-                        self.currentLoadingShareId = nil
+                // 重新从本地加载（刷新 UI）
+                _ = self.loadFromLocal(shareId: shareId)
+                if !isBackground {
+                    self.currentLoadingShareId = nil
+                }
+
+                // 更新状态为成功
+                if let share = self.selectedShare {
+                    self.shareDetailState = .loaded(share)
+                } else {
+                    self.shareDetailState = .idle
+                }
+
+            } catch {
+                // 取消时恢复状态
+                if Task.isCancelled {
+                    self.shareDetailState = prevState
+                    return
+                }
+
+                print("❌ [SearchViewModel] 获取分享详情失败: \(error)")
+
+                // 出错时设置错误状态
+                if !isBackground {
+                    self.currentLoadingShareId = nil
+                    self.shareDetailState = .error(error)
+                }
+            }
+        }
+    }
+
+    /// 重试获取分享详情
+    func retryShareDetail(shareId: Int64) {
+        // 清除错误状态
+        shareDetailState = .idle
+        // 使用 manual 原因绕过 cooldown
+        currentDetailTask?.cancel()
+
+        currentDetailTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+
+            let key = RetryCoordinator.key(for: .shareDetail(id: shareId))
+
+            // bypassCooldown = true 因为是手动重试
+            guard await RetryCoordinator.shared.beginIfAllowed(
+                key: key,
+                bypassCooldown: true
+            ) else { return }
+
+            defer {
+                Task.detached { await RetryCoordinator.shared.finish(key: key) }
+            }
+
+            self.shareDetailState = .loading
+
+            do {
+                let detail = try await ShareService.shared.fetchShareDetail(shareId: shareId)
+
+                if Task.isCancelled { return }
+
+                if detail.deleted == 1 {
+                    self.deleteShare(shareId: shareId)
+                    if let index = self.annotations.firstIndex(where: { $0.id == "\(shareId)" }) {
+                        self.annotations.remove(at: index)
                     }
+                    self.shareDeletedMessage = "这条观之已被删除，看看其他的吧～"
+                    self.shareDetailState = .idle
+                    return
+                }
+
+                await self.saveSharesToDatabase(shares: [detail])
+                _ = self.loadFromLocal(shareId: shareId)
+
+                if let share = self.selectedShare {
+                    self.shareDetailState = .loaded(share)
+                } else {
+                    self.shareDetailState = .idle
                 }
             } catch {
-                print("Error fetching share detail: \(error)")
-
-                // ✅ 出错时也要清除加载状态
-                Task { @MainActor in
-                    if !isBackground {
-                        self.currentLoadingShareId = nil
-                    }
-                }
+                if Task.isCancelled { return }
+                print("❌ [SearchViewModel] 重试获取分享详情失败: \(error)")
+                self.shareDetailState = .error(error)
             }
         }
     }
