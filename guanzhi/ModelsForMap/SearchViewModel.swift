@@ -74,6 +74,18 @@ class SearchViewModel: ObservableObject {
     // ✅ MediaItemWrapper 缓存，key 为 "shareId-prefix"，用于复用已有的 wrapper，避免重复创建导致视图重建
     private var mediaItemWrapperCache: [String: MediaItemWrapper] = [:]
 
+    // MARK: - 媒体下载重试机制
+    /// 失败的下载任务队列（用于网络恢复时重试）
+    private var failedDownloads: [(mediaFile: MediaFile, wrapper: MediaItemWrapper)] = []
+    /// 媒体下载的 URLSession（带超时配置）
+    private lazy var mediaDownloadSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30   // 请求超时 30 秒
+        config.timeoutIntervalForResource = 120 // 资源超时 120 秒
+        config.waitsForConnectivity = true      // 等待网络连接
+        return URLSession(configuration: config)
+    }()
+
     // MARK: - Functions - 分享标注列表与标注用于地图
 
     // 根据坐标获取地址（备用，目前未使用）
@@ -122,6 +134,8 @@ class SearchViewModel: ObservableObject {
                     print("📶 [SearchViewModel] 网络恢复，自动重试获取分享详情")
                     self.fetchShareDetailFromServer(shareId: shareId, isBackground: false)
                 }
+                // 媒体下载：重试失败的下载
+                self.retryFailedMediaDownloads()
             }
 
         // 监听网络类型切换
@@ -139,7 +153,40 @@ class SearchViewModel: ObservableObject {
                     print("📶 [SearchViewModel] 网络切换，自动重试获取分享详情")
                     self.fetchShareDetailFromServer(shareId: shareId, isBackground: false)
                 }
+                // 媒体下载：重试失败的下载
+                self.retryFailedMediaDownloads()
             }
+    }
+
+    /// 重试失败的媒体下载
+    private func retryFailedMediaDownloads() {
+        guard !failedDownloads.isEmpty else { return }
+
+        let downloadsToRetry = failedDownloads
+        failedDownloads.removeAll()
+
+        print("📶 [SearchViewModel] 网络恢复，重试 \(downloadsToRetry.count) 个失败的媒体下载")
+
+        Task {
+            for item in downloadsToRetry {
+                do {
+                    try await downloadMediaFile(mediaFile: item.mediaFile)
+                    // 下载成功后创建媒体项
+                    await MainActor.run {
+                        if let mediaItem = createMediaItem(from: item.wrapper) {
+                            item.wrapper.mediaItem = mediaItem
+                            print("✅ [SearchViewModel] 媒体重试下载成功")
+                        }
+                    }
+                } catch {
+                    // 仍然失败，重新加入队列
+                    print("❌ [SearchViewModel] 媒体重试下载仍然失败: \(error.localizedDescription)")
+                    await MainActor.run {
+                        self.failedDownloads.append(item)
+                    }
+                }
+            }
+        }
     }
 
     /// 刷新附近分享（带重试机制）
@@ -1305,42 +1352,70 @@ class SearchViewModel: ObservableObject {
     func downloadMediaFiles(mediaItems: [MediaItemWrapper]) {
         Task {
             for mediaItemWrapper in mediaItems {
+                var photoDownloadFailed = false
+                var videoDownloadFailed = false
+
                 // 使用 TaskGroup 并发下载
-                try await withThrowingTaskGroup(of: Void.self) { group in
+                await withTaskGroup(of: (Bool, Bool).self) { group in
                     // 下载照片文件
                     if let photoFile = mediaItemWrapper.photoFile, photoFile.localURL == nil {
                         group.addTask {
-                            try await self.downloadMediaFile(mediaFile: photoFile)
+                            do {
+                                try await self.downloadMediaFile(mediaFile: photoFile)
+                                return (false, false) // photo success
+                            } catch {
+                                print("❌ 照片下载失败，已加入重试队列: \(error.localizedDescription)")
+                                await MainActor.run {
+                                    self.failedDownloads.append((mediaFile: photoFile, wrapper: mediaItemWrapper))
+                                }
+                                return (true, false) // photo failed
+                            }
                         }
                     }
                     // 下载视频文件
                     if let videoFile = mediaItemWrapper.videoFile, videoFile.localURL == nil {
                         group.addTask {
-                            try await self.downloadMediaFile(mediaFile: videoFile)
+                            do {
+                                try await self.downloadMediaFile(mediaFile: videoFile)
+                                return (false, false) // video success
+                            } catch {
+                                print("❌ 视频下载失败，已加入重试队列: \(error.localizedDescription)")
+                                await MainActor.run {
+                                    self.failedDownloads.append((mediaFile: videoFile, wrapper: mediaItemWrapper))
+                                }
+                                return (false, true) // video failed
+                            }
                         }
                     }
-                    // 等待所有任务完成
-                    try await group.waitForAll()
-                }
-                // 在主线程上创建媒体项并更新 UI
-                await MainActor.run {
-                    // 检查 mediaFile 是否还存在（可能已被删除）
-                    let isDeleted = (mediaItemWrapper.photoFile?.isDeleted ?? false) ||
-                                   (mediaItemWrapper.videoFile?.isDeleted ?? false)
-                    guard !isDeleted else {
-                        print("媒体文件已被删除，跳过创建媒体项")
-                        return
+                    // 收集结果
+                    for await result in group {
+                        if result.0 { photoDownloadFailed = true }
+                        if result.1 { videoDownloadFailed = true }
                     }
+                }
 
-                    if let mediaItem = createMediaItem(from: mediaItemWrapper) {
-                        mediaItemWrapper.mediaItem = mediaItem
+                // 只有在没有失败时才创建媒体项
+                if !photoDownloadFailed && !videoDownloadFailed {
+                    // 在主线程上创建媒体项并更新 UI
+                    await MainActor.run {
+                        // 检查 mediaFile 是否还存在（可能已被删除）
+                        let isDeleted = (mediaItemWrapper.photoFile?.isDeleted ?? false) ||
+                                       (mediaItemWrapper.videoFile?.isDeleted ?? false)
+                        guard !isDeleted else {
+                            print("媒体文件已被删除，跳过创建媒体项")
+                            return
+                        }
+
+                        if let mediaItem = createMediaItem(from: mediaItemWrapper) {
+                            mediaItemWrapper.mediaItem = mediaItem
+                        }
                     }
                 }
             }
         }
     }
-    
-    //异步加载媒体文件
+
+    //异步加载媒体文件（使用自定义超时配置的 URLSession）
     func downloadMediaFile(mediaFile: MediaFile) async throws {
         guard let url = mediaFile.url else {
             print("媒体文件没有有效的 URL")
@@ -1348,11 +1423,12 @@ class SearchViewModel: ObservableObject {
         }
         do {
             print("开始下载媒体文件：\(url.absoluteString)")
-            let (data, _) = try await URLSession.shared.data(from: url)
+            // 使用自定义的 URLSession（带超时配置）
+            let (data, _) = try await mediaDownloadSession.data(from: url)
             // 保存到本地
             let localURL = getLocalURL(for: mediaFile)
             try data.write(to: localURL)
-            
+
             // 检查文件尺寸（仅对图像和视频文件）
             if mediaFile.type == .photo || mediaFile.type == .livePhoto {
                 if let image = UIImage(data: data) {
@@ -1368,7 +1444,7 @@ class SearchViewModel: ObservableObject {
                     print("下载的视频尺寸：(\(width), \(height))")
                 }
             }
-            
+
             // 在主线程上更新 mediaFile 对象
             await MainActor.run {
                 // 安全检查：确保 context 已初始化
@@ -1692,8 +1768,10 @@ class SearchViewModel: ObservableObject {
         self.downloadMedia.removeAll()
         // ✅ 清理所有 MediaItemWrapper 缓存
         mediaItemWrapperCache.removeAll()
+        // ✅ 清理失败下载队列
+        failedDownloads.removeAll()
         #if DEBUG
-        print("🧹 清理所有 MediaItemWrapper 缓存")
+        print("🧹 清理所有 MediaItemWrapper 缓存和失败下载队列")
         #endif
     }
 

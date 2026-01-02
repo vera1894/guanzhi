@@ -35,29 +35,59 @@ struct ShareListView: View {
             .padding()
             Divider()
             if selectedTab == 0 {
-                List {
-                    ForEach(timelineVM.userShares.filter { $0.deleted == 0 }, id: \.id) { shareItem in
-                        ShareSingleView(share: shareItem)
-                            .listRowInsets(EdgeInsets())
-                            .environment(\.appState, appState)
-                            .environmentObject(searchViewModel)                  //
-                            .environmentObject(navigationCoordinator)
+                // 根据加载状态显示不同内容
+                switch timelineVM.loadingState {
+                case .idle, .loading:
+                    VStack {
+                        Spacer()
+                        ProgressView("加载中...")
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+
+                case .error:
+                    RetryView(
+                        message: "加载失败",
+                        detail: "请检查网络连接",
+                        onRetry: {
+                            timelineVM.retry()
+                        }
+                    )
+                    .frame(maxWidth: .infinity)
+
+                case .loaded:
+                    if timelineVM.userShares.filter({ $0.deleted == 0 }).isEmpty {
+                        VStack {
+                            Spacer()
+                            Text("暂无分享")
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        List {
+                            ForEach(timelineVM.userShares.filter { $0.deleted == 0 }, id: \.id) { shareItem in
+                                ShareSingleView(share: shareItem)
+                                    .listRowInsets(EdgeInsets())
+                                    .environment(\.appState, appState)
+                                    .environmentObject(searchViewModel)
+                                    .environmentObject(navigationCoordinator)
+                            }
+                        }
+                        .listStyle(PlainListStyle())
                     }
                 }
-                
-                .listStyle(PlainListStyle())
-                  
             } else {
                 List {
 //                    ShareSingleView().listRowInsets(EdgeInsets())
 //                    ShareSingleView().listRowInsets(EdgeInsets())
 //                    ShareSingleView().listRowInsets(EdgeInsets())
-                          
+
                         }.listStyle(PlainListStyle())
-                   
+
             }
-            
-            
+
+
         }
         .task {
             do {
