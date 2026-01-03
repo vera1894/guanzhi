@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v2.7
-**最后更新**: 2026-01-02（缩略图缓存失效修复）
+**文档版本**: v2.8
+**最后更新**: 2026-01-03（Sheet与导航层级冲突修复）
 
 ---
 
@@ -713,6 +713,7 @@ extension Notification.Name {
 | 通知中台V2.0 | `projectBasicInfo/logs/2025-12-31-notification-v2-events-cc.md` | 管理通知+褪色提醒 |
 | 消息页面UI优化 | `projectBasicInfo/logs/2026-01-01-messages-page-ui-fixes-cc.md` | 红点/已读/详情页修复 |
 | 缩略图缓存修复 | `projectBasicInfo/logs/2026-01-02-thumbnail-cache-invalidation-fix-cc.md` | iOS Caches 目录失效问题 |
+| Sheet导航冲突修复 | `projectBasicInfo/logs/2026-01-03-sheet-navigation-conflict-fix-cc.md` | Sheet与NavigationStack层级问题 |
 
 ---
 
