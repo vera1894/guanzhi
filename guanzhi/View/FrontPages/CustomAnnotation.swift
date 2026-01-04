@@ -36,6 +36,16 @@ class CustomAnnotation: NSObject, Identifiable, MKAnnotation {
         self.annotationData = annotationData
         self.annotationType = annotationType
     }
+
+    // MARK: - Hashable (Stage 1: 用于 MKMapView 标注 diff 算法)
+    override var hash: Int {
+        return id.hashValue
+    }
+
+    override func isEqual(_ object: Any?) -> Bool {
+        guard let other = object as? CustomAnnotation else { return false }
+        return self.id == other.id
+    }
 }
 
 enum AnnotationType {

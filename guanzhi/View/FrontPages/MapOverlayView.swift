@@ -7,9 +7,23 @@
 import SwiftUI
 import MapKit
 
+// MARK: - 可调参数
+
+/// 地图控件按钮直径（定位、指南针、3D/2D）
+private let kMapControlButtonSize: CGFloat = 40
+
 struct MapOverlayView: View {
     let mapScope: Namespace.ID  // ✅ 接收与 Map 相同的 scope，用于绑定 MapKit 控件
     @Binding var position: MapCameraPosition
+
+    // MARK: - MKMapView 支持
+    var useMKMapView: Bool = false  // 是否使用 MKMapView 模式
+    var mkMapView: MKMapView?  // MKMapView 引用（用于 MKCompassButton）
+    @Binding var shouldCenterOnUser: Bool  // MKMapView 模式：定位按钮触发
+    @Binding var shouldResetHeading: Bool  // MKMapView 模式：指南针按钮触发
+    @Binding var shouldToggle3D: Bool  // MKMapView 模式：3D 按钮触发
+    @Binding var is3DMode: Bool  // MKMapView 模式：当前是否 3D
+
     @Environment(\.appState) var appState
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var searchViewModel: SearchViewModel
@@ -100,46 +114,74 @@ struct MapOverlayView: View {
 //            }
 //            .buttonStyle(ButtonStyle_m())
             
-            // ✅ 官方 MapKit 控件（绑定到同一个 mapScope，会与地图联动）
-            
-            MapUserLocationButton(scope: mapScope)  // 定位按钮：回到用户位置
-                .mapControlVisibility(.automatic)
-                .symbolVariant (.circle)
-                .labelStyle(.automatic)
-                .controlSize(.small)
-                .cornerRadius(24)
-                .tint(Color("color-black"))
-                .symbolRenderingMode(.hierarchical)
-                .labelStyle(.iconOnly)
-                .background(.regularMaterial, in: Circle())
-                .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
-                .font(. system(size: 12))
-//                .foregroundColor(Color.black)
-                .scaleEffect(0.9)
+            // MARK: - 地图控件（根据地图类型切换）
+            if useMKMapView {
+                // ===== MKMapView 模式：使用官方 UIKit 控件 =====
 
-            MapCompass(scope: mapScope)             // 指南针：随地图旋转，点击复位正北
-                .mapControlVisibility(.visible)
-                .symbolVariant (.fill)
-                .labelStyle(.iconOnly)
-                .foregroundColor(Color.black)
-                .controlSize(.small)
-                .tint(Color.black)
-                .background(.ultraThinMaterial, in: Circle())
-                .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
-                .font(.system(size: 8))
-                .scaleEffect(0.9)
+                // MKUserTrackingButton（官方定位按钮，圆形毛玻璃背景已内置）
+                MKUserTrackingButtonWrapper(mapView: mkMapView, size: kMapControlButtonSize)
+                    .frame(width: kMapControlButtonSize, height: kMapControlButtonSize)
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
 
-            MapPitchToggle(scope: mapScope)         // 3D 按钮：切换平面/3D 视角
-                .mapControlVisibility(.visible)
-                .symbolVariant (.fill)
-                .labelStyle(.iconOnly)
-//                .foregroundColor(Color.black)
-                .controlSize(.small)
-                .tint(Color("color-black"))
-                .background(.regularMaterial, in: Circle())
+                // MKCompassButton（官方指南针，圆形纯色背景）
+                MKCompassButtonWrapper(mapView: mkMapView, size: kMapControlButtonSize)
+                    .frame(width: kMapControlButtonSize, height: kMapControlButtonSize)
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+
+                // 3D/2D 切换按钮（无官方控件，自定义实现，纯色背景与官方控件统一）
+                Button {
+                    print("MKMapView 3D 按钮被点击")
+                    shouldToggle3D = true
+                } label: {
+                    Image(systemName: is3DMode ? "view.2d" : "view.3d")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                }
+                .frame(width: kMapControlButtonSize, height: kMapControlButtonSize)
+                .background(Color(.systemBackground), in: Circle())
+                .compositingGroup()
                 .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
-                .font(.system(size: 8))
-                .scaleEffect(0.9)
+
+            } else {
+                // ===== SwiftUI Map 模式：使用官方 MapKit 控件 =====
+
+                MapUserLocationButton(scope: mapScope)  // 定位按钮：回到用户位置
+                    .mapControlVisibility(.automatic)
+                    .symbolVariant (.circle)
+                    .labelStyle(.automatic)
+                    .controlSize(.small)
+                    .cornerRadius(24)
+                    .tint(Color("color-black"))
+                    .symbolRenderingMode(.hierarchical)
+                    .labelStyle(.iconOnly)
+                    .background(.regularMaterial, in: Circle())
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                    .font(. system(size: 12))
+                    .scaleEffect(0.9)
+
+                MapCompass(scope: mapScope)             // 指南针：随地图旋转，点击复位正北
+                    .mapControlVisibility(.visible)
+                    .symbolVariant (.fill)
+                    .labelStyle(.iconOnly)
+                    .foregroundColor(Color.black)
+                    .controlSize(.small)
+                    .tint(Color.black)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                    .font(.system(size: 8))
+                    .scaleEffect(0.9)
+
+                MapPitchToggle(scope: mapScope)         // 3D 按钮：切换平面/3D 视角
+                    .mapControlVisibility(.visible)
+                    .symbolVariant (.fill)
+                    .labelStyle(.iconOnly)
+                    .controlSize(.small)
+                    .tint(Color("color-black"))
+                    .background(.regularMaterial, in: Circle())
+                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                    .font(.system(size: 8))
+                    .scaleEffect(0.9)
+            }
             
 
         }
@@ -166,7 +208,12 @@ struct MapOverlayView_Previews: PreviewProvider {
                         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
                     )
                 )
-            )
+            ),
+            useMKMapView: false,
+            shouldCenterOnUser: .constant(false),
+            shouldResetHeading: .constant(false),
+            shouldToggle3D: .constant(false),
+            is3DMode: .constant(false)
         )
         .environment(\.appState, AppStateModel())
         .environmentObject(LocationManager())

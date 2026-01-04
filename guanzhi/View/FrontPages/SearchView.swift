@@ -12,6 +12,12 @@ import UserNotifications
 struct SearchView: View {
     
     let useOverlay = false // true: 使用overlay, false: 使用navigationDestination 显示分享详情
+
+    // MARK: - Stage 1 临时开关：可一键切回旧 SwiftUI Map
+    // 设为 true 使用新的 MKMapView，设为 false 使用旧的 SwiftUI Map
+    // 地图模式切换开关
+    let useMKMapView = true
+
     var animationNamespace: Namespace.ID
     @Namespace var mapScope
 //    @Namespace private var animationNamespace
@@ -36,6 +42,29 @@ struct SearchView: View {
     @State private var isAnimating: Bool = false
     @State private var didPrime3D = false  // ✅ 追踪是否已激活 3D 按钮
     @State private var lastCamera: MapCamera?  // ✅ 保存最近的相机状态
+
+    // MARK: - MKMapView 状态（Stage 1）
+    @State private var shouldSetRegion = false  // 控制是否需要设置 region（搜索跳转）
+    @State private var shouldCenterOnUser = false  // 控制是否定位到用户位置（点击定位按钮）
+    @State private var shouldResetHeading = false  // 控制是否复位到正北（点击指南针按钮）
+    @State private var shouldToggle3D = false  // 控制是否切换 3D 模式（点击 3D 按钮）
+    @State private var is3DMode = false  // 当前是否为 3D 模式
+    @State private var mkMapView: MKMapView?  // MKMapView 引用（用于 MKCompassButton）
+
+    // MARK: - 标注点击处理（Stage 1 提取，供 SwiftUI Map 和 MKMapView 共用）
+    private func handleAnnotationTap(annotation: CustomAnnotation, thumbnailImage: UIImage?) {
+        print("点击标注")
+        searchViewModel.selectAnnotation(annotation, thumbnailImage: thumbnailImage)
+        withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.4)) {
+            appState.isShowingSearchView = false
+            if appState.useOverlayMode {
+                searchViewModel.isShareDetailOverlayShown = true
+                print("searchViewModel.isShareDetailOverlayShown 为 \(searchViewModel.isShareDetailOverlayShown)")
+            } else {
+                navigationCoordinator.path.append(Route.shareDetailView(annotationID: annotation.id))
+            }
+        }
+    }
 
     /// 激活 3D 按钮：轻抬 pitch 到 1° 再回到 0°
     /// 等效于用户双指上托一次，但视觉上保持 2D
@@ -85,99 +114,106 @@ struct SearchView: View {
             } else {
 //                NavigationStack(path: $navigationCoordinator.path) {
                     ZStack{
-                        // 地图层
-                        Map(position: $position,
-                            interactionModes: [.pan, .zoom, .rotate, .pitch],  // ✅ 明确包含 .pitch，确保 3D 控件可用
-                            scope: mapScope) {
-                            if !searchViewModel.isShareDetailOverlayShown/*appState.isShareImageExpanded*/ {
-                                ForEach(searchViewModel.annotations, id: \.id) { annotation in
-                                    Annotation("", coordinate: annotation.coordinate, anchor: .bottom) {
-                                        MapAnnotationView(
-                                            animationNamespace: animationNamespace,
-                                            annotation: annotation,
-                                            onTap: { uiImage in
-                                                print("点击标注")
-                                                searchViewModel.selectAnnotation(annotation, thumbnailImage: uiImage)
-                                                withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.4)) {
-                                                        appState.isShowingSearchView = false
-                                                    if appState.useOverlayMode {
-                                                        /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = true  // 启用overlay模式
-                                                        print("searchViewModel.isShareDetailOverlayShown 为 \(searchViewModel.isShareDetailOverlayShown)")
-                                                    } else {
-                                                        navigationCoordinator.path.append(Route.shareDetailView(annotationID: annotation.id)) // 导航模式
-                                                    }
-                                                    }
-                                            }
-                                        )
-//                                        .matchedGeometryEffect(id: "sharedElement\(annotation.id)", in: animationNamespace)
-                                        .environment(appState)
-                                        .environmentObject(searchViewModel)
-                                        .id(annotation.id)
-                                    }
-
+                        // MARK: - 地图层（Stage 1: 支持 MKMapView 和 SwiftUI Map 切换）
+                        Group {
+                        if useMKMapView {
+                            // ===== 新版：MKMapView (Stage 1) =====
+                            MKMapViewWrapper(
+                                region: $searchViewModel.region,
+                                annotations: searchViewModel.annotations,
+                                onAnnotationTap: { annotation, thumbnailImage in
+                                    handleAnnotationTap(annotation: annotation, thumbnailImage: thumbnailImage)
+                                },
+                                onRegionChange: { newRegion in
+                                    // 只更新 ViewModel，不触发 updateUIView 重设 region
+                                    searchViewModel.region = newRegion
+                                    searchViewModel.scheduleAnnotationUpdate()
+                                },
+                                showsUserLocation: true,
+                                shouldSetRegion: $shouldSetRegion,
+                                shouldCenterOnUser: $shouldCenterOnUser,
+                                shouldResetHeading: $shouldResetHeading,
+                                shouldToggle3D: $shouldToggle3D,
+                                is3DMode: $is3DMode,
+                                onMapViewCreated: { mapView in
+                                    self.mkMapView = mapView
+                                }
+                            )
+                            .disabled(searchViewModel.isShareDetailOverlayShown)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .ignoresSafeArea(.all)
+                            .onAppear {
+                                // 首次加载，请求定位
+                                locationManager.requestLocation()
+                            }
+                            .onReceive(locationManager.$currentLocation) { location in
+                                if let location = location, !appState.hasSetInitialRegion {
+                                    // 首次获取位置：触发精确定位（类似点击定位按钮）
+                                    shouldCenterOnUser = true
+                                    appState.hasSetInitialRegion = true
+                                    searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
                                 }
                             }
-                            ForEach(locationMarkers) { marker in
+                        } else {
+                            // ===== 旧版：SwiftUI Map（回退开关） =====
+                            Map(position: $position,
+                                interactionModes: [.pan, .zoom, .rotate, .pitch],
+                                scope: mapScope) {
+                                if !searchViewModel.isShareDetailOverlayShown {
+                                    ForEach(searchViewModel.annotations, id: \.id) { annotation in
+                                        Annotation("", coordinate: annotation.coordinate, anchor: .bottom) {
+                                            MapAnnotationView(
+                                                animationNamespace: animationNamespace,
+                                                annotation: annotation,
+                                                onTap: { uiImage in
+                                                    handleAnnotationTap(annotation: annotation, thumbnailImage: uiImage)
+                                                }
+                                            )
+                                            .environment(appState)
+                                            .environmentObject(searchViewModel)
+                                            .id(annotation.id)
+                                        }
+                                    }
+                                }
+                                ForEach(locationMarkers) { marker in
                                     Marker(marker.title ?? "", coordinate: marker.coordinate)
                                 }
-                            UserAnnotation()
-
-//                            MainMapContent(
-//                                    searchViewModel: searchViewModel,
-//                                    locationMarkers: locationMarkers,
-//                                    animationNamespace: animationNamespace
-//                                )
-                        }
-//                        .mapControlVisibility(.visible)  // 🧪 验证用：显示系统控件
-//                        .mapControls {
-//                            MapCompass(scope: mapScope)
-//                            MapUserLocationButton(scope: mapScope)
-//                            MapPitchToggle(scope: mapScope)
-//                            MapScaleView(scope: mapScope)
-//                        }
-                        .coordinateSpace(name: "shared")
-                        .disabled(/*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .mapStyle(.standard(elevation: .realistic))
-                        .ignoresSafeArea(.all)
-                        .animation(.spring(), value: searchViewModel.selectedLocation)
-                        .onAppear {
-                            if !appState.hasSetInitialRegion {
-                                position = .automatic
-                            } else {
-                                position = .region(searchViewModel.region)
+                                UserAnnotation()
                             }
-                            locationManager.requestLocation()
-                        }
-                        .onMapCameraChange(frequency: .continuous) { context in
-//                            print("🧭 heading=\(context.camera.heading), pitch=\(context.camera.pitch)")
-                            lastCamera = context.camera  // ✅ 保存相机状态
-                            let region = context.region
-                            searchViewModel.region = region
-                            // 更新地图上的标注
-                            searchViewModel.scheduleAnnotationUpdate()
-                        }
-                        .task {
-                            // ✅ 只在 App 启动时激活一次 3D 按钮
-                            guard !didPrime3D else { return }
-                            didPrime3D = true
-
-                            // 等待地图初始化完成
-                            try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 秒
-
-                            // 执行激活
-                            prime3DButton()
-                        }
-                        .onReceive(locationManager.$currentLocation) { location in
-                            if let location = location, !appState.hasSetInitialRegion {
-                                // ✅ 使用 .userLocation() 自动居中到用户位置（由 MapKit 处理居中逻辑）
-                                position = .userLocation(followsHeading: false, fallback: .automatic)
-                                appState.hasSetInitialRegion = true
-
-                                // ✅ region 会由 onMapCameraChange 自动更新，这里只需获取分享数据
-                                searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
+                            .coordinateSpace(name: "shared")
+                            .disabled(searchViewModel.isShareDetailOverlayShown)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .mapStyle(.standard(elevation: .realistic))
+                            .ignoresSafeArea(.all)
+                            .animation(.spring(), value: searchViewModel.selectedLocation)
+                            .onAppear {
+                                if !appState.hasSetInitialRegion {
+                                    position = .automatic
+                                } else {
+                                    position = .region(searchViewModel.region)
+                                }
+                                locationManager.requestLocation()
+                            }
+                            .onMapCameraChange(frequency: .continuous) { context in
+                                lastCamera = context.camera
+                                searchViewModel.region = context.region
+                                searchViewModel.scheduleAnnotationUpdate()
+                            }
+                            .task {
+                                guard !didPrime3D else { return }
+                                didPrime3D = true
+                                try? await Task.sleep(nanoseconds: 800_000_000)
+                                prime3DButton()
+                            }
+                            .onReceive(locationManager.$currentLocation) { location in
+                                if let location = location, !appState.hasSetInitialRegion {
+                                    position = .userLocation(followsHeading: false, fallback: .automatic)
+                                    appState.hasSetInitialRegion = true
+                                    searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
+                                }
                             }
                         }
+                        } // End Group
                         .onChange(of: appState.responsedNearbyShareList) { _ , newValue in
                             print("Nearby share list updated")
                             searchViewModel.getAnnotations()
@@ -210,7 +246,16 @@ struct SearchView: View {
                         }
                         .overlay(alignment:.bottomTrailing) {
                             if appState.isShowingSearchView{
-                                MapOverlayView(mapScope: mapScope, position: $position)  // ✅ 传递 mapScope
+                                MapOverlayView(
+                                    mapScope: mapScope,
+                                    position: $position,
+                                    useMKMapView: useMKMapView,
+                                    mkMapView: mkMapView,
+                                    shouldCenterOnUser: $shouldCenterOnUser,
+                                    shouldResetHeading: $shouldResetHeading,
+                                    shouldToggle3D: $shouldToggle3D,
+                                    is3DMode: $is3DMode
+                                )  // ✅ 传递 mapScope 和 MKMapView 状态
                                 .environment(appState)
                                 .environmentObject(searchViewModel)
                                 .environmentObject(locationManager)
@@ -237,15 +282,20 @@ struct SearchView: View {
                             SheetView(
                                 currentDetent: $currentDetent,
                                 onLocationSelected: { coordinate, title in
-    //                                // 创建新的 LocationMarker 并添加到 locationMarkers 数组中
+                                    // 创建新的 LocationMarker 并添加到 locationMarkers 数组中
                                     let marker = LocationMarker(coordinate: coordinate, title: title)
                                     locationMarkers.append(marker)
-                                    // 更新地图位置
-                                    position = .region(MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)))
+                                    // 更新地图区域
+                                    let newRegion = MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+                                    searchViewModel.region = newRegion
+                                    // Stage 1: 同时支持两种地图
+                                    if useMKMapView {
+                                        shouldSetRegion = true  // 触发 MKMapView 更新
+                                    } else {
+                                        position = .region(newRegion)  // SwiftUI Map
+                                    }
                                     // 关闭 SheetView
                                     appState.isShowingSearchView = false
-                                    // 更新地图区域
-                                    searchViewModel.region.center = coordinate
                                 }
                             )
                             // iOS 26 修复：移除 .id(UUID()) 以保持视图状态和 presentationDetents
