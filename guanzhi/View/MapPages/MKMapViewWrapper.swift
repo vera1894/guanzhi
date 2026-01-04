@@ -26,6 +26,9 @@ struct MKMapViewWrapper: UIViewRepresentable {
     /// 标注点击回调
     var onAnnotationTap: ((CustomAnnotation, UIImage?) -> Void)?
 
+    /// 聚合点击回调（返回聚合内的所有 CustomAnnotation）
+    var onClusterTap: (([CustomAnnotation]) -> Void)?
+
     /// region 变化回调（用于更新 ViewModel，不触发 updateUIView）
     var onRegionChange: ((MKCoordinateRegion) -> Void)?
 
@@ -99,6 +102,12 @@ struct MKMapViewWrapper: UIViewRepresentable {
         mapView.register(
             CustomMKAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: CustomMKAnnotationView.reuseIdentifier
+        )
+
+        // Stage 2: 注册聚合视图
+        mapView.register(
+            ClusterAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: ClusterAnnotationView.reuseIdentifier
         )
 
         // 添加初始标注
@@ -184,12 +193,23 @@ struct MKMapViewWrapper: UIViewRepresentable {
     // MARK: - Private Methods
 
     /// 使用 diff 算法更新标注，避免全量删除/添加
+    /// 关键：只有在真正有变化时才执行 remove/add，避免打断聚合状态
     private func updateAnnotations(mapView: MKMapView) {
+        // 获取当前地图上的自定义标注（不包括聚合标注和用户位置）
         let currentAnnotations = Set(mapView.annotations.compactMap { $0 as? CustomAnnotation })
         let newAnnotations = Set(annotations)
 
         let toRemove = currentAnnotations.subtracting(newAnnotations)
         let toAdd = newAnnotations.subtracting(currentAnnotations)
+
+        // 只有在真的有变化时才执行操作
+        let hasChanges = !toRemove.isEmpty || !toAdd.isEmpty
+
+        #if DEBUG
+        if hasChanges {
+            print("📍 [Annotations] 更新: 移除 \(toRemove.count), 添加 \(toAdd.count), 当前 \(currentAnnotations.count) -> 新 \(newAnnotations.count)")
+        }
+        #endif
 
         if !toRemove.isEmpty {
             mapView.removeAnnotations(Array(toRemove))

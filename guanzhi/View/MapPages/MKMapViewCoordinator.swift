@@ -91,8 +91,26 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
             return nil
         }
 
+        // Stage 2: 聚合标注
+        if let clusterAnnotation = annotation as? MKClusterAnnotation {
+            #if DEBUG
+            print("🔷 [Cluster] 创建聚合视图, 成员数: \(clusterAnnotation.memberAnnotations.count)")
+            #endif
+
+            let clusterView = mapView.dequeueReusableAnnotationView(
+                withIdentifier: ClusterAnnotationView.reuseIdentifier,
+                for: annotation
+            ) as? ClusterAnnotationView
+
+            clusterView?.configure(with: clusterAnnotation)
+            return clusterView
+        }
+
         // 自定义标注
         guard let customAnnotation = annotation as? CustomAnnotation else {
+            #if DEBUG
+            print("⚠️ [viewFor] 未知标注类型: \(type(of: annotation))")
+            #endif
             return nil
         }
 
@@ -103,14 +121,27 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
 
         annotationView?.configure(with: customAnnotation)
 
-        // Stage 1: 暂不设置 clusteringIdentifier（Stage 2 再添加）
-        // annotationView?.clusteringIdentifier = "share"
+        #if DEBUG
+        // 验证 clusteringIdentifier 是否正确设置
+        if annotationView?.clusteringIdentifier != "share" {
+            print("⚠️ [viewFor] clusteringIdentifier 未设置!")
+        }
+        #endif
 
         return annotationView
     }
 
     /// 标注被选中时调用
     func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {
+        // Stage 2: 聚合标注点击
+        if let clusterAnnotation = annotation as? MKClusterAnnotation {
+            let members = clusterAnnotation.memberAnnotations.compactMap { $0 as? CustomAnnotation }
+            parent.onClusterTap?(members)
+            mapView.deselectAnnotation(annotation, animated: false)
+            return
+        }
+
+        // 单个标注点击
         guard let customAnnotation = annotation as? CustomAnnotation else {
             return
         }

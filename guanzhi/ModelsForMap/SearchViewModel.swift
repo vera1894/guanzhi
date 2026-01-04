@@ -871,7 +871,9 @@ class SearchViewModel: ObservableObject {
     
     //在地图上显示标注
     func getAnnotations() {
-        annotations.removeAll()
+        // 注意：不要使用 removeAll()！
+        // 直接构建新数组后赋值，避免触发两次 SwiftUI 更新，保护聚合状态
+
         // 获取当前地图区域
         let currentRegion = self.region
         // 获取可视区域内的分享

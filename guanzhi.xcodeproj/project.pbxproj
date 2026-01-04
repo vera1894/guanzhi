@@ -10,6 +10,8 @@
 		B2D7078B92364968A618EB26 /* MKMapViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D2D807E7BB4A3B87B477A5 /* MKMapViewWrapper.swift */; };
 		0ABB5751E2DB40C9B527C928 /* MKMapViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559A48639D2240DEA0E19C51 /* MKMapViewCoordinator.swift */; };
 		D7C2D76C206F453ABA110F9B /* CustomMKAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FECCE70CD6BC4F628AF06E1A /* CustomMKAnnotationView.swift */; };
+		AA90551675D740C2A419D7DE /* ClusterAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9402D4836634A0799F61287 /* ClusterAnnotationView.swift */; };
+		60051847F1CB4F76BA022636 /* ClusterShareListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44752BF84EF141EEA7443321 /* ClusterShareListView.swift */; };
 		41537D177F504F5BB9A67838 /* StickerSummaryOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F022F2371C6843778441E6DF /* StickerSummaryOverlay.swift */; };
 		4AB9EF9BCA31D1003317B316 /* UseZoneParticleFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79B70507B570C942755BE6C9 /* UseZoneParticleFactory.swift */; };
 		ABFC26C737DE40DA8A012A67 /* StickerSummaryBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE80580CFFFA49BE843C5C86 /* StickerSummaryBar.swift */; };
@@ -179,6 +181,8 @@
 		40D2D807E7BB4A3B87B477A5 /* MKMapViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MKMapViewWrapper.swift; sourceTree = "<group>"; };
 		559A48639D2240DEA0E19C51 /* MKMapViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MKMapViewCoordinator.swift; sourceTree = "<group>"; };
 		FECCE70CD6BC4F628AF06E1A /* CustomMKAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomMKAnnotationView.swift; sourceTree = "<group>"; };
+		C9402D4836634A0799F61287 /* ClusterAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterAnnotationView.swift; sourceTree = "<group>"; };
+		44752BF84EF141EEA7443321 /* ClusterShareListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterShareListView.swift; sourceTree = "<group>"; };
 		6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_guanzhi.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		79B70507B570C942755BE6C9 /* UseZoneParticleFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseZoneParticleFactory.swift; sourceTree = "<group>"; };
 		85B32ABF81BE56D4F7168B76 /* Pods-guanzhi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-guanzhi.release.xcconfig"; path = "Target Support Files/Pods-guanzhi/Pods-guanzhi.release.xcconfig"; sourceTree = "<group>"; };
@@ -693,6 +697,8 @@
 				40D2D807E7BB4A3B87B477A5 /* MKMapViewWrapper.swift */,
 				559A48639D2240DEA0E19C51 /* MKMapViewCoordinator.swift */,
 				FECCE70CD6BC4F628AF06E1A /* CustomMKAnnotationView.swift */,
+				C9402D4836634A0799F61287 /* ClusterAnnotationView.swift */,
+				44752BF84EF141EEA7443321 /* ClusterShareListView.swift */,
 			);
 			path = MapPages;
 			sourceTree = "<group>";
@@ -973,6 +979,8 @@
 				B2D7078B92364968A618EB26 /* MKMapViewWrapper.swift in Sources */,
 				0ABB5751E2DB40C9B527C928 /* MKMapViewCoordinator.swift in Sources */,
 				D7C2D76C206F453ABA110F9B /* CustomMKAnnotationView.swift in Sources */,
+				AA90551675D740C2A419D7DE /* ClusterAnnotationView.swift in Sources */,
+				60051847F1CB4F76BA022636 /* ClusterShareListView.swift in Sources */,
 				FF5D24192D23DA2700C1D463 /* SingleToastView.swift in Sources */,
 				FF5D24112D23965700C1D463 /* GeneralFunctions.swift in Sources */,
 				FF9DB79E2EEAA9ED00374E02 /* StickerQueueView.swift in Sources */,

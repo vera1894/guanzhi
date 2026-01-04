@@ -51,6 +51,10 @@ struct SearchView: View {
     @State private var is3DMode = false  // 当前是否为 3D 模式
     @State private var mkMapView: MKMapView?  // MKMapView 引用（用于 MKCompassButton）
 
+    // MARK: - Stage 2: 聚合列表状态
+    @State private var clusterAnnotations: [CustomAnnotation] = []  // 聚合内的标注
+    @State private var isShowingClusterList = false  // 是否显示聚合列表
+
     // MARK: - 标注点击处理（Stage 1 提取，供 SwiftUI Map 和 MKMapView 共用）
     private func handleAnnotationTap(annotation: CustomAnnotation, thumbnailImage: UIImage?) {
         print("点击标注")
@@ -123,6 +127,13 @@ struct SearchView: View {
                                 annotations: searchViewModel.annotations,
                                 onAnnotationTap: { annotation, thumbnailImage in
                                     handleAnnotationTap(annotation: annotation, thumbnailImage: thumbnailImage)
+                                },
+                                onClusterTap: { annotations in
+                                    // Stage 2: 聚合点击 -> 显示列表，同时隐藏搜索栏 sheet
+                                    print("点击聚合，包含 \(annotations.count) 个标注")
+                                    clusterAnnotations = annotations
+                                    appState.isShowingSearchView = false
+                                    isShowingClusterList = true
                                 },
                                 onRegionChange: { newRegion in
                                     // 只更新 ViewModel，不触发 updateUIView 重设 region
@@ -331,6 +342,26 @@ struct SearchView: View {
                         }
                         .navigationDestination(isPresented: $appState.isShowingCameraView) {
                             CameraViewWrapper(appState: appState)
+                        }
+                        // MARK: - Stage 2: 聚合列表 sheet（与主页搜索结果卡片风格一致）
+                        .sheet(isPresented: $isShowingClusterList, onDismiss: {
+                            // sheet 关闭时恢复搜索栏
+                            clusterAnnotations = []
+                            appState.isShowingSearchView = true
+                        }) {
+                            ClusterShareListView(
+                                annotations: clusterAnnotations,
+                                onDismiss: {
+                                    isShowingClusterList = false
+                                }
+                            )
+                            .environment(appState)
+                            .environmentObject(searchViewModel)
+                            .environmentObject(navigationCoordinator)
+                            .presentationDetents([.medium, .large])
+                            .presentationDragIndicator(.visible)
+                            .presentationCornerRadius(Constants.sheetCornerRadius)
+                            .presentationBackgroundInteraction(.enabled)
                         }
 
                     } //ZStack

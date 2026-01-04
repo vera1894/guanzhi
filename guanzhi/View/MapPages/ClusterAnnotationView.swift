@@ -1,29 +1,23 @@
 //
-//  CustomMKAnnotationView.swift
+//  ClusterAnnotationView.swift
 //  guanzhi
 //
-//  Created by Claude Code on 2026/1/3.
+//  Created by Claude Code on 2026/1/4.
 //
-//  Stage 1: 单个标注 UIKit 视图
-//  - 复刻 SwiftUI MapAnnotationView 样式
-//  - 64x64 圆形缩略图 + 4pt 黑色边框
-//  - 底部定位图标
-//  - 异步加载缩略图
-//
-//  阴影实现：复制图标作为阴影（不使用 path 拟合）
-//  - 圆形阴影：CAShapeLayer 圆形，偏移后置底
-//  - 尖角阴影：复制 icon-position 图像，染色+偏移+置底
-//  - 所有布局在 layoutSubviews() 中更新
+//  Stage 2: 聚合标注 UIKit 视图
+//  - 保持单个标注样式（圆形缩略图 + 底部定位图标）
+//  - 右上角添加白底黑字数量角标
+//  - 使用第一个成员的缩略图
 //
 
 import MapKit
 import UIKit
 
-class CustomMKAnnotationView: MKAnnotationView {
+class ClusterAnnotationView: MKAnnotationView {
 
     // MARK: - Constants
 
-    static let reuseIdentifier = "CustomMKAnnotationView"
+    static let reuseIdentifier = "ClusterAnnotationView"
 
     private let thumbnailSize: CGFloat = 64
     private let borderWidth: CGFloat = 4
@@ -31,52 +25,39 @@ class CustomMKAnnotationView: MKAnnotationView {
     private let positionIconWidth: CGFloat = 24
     private let overlapAmount: CGFloat = 16  // 圆形覆盖尖角的重叠量
 
+    // 角标参数
+    private let badgeMinWidth: CGFloat = 20
+    private let badgeHeight: CGFloat = 20
+    private let badgePadding: CGFloat = 6
+    private let badgeFontSize: CGFloat = 12
+
     // 阴影参数
     private let shadowOffsetX: CGFloat = 2
     private let shadowOffsetY: CGFloat = 4
     private let shadowColor: UIColor = UIColor(named: "color-primary") ?? .systemBlue
 
-    // 边距：为阴影和内容预留足够空间（四个方向）
+    // 边距
     private let paddingLeft: CGFloat = 8
     private let paddingTop: CGFloat = 8
-    private let paddingRight: CGFloat = 12   // 阴影向右偏移，需要更多空间
-    private let paddingBottom: CGFloat = 12  // 阴影向下偏移，需要更多空间
-
-    // ===== 聚合抵抗参数 =====
-    // MapKit 通过 annotation view 的 frame 碰撞检测来决定是否聚合
-    // 这里通过缩小碰撞盒（frame）来减少聚合敏感度，视觉内容通过子视图溢出显示
-    //
-    // 数值越大 = 碰撞盒越小 = 越不容易聚合
-    // 数值为 0 = 碰撞盒等于视觉尺寸（默认行为）
-    //
-    // 碰撞盒与点击区域已解耦（通过 point(inside:with:) 重写）：
-    // - 碰撞盒可以很小（下限 12pt），让聚合更不敏感
-    // - 点击区域仍然用视觉尺寸（containerView），保证好点击
-    //
-    // 当前视觉尺寸约 84x101pt，碰撞盒下限 12pt
-    // 建议范围：0-40（超过 40 后碰撞盒接近下限，效果不再变化）
-    static let clusterResistanceHorizontal: CGFloat = 40   // 水平方向聚合抵抗
-    static let clusterResistanceVertical: CGFloat = 42    // 垂直方向聚合抵抗
-
-    // 碰撞盒最小尺寸（与点击区域解耦后可以设得很小）
-    private let minCollisionSize: CGFloat = 12
+    private let paddingRight: CGFloat = 16   // 角标需要更多空间
+    private let paddingBottom: CGFloat = 12
 
     // MARK: - UI Elements
 
-    /// 圆形阴影层：CAShapeLayer 绘制圆形，偏移后作为缩略图阴影
+    /// 圆形阴影层
     private let circleShadowLayer: CAShapeLayer = {
         let layer = CAShapeLayer()
         return layer
     }()
 
-    /// 尖角阴影视图：复制 icon-position 图像，染色后作为阴影
+    /// 尖角阴影视图
     private let positionIconShadowView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
 
-    /// 容器视图：承载所有内容（不含阴影）
+    /// 容器视图
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .clear
@@ -101,6 +82,22 @@ class CustomMKAnnotationView: MKAnnotationView {
         return imageView
     }()
 
+    /// 数量角标背景
+    private let badgeBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        return view
+    }()
+
+    /// 数量角标标签
+    private let badgeLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .black
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 12, weight: .semibold)
+        return label
+    }()
+
     /// 加载指示器
     private let activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .medium)
@@ -109,13 +106,9 @@ class CustomMKAnnotationView: MKAnnotationView {
         return indicator
     }()
 
-
     // MARK: - Properties
 
-    private(set) var thumbnailImage: UIImage?
     private var currentImageUrl: URL?
-
-    // 缓存计算值
     private var contentWidth: CGFloat = 0
     private var contentHeight: CGFloat = 0
 
@@ -124,9 +117,6 @@ class CustomMKAnnotationView: MKAnnotationView {
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         setupViews()
-
-        // Stage 2: 启用聚合功能
-        clusteringIdentifier = "share"
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -137,62 +127,57 @@ class CustomMKAnnotationView: MKAnnotationView {
     // MARK: - Setup
 
     private func setupViews() {
-        // ===== 计算尺寸 =====
-        let visiblePinHeight = positionIconHeight - overlapAmount  // 尖角露出部分
-        contentHeight = thumbnailSize + visiblePinHeight           // 内容总高度
-        contentWidth = thumbnailSize                               // 内容宽度
+        // 计算尺寸
+        let visiblePinHeight = positionIconHeight - overlapAmount
+        contentHeight = thumbnailSize + visiblePinHeight
+        contentWidth = thumbnailSize
 
-        // 视觉所需的总尺寸
-        let visualWidth = paddingLeft + contentWidth + paddingRight
-        let visualHeight = paddingTop + contentHeight + paddingBottom
+        let totalWidth = paddingLeft + contentWidth + paddingRight
+        let totalHeight = paddingTop + contentHeight + paddingBottom
 
-        // 碰撞盒尺寸 = 视觉尺寸 - 抵抗值（抵抗值越大，碰撞盒越小，越不容易聚合）
-        // 碰撞盒下限设为很小的值，点击区域通过 point(inside:with:) 单独处理
-        let collisionWidth = max(minCollisionSize, visualWidth - Self.clusterResistanceHorizontal * 2)
-        let collisionHeight = max(minCollisionSize, visualHeight - Self.clusterResistanceVertical * 2)
-
-        // ===== 设置 MKAnnotationView 的 frame =====
-        // frame 使用碰撞盒尺寸，视觉内容通过子视图溢出显示（clipsToBounds = false）
-        // centerOffset 由 layoutSubviews 统一计算（使用正确的测量法）
-        frame = CGRect(x: 0, y: 0, width: collisionWidth, height: collisionHeight)
-
-        // 禁用默认 callout
+        frame = CGRect(x: 0, y: 0, width: totalWidth, height: totalHeight)
         canShowCallout = false
-
-        // 关键：MKAnnotationView 不裁剪
         clipsToBounds = false
         layer.masksToBounds = false
         backgroundColor = .clear
 
-        // ===== 圆形阴影层（置底）=====
+        // 圆形阴影层
         circleShadowLayer.fillColor = shadowColor.cgColor
         layer.addSublayer(circleShadowLayer)
 
-        // ===== 尖角阴影视图（置底）=====
-        // 使用 icon-position 图像的 template 模式，染成阴影色
+        // 尖角阴影视图
         if let positionIcon = UIImage(named: "icon-position")?.withRenderingMode(.alwaysTemplate) {
             positionIconShadowView.image = positionIcon
             positionIconShadowView.tintColor = shadowColor
         }
         addSubview(positionIconShadowView)
 
-        // ===== 容器视图 =====
+        // 容器视图
         addSubview(containerView)
 
-        // ===== 定位图标（在容器内，z-order 底层）=====
+        // 定位图标
         containerView.addSubview(positionIconView)
 
-        // ===== 缩略图（在容器内，z-order 顶层）=====
+        // 缩略图
         thumbnailImageView.layer.cornerRadius = thumbnailSize / 2
         thumbnailImageView.layer.borderWidth = borderWidth
         thumbnailImageView.layer.borderColor = UIColor.black.cgColor
         thumbnailImageView.layer.masksToBounds = true
         containerView.addSubview(thumbnailImageView)
 
-        // ===== 加载指示器 =====
+        // 角标背景
+        badgeBackgroundView.layer.shadowColor = UIColor.black.cgColor
+        badgeBackgroundView.layer.shadowOffset = CGSize(width: 0, height: 1)
+        badgeBackgroundView.layer.shadowRadius = 2
+        badgeBackgroundView.layer.shadowOpacity = 0.2
+        containerView.addSubview(badgeBackgroundView)
+
+        // 角标标签
+        badgeBackgroundView.addSubview(badgeLabel)
+
+        // 加载指示器
         thumbnailImageView.addSubview(activityIndicator)
 
-        // 初始布局
         setNeedsLayout()
     }
 
@@ -201,17 +186,8 @@ class CustomMKAnnotationView: MKAnnotationView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // ===== 1) 先完成子视图布局（确保 frame 是最终值）=====
-        // 由于碰撞盒（frame）比视觉尺寸小，内容需要向负方向偏移以溢出显示
-        // 偏移量 = -clusterResistance，使视觉内容仍然居中于原本位置
-
-        // 容器视图位置（向负方向偏移，使内容溢出碰撞盒）
-        containerView.frame = CGRect(
-            x: paddingLeft - Self.clusterResistanceHorizontal,
-            y: paddingTop - Self.clusterResistanceVertical,
-            width: contentWidth,
-            height: contentHeight
-        )
+        // 容器视图位置
+        containerView.frame = CGRect(x: paddingLeft, y: paddingTop, width: contentWidth, height: contentHeight)
 
         // 缩略图位置
         thumbnailImageView.frame = CGRect(x: 0, y: 0, width: thumbnailSize, height: thumbnailSize)
@@ -224,71 +200,76 @@ class CustomMKAnnotationView: MKAnnotationView {
             height: positionIconHeight
         )
 
-        // 圆形阴影位置（同样向负方向偏移）
+        // 圆形阴影位置
         let circleShadowRect = CGRect(
-            x: paddingLeft - Self.clusterResistanceHorizontal + shadowOffsetX,
-            y: paddingTop - Self.clusterResistanceVertical + shadowOffsetY,
+            x: paddingLeft + shadowOffsetX,
+            y: paddingTop + shadowOffsetY,
             width: thumbnailSize,
             height: thumbnailSize
         )
         circleShadowLayer.path = UIBezierPath(ovalIn: CGRect(origin: .zero, size: circleShadowRect.size)).cgPath
         circleShadowLayer.frame = circleShadowRect
 
-        // 尖角阴影位置（同样向负方向偏移）
+        // 尖角阴影位置
         positionIconShadowView.frame = CGRect(
-            x: paddingLeft - Self.clusterResistanceHorizontal + (contentWidth - positionIconWidth) / 2 + shadowOffsetX,
-            y: paddingTop - Self.clusterResistanceVertical + thumbnailSize - overlapAmount + shadowOffsetY,
+            x: paddingLeft + (contentWidth - positionIconWidth) / 2 + shadowOffsetX,
+            y: paddingTop + thumbnailSize - overlapAmount + shadowOffsetY,
             width: positionIconWidth,
             height: positionIconHeight
         )
 
+        // 角标布局（右上角）
+        let badgeText = badgeLabel.text ?? ""
+        let textWidth = badgeText.size(withAttributes: [.font: badgeLabel.font!]).width
+        let badgeWidth = max(badgeMinWidth, textWidth + badgePadding * 2)
+        badgeBackgroundView.frame = CGRect(
+            x: thumbnailSize - badgeWidth / 2,
+            y: -badgeHeight / 4,
+            width: badgeWidth,
+            height: badgeHeight
+        )
+        badgeBackgroundView.layer.cornerRadius = badgeHeight / 2
+        badgeLabel.frame = badgeBackgroundView.bounds
+
         // 加载指示器居中
         activityIndicator.center = CGPoint(x: thumbnailSize / 2, y: thumbnailSize / 2)
 
-        // ===== 2) 计算"尖端 tip"在 annotationView 坐标系中的真实位置 =====
-        // 从 positionIconView 的真实 frame convert 出 tip 点（底部中心）
+        // 计算尖端位置并设置 centerOffset
         let tipInSelf = positionIconView.convert(
             CGPoint(x: positionIconView.bounds.midX, y: positionIconView.bounds.maxY),
             to: self
         )
-
-        // ===== 3) 用正确公式：centerOffset = viewCenter - tip =====
         let viewCenter = CGPoint(x: bounds.midX, y: bounds.midY)
         let newCenterOffset = CGPoint(
             x: viewCenter.x - tipInSelf.x,
             y: viewCenter.y - tipInSelf.y
         )
-
-        // 只在值变化时更新（避免无限循环）
         if centerOffset != newCenterOffset {
             centerOffset = newCenterOffset
         }
     }
 
-    // MARK: - Hit Testing（碰撞盒/点击盒解耦）
-
-    /// 重写点击命中测试，使用视觉区域（containerView）而不是碰撞盒（frame）
-    /// 这样碰撞盒可以很小（减少聚合敏感度），但点击区域仍然足够大
-    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        // 使用 containerView 的 frame 作为点击区域，并稍微扩大以便于点击
-        let hitRect = containerView.frame.insetBy(dx: -10, dy: -10)
-        return hitRect.contains(point)
-    }
-
     // MARK: - Configuration
 
-    func configure(with annotation: CustomAnnotation) {
-        // 关键：复用时也必须设置 clusteringIdentifier，否则聚合功能会失效
-        clusteringIdentifier = "share"
+    func configure(with clusterAnnotation: MKClusterAnnotation) {
+        let memberCount = clusterAnnotation.memberAnnotations.count
 
-        thumbnailImage = nil
-        thumbnailImageView.image = nil
+        // 设置角标文字
+        if memberCount > 99 {
+            badgeLabel.text = "99+"
+        } else {
+            badgeLabel.text = "\(memberCount)"
+        }
 
-        if let imageUrl = annotation.imageUrl {
+        // 获取第一个成员的缩略图
+        if let firstMember = clusterAnnotation.memberAnnotations.first as? CustomAnnotation,
+           let imageUrl = firstMember.imageUrl {
             loadThumbnail(from: imageUrl)
         } else {
             showPlaceholder()
         }
+
+        setNeedsLayout()
     }
 
     // MARK: - Image Loading
@@ -304,7 +285,6 @@ class CustomMKAnnotationView: MKAnnotationView {
             DispatchQueue.main.async {
                 self.activityIndicator.stopAnimating()
                 if let image = loadedImage {
-                    self.thumbnailImage = image
                     self.thumbnailImageView.image = image
                 } else {
                     self.showPlaceholder()
@@ -349,12 +329,11 @@ class CustomMKAnnotationView: MKAnnotationView {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        thumbnailImage = nil
         thumbnailImageView.image = nil
+        badgeLabel.text = nil
         currentImageUrl = nil
         activityIndicator.stopAnimating()
         transform = .identity
         alpha = 1.0
     }
-
 }
