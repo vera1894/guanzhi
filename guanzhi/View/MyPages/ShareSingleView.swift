@@ -9,11 +9,14 @@ import SwiftUI
 
 struct ShareSingleView: View {
     let share: ResponsedShare
+    /// 可选的点击回调，如果提供则使用它，否则使用内部的 showShareDetail()
+    var onTap: (() -> Void)? = nil
+
     // 环境对象
     @Environment(\.appState) var appState
     @EnvironmentObject var searchViewModel: SearchViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
-    
+
     @State private var image: UIImage?
     @State private var variableValue: Double = 0.0
     @State private var isPressed: Bool = false
@@ -90,8 +93,12 @@ struct ShareSingleView: View {
         .padding(.vertical, Constants.spacingSpacingXs)
         .frame(maxWidth: .infinity, maxHeight: 133,alignment: .topLeading)
         .onTapGesture {
-            // 点击 -> 进入分享详情
-            showShareDetail()
+            // 如果外部提供了 onTap 回调，使用它；否则使用内部的 showShareDetail()
+            if let onTap = onTap {
+                onTap()
+            } else {
+                showShareDetail()
+            }
         }
         
     }

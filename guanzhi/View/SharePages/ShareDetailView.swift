@@ -75,6 +75,13 @@ import _AVKit_SwiftUI
 import Combine
 import SwiftData
 
+// MARK: - 通知名称扩展
+
+extension Notification.Name {
+    /// 分享详情页退出通知（用于恢复聚合列表）
+    static let shareDetailDidDisappear = Notification.Name("shareDetailDidDisappear")
+}
+
 // MARK: - ═══════════════════════════════════════════════════════════════════
 // MARK:   🎬 视频播放器定位 PreferenceKey
 // MARK: - ═══════════════════════════════════════════════════════════════════
@@ -813,6 +820,10 @@ struct ShareDetailView: View {
         .onDisappear {
             // 标记离开分享详情页
             appState.isInShareDetailView = false
+
+            // 通知 SearchView 详情页已退出，用于恢复聚合列表
+            print("🔷 [ShareDetail] onDisappear - 发送 shareDetailDidDisappear 通知")
+            NotificationCenter.default.post(name: .shareDetailDidDisappear, object: nil)
 
             if navigationCoordinator.path.isEmpty {
                 withAnimation(.easeInOut) {
