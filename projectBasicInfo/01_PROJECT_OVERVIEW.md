@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.0
-**最后更新**: 2026-01-06（褪色白化效果）
+**文档版本**: v3.1
+**最后更新**: 2026-01-06（fadeScore=100 隐藏）
 
 ---
 
@@ -193,6 +193,26 @@ ModelsForMap/SearchViewModel.swift      # ImageCache 统一 API
 - 修改参数后需 bump 版本号，否则旧缓存不会更新
 
 **相关文档**：`projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md`
+
+#### fadeScore=100 隐藏（2026-01-06 实现）
+
+当分享 `fadeScore >= 100` 时，在首页地图相关区域不再可见，但详情页和个人主页仍可访问。
+
+**可见性规则**：
+| 场景 | fadeScore=100 |
+|------|---------------|
+| 首页地图单标注 | **不可见** |
+| 首页地图聚合标注 | **不可见**（成员被过滤） |
+| 首页地图聚合列表 | **不可见** |
+| 个人主页列表 | 可见（"已褪色" Tab） |
+| 详情页 / Deep Link | 可访问 |
+
+**技术实现**：
+- SSOT 唯一过滤点：`SearchViewModel.getAnnotations()`
+- fadeScore 取值：`max(cached, local)` 确保不低估褪色度
+- 只在 Home Map annotation pipeline 过滤，不影响数据层
+
+**相关文档**：`projectBasicInfo/logs/2026-01-06-fade-score-100-hide-plan.md`
 
 ### 3. 积分与等级系统
 
@@ -858,6 +878,7 @@ HostingTableView(
 | 聚合列表Overlay优化 | `projectBasicInfo/logs/2026-01-05-cluster-list-overlay-optimization-cc.md` | UIKitListKit + OverlaySheet 组件 |
 | 褪色度UI显示修复 | `projectBasicInfo/logs/2026-01-06-fade-score-ui-fix-cc.md` | 聚合列表fadeScore修复 |
 | 褪色白化效果 | `projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md` | fadeScore>=90缩略图白化 |
+| fadeScore=100隐藏 | `projectBasicInfo/logs/2026-01-06-fade-score-100-hide-plan.md` | 已褪色分享Home Map不可见 |
 
 ---
 

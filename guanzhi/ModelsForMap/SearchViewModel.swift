@@ -932,6 +932,14 @@ class SearchViewModel: ObservableObject {
         }
 
         for share in sharesInRegion {
+            // SSOT：取 max(cached, local) 确保不低估褪色度
+            // fadeScore 单调递增，取 max 更保守，>=100 的隐藏更可靠
+            let cachedFadeScore = cachedResponsedShares[Int(share.id)]?.fadeScore ?? 0
+            let effectiveFadeScore = max(cachedFadeScore, share.fadeScore)
+
+            // 跳过已完全褪色的分享（Home Map 不可见）
+            guard effectiveFadeScore < 100 else { continue }
+
             let wgsCoordinate = CLLocationCoordinate2D(latitude: share.latitude, longitude: share.longitude)
             var displayCoordinate = wgsCoordinate
 
