@@ -1,13 +1,24 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.1
-**最后更新**: 2026-01-06（fadeScore=100 隐藏）
+**文档版本**: v3.2
+**最后更新**: 2026-01-06（术语统一：观之）
+
+---
+
+## 术语说明
+
+**详见** `04_TERMINOLOGY.md`
+
+| 层面 | 术语 | 说明 |
+|------|------|------|
+| UI 文案 | **观之** | 用户可见的内容单位名称 |
+| 代码/API/DB | Share | 内部技术模型名称（不改） |
 
 ---
 
 ## 项目简介
 
-**观之**是一个基于位置的社交分享平台，用户可以在地图上分享和发现内容。项目采用 Monorepo 结构，包含 iOS 客户端、Java 后端服务和 Vue 管理后台。
+**观之**是一个基于位置的社交平台，用户可以在地图上发布和发现「观之」内容。项目采用 Monorepo 结构，包含 iOS 客户端、Java 后端服务和 Vue 管理后台。
 
 ---
 
@@ -121,27 +132,27 @@ npm run build
 
 ## 核心功能模块
 
-### 1. 分享系统（Share）
+### 1. 观之系统（Share）
 
-- 用户在地图上发布分享（文字、图片、Live Photo）
-- 分享可被查看、点赞、评论
-- 分享有"褪色"机制（随时间衰减）
+- 用户在地图上发布观之（文字、图片、Live Photo）
+- 观之可被查看、点赞、评论
+- 观之有"褪色"机制（随时间衰减）
 
 ### 2. 褪色系统（Fade）
 
-- 分享发布后，随时间逐渐"褪色"
+- 观之发布后，随时间逐渐"褪色"
 - 褪色速度受阅读量、标签、互动影响
 - 管理后台提供褪色曲线模拟器
 
 #### iOS 客户端褪色度显示（2026-01-06 更新）
 
-**个人主页分享列表**（`ShareListView.swift`）：
-- 第一个 Tab："全部观之" - 显示所有未删除的分享
-- 第二个 Tab："已褪色" - 显示 `fadeScore >= 100` 的分享
+**个人主页观之列表**（`ShareListView.swift`）：
+- 第一个 Tab："全部观之" - 显示所有未删除的观之
+- 第二个 Tab："已褪色" - 显示 `fadeScore >= 100` 的观之
 
-**分享条目**（`ShareSingleView.swift`）：
+**观之条目**（`ShareSingleView.swift`）：
 - 标题限制为 2 行，超出部分显示省略号
-- 在分享 ID 行上方显示 "褪色度：n%"
+- 在观之 ID 行上方显示 "褪色度：n%"
 - 当 `fadeScore >= 90` 时，标签显示为红色
 
 **聚合列表数据流**（重要）：
@@ -160,12 +171,12 @@ SearchView.convertAnnotationsToShares() 优先从缓存获取
 **关键文件**：
 - `SearchView.swift:convertAnnotationsToShares()` - 聚合列表数据转换
 - `SearchViewModel.swift:cachedResponsedShares` - 服务器数据缓存
-- `ShareSingleView.swift` - 分享条目视图（含褪色度标签）
-- `ShareListView.swift` - 个人主页分享列表（含 Tab 切换）
+- `ShareSingleView.swift` - 观之条目视图（含褪色度标签）
+- `ShareListView.swift` - 个人主页观之列表（含 Tab 切换）
 
 #### 褪色白化效果（Fade Veil）（2026-01-06 实现）
 
-当分享 `fadeScore >= 90` 时，缩略图自动应用"发白"视觉效果，提示用户该分享即将褪色。
+当观之 `fadeScore >= 90` 时，缩略图自动应用"发白"视觉效果，提示用户该观之即将褪色。
 
 **效果**：
 - 降低饱和度（saturation = 0.15）
@@ -196,7 +207,7 @@ ModelsForMap/SearchViewModel.swift      # ImageCache 统一 API
 
 #### fadeScore=100 隐藏（2026-01-06 实现）
 
-当分享 `fadeScore >= 100` 时，在首页地图相关区域不再可见，但详情页和个人主页仍可访问。
+当观之 `fadeScore >= 100` 时，在首页地图相关区域不再可见，但详情页和个人主页仍可访问。
 
 **可见性规则**：
 | 场景 | fadeScore=100 |
@@ -237,8 +248,8 @@ ModelsForMap/SearchViewModel.swift      # ImageCache 统一 API
   - 所有贴纸统一使用 `tagCode` 标识
 
 **核心规则**：
-- 任何贴纸对同一条分享、同一用户，只允许使用一次，不可撤回
-- 每个用户对每条分享只能使用一个贴纸（互斥）
+- 任何贴纸对同一条观之、同一用户，只允许使用一次，不可撤回
+- 每个用户对每条观之只能使用一个贴纸（互斥）
 - 所有贴纸（包括赞同、无感）遵循统一的互斥规则，无特殊处理
 
 #### iOS 客户端实现架构
@@ -261,7 +272,7 @@ guanzhi/View/Features/StickerKit/
 
 guanzhi/View/SharePages/
 ├── ShareInteractionViewModel.swift  # 贴纸交互核心 ViewModel
-└── ShareDetailView.swift            # 分享详情页
+└── ShareDetailView.swift            # 观之详情页
 ```
 
 **核心 ViewModel：`ShareInteractionViewModel`**
@@ -297,7 +308,7 @@ func rebuildStickerSummaries()
 
 **数据流程**：
 ```
-1. 进入分享详情页
+1. 进入观之详情页
    ↓
 2. initialize(share:) - 重置所有状态
    ↓
@@ -354,22 +365,22 @@ guanzhiApp.swift                              # App 启动时预加载
 
 **状态**：已完成（2025-12-25），计数实时更新修复（2026-01-02）
 
-支持分享的评论与回复功能：
+支持观之的评论与回复功能：
 
 **核心功能**：
 - 一级评论 + 二级回复（含"回复 @B"语义）
 - 评论点赞
 - 三种排序：默认热度、最新、最多点赞
 - 评论长度限制（1-230 字符）
-- 频率限制：同一分享 10 秒 1 条；全局每天最多 200 条
+- 频率限制：同一观之 10 秒 1 条；全局每天最多 200 条
 - 回复触发站内通知 + APNs 推送
 - **评论计数实时更新**：发布/删除评论后按钮计数即时刷新
 
 **重要规则**：
-- **无地理位置限制**：用户可在任意位置评论（不再需要在分享附近）
+- **无地理位置限制**：用户可在任意位置评论（不再需要在观之附近）
 - 一级评论删除后，其二级回复继续展示
 - 热度参数可配置（存入 fade_config 表）
-- 回复、点赞对分享产生积分（接入后台配置）
+- 回复、点赞对观之产生积分（接入后台配置）
 
 **iOS 实现要点**：
 - `CommentViewModel` 通过 `onCommentCountChanged` 回调通知计数变化
@@ -396,24 +407,24 @@ guanzhiApp.swift                              # App 启动时预加载
 **核心功能**：
 - 设备 Token 注册与管理
 - 多种通知类型推送
-- Deep Link 支持（从推送跳转到对应分享/评论）
+- Deep Link 支持（从推送跳转到对应观之/评论）
 - 登录/登出时自动注册/注销设备
 
 **支持的通知类型**（共 12 种）：
 | 类型 | 说明 | 触发场景 |
 |------|------|----------|
-| `NEW_COMMENT` | 新评论 | 别人评论了你的分享 |
+| `NEW_COMMENT` | 新评论 | 别人评论了你的观之 |
 | `COMMENT_REPLY` | 评论回复 | 别人回复了你的评论 |
 | `COMMENT_LIKE` | 评论点赞 | 别人点赞了你的评论 |
-| `STICKER_RECEIVED` | 收到贴纸 | 别人给你的分享贴了贴纸 |
+| `STICKER_RECEIVED` | 收到贴纸 | 别人给你的观之贴了贴纸 |
 | `SYSTEM` | 系统通知 | 官方公告、账号相关 |
 | `LEVEL_UP` | 用户升级 | 用户等级提升时 |
 | `USER_WARNED` | 用户被警告 | 管理员警告用户时 |
 | `USER_FROZEN` | 用户被冻结 | 管理员冻结账户时 |
-| `SHARE_REMOVED` | 分享被删除 | 分享因违规被删除时 |
+| `SHARE_REMOVED` | 观之被删除 | 观之因违规被删除时 |
 | `REPORT_RESULT` | 举报处理结果 | 举报被处理后通知举报人 |
-| `FADE_WARNING` | 分享即将褪色 | 分享褪色度达到90%时 |
-| `FADE_COMPLETE` | 分享已褪色 | 分享完全褪色消失时 |
+| `FADE_WARNING` | 观之即将褪色 | 观之褪色度达到90%时 |
+| `FADE_COMPLETE` | 观之已褪色 | 观之完全褪色消失时 |
 
 **APNs 环境**：
 - DEBUG 模式：`sandbox`（开发环境）
@@ -438,11 +449,11 @@ guanzhi/ModelsForNetwork/
 - 消息分类 Tab（互动/系统），选中/未选中状态均显示红点
 - 消息列表（分页加载、下拉刷新、切换分类立即 loading）
 - 未读红点（显示未读数量，>999 显示 999+）
-- 点击消息跳转到对应分享/评论
+- 点击消息跳转到对应观之/评论
 - 系统消息详情 Sheet（点击系统消息弹出详情页）
 - 标记已读（点击自动标记，本地状态即时更新）
 - 全部已读（更多菜单中）
-- 贴纸消息聚合（同一分享的多个贴纸通知合并显示）
+- 贴纸消息聚合（同一观之的多个贴纸通知合并显示）
 
 **全局红点管理**：
 ```swift
@@ -473,8 +484,8 @@ NotificationCenter.default.post(name: .refreshUnreadBadge, object: nil)
 #### 6.4 Deep Link 格式
 
 ```
-guanzhi://share/{shareId}/comment/{commentId}  # 跳转到分享评论
-guanzhi://share/{shareId}                      # 跳转到分享详情
+guanzhi://share/{shareId}/comment/{commentId}  # 跳转到观之评论
+guanzhi://share/{shareId}                      # 跳转到观之详情
 ```
 
 #### 6.5 通知名称定义
@@ -530,7 +541,7 @@ extension Notification.Name {
 - 积分规则配置
 - 等级定义管理（配额倍率、待生效配置）
 - 贴纸定义管理（解锁等级、基础限额、待生效配置）
-- **综合查询**（2025-12-24 新增）：支持按用户ID或分享ID查询所有关联数据明细
+- **综合查询**（2025-12-24 新增）：支持按用户ID或观之ID查询所有关联数据明细
 
 ---
 
@@ -564,9 +575,9 @@ extension Notification.Name {
 
 ```
 /user/**            # 用户相关（登录、验证码等）
-/guan/**            # 分享业务 API（需登录）
+/guan/**            # 观之业务 API（需登录）
 /stickers/**        # 贴纸 API（需登录）
-/shares/**          # 分享操作 API（需登录）
+/shares/**          # 观之操作 API（需登录）
 /device/**          # 设备管理 API（推送通知，需登录）
 /notifications/**   # 通知 API（需登录）
 /api/admin/**       # 管理后台 API（需 ADMIN 权限）
@@ -661,8 +672,8 @@ extension Notification.Name {
 
 | 接口 | 方法 | 路径 | 说明 |
 |------|------|------|------|
-| 分享完整详情 | GET | `/admin/inspector/share/{shareId}/detail` | 返回分享信息+评论/贴纸/打卡/浏览/举报明细 |
-| 用户完整详情 | GET | `/admin/inspector/user/{userId}/detail` | 返回用户信息+分享/评论/贴纸/打卡/奖章明细 |
+| 观之完整详情 | GET | `/admin/inspector/share/{shareId}/detail` | 返回观之信息+评论/贴纸/打卡/浏览/举报明细 |
+| 用户完整详情 | GET | `/admin/inspector/user/{userId}/detail` | 返回用户信息+观之/评论/贴纸/打卡/奖章明细 |
 
 ### iOS App 贴纸相关 API
 
@@ -741,14 +752,14 @@ extension Notification.Name {
 | 表名 | 用途 | 状态 |
 |------|------|------|
 | `user` | 用户信息 | 使用中 |
-| `share` / `guanzhi` | 分享内容 | 使用中 |
+| `share` / `guanzhi` | 观之内容 | 使用中 |
 | `fade_config` | 褪色配置 | 使用中 |
 | `points_rule` | 积分规则 | 使用中 |
 | `level_definition` | 等级定义（含 daily_multiplier 配额倍率）| 使用中 |
 | `tag_definition` | 贴纸定义（含 min_level_code、base_daily_limit）| 使用中 |
 | `share_sticker_action` | 贴纸使用记录（**唯一事实来源**）| 使用中 |
 | `sticker_level_quota_override` | 等级-贴纸限额覆盖配置 | 使用中 |
-| `share_view_log` | 分享浏览记录 | 使用中 |
+| `share_view_log` | 观之浏览记录 | 使用中 |
 | `admin_operation_log` | 管理操作日志 | 使用中 |
 | `notification` | 通知消息记录 | 使用中（2025-12-30 新增）|
 | `device` | 设备 Token 注册 | 使用中（2025-12-29 新增）|
@@ -857,7 +868,7 @@ HostingTableView(
 ```
 
 **应用场景**：
-- 聚合列表（ClusterList）中的分享列表
+- 聚合列表（ClusterList）中的观之列表
 
 ---
 
@@ -878,7 +889,7 @@ HostingTableView(
 | 聚合列表Overlay优化 | `projectBasicInfo/logs/2026-01-05-cluster-list-overlay-optimization-cc.md` | UIKitListKit + OverlaySheet 组件 |
 | 褪色度UI显示修复 | `projectBasicInfo/logs/2026-01-06-fade-score-ui-fix-cc.md` | 聚合列表fadeScore修复 |
 | 褪色白化效果 | `projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md` | fadeScore>=90缩略图白化 |
-| fadeScore=100隐藏 | `projectBasicInfo/logs/2026-01-06-fade-score-100-hide-plan.md` | 已褪色分享Home Map不可见 |
+| fadeScore=100隐藏 | `projectBasicInfo/logs/2026-01-06-fade-score-100-hide-plan.md` | 已褪色观之Home Map不可见 |
 
 ---
 

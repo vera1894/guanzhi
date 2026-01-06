@@ -14,6 +14,7 @@ projectBasicInfo/
 ├── 01_PROJECT_OVERVIEW.md    # 项目概述（必读）
 ├── 02_CONNECTIONS.private.md # 服务器连接信息（部署时需要）
 ├── 03_CREDENTIALS.private.md # 凭证信息（认证时需要）
+├── 04_TERMINOLOGY.md         # 术语规范（UI 使用「观之」）
 └── logs/                     # 历史操作日志（了解之前做过什么）
 ```
 
@@ -26,8 +27,16 @@ projectBasicInfo/
 - Code comments may be in Chinese or English depending on context
 - Technical terms may be in English but should include Chinese explanations when possible
 
+## Terminology / 术语规范
+
+**详细规范请参阅** `projectBasicInfo/04_TERMINOLOGY.md`
+
+- **UI 文案**：用户可见层统一使用「观之」（如"发布观之"、"暂无观之"）
+- **代码层**：类型名/变量名保持 `Share`（如 `ShareService`、`shareId`）
+- **禁止改动**：Swift 类型名、API 路径、数据库结构
+
 ## Project Overview
-This is a SwiftUI iOS application called "guanzhi" that appears to be a social mapping application with camera functionality. The app allows users to capture photos/videos, view them on a map, and share content with others.
+This is a SwiftUI iOS application called "guanzhi" (观之) - a social mapping application with camera functionality. Users can publish location-based content called "观之" (internally modeled as `Share`), view them on a map, and interact with others.
 
 ## Architecture
 - **Main App Entry**: `guanzhiApp.swift` - Contains the main app structure with navigation stack
