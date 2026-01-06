@@ -168,12 +168,25 @@ struct ClusterShareListView: View {
     // MARK: - Helper
 
     /// 将 CustomAnnotation 转换为 ResponsedShare（ShareSingleView 需要）
+    /// 优先从 SearchViewModel 的缓存获取原始数据（包含正确的 fadeScore）
     private func convertToResponsedShares() -> [ResponsedShare] {
+        // 🔍 调试日志
+        print("🔍 [DEBUG] ClusterList convertToResponsedShares called, annotations.count=\(annotations.count)")
+        print("🔍 [DEBUG] cachedResponsedShares.count=\(searchViewModel.cachedResponsedShares.count)")
+
         return annotations.compactMap { annotation -> ResponsedShare? in
             guard let share = annotation.annotationData else { return nil }
-
-            // 分离变量以简化表达式，避免编译器超时
             let shareId = Int(share.id)
+
+            // 优先从缓存获取原始的 ResponsedShare（包含正确的 fadeScore 等字段）
+            if let cached = searchViewModel.cachedResponsedShares[shareId] {
+                print("🔍 [DEBUG] shareId=\(shareId) cache HIT, fadeScore=\(cached.fadeScore as Any)")
+                return cached
+            }
+
+            print("🔍 [DEBUG] shareId=\(shareId) cache MISS, local fadeScore=\(share.fadeScore)")
+
+            // 回退：从本地 Share 对象转换（可能 fadeScore 不准确）
             let createDateTs = Int(share.createDate.timeIntervalSince1970) * 1000
             let userId = Int(share.userId)
             let dataText = share.data
@@ -186,6 +199,7 @@ struct ClusterShareListView: View {
             let neutral = share.neutralCount
             let checkin = share.checkinCount
             let comment = share.commentCount
+            let fade = share.fadeScore
 
             return ResponsedShare(
                 id: shareId,
@@ -206,7 +220,7 @@ struct ClusterShareListView: View {
                 checkinCount: checkin,
                 commentCount: comment,
                 currentUserVoteType: nil,
-                fadeScore: 0
+                fadeScore: fade
             )
         }
     }

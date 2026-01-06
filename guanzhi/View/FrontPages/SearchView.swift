@@ -18,6 +18,11 @@ struct SearchView: View {
     // 地图模式切换开关
     let useMKMapView = true
 
+    // MARK: - 聚合列表显示模式开关
+    // true: 使用 overlay（无 sheet 冲突，动画可控）
+    // false: 使用 sheet（iOS 原生体验）
+    let useOverlayForClusterList = true
+
     var animationNamespace: Namespace.ID
     @Namespace var mapScope
 //    @Namespace private var animationNamespace
@@ -77,11 +82,20 @@ struct SearchView: View {
     }
 
     /// 将 CustomAnnotation 数组转换为 ResponsedShare 数组
+    /// 优先从 SearchViewModel 的缓存获取原始数据（包含正确的 fadeScore）
     private func convertAnnotationsToShares(_ annotations: [CustomAnnotation]) -> [ResponsedShare] {
         return annotations.compactMap { annotation -> ResponsedShare? in
             guard let share = annotation.annotationData else { return nil }
+            let shareId = Int(share.id)
+
+            // 优先从缓存获取原始的 ResponsedShare（包含正确的 fadeScore 等字段）
+            if let cached = searchViewModel.cachedResponsedShares[shareId] {
+                return cached
+            }
+
+            // 回退：从本地 Share 对象转换
             return ResponsedShare(
-                id: Int(share.id),
+                id: shareId,
                 createDate: Int(share.createDate.timeIntervalSince1970) * 1000,
                 userId: Int(share.userId),
                 data: share.data,
@@ -99,9 +113,66 @@ struct SearchView: View {
                 checkinCount: share.checkinCount,
                 commentCount: share.commentCount,
                 currentUserVoteType: nil,
-                fadeScore: 0
+                fadeScore: share.fadeScore
             )
         }
+    }
+
+    /// 聚合列表内容（供 sheet 和 overlay 两种模式共用）
+    @ViewBuilder
+    private var clusterListContent: some View {
+        VStack(spacing: 0) {
+            // 顶部标题栏（居中显示）
+            Text("这里有 \(clusterAnnotations.count) 条观之")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color("text-gray"))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Constants.spacingSpacingM)
+
+            Divider()
+
+            // UITableView 列表
+            HostingTableView(
+                items: convertAnnotationsToShares(clusterAnnotations),
+                id: \.id,
+                row: { share in
+                    ShareSingleView(share: share, onTap: {
+                        print("🔷 [ClusterList] 点击了 share.id=\(share.id)")
+                        // 保存状态用于恢复
+                        savedClusterAnnotations = clusterAnnotations
+                        savedClusterListDetent = clusterListDetent
+                        savedScrollToShareId = share.id
+                        shouldRestoreClusterList = true
+                        print("🔷 [ClusterList] 保存了 \(clusterAnnotations.count) 条标注，detent=\(clusterListDetent)，scrollTo=\(share.id)，标记需要恢复")
+
+                        // 关闭列表
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            isShowingClusterList = false
+                        }
+
+                        // 延迟进入详情（overlay 模式可用更短延迟）
+                        let delay = useOverlayForClusterList ? 0.05 : 0.1
+                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                            if appState.useOverlayMode {
+                                searchViewModel.selectedAnnotationID = "\(share.id)"
+                                searchViewModel.loadShareDetail(for: Int64(share.id))
+                                searchViewModel.isShareDetailOverlayShown = true
+                            } else {
+                                navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(share.id)"))
+                            }
+                        }
+                    })
+                        .environment(appState)
+                        .environmentObject(searchViewModel)
+                        .environmentObject(navigationCoordinator)
+                },
+                bouncesEnabled: true,
+                endFooterStyle: .text("- 到底啦 -"),
+                restoreToID: savedScrollToShareId,
+                estimatedRowHeight: 133
+            )
+        }
+        .id(clusterListSession)
     }
 
     /// 恢复聚合列表（如果之前因进入详情而隐藏）
@@ -115,15 +186,26 @@ struct SearchView: View {
         // 先关闭可能正在显示的搜索栏 sheet（避免 sheet 冲突）
         appState.isShowingSearchView = false
 
-        // 延迟显示聚合列表，确保其他 sheet 先关闭
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // 恢复数据和 detent（滚动位置通过 savedScrollToShareId 在 ClusterShareListView 中恢复）
-            clusterAnnotations = savedClusterAnnotations
-            clusterListDetent = savedClusterListDetent
+        // 恢复聚合列表
+        clusterAnnotations = savedClusterAnnotations
+        clusterListDetent = savedClusterListDetent
+
+        if useOverlayForClusterList {
+            // Overlay 模式：无需延迟和动画，瞬间出现（skipAnimation 会处理）
             isShowingClusterList = true
             shouldRestoreClusterList = false
             savedClusterAnnotations = []
-            print("🔷 [ClusterList] 已恢复聚合列表，共 \(clusterAnnotations.count) 条，detent=\(clusterListDetent)，scrollTo=\(String(describing: savedScrollToShareId))")
+            print("🔷 [ClusterList] 已恢复聚合列表（overlay瞬间出现），共 \(clusterAnnotations.count) 条")
+        } else {
+            // Sheet 模式：需要短暂延迟避免 sheet 冲突
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isShowingClusterList = true
+                }
+                shouldRestoreClusterList = false
+                savedClusterAnnotations = []
+                print("🔷 [ClusterList] 已恢复聚合列表（sheet），共 \(clusterAnnotations.count) 条，detent=\(clusterListDetent)，scrollTo=\(String(describing: savedScrollToShareId))")
+            }
         }
     }
 
@@ -190,7 +272,11 @@ struct SearchView: View {
                                     print("点击聚合，包含 \(annotations.count) 个标注")
                                     clusterAnnotations = annotations
                                     clusterListSession = UUID()  // 新会话，重置内部 @State
-                                    appState.isShowingSearchView = false
+
+                                    // 快速隐藏搜索栏（0.15秒），同时立即显示聚合列表
+                                    withAnimation(.easeOut(duration: 0.15)) {
+                                        appState.isShowingSearchView = false
+                                    }
                                     isShowingClusterList = true
                                 },
                                 onRegionChange: { newRegion in
@@ -401,99 +487,46 @@ struct SearchView: View {
                         .navigationDestination(isPresented: $appState.isShowingCameraView) {
                             CameraViewWrapper(appState: appState)
                         }
-                        // MARK: - Stage 2: 聚合列表 sheet（使用 HostingTableView 替代 ScrollView）
-                        .sheet(isPresented: $isShowingClusterList, onDismiss: {
-                            print("🔷 [ClusterList] sheet onDismiss, shouldRestoreClusterList=\(shouldRestoreClusterList), savedCount=\(savedClusterAnnotations.count)")
-                            // 进入详情时：保存数据，不清空，不恢复搜索栏
-                            if shouldRestoreClusterList {
-                                // 数据已保存到 savedClusterAnnotations，这里不清空
-                                print("🔷 [ClusterList] 进入详情模式，保留数据")
-                            } else {
-                                // 手动关闭：清空数据，恢复搜索栏
-                                print("🔷 [ClusterList] 手动关闭，清空数据")
-                                clusterAnnotations = []
-                                appState.isShowingSearchView = true
-                            }
-                        }) {
-                            // 使用 HostingTableView 替代原来的 ScrollView + LazyVStack
-                            VStack(spacing: 0) {
-                                // 顶部标题栏
-                                HStack {
-                                    Text("附近的观之")
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(Color("text-black"))
-                                        .padding(.top, 8)
-
-                                    Spacer()
-
-                                    Text("\(clusterAnnotations.count) 条")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(Color("text-gray"))
-
-                                    Button {
-                                        // 手动关闭
-                                        isShowingClusterList = false
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(Color("text-gray"))
-                                    }
+                        // MARK: - Stage 2: 聚合列表（支持 sheet 和 overlay 两种模式）
+                        .modifier(ClusterListSheetModifier(
+                            isEnabled: !useOverlayForClusterList,
+                            isPresented: $isShowingClusterList,
+                            clusterAnnotations: clusterAnnotations,
+                            shouldRestoreClusterList: shouldRestoreClusterList,
+                            onDismiss: {
+                                if !shouldRestoreClusterList {
+                                    clusterAnnotations = []
+                                    appState.isShowingSearchView = true
                                 }
-                                .padding(.horizontal, Constants.spacingSpacingM)
-                                .padding(.top, Constants.spacingSpacingS)
-                                .padding(.bottom, Constants.spacingSpacingS)
-
-                                Divider()
-
-                                // UITableView 列表
-                                HostingTableView(
-                                    items: convertAnnotationsToShares(clusterAnnotations),
-                                    id: \.id,
-                                    row: { share in
-                                        // 注意：ShareSingleView 有自己的 .onTapGesture，会拦截 UITableView 的 didSelectRowAt
-                                        // 所以需要通过 onTap 回调传递点击逻辑
-                                        ShareSingleView(share: share, onTap: {
-                                            print("🔷 [ClusterList] 点击了 share.id=\(share.id)")
-                                            // 保存状态用于恢复
-                                            savedClusterAnnotations = clusterAnnotations
-                                            savedClusterListDetent = clusterListDetent
-                                            savedScrollToShareId = share.id
-                                            shouldRestoreClusterList = true
-                                            print("🔷 [ClusterList] 保存了 \(clusterAnnotations.count) 条标注，detent=\(clusterListDetent)，scrollTo=\(share.id)，标记需要恢复")
-
-                                            // 先关闭列表，再进入详情（与原交互一致）
-                                            isShowingClusterList = false
-
-                                            // 延迟进入详情，确保 sheet 先关闭
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                if appState.useOverlayMode {
-                                                    searchViewModel.selectedAnnotationID = "\(share.id)"
-                                                    searchViewModel.loadShareDetail(for: Int64(share.id))
-                                                    searchViewModel.isShareDetailOverlayShown = true
-                                                } else {
-                                                    navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(share.id)"))
-                                                }
-                                            }
-                                        })
-                                            .environment(appState)
-                                            .environmentObject(searchViewModel)
-                                            .environmentObject(navigationCoordinator)
-                                    },
-                                    bouncesEnabled: true,  // 暂时启用 bounce 以便测试
-                                    endFooterStyle: .text("- 到底啦 -"),
-                                    restoreToID: savedScrollToShareId,
-                                    estimatedRowHeight: 133
-                                )
-                            }
-                            .id(clusterListSession)  // 每次打开新会话时重置内部 @State
-                            .presentationDetents([.medium, .large], selection: $clusterListDetent)
-                            .presentationContentInteraction(.scrolls)
-                            .presentationDragIndicator(.visible)
-                            .presentationCornerRadius(Constants.sheetCornerRadius)
-                            .presentationBackgroundInteraction(.enabled)
-                        }
+                            },
+                            content: { clusterListContent }
+                        ))
 
                     } //ZStack
+                    // MARK: - Overlay 模式的聚合列表（macOS 26 风格缩放动画）
+                    // skipAnimation: 进入详情时无动画，从详情返回时瞬间出现
+                    .overlay {
+                        if useOverlayForClusterList {
+                            AnimatedOverlaySheet(
+                                isPresented: $isShowingClusterList,
+                                cornerRadius: 0,  // 使用屏幕圆角
+                                heightFraction: 0.75,
+                                edgeInset: 12,
+                                onDismiss: {
+                                    print("🔷 [ClusterList] overlay onDismiss, shouldRestoreClusterList=\(shouldRestoreClusterList)")
+                                    if !shouldRestoreClusterList {
+                                        clusterAnnotations = []
+                                        withAnimation(.easeOut(duration: 0.15)) {
+                                            appState.isShowingSearchView = true
+                                        }
+                                    }
+                                },
+                                content: { clusterListContent },
+                                skipAnimation: shouldRestoreClusterList  // 进入/返回详情时跳过动画
+                            )
+                            .zIndex(100)
+                        }
+                    }
                     .mapScope(mapScope)  // ✅ 添加环境注入，确保 overlay 中的控件也能访问 scope
 //                    .navigationDestination(for: Route.self) { route in
 //                        switch route {
@@ -707,6 +740,37 @@ struct SearchView_Previews: PreviewProvider {
             .environmentObject(ToastManager())
             .environmentObject(UserProfileManager())
             .environmentObject(NavigationCoordinator())
+    }
+}
+
+// MARK: - 聚合列表 Sheet 修饰器（条件性应用）
+
+/// 条件性 sheet 修饰器，用于在开关关闭时保持 sheet 实现
+struct ClusterListSheetModifier<SheetContent: View>: ViewModifier {
+    let isEnabled: Bool
+    @Binding var isPresented: Bool
+    let clusterAnnotations: [CustomAnnotation]
+    let shouldRestoreClusterList: Bool
+    let onDismiss: () -> Void
+    let content: () -> SheetContent
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .sheet(isPresented: $isPresented, onDismiss: {
+                    print("🔷 [ClusterList] sheet onDismiss, shouldRestoreClusterList=\(shouldRestoreClusterList)")
+                    onDismiss()
+                }) {
+                    self.content()
+                        .presentationDetents([.medium, .large])
+                        .presentationContentInteraction(.scrolls)
+                        .presentationDragIndicator(.visible)
+                        .presentationCornerRadius(Constants.sheetCornerRadius)
+                        .presentationBackgroundInteraction(.enabled)
+                }
+        } else {
+            content
+        }
     }
 }
 

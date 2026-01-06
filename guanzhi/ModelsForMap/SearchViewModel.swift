@@ -45,7 +45,9 @@ class SearchViewModel: ObservableObject {
 //    var locationAnimating: Bool = false
 //    private var lastRegionChangeTime: Date = Date()
 //    private var cancellables = Set<AnyCancellable>()
-//    @Published var cachedShares: [String: ResponsedShare] = [:] // 使用分享标识符作为键
+    /// 缓存服务器返回的原始 ResponsedShare 数据（key: shareId）
+    /// 用于聚合列表等需要完整数据（如 fadeScore）的场景
+    @Published var cachedResponsedShares: [Int: ResponsedShare] = [:]
     @Published var selectedAnnotation: CustomAnnotation? = nil //用于存储选中的分享
     @Published var selectedAnnotationID: String? = nil //用于存储选中分享的id，用于match动画，但目前不可用
     @Published var selectedAnnotationImage: UIImage? //用于存储选中分享的图像，快速传递缩略图，后加载为原文件
@@ -190,11 +192,22 @@ class SearchViewModel: ObservableObject {
     }
 
     /// 刷新附近分享（带重试机制）
-    /// - Parameter reason: 刷新原因
-    func refreshNearbyShares(reason: RefreshReason) {
-        guard let location = locationManager?.currentLocation else {
-            print("⚠️ [SearchViewModel] 无法获取当前位置")
-            return
+    /// - Parameters:
+    ///   - reason: 刷新原因
+    ///   - overrideLocation: 可选的覆盖坐标，如果提供则使用它，否则从 locationManager 获取
+    func refreshNearbyShares(reason: RefreshReason, overrideLocation: CLLocationCoordinate2D? = nil) {
+        // 优先使用传入的坐标，其次使用 locationManager，最后使用地图中心点
+        let location: CLLocationCoordinate2D
+        if let override = overrideLocation {
+            location = override
+            print("📍 [SearchViewModel] 使用传入坐标: \(override.latitude), \(override.longitude)")
+        } else if let current = locationManager?.currentLocation {
+            location = current
+            print("📍 [SearchViewModel] 使用定位坐标: \(current.latitude), \(current.longitude)")
+        } else {
+            // 备用：使用地图中心点
+            location = region.center
+            print("📍 [SearchViewModel] 使用地图中心点: \(region.center.latitude), \(region.center.longitude)")
         }
 
         // 规范 2：如果已在加载中，直接返回
@@ -244,6 +257,14 @@ class SearchViewModel: ObservableObject {
 
                 print("✅ [SearchViewModel] 成功获取 \(shareList.count) 条分享数据")
 
+                // 🔍 调试日志：检查服务器返回的 fadeScore
+                print("🔍 [DEBUG] nearby first 5 fadeScore:", shareList.prefix(5).map { ($0.id, $0.fadeScore as Any) })
+
+                // 缓存原始 ResponsedShare 数据（用于聚合列表等场景）
+                for share in shareList {
+                    self.cachedResponsedShares[share.id] = share
+                }
+
                 // 保存到 SwiftData
                 await self.saveSharesToDatabase(shares: shareList)
                 self.getAnnotations()
@@ -278,8 +299,9 @@ class SearchViewModel: ObservableObject {
         if networkRestoredCancellable == nil {
             setupNetworkMonitoring()
         }
-        // 使用新的刷新方法
-        refreshNearbyShares(reason: .onAppear)
+        // 使用新的刷新方法，传入坐标
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        refreshNearbyShares(reason: .onAppear, overrideLocation: coordinate)
     }
     
     //保存分享数据到数据库
@@ -332,6 +354,15 @@ class SearchViewModel: ObservableObject {
                         title: share.title,
                         deleted: share.deleted == 1
                     )
+                    // 设置互动统计字段
+                    newShare.agreeCount = share.agreeCount ?? 0
+                    newShare.neutralCount = share.neutralCount ?? 0
+                    newShare.checkinCount = share.checkinCount ?? 0
+                    newShare.commentCount = share.commentCount ?? 0
+                    newShare.fadeScore = share.fadeScore ?? 0
+                    if let voteType = share.currentUserVoteType {
+                        newShare.currentUserVoteType = voteType
+                    }
                     context.insert(newShare)
 //                    print("插入新的分享，ID: \(share.id)")
                     // 解析并存储该分享的媒体文件

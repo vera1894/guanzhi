@@ -22,12 +22,10 @@ struct ShareListView: View {
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
             HStack(alignment: .top,spacing: Constants.iconSizeS) {
-                //Spacer()
-                TabButton(title: "我分享的", isSelected: selectedTab == 0) {
+                TabButton(title: "全部观之", isSelected: selectedTab == 0) {
                     selectedTab = 0
                 }
-               // Spacer()
-                TabButton(title: "我的消息", isSelected: selectedTab == 1) {
+                TabButton(title: "已褪色", isSelected: selectedTab == 1) {
                     selectedTab = 1
                 }
                 Spacer()
@@ -78,13 +76,49 @@ struct ShareListView: View {
                     }
                 }
             } else {
-                List {
-//                    ShareSingleView().listRowInsets(EdgeInsets())
-//                    ShareSingleView().listRowInsets(EdgeInsets())
-//                    ShareSingleView().listRowInsets(EdgeInsets())
+                // 已褪色 tab：显示褪色度达到100的分享
+                switch timelineVM.loadingState {
+                case .idle, .loading:
+                    VStack {
+                        Spacer()
+                        ProgressView("加载中...")
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
 
-                        }.listStyle(PlainListStyle())
+                case .error:
+                    RetryView(
+                        message: "加载失败",
+                        detail: "请检查网络连接",
+                        onRetry: {
+                            timelineVM.retry()
+                        }
+                    )
+                    .frame(maxWidth: .infinity)
 
+                case .loaded:
+                    let fadedShares = timelineVM.userShares.filter { $0.deleted == 0 && ($0.fadeScore ?? 0) >= 100 }
+                    if fadedShares.isEmpty {
+                        VStack {
+                            Spacer()
+                            Text("暂无已褪色的观之")
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        List {
+                            ForEach(fadedShares, id: \.id) { shareItem in
+                                ShareSingleView(share: shareItem)
+                                    .listRowInsets(EdgeInsets())
+                                    .environment(\.appState, appState)
+                                    .environmentObject(searchViewModel)
+                                    .environmentObject(navigationCoordinator)
+                            }
+                        }
+                        .listStyle(PlainListStyle())
+                    }
+                }
             }
 
 

@@ -65,6 +65,10 @@ class HostingTableViewController<Item, ID: Hashable, RowView: View>: UITableView
         // 移除多余分割线
         tableView.tableFooterView = UIView()
 
+        // 背景透明（让毛玻璃效果透过来）
+        tableView.backgroundColor = .clear
+        view.backgroundColor = .clear
+
         // 应用配置
         applyConfiguration()
     }
@@ -74,7 +78,8 @@ class HostingTableViewController<Item, ID: Hashable, RowView: View>: UITableView
     /// 应用配置（viewDidLoad 和 update 时调用）
     func applyConfiguration() {
         tableView.bounces = bouncesEnabled
-        tableView.alwaysBounceVertical = false
+        // 始终启用垂直回弹，确保条目较少时也能滑动
+        tableView.alwaysBounceVertical = true
         tableView.alwaysBounceHorizontal = false
         tableView.separatorStyle = showsSeparators ? .singleLine : .none
         tableView.contentInset = contentInsets
@@ -155,9 +160,11 @@ class HostingTableViewController<Item, ID: Hashable, RowView: View>: UITableView
                 .id(itemID)  // 关键：确保 SwiftUI 行的稳定标识
         }
         .margins(.all, 0)
+        .background(.clear)  // 透明背景
 
         cell.selectionStyle = .none
         cell.backgroundColor = .clear
+        cell.contentView.backgroundColor = .clear
 
         return cell
     }

@@ -10,6 +10,7 @@
 		5BA50F8228184F8089DF974E /* TableEndFooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB99A6CA2D6A4F7882C94B22 /* TableEndFooterView.swift */; };
 		A5CE2C7CC6D24607945B33E6 /* HostingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ABB0F143B8746BC8D412356 /* HostingTableViewController.swift */; };
 		3D624759975544D8978D49F9 /* HostingTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEF85D2DB3F14D168161B18C /* HostingTableView.swift */; };
+		1234ABCD5678EF901234ABCD /* OverlaySheetContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F647889012ABCD /* OverlaySheetContainer.swift */; };
 		B2D7078B92364968A618EB26 /* MKMapViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D2D807E7BB4A3B87B477A5 /* MKMapViewWrapper.swift */; };
 		0ABB5751E2DB40C9B527C928 /* MKMapViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559A48639D2240DEA0E19C51 /* MKMapViewCoordinator.swift */; };
 		D7C2D76C206F453ABA110F9B /* CustomMKAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FECCE70CD6BC4F628AF06E1A /* CustomMKAnnotationView.swift */; };
@@ -184,6 +185,7 @@
 		BB99A6CA2D6A4F7882C94B22 /* TableEndFooterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableEndFooterView.swift; sourceTree = "<group>"; };
 		3ABB0F143B8746BC8D412356 /* HostingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostingTableViewController.swift; sourceTree = "<group>"; };
 		DEF85D2DB3F14D168161B18C /* HostingTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostingTableView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F647889012ABCD /* OverlaySheetContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySheetContainer.swift; sourceTree = "<group>"; };
 		40D2D807E7BB4A3B87B477A5 /* MKMapViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MKMapViewWrapper.swift; sourceTree = "<group>"; };
 		559A48639D2240DEA0E19C51 /* MKMapViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MKMapViewCoordinator.swift; sourceTree = "<group>"; };
 		FECCE70CD6BC4F628AF06E1A /* CustomMKAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomMKAnnotationView.swift; sourceTree = "<group>"; };
@@ -837,8 +839,17 @@
 			isa = PBXGroup;
 			children = (
 				75AB86BA284F488E99E629D6 /* UIKitListKit */,
+				OVERLAY1234567890ABCDEF /* OverlaySheet */,
 			);
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		OVERLAY1234567890ABCDEF /* OverlaySheet */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F647889012ABCD /* OverlaySheetContainer.swift */,
+			);
+			path = OverlaySheet;
 			sourceTree = "<group>";
 		};
 		75AB86BA284F488E99E629D6 /* UIKitListKit */ = {
@@ -989,6 +1000,7 @@
 				5BA50F8228184F8089DF974E /* TableEndFooterView.swift in Sources */,
 				A5CE2C7CC6D24607945B33E6 /* HostingTableViewController.swift in Sources */,
 				3D624759975544D8978D49F9 /* HostingTableView.swift in Sources */,
+				1234ABCD5678EF901234ABCD /* OverlaySheetContainer.swift in Sources */,
 				4AB9EF9BCA31D1003317B316 /* UseZoneParticleFactory.swift in Sources */,
 				CF01E7A8B2D3C4F5E6A7B8C9 /* ConfettiParticleFactory.swift in Sources */,
 				FF9DB7A02EEAB25500374E02 /* PassthroughSpriteView.swift in Sources */,

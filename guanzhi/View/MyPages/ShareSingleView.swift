@@ -68,17 +68,25 @@ struct ShareSingleView: View {
                   .kerning(0.22)
                   .foregroundColor(Color("text-black"))
                   .frame(maxWidth: .infinity, alignment: .leading)
+                  .lineLimit(2) // 限制显示两行
                   .truncationMode(.tail) // 设置省略模式为尾部省略
                 Spacer(minLength: 2)
                 // Alternating Views and Spacers
                 // tx/SecondaryInfo
-                VStack(alignment: .leading, spacing: Constants.spacingSpacingXs) {
+                VStack(alignment: .leading, spacing: 2) {
+                    // 褪色度标签
+                    let fadePercent = share.fadeScore ?? 0
+                    Text("褪色度：\(fadePercent)%")
+                        .font(Font.custom("PingFang SC", size: 14))
+                        .kerning(0.22)
+                        .foregroundColor(fadePercent >= 90 ? .red : Color("text-gray"))
+
                     let dateString = dateStringFrom(share.createDate)
                     Text("#\(share.id) · \(dateString)")
                       .font(Font.custom("PingFang SC", size: 14))
                       .kerning(0.22)
                       .foregroundColor(Color("text-gray"))
-                    Text("📌 \(share.address)") //需要调整
+                    Text("📌 \(share.address)")
                         .font(Font.custom("PingFang SC", size: 14))
                         .kerning(0.22)
                         .foregroundColor(Color("color-black"))

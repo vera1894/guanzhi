@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v2.8
-**最后更新**: 2026-01-03（Sheet与导航层级冲突修复）
+**文档版本**: v2.9
+**最后更新**: 2026-01-06（褪色度 UI 显示优化）
 
 ---
 
@@ -132,6 +132,36 @@ npm run build
 - 分享发布后，随时间逐渐"褪色"
 - 褪色速度受阅读量、标签、互动影响
 - 管理后台提供褪色曲线模拟器
+
+#### iOS 客户端褪色度显示（2026-01-06 更新）
+
+**个人主页分享列表**（`ShareListView.swift`）：
+- 第一个 Tab："全部观之" - 显示所有未删除的分享
+- 第二个 Tab："已褪色" - 显示 `fadeScore >= 100` 的分享
+
+**分享条目**（`ShareSingleView.swift`）：
+- 标题限制为 2 行，超出部分显示省略号
+- 在分享 ID 行上方显示 "褪色度：n%"
+- 当 `fadeScore >= 90` 时，标签显示为红色
+
+**聚合列表数据流**（重要）：
+```
+服务器 ResponsedShare (fadeScore: Int?)
+    ↓ 缓存到
+SearchViewModel.cachedResponsedShares [shareId: ResponsedShare]
+    ↓ 存入 SwiftData
+Share (fadeScore: Int)
+    ↓ 转换为
+CustomAnnotation.annotationData
+    ↓ 聚合列表读取时
+SearchView.convertAnnotationsToShares() 优先从缓存获取
+```
+
+**关键文件**：
+- `SearchView.swift:convertAnnotationsToShares()` - 聚合列表数据转换
+- `SearchViewModel.swift:cachedResponsedShares` - 服务器数据缓存
+- `ShareSingleView.swift` - 分享条目视图（含褪色度标签）
+- `ShareListView.swift` - 个人主页分享列表（含 Tab 切换）
 
 ### 3. 积分与等级系统
 
@@ -700,6 +730,86 @@ extension Notification.Name {
 
 ---
 
+## 通用 UI 组件
+
+### 1. OverlaySheet（Overlay 弹窗）
+
+**位置**：`View/Shared/OverlaySheet/OverlaySheetContainer.swift`
+
+**状态**：已完成（2026-01-05）
+
+替代 SwiftUI Sheet 的 Overlay 弹窗组件，解决 Sheet 与 NavigationStack 的层级冲突问题。
+
+**核心特性**：
+- macOS 26 风格动画：缩放（1.06x → 1.0x）+ 淡入
+- 自动适配设备屏幕圆角（使用 iOS 私有 API `_displayCornerRadius`）
+- 毛玻璃背景（`.ultraThinMaterial`）
+- 支持条件性动画跳过（进入/返回详情时瞬间出现）
+- 固定 3/4 屏幕高度，12pt 边距
+
+**使用方式**：
+```swift
+.overlaySheet(
+    isPresented: $isPresented,
+    cornerRadius: 0,        // 0 表示使用屏幕圆角
+    heightFraction: 0.75,   // 高度占比
+    edgeInset: 12,          // 边距
+    skipAnimation: false,   // 是否跳过动画
+    onDismiss: { }
+) {
+    // 内容视图
+}
+```
+
+**应用场景**：
+- `SearchView` 中的聚合列表（通过 `useOverlayForClusterList` 开关控制）
+
+### 2. UIKitListKit（UIKit 列表桥接）
+
+**位置**：`View/Shared/UIKitListKit/`
+
+**状态**：已完成（2026-01-05）
+
+解决 SwiftUI ScrollView 触底回弹（"缓缓回滑"）问题的 UIKit 列表组件。
+
+**核心文件**：
+```
+UIKitListKit/
+├── HostingTableView.swift           # SwiftUI Representable 桥接
+├── HostingTableViewController.swift # UITableViewController 实现
+└── TableEndFooterView.swift         # 列表底部 Footer
+```
+
+**核心特性**：
+- 使用 `UIHostingConfiguration`（iOS 16+）承载 SwiftUI 行视图
+- `bounces = false` 禁用底部回弹
+- `alwaysBounceVertical = true` 确保条目较少时也可滑动
+- 透明背景，支持毛玻璃效果透过
+- 支持滚动位置恢复
+- 预估行高优化
+
+**使用方式**：
+```swift
+HostingTableView(
+    items: items,
+    idKeyPath: \.id,
+    bouncesEnabled: false,
+    showsSeparators: false
+) { item in
+    // SwiftUI 行视图
+    RowView(item: item)
+}
+.onSelect { item in
+    // 点击处理
+}
+.footer(.text("- 到底啦 -"))
+```
+
+**应用场景**：
+- 聚合列表（ClusterList）中的分享列表
+
+---
+
 ## 相关文档索引
 
 | 文档 | 路径 | 说明 |
@@ -714,6 +824,8 @@ extension Notification.Name {
 | 消息页面UI优化 | `projectBasicInfo/logs/2026-01-01-messages-page-ui-fixes-cc.md` | 红点/已读/详情页修复 |
 | 缩略图缓存修复 | `projectBasicInfo/logs/2026-01-02-thumbnail-cache-invalidation-fix-cc.md` | iOS Caches 目录失效问题 |
 | Sheet导航冲突修复 | `projectBasicInfo/logs/2026-01-03-sheet-navigation-conflict-fix-cc.md` | Sheet与NavigationStack层级问题 |
+| 聚合列表Overlay优化 | `projectBasicInfo/logs/2026-01-05-cluster-list-overlay-optimization-cc.md` | UIKitListKit + OverlaySheet 组件 |
+| 褪色度UI显示修复 | `projectBasicInfo/logs/2026-01-06-fade-score-ui-fix-cc.md` | 聚合列表fadeScore修复 |
 
 ---
 
