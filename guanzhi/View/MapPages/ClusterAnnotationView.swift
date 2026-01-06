@@ -278,17 +278,18 @@ class ClusterAnnotationView: MKAnnotationView {
         currentImageUrl = url
         activityIndicator.startAnimating()
 
-        ImageCache.shared.loadImage(from: url) { [weak self] loadedImage in
-            guard let self = self else { return }
-            guard self.currentImageUrl == url else { return }
-
-            DispatchQueue.main.async {
-                self.activityIndicator.stopAnimating()
-                if let image = loadedImage {
-                    self.thumbnailImageView.image = image
-                } else {
-                    self.showPlaceholder()
-                }
+        // 聚合图标明确使用原图，永不白化（即使代表图 fadeScore >= 90）
+        ImageCache.shared.loadImage(
+            from: url,
+            variant: .original
+        ) { [weak self] loadedImage in
+            // 回调已统一在主线程，无需再 DispatchQueue.main.async
+            guard let self = self, self.currentImageUrl == url else { return }
+            self.activityIndicator.stopAnimating()
+            if let image = loadedImage {
+                self.thumbnailImageView.image = image
+            } else {
+                self.showPlaceholder()
             }
         }
     }

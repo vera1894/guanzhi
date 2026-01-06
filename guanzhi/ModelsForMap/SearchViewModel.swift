@@ -2000,7 +2000,51 @@ enum StringOrInt: Codable, Equatable {
     }
 }
 
-// 图片缓存类，使用 NSCache 缓存图片
+// MARK: - 图片变体枚举（统一 API）
+
+/// 图片变体类型
+/// - original: 原图
+/// - fadeVeil: 白化效果（fadeScore >= 90 时应用）
+enum ImageVariant: Hashable {
+    case original                      // 原图
+    case fadeVeil(fadeScore: Int)      // 白化效果（内部判断 >= 90 才处理）
+
+    /// 生成缓存 key 后缀
+    var cacheKeySuffix: String {
+        switch self {
+        case .original:
+            return ""
+        case .fadeVeil(let fadeScore):
+            if fadeScore >= FadeVeilProcessor.threshold {
+                return "_\(FadeVeilProcessor.version)"  // 带版本号
+            }
+            return ""  // < 90 等价于原图
+        }
+    }
+
+    /// 是否需要处理
+    var needsProcessing: Bool {
+        switch self {
+        case .original:
+            return false
+        case .fadeVeil(let fadeScore):
+            return fadeScore >= FadeVeilProcessor.threshold
+        }
+    }
+
+    /// 提取 fadeScore（用于处理器）
+    var fadeScore: Int {
+        switch self {
+        case .original: return 0
+        case .fadeVeil(let score): return score
+        }
+    }
+}
+
+// MARK: - 图片缓存类
+
+/// 图片缓存类，使用 NSCache 缓存图片
+/// 支持原图和白化效果图片的加载与缓存
 class ImageCache {
     static let shared = ImageCache()
     private init() {
@@ -2009,21 +2053,95 @@ class ImageCache {
 
     private let cache = NSCache<NSString, UIImage>()
 
+    // 并发去重：记录正在处理的请求
+    private var inFlightRequests: [String: [(UIImage?) -> Void]] = [:]
+    private let lock = NSLock()
+
+    // MARK: - 基础方法
+
     func image(forKey key: String) -> UIImage? {
-        let image = cache.object(forKey: key as NSString)
-        if image != nil {
-//            print("从缓存中获取图片，Key: \(key)")
-        }
-        return image
+        return cache.object(forKey: key as NSString)
     }
 
     func setImage(_ image: UIImage, forKey key: String) {
         cache.setObject(image, forKey: key as NSString)
-//        print("缓存图片，Key: \(key)")
     }
 
-    func loadImage(from url: URL, completion: @escaping (UIImage?) -> Void) {
+    // MARK: - 统一图片加载 API
+
+    /// 加载图片（统一 API）
+    /// - Parameters:
+    ///   - url: 图片 URL
+    ///   - variant: 图片变体（原图 or 白化）
+    ///   - completion: 回调（始终在主线程）
+    func loadImage(from url: URL,
+                   variant: ImageVariant = .original,
+                   completion: @escaping (UIImage?) -> Void) {
+        let cacheKey = url.absoluteString + variant.cacheKeySuffix
+
+        // 1. 检查缓存（命中时也统一回主线程）
+        if let cachedImage = image(forKey: cacheKey) {
+            DispatchQueue.main.async {
+                completion(cachedImage)
+            }
+            return
+        }
+
+        // 2. 并发去重：如果已有相同请求在处理，加入等待队列
+        lock.lock()
+        if var waiters = inFlightRequests[cacheKey] {
+            waiters.append(completion)
+            inFlightRequests[cacheKey] = waiters
+            lock.unlock()
+            return
+        }
+        inFlightRequests[cacheKey] = [completion]
+        lock.unlock()
+
+        // 3. 加载原图（单例不需要 weak self）
+        loadOriginalImage(from: url) { originalImage in
+            guard let originalImage = originalImage else {
+                self.completeRequest(cacheKey: cacheKey, image: nil)
+                return
+            }
+
+            // 4. 处理（异步）
+            if variant.needsProcessing {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let processed = FadeVeilProcessor.shared.process(
+                        originalImage,
+                        fadeScore: variant.fadeScore
+                    )
+                    self.setImage(processed, forKey: cacheKey)
+                    self.completeRequest(cacheKey: cacheKey, image: processed)
+                }
+            } else {
+                self.completeRequest(cacheKey: cacheKey, image: originalImage)
+            }
+        }
+    }
+
+    /// 完成请求并通知所有等待者（统一回主线程）
+    private func completeRequest(cacheKey: String, image: UIImage?) {
+        lock.lock()
+        let waiters = inFlightRequests.removeValue(forKey: cacheKey) ?? []
+        lock.unlock()
+
+        // 统一在主线程回调，避免调用方线程不一致
+        DispatchQueue.main.async {
+            for completion in waiters {
+                completion(image)
+            }
+        }
+    }
+
+    // MARK: - 原图加载（内部方法）
+
+    /// 加载原图（不带任何处理）
+    private func loadOriginalImage(from url: URL, completion: @escaping (UIImage?) -> Void) {
         let cacheKey = url.absoluteString
+
+        // 检查原图缓存
         if let cachedImage = image(forKey: cacheKey) {
             completion(cachedImage)
             return
@@ -2035,13 +2153,9 @@ class ImageCache {
                 if let imageData = try? Data(contentsOf: url),
                    let loadedImage = UIImage(data: imageData) {
                     self.setImage(loadedImage, forKey: cacheKey)
-                    DispatchQueue.main.async {
-                        completion(loadedImage)
-                    }
+                    completion(loadedImage)
                 } else {
-                    DispatchQueue.main.async {
-                        completion(nil)
-                    }
+                    completion(nil)
                 }
             }
         } else {
@@ -2049,13 +2163,9 @@ class ImageCache {
             URLSession.shared.dataTask(with: url) { data, response, error in
                 if let data = data, let downloadedImage = UIImage(data: data) {
                     self.setImage(downloadedImage, forKey: cacheKey)
-                    DispatchQueue.main.async {
-                        completion(downloadedImage)
-                    }
+                    completion(downloadedImage)
                 } else {
-                    DispatchQueue.main.async {
-                        completion(nil)
-                    }
+                    completion(nil)
                 }
             }.resume()
         }

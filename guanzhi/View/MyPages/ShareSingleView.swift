@@ -121,10 +121,14 @@ struct ShareSingleView: View {
     
     private func loadImage() {
         if let url = ephemeralGetThumbnailOrPhotoURL(responsedShare: share) {
-            ImageCache.shared.loadImage(from: url) { downloaded in
-                DispatchQueue.main.async {
-                    self.image = downloaded
-                }
+            let fadeScore = share.fadeScore ?? 0
+            // 使用统一 API，传入 fadeScore 以支持白化效果
+            ImageCache.shared.loadImage(
+                from: url,
+                variant: .fadeVeil(fadeScore: fadeScore)
+            ) { downloaded in
+                // 回调已统一在主线程，无需再 DispatchQueue.main.async
+                self.image = downloaded
             }
         }
     }

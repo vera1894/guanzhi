@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DDC8647E362B465EBE7DE883 /* FadeVeilProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F62122E3C8C463A80B6614A /* FadeVeilProcessor.swift */; };
 		5BA50F8228184F8089DF974E /* TableEndFooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB99A6CA2D6A4F7882C94B22 /* TableEndFooterView.swift */; };
 		A5CE2C7CC6D24607945B33E6 /* HostingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ABB0F143B8746BC8D412356 /* HostingTableViewController.swift */; };
 		3D624759975544D8978D49F9 /* HostingTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEF85D2DB3F14D168161B18C /* HostingTableView.swift */; };
@@ -343,6 +344,7 @@
 		FFDDA3812D5DC6C30027ED26 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		FFF669262CA93EEA005FDB86 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
 		FFF6692A2CB6292D005FDB86 /* MapOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapOverlayView.swift; sourceTree = "<group>"; };
+		9F62122E3C8C463A80B6614A /* FadeVeilProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FadeVeilProcessor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -840,6 +842,7 @@
 			children = (
 				75AB86BA284F488E99E629D6 /* UIKitListKit */,
 				OVERLAY1234567890ABCDEF /* OverlaySheet */,
+				9F62122E3C8C463A80B6614A /* FadeVeilProcessor.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -1141,6 +1144,7 @@
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 				D13FFDEE2BAF1F26007E1970 /* CapsuleTextField.swift in Sources */,
 				D13FFDF02BAF1F26007E1970 /* OTPTextField.swift in Sources */,
+				DDC8647E362B465EBE7DE883 /* FadeVeilProcessor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

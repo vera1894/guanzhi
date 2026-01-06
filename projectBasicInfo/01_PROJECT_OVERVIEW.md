@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v2.9
-**最后更新**: 2026-01-06（褪色度 UI 显示优化）
+**文档版本**: v3.0
+**最后更新**: 2026-01-06（褪色白化效果）
 
 ---
 
@@ -162,6 +162,37 @@ SearchView.convertAnnotationsToShares() 优先从缓存获取
 - `SearchViewModel.swift:cachedResponsedShares` - 服务器数据缓存
 - `ShareSingleView.swift` - 分享条目视图（含褪色度标签）
 - `ShareListView.swift` - 个人主页分享列表（含 Tab 切换）
+
+#### 褪色白化效果（Fade Veil）（2026-01-06 实现）
+
+当分享 `fadeScore >= 90` 时，缩略图自动应用"发白"视觉效果，提示用户该分享即将褪色。
+
+**效果**：
+- 降低饱和度（saturation = 0.15）
+- 叠加白色蒙版（Screen 混合，opacity = 0.24）
+
+**应用范围**：
+| 场景 | 是否白化 |
+|------|----------|
+| 地图单标注（CustomMKAnnotationView）| 是 |
+| 个人列表（ShareSingleView）| 是 |
+| 聚合列表项（ShareSingleView）| 是 |
+| 聚合图标（ClusterAnnotationView）| **否** |
+
+**核心实现**：
+```
+View/Shared/FadeVeilProcessor.swift     # Core Image 处理器（参数集中管理）
+ModelsForMap/SearchViewModel.swift      # ImageCache 统一 API
+  ├── ImageVariant.original             # 原图（聚合图标用）
+  └── ImageVariant.fadeVeil(fadeScore:) # 白化图（单标注/列表用）
+```
+
+**缓存策略**：
+- 使用 `ImageVariant.cacheKeySuffix` 区分缓存
+- 版本号 `FadeVeilProcessor.version`（当前 `fv_v1`）
+- 修改参数后需 bump 版本号，否则旧缓存不会更新
+
+**相关文档**：`projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md`
 
 ### 3. 积分与等级系统
 
@@ -826,6 +857,7 @@ HostingTableView(
 | Sheet导航冲突修复 | `projectBasicInfo/logs/2026-01-03-sheet-navigation-conflict-fix-cc.md` | Sheet与NavigationStack层级问题 |
 | 聚合列表Overlay优化 | `projectBasicInfo/logs/2026-01-05-cluster-list-overlay-optimization-cc.md` | UIKitListKit + OverlaySheet 组件 |
 | 褪色度UI显示修复 | `projectBasicInfo/logs/2026-01-06-fade-score-ui-fix-cc.md` | 聚合列表fadeScore修复 |
+| 褪色白化效果 | `projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md` | fadeScore>=90缩略图白化 |
 
 ---
 

@@ -284,8 +284,11 @@ class CustomMKAnnotationView: MKAnnotationView {
         thumbnailImage = nil
         thumbnailImageView.image = nil
 
+        // 获取 fadeScore 用于白化效果
+        let fadeScore = annotation.annotationData?.fadeScore ?? 0
+
         if let imageUrl = annotation.imageUrl {
-            loadThumbnail(from: imageUrl)
+            loadThumbnail(from: imageUrl, fadeScore: fadeScore)
         } else {
             showPlaceholder()
         }
@@ -293,22 +296,23 @@ class CustomMKAnnotationView: MKAnnotationView {
 
     // MARK: - Image Loading
 
-    private func loadThumbnail(from url: URL) {
+    private func loadThumbnail(from url: URL, fadeScore: Int) {
         currentImageUrl = url
         activityIndicator.startAnimating()
 
-        ImageCache.shared.loadImage(from: url) { [weak self] loadedImage in
-            guard let self = self else { return }
-            guard self.currentImageUrl == url else { return }
-
-            DispatchQueue.main.async {
-                self.activityIndicator.stopAnimating()
-                if let image = loadedImage {
-                    self.thumbnailImage = image
-                    self.thumbnailImageView.image = image
-                } else {
-                    self.showPlaceholder()
-                }
+        // 使用统一 API，传入 fadeScore 以支持白化效果
+        ImageCache.shared.loadImage(
+            from: url,
+            variant: .fadeVeil(fadeScore: fadeScore)
+        ) { [weak self] loadedImage in
+            // 回调已统一在主线程，无需再 DispatchQueue.main.async
+            guard let self = self, self.currentImageUrl == url else { return }
+            self.activityIndicator.stopAnimating()
+            if let image = loadedImage {
+                self.thumbnailImage = image
+                self.thumbnailImageView.image = image
+            } else {
+                self.showPlaceholder()
             }
         }
     }
