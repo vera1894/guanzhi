@@ -24,10 +24,117 @@ class UserProfileManager: ObservableObject {
     // 让它可访问 SwiftData 的 context
     var context: ModelContext?
 
-    // 为了在内存里临时存储他人资料
+    // MARK: - SSOT 新属性
+    /// 他人页面当前查看的用户 ID（View 用 @Query 根据此 ID 查询）
+    @Published var viewedUserId: Int?
+
+    // MARK: - SSOT 方法
+
+    /// 统一保存用户信息到 UserProfile 表（替代原有的分离存储逻辑）
+    /// 无论是当前用户还是他人，都写入同一张表
+    func saveToUserProfile(userInfo: UserFullInfoModel) throws {
+        guard let context = context else {
+            print("⚠️ [SSOT] saveToUserProfile: context 为 nil，无法保存用户 \(userInfo.id)")
+            return
+        }
+        print("📝 [SSOT] 保存用户 \(userInfo.id) 到 UserProfile 表，levelCode: \(userInfo.levelCode ?? "nil")")
+
+        // 使用 flatMap 正确处理 nil 编码
+        let titleDOSData = userInfo.titleDOS.flatMap { try? JSONEncoder().encode($0) }
+
+        // 查找是否已存在
+        let userId = userInfo.id
+        let descriptor = FetchDescriptor<UserProfile>(
+            predicate: #Predicate { $0.id == userId }
+        )
+        let existing = (try? context.fetch(descriptor))?.first
+
+        if let existing = existing {
+            // 更新已有记录
+            existing.name = userInfo.name
+            existing.nickname = userInfo.nickname
+            existing.phone = userInfo.phone
+            existing.photo = userInfo.photo
+            existing.code = userInfo.code
+            existing.createDate = userInfo.createDate
+            existing.jpushId = userInfo.jpushId
+            existing.titleDOSData = titleDOSData
+            existing.levelCode = userInfo.levelCode
+            existing.pointsTotal = userInfo.pointsTotal
+            existing.platform = userInfo.platform
+            existing.lastUpdated = Date()
+        } else {
+            // 新建记录
+            let newProfile = UserProfile(
+                id: userInfo.id,
+                name: userInfo.name,
+                nickname: userInfo.nickname,
+                phone: userInfo.phone,
+                photo: userInfo.photo,
+                code: userInfo.code,
+                createDate: userInfo.createDate,
+                jpushId: userInfo.jpushId,
+                titleDOSData: titleDOSData,
+                levelCode: userInfo.levelCode,
+                pointsTotal: userInfo.pointsTotal,
+                platform: userInfo.platform
+            )
+            context.insert(newProfile)
+            print("📝 [SSOT] 新建 UserProfile 记录: \(userInfo.id)")
+        }
+
+        try context.save()
+        print("✅ [SSOT] UserProfile 保存成功: \(userInfo.id)")
+    }
+
+    /// 从 UserProfile 表查询指定用户
+    func findUserProfile(userId: Int) -> UserProfile? {
+        guard let context = context else { return nil }
+        let descriptor = FetchDescriptor<UserProfile>(
+            predicate: #Predicate { $0.id == userId }
+        )
+        return (try? context.fetch(descriptor))?.first
+    }
+
+    /// 清空所有 UserProfile（退出登录时调用，确保账户隔离）
+    func clearAllUserProfiles() throws {
+        guard let context = context else { return }
+
+        let descriptor = FetchDescriptor<UserProfile>()
+        let allProfiles = (try? context.fetch(descriptor)) ?? []
+
+        for profile in allProfiles {
+            context.delete(profile)
+        }
+
+        try context.save()
+
+        // 同时清空内存中的状态
+        self.viewedUserId = nil
+        self.otherUserProfile = nil
+        self.localUserProfile = nil
+        self.avatarImage = nil
+
+        // 清除头像缓存文件
+        try? FileManager.default.removeItem(at: getAvatarCacheURL())
+
+        print("🧹 已清空所有 UserProfile 缓存")
+    }
+
+    /// 启动时检查：如果未登录则清空缓存（防止残留数据）
+    func checkAndClearIfNotLoggedIn() {
+        let currentUserId = OTOLoginStatusManager.shared.getUserID()
+        // getUserID() 返回 0 或负数表示未登录
+        if currentUserId <= 0 {
+            try? clearAllUserProfiles()
+            print("🔐 用户未登录，已清空 UserProfile 缓存")
+        }
+    }
+
+    // 为了在内存里临时存储他人资料（过渡期保留，后续移除）
     @Published var otherUserProfile: UserFullInfoModel? = nil
 
-    // 为了在内存里保存当前本机用户信息(也可以不保存, 直接取 SwiftData)
+    // 为了在内存里保存当前本机用户信息（过渡期保留，后续移除）
     @Published var localUserProfile: LocalUserProfile?
 
     // 添加头像缓存
@@ -95,17 +202,23 @@ class UserProfileManager: ObservableObject {
                                                     throw error
                                                 }
                                     
-                                                // 如果是当前用户，处理头像
+                                                // SSOT: 无论是当前用户还是他人，都统一保存到 UserProfile 表
+                                                try saveToUserProfile(userInfo: userData)
+
                                                 if isCurrentLoggedUser(userId: userId) {
+                                                    // 当前用户：额外处理头像缓存
                                                     if let photoPath = userData.photo {
-                                                        // 异步加载头像
                                                         Task {
                                                             await loadAndCacheAvatar(path: photoPath)
                                                         }
                                                     }
+                                                    // 过渡期：同时保持旧逻辑
                                                     try saveToSwiftData(userInfo: userData)
                                                     self.localUserProfile = findLocalUserInSwiftData(userId: userId)
                                                 } else {
+                                                    // 他人用户：设置 viewedUserId 供 @Query 使用
+                                                    self.viewedUserId = userId
+                                                    // 过渡期：同时保持旧逻辑
                                                     self.otherUserProfile = userData
                                                 }
                                     

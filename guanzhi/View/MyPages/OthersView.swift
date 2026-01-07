@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 struct OthersView: View {
@@ -14,52 +15,80 @@ struct OthersView: View {
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var searchViewModel: SearchViewModel
     @State private var navigationPathCount: Int = 0
-    
-    private var localUser: LocalUserProfile {
-        return userProfileManager.localUserProfile!
-    }
-    
+
     let userId: Int
 
-    @State private var isLoading: Bool = false
+    @State private var isLoading: Bool = true  // 初始为 true，防止显示"无数据"
     @State private var errorMessage: String?
-    
+
+    // SSOT: 使用 @Query 查询用户（自动响应数据变化）
+    @Query private var profiles: [UserProfile]
+
+    /// 过滤出目标用户的 profile
+    private var targetUserProfile: UserProfile? {
+        profiles.first { $0.id == userId }
+    }
+
     var body: some View {
         @Bindable var appState = appState
 
         VStack {
+            // 调试日志
+            let _ = print("🔍 [OthersView] isLoading=\(isLoading), profiles.count=\(profiles.count), targetUserProfile=\(targetUserProfile?.id ?? -1)")
+
             if isLoading {
-                Text("加载中...")
-            } else if let error = errorMessage {
-                Text("错误：\(error)")
-            } else if let other = userProfileManager.otherUserProfile,
-                      other.id == userId {
-                HStack(alignment: .center, spacing: Constants.spacingSpacingXs) {
-                    // 头像
-                    Button(action: {}) {
-                        // 头像-l
-                    }
-                    .buttonStyle(AvatarStyle_l(
-                        isEnabled: true,
-                        profileImage: Image("例子"),
-                        borderThickness: 4
-                    ))
-
-                    VStack(alignment: .leading) {
-                        Text(other.nickname ?? "未知用户")
-                            .font(.headline)
-                        // 其他想展示的字段
-//                        Text("OneCode: \(other.code ?? "⬛️⬛️⬛️⬛️")")
-//                            .font(.subheadline)
-                        Text("OneCode: \((other.name == other.phone) ? "⬛️⬛️⬛️⬛️" : (other.name ?? "⬛️⬛️⬛️⬛️"))")
-                            .font(.subheadline)
-                    }
-
+                VStack {
+                    Spacer()
+                    ProgressView("加载中...")
+                        .progressViewStyle(CircularProgressViewStyle())
                     Spacer()
                 }
-                .padding(.horizontal)
-                .padding(.top, Constants.spacingSpacingXs)
-                
+            } else if let error = errorMessage {
+                Text("错误：\(error)")
+            } else if let profile = targetUserProfile {
+                // SSOT 路径：从 @Query 获取数据
+                let displayModel = profile.toDisplayModel()
+
+                ProfileHeaderView(
+                    displayModel: displayModel,
+                    mode: .other,
+                    cachedAvatarImage: nil
+                )
+
+                VStack {
+                    ShareListView(
+                        userId: profile.id,
+                        lat: searchViewModel.region.center.latitude,
+                        lon: searchViewModel.region.center.longitude,
+                        radius: 10)
+                    .environment(\.appState, appState)
+                    .environmentObject(searchViewModel)
+                    .environmentObject(navigationCoordinator)
+                }
+
+                Spacer()
+            } else if let other = userProfileManager.otherUserProfile, other.id == userId {
+                // 回退路径：@Query 暂时没数据时，使用内存中的 otherUserProfile
+                let _ = print("⚠️ [OthersView] 使用回退路径 otherUserProfile")
+
+                // 手动构建展示模型
+                let masked = (other.name == other.phone) || (other.name == nil) || (other.name?.isEmpty == true)
+                let displayModel = UserProfileDisplayModel(
+                    id: other.id,
+                    displayNickname: other.nickname ?? "未知用户",
+                    displayOneCode: masked ? "⬛️⬛️⬛️⬛️" : (other.name ?? "⬛️⬛️⬛️⬛️"),
+                    isOneCodeMasked: masked,
+                    avatarPath: other.photo,
+                    levelName: UserLevelMapping.getName(for: other.levelCode),
+                    titleDOS: other.titleDOS
+                )
+
+                ProfileHeaderView(
+                    displayModel: displayModel,
+                    mode: .other,
+                    cachedAvatarImage: nil
+                )
+
                 VStack {
                     ShareListView(
                         userId: other.id,
@@ -70,14 +99,14 @@ struct OthersView: View {
                     .environmentObject(searchViewModel)
                     .environmentObject(navigationCoordinator)
                 }
-                
+
                 Spacer()
             } else {
                 Text("无数据")
             }
             
         }
-        .navigationBarTitle(userProfileManager.otherUserProfile?.nickname ?? "未知用户", displayMode: .inline)
+        .navigationBarTitle(targetUserProfile?.nickname ?? "未知用户", displayMode: .inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -151,32 +180,35 @@ struct OthersView: View {
     }
 }
 
-struct OthersView_Previews: PreviewProvider {
-    static var previews: some View {
-        // 1. 构造一个 UserProfileManager
-        let manager = UserProfileManager()
-        // 2. 人工创建一个 mock 的 LocalUserProfile
-        let mockLocalUser = LocalUserProfile(
-            id: 999,
-            name: "MockName",
-            nickname: "预览测试昵称",
-            phone: "1234567890",
-            photo: nil,
-            code: nil,
-            createDate: nil,
-            jpushId: nil,
-            titleDOS: nil
-        )
-        // 3. 把它放进 manager
-        manager.localUserProfile = mockLocalUser
+// MARK: - Preview
 
-        // 4. 把 manager 注入到预览环境即可
-        return OthersView(userId: 0)
-            .environment(AppStateModel())
-            .environmentObject(NavigationCoordinator())
-            .environmentObject(manager)
-            .environmentObject(SearchViewModel())
-            .previewDisplayName("带有 MockLocalUser 的预览")
-    }
+#Preview("OthersView - 带用户数据") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: UserProfile.self, configurations: config)
+
+    // 插入 mock 数据（他人用户）
+    let mockProfile = UserProfile(
+        id: 123,
+        name: "OtherCode",
+        nickname: "他人昵称",
+        phone: "9876543210",
+        photo: nil,
+        code: nil,
+        createDate: nil,
+        jpushId: nil,
+        titleDOSData: nil,
+        levelCode: "DENGTA",
+        pointsTotal: 500
+    )
+    container.mainContext.insert(mockProfile)
+
+    let manager = UserProfileManager()
+
+    return OthersView(userId: 123)
+        .modelContainer(container)
+        .environment(AppStateModel())
+        .environmentObject(NavigationCoordinator())
+        .environmentObject(manager)
+        .environmentObject(SearchViewModel())
 }
 

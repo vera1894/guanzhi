@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 struct MyView: View {
@@ -16,62 +17,45 @@ struct MyView: View {
     @EnvironmentObject var toastManager: ToastManager
     @State private var navigationPathCount: Int = 0
     @State private var isEditAvatarView = false
-    
+
+    // SSOT: 使用 @Query 查询当前用户（自动响应数据变化）
+    @Query private var profiles: [UserProfile]
+
+    /// 当前用户 ID（从 OTOLoginStatusManager 获取）
+    private var currentUserId: Int {
+        OTOLoginStatusManager.shared.getUserID()
+    }
+
+    /// 过滤出当前用户的 profile
+    private var currentUserProfile: UserProfile? {
+        profiles.first { $0.id == currentUserId }
+    }
+
     var body: some View {
         @Bindable var appState = appState
-        
-        // 提前计算头像图片，避免在 ButtonStyle 中进行异步操作
-        let avatarImage: Image = {
-            if let uiImage = userProfileManager.avatarImage {
-                return Image(uiImage: uiImage)
-            } else {
-                return Image("例子")
-            }
-        }()
 
         // 检查用户信息是否已加载
         Group {
-            if let localUser = userProfileManager.localUserProfile {
+            if let profile = currentUserProfile {
+                // 转换为展示模型
+                let displayModel = profile.toDisplayModel()
+
                 VStack {
-                    HStack(alignment: .center, spacing: Constants.spacingSpacingXs) {
-                        // 头像
-                        Button(action: {
+                    // 使用统一的 ProfileHeaderView 组件
+                    ProfileHeaderView(
+                        displayModel: displayModel,
+                        mode: .me,
+                        cachedAvatarImage: userProfileManager.avatarImage,
+                        onAvatarTap: {
                             isEditAvatarView.toggle()
-                        }) {
-                            // 头像-l
-                        }
-                        .buttonStyle(AvatarStyle_l(
-                            isEnabled: true,
-                            profileImage: avatarImage,
-                            borderThickness: 4
-                        ))
-
-                        VStack(alignment: .leading) {
-                            Text(localUser.nickname)
-                                .font(.headline)
-                            // 其他想展示的字段
-                            Text("OneCode: \((localUser.name == localUser.phone) ? "⬛️⬛️⬛️⬛️" : (localUser.name ?? "⬛️⬛️⬛️⬛️"))")
-                                .font(.subheadline)
-                                .onTapGesture {
-                                    showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
-                                }
-                            // 用户等级
-                            Text("等级：「\(localUser.levelName)」")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-
-                        Spacer()
-                        
-                        Button(action: {
+                        },
+                        onEditProfileTap: {
                             navigationCoordinator.path.append(Route.editProfileView)
-                        }) {
-                            Text("修改资料")
+                        },
+                        onOneCodeTap: {
+                            showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
                         }
-                        .buttonStyle(ButtonStyle_capsuleHugPrimary_s(isEnabled: true))
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, Constants.spacingSpacingXs)
+                    )
                     
 
                     VStack {
@@ -186,34 +170,35 @@ struct MyView: View {
     }
 }
 
-struct MyView_Previews: PreviewProvider {
-    static var previews: some View {
-        // 1. 构造一个 UserProfileManager
-        let manager = UserProfileManager()
-        // 2. 人工创建一个 mock 的 LocalUserProfile
-        let mockLocalUser = LocalUserProfile(
-            id: 999,
-            name: "MockName",
-            nickname: "预览测试昵称",
-            phone: "1234567890",
-            photo: nil,
-            code: nil,
-            createDate: nil,
-            jpushId: nil,
-            titleDOS: nil,
-            levelCode: "CHONGLANG",
-            pointsTotal: 100
-        )
-        // 3. 把它放进 manager
-        manager.localUserProfile = mockLocalUser
+// MARK: - Preview
 
-        // 4. 把 manager 注入到预览环境即可
-        return MyView()
-            .environment(AppStateModel())
-            .environmentObject(NavigationCoordinator())
-            .environmentObject(manager)
-            .environmentObject(SearchViewModel())
-            .environmentObject(ToastManager())
-            .previewDisplayName("带有 MockLocalUser 的预览")
-    }
+#Preview("MyView - 带用户数据") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: UserProfile.self, configurations: config)
+
+    // 插入 mock 数据
+    let mockProfile = UserProfile(
+        id: 999,
+        name: "MockCode",
+        nickname: "预览测试昵称",
+        phone: "1234567890",
+        photo: nil,
+        code: nil,
+        createDate: nil,
+        jpushId: nil,
+        titleDOSData: nil,
+        levelCode: "CHONGLANG",
+        pointsTotal: 100
+    )
+    container.mainContext.insert(mockProfile)
+
+    let manager = UserProfileManager()
+
+    return MyView()
+        .modelContainer(container)
+        .environment(AppStateModel())
+        .environmentObject(NavigationCoordinator())
+        .environmentObject(manager)
+        .environmentObject(SearchViewModel())
+        .environmentObject(ToastManager())
 }

@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.2
-**最后更新**: 2026-01-06（术语统一：观之）
+**文档版本**: v3.3
+**最后更新**: 2026-01-07（用户档案 SSOT 重构）
 
 ---
 
@@ -29,7 +29,12 @@ guanzhi/                          # 项目根目录
 │
 ├── guanzhi/                      # iOS 客户端
 │   ├── View/                     # SwiftUI 视图
-│   ├── Data/                     # 数据模型
+│   │   └── UIElement/            # 可复用 UI 组件（ProfileHeaderView 等）
+│   ├── Data/                     # 数据模型（SwiftData）
+│   │   └── UserProfile.swift     # 统一用户档案模型（SSOT）
+│   ├── Models/                   # 展示层模型
+│   │   ├── UserProfileDisplayModel.swift   # UI 展示模型
+│   │   └── UserProfileMapper.swift         # 数据映射
 │   ├── ModelsForNetwork/         # 网络请求模型
 │   ├── ModelsForMap/             # 地图相关模型
 │   ├── CameraViews/              # 相机视图
@@ -534,7 +539,84 @@ extension Notification.Name {
 - V1.0：`projectBasicInfo/logs/2025-12-30-notification-center-ios-v1-complete-cc.md`
 - V1.5：`projectBasicInfo/logs/2025-12-30-notification-center-v1.5-complete-cc.md`
 
-### 7. 管理后台
+### 7. 用户档案 SSOT 系统（2026-01-07）
+
+**状态**：已完成
+
+统一的用户档案管理系统，解决了之前"自己主页显示等级，他人主页不显示"的问题。
+
+#### 问题背景
+
+原架构存在数据分裂：
+- `LocalUserProfile`（当前用户）有 `levelCode` 字段
+- `OtherUserProfile`（他人）缺失该字段
+- 存储路径分裂：当前用户存 SwiftData，他人只存内存
+- UI 代码重复：MyView 和 OthersView 各自实现 header
+
+#### SSOT 解决方案
+
+| 组件 | 路径 | 说明 |
+|------|------|------|
+| `UserProfile` | `Data/UserProfile.swift` | 统一 SwiftData 模型（@Model） |
+| `UserProfileDisplayModel` | `Models/UserProfileDisplayModel.swift` | UI 展示层模型 |
+| `UserProfileMapper` | `Models/UserProfileMapper.swift` | 数据映射 + OneCode 遮挡规则 |
+| `ProfileHeaderView` | `View/UIElement/ProfileHeaderView.swift` | 统一头部组件 |
+
+#### 核心架构
+
+```
+服务器 API → UserFullInfoModel
+    ↓ saveToUserProfile()
+SwiftData UserProfile 表（所有用户统一存储）
+    ↓ @Query
+MyView / OthersView（自动刷新）
+    ↓ toDisplayModel()
+ProfileHeaderView（统一展示）
+```
+
+#### 数据模型字段
+
+```swift
+@Model
+class UserProfile {
+    @Attribute(.unique) var id: Int
+    var name: String?           // OneCode
+    var nickname: String?       // 昵称
+    var phone: String?          // 手机号（用于遮挡判断）
+    var photo: String?          // 头像路径
+    var levelCode: String?      // 等级代码
+    var pointsTotal: Int?       // 积分
+    var titleDOSData: Data?     // 称号 JSON
+    var lastUpdated: Date?      // 更新时间
+}
+```
+
+#### ProfileHeaderView 使用
+
+```swift
+// 统一头部组件
+ProfileHeaderView(
+    displayModel: profile.toDisplayModel(),
+    mode: .me,  // 或 .other
+    cachedAvatarImage: cachedImage,
+    onAvatarTap: { },
+    onEditProfileTap: { },
+    onOneCodeTap: { }
+)
+```
+
+#### 生命周期管理
+
+| 时机 | 操作 |
+|------|------|
+| 登录成功 | `saveToUserProfile()` 保存当前用户 |
+| 查看他人 | `saveToUserProfile()` 保存他人信息 |
+| 退出登录 | `clearAllUserProfiles()` 清空全表 |
+| App 启动 | `checkAndClearIfNotLoggedIn()` 检查并清理 |
+
+**相关文档**：`projectBasicInfo/logs/2026-01-07-user-profile-ssot-implementation-cc.md`
+
+### 8. 管理后台
 
 - 褪色曲线模拟器（核心功能）
 - 褪色规则配置
@@ -890,6 +972,7 @@ HostingTableView(
 | 褪色度UI显示修复 | `projectBasicInfo/logs/2026-01-06-fade-score-ui-fix-cc.md` | 聚合列表fadeScore修复 |
 | 褪色白化效果 | `projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md` | fadeScore>=90缩略图白化 |
 | fadeScore=100隐藏 | `projectBasicInfo/logs/2026-01-06-fade-score-100-hide-plan.md` | 已褪色观之Home Map不可见 |
+| 用户档案SSOT重构 | `projectBasicInfo/logs/2026-01-07-user-profile-ssot-implementation-cc.md` | 统一用户数据模型+等级显示修复 |
 
 ---
 

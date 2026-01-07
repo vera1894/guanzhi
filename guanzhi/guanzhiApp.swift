@@ -7,6 +7,7 @@
 
 import os
 import SwiftUI
+import SwiftData
 import UserNotifications
 
 // MARK: - AppDelegate (推送通知处理)
@@ -204,7 +205,7 @@ struct guanzhiApp: App {
                 .environmentObject(searchViewModel)
                 .environmentObject(userProfileManager)
                 .environmentObject(navigationCoordinator)
-                .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self])
+                .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self, UserProfile.self])
 
                 GlobalToastContainerView()
             }
@@ -227,6 +228,8 @@ struct guanzhiApp: App {
             }
             // 处理冷启动时缓存的 Deep Link
             .onAppear {
+                // SSOT: 启动时检查，如果未登录则清空缓存（防止残留数据）
+                userProfileManager.checkAndClearIfNotLoggedIn()
                 handlePendingDeepLink()
                 // 触发 NotificationBadgeManager 初始化并刷新未读数
                 Task {

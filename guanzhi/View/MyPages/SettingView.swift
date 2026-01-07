@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var userProfileManager: UserProfileManager
     @State private var isLoggingout = false
     @State private var showAgreement = false
     
@@ -83,6 +84,8 @@ struct SettingView: View {
                 Task {
                     await DeviceService.shared.logoutDevice()
                 }
+                // SSOT: 清空所有用户缓存（账户隔离）
+                try? userProfileManager.clearAllUserProfiles()
                 appState.isShowingSearchView = true
                 OTOLoginStatusManager.shared.logout()
                 navigationCoordinator.path = NavigationPath()
