@@ -69,7 +69,7 @@ struct SheetView: View {
                         appState.isShowingCameraView = true
                         appState.isShowingSearchView = false
                     }) {
-                        Text("📷 分享地点")
+                        Text("📷 发布观之")
                     }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
                     

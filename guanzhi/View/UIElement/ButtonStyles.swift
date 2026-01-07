@@ -155,7 +155,7 @@ struct ButtonStyles: View {
             Button(action: {
                         // 分享地点-胶囊按钮hug
                     }) {
-                        Text("📷 分享地点")
+                        Text("📷 发布观之")
                     }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
             

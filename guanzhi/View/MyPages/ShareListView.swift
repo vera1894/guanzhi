@@ -57,7 +57,7 @@ struct ShareListView: View {
                     if timelineVM.userShares.filter({ $0.deleted == 0 }).isEmpty {
                         VStack {
                             Spacer()
-                            Text("暂无分享")
+                            Text("暂无观之")
                                 .foregroundColor(.secondary)
                             Spacer()
                         }

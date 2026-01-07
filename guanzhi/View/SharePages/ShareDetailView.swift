@@ -1228,7 +1228,7 @@ struct ShareDetailView: View {
         let alert = UIAlertController(title: "更多操作", message: nil, preferredStyle: .actionSheet)
 
         // 分享按钮
-        alert.addAction(UIAlertAction(title: "分享", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: "分享至", style: .default) { _ in
             // TODO: 实现分享功能
         })
 
@@ -1271,7 +1271,7 @@ struct ShareDetailView: View {
     ) {
         let alert = UIAlertController(
             title: "确认删除",
-            message: "确定要删除这条分享吗？删除后将无法恢复。",
+            message: "确定要删除这条观之吗？删除后将无法恢复。",
             preferredStyle: .alert
         )
 

@@ -55,7 +55,7 @@ struct StickerSummaryOverlay: View {
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("拖动下方贴纸来为这条分享添加互动")
+            Text("拖动下方贴纸来为这条观之添加互动")
                 .font(.subheadline)
                 .foregroundColor(.secondary.opacity(0.8))
                 .multilineTextAlignment(.center)

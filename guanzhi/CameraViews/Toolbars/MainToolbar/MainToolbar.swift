@@ -19,7 +19,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     
     @State var camera: CameraModel
     @State var appState: AppStateModel
-    @State private var textFieldPlaceholder: String = "分享一下想法吧"
+    @State private var textFieldPlaceholder: String = "发一条观之吧"
     @State private var locatedPosition : CLLocationCoordinate2D?
     @State private var locatedPositionName : String = ""
     @State private var isLocationAvailable = false
@@ -591,7 +591,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                     // 如果 `datas` 字段为其他类型，替换 `EmptyData` 为实际的模型类型
 
                     if response.respCode == 0 {
-                        print("发布分享成功: \(imagePath)")
+                        print("发布观之成功: \(imagePath)")
                     } else {
                         print("Failed to publish: \(String(describing: response.respMsg))")
                     }

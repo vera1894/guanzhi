@@ -149,7 +149,7 @@ class CommentViewModel: ObservableObject {
 
         // 检查 shareId 是否有效
         guard shareId > 0 else {
-            error = "无效的分享ID"
+            error = "无效的观之ID"
             print("❌ [CommentViewModel] shareId 无效: \(shareId)")
             return
         }

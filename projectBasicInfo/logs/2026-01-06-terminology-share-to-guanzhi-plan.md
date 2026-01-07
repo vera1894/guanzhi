@@ -2,7 +2,7 @@
 
 **日期**: 2026-01-06
 **作者**: Claude Code
-**状态**: 阶段一完成（v4 - 文档/规则/术语字典已更新）
+**状态**: ✅ 全部完成（v5 - 文档 + iOS UI 文案已统一）
 
 ---
 
@@ -238,10 +238,23 @@ rg "术语规范|观之" .rules/agent_rules.md
 - [x] `projectBasicInfo/01_PROJECT_OVERVIEW.md` 已更新
 
 ### 阶段二交付
-- [ ] 用户确认的文案替换表
-- [ ] iOS UI 名词零残留（验证命令 A 结果）
-- [ ] 动词白名单列表（验证命令 B 人工确认）
-- [ ] 类型名/API/DB 未改动证据（验证命令 C 结果 + git diff）
+- [x] 用户确认的文案替换表（2026-01-07 确认）
+- [x] iOS UI 名词零残留（验证命令 A 结果）
+- [x] 动词白名单列表（"分享至" 保留）
+- [x] 类型名/API/DB 未改动（Share/shareId 等全部保留）
+
+**已修改文件清单**：
+| 文件 | 修改内容 |
+|------|----------|
+| `MainToolbar.swift` | "发一条观之吧"、"发布观之成功" |
+| `ButtonStyles.swift` | "📷 发布观之" |
+| `UIElement/ButtonStyles.swift` | "📷 发布观之" |
+| `SheetView.swift` | "📷 发布观之" |
+| `ShareListView.swift` | "暂无观之"、"暂无已褪色的观之" |
+| `StickerSummaryOverlay.swift` | "这条观之" |
+| `ShareDetailView.swift` | "分享至"、"这条观之" |
+| `CommentViewModel.swift` | "无效的观之ID" |
+| `StickerAvailability.swift` | "这条观之已使用过贴纸" |
 
 ---
 

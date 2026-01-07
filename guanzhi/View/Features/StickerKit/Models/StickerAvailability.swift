@@ -186,9 +186,9 @@ enum StickerUseError: Error, LocalizedError {
             return "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限"
         case .alreadyUsed(_, let usedName):
             if let name = usedName {
-                return "本条分享已使用过「\(name)」贴纸"
+                return "这条观之已使用过「\(name)」贴纸"
             }
-            return "本条分享已使用过贴纸"
+            return "这条观之已使用过贴纸"
         case .networkError:
             return "网络连接失败，请稍后重试"
         case .serverError(_, let message):
