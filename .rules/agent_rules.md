@@ -33,7 +33,9 @@
 ## 3. 日志与记录规范
 
 *   **统一日志目录**：所有重大操作（如部署、架构变更、复杂 Bug 修复等）的记录，**必须** 归档到 `projectBasicInfo/logs/` 目录下。不要再散落在其他目录。
-*   **日志命名格式**：`YYYY-MM-DD-英文主题-角色.md`（例如：`2025-12-08-admin-web-deploy-gemini.md`）。
+*   **日志命名格式**：`YYYY-MM-DD-英文主题-角色.md`
+    *   示例：`2025-12-08-admin-web-deploy-cc.md`
+    *   角色：`cc` (Claude Code), `gpt`, `gemini`, `human` 等
 *   **日志内容结构**：
     *   **背景**：为什么做这次操作。
     *   **环境**：本地/测试/生产。

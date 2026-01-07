@@ -175,7 +175,14 @@ extension Movie: MediaItemProtocol {}
             status = .failed
         }
     }
-    
+
+    // MARK: - Stopping the camera 停止相机
+    /// Stop the camera and release all resources. 停止相机并释放所有资源。
+    func stop() async {
+        await captureService.stop()
+        status = .unknown
+    }
+
     // MARK: - Changing modes and devices 更改模式和设备
     
     /// A value that indicates the mode of capture for the camera. 一个值，指示相机的捕获模式。

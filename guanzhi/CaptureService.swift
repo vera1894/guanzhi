@@ -60,6 +60,33 @@ actor CaptureService {
         try setUpSession()
         captureSession.startRunning()
     }
+
+    // 停止捕获会话并释放资源的方法。
+    func stop() {
+        guard captureSession.isRunning else { return }
+
+        // 停止 session
+        captureSession.stopRunning()
+
+        // 取消观察任务
+        subjectAreaChangeTask?.cancel()
+        subjectAreaChangeTask = nil
+        systemPreferredCameraTask?.cancel()
+        systemPreferredCameraTask = nil
+
+        // 清理旋转观察者
+        rotationObservers.removeAll()
+
+        // 移除所有输入和输出
+        captureSession.beginConfiguration()
+        captureSession.inputs.forEach { captureSession.removeInput($0) }
+        captureSession.outputs.forEach { captureSession.removeOutput($0) }
+        captureSession.commitConfiguration()
+
+        // 重置状态
+        activeVideoInput = nil
+        isSetUp = false
+    }
     
     // 初始化捕获会话的方法。
     private func setUpSession() throws {
@@ -110,12 +137,9 @@ actor CaptureService {
         }
     }
     
-    // 获取当前使用的捕获设备。
-    private var currentDevice: AVCaptureDevice {
-        guard let device = activeVideoInput?.device else {
-            fatalError("No device found for current video input.")
-        }
-        return device
+    // 获取当前使用的捕获设备（可能为 nil）。
+    private var currentDevice: AVCaptureDevice? {
+        return activeVideoInput?.device
     }
     
     // 设置捕获模式的方法。
@@ -142,24 +166,50 @@ actor CaptureService {
     // 选择下一个可用的视频设备的方法。
     func selectNextVideoDevice() {
         let videoDevices = deviceLookup.cameras
-        let selectedIndex = videoDevices.firstIndex(of: currentDevice) ?? 0
+        guard !videoDevices.isEmpty else {
+            logger.error("No video devices available for switching.")
+            return
+        }
+
+        // 安全获取当前设备索引，如果当前设备为 nil 则从 0 开始
+        let selectedIndex: Int
+        if let current = currentDevice {
+            selectedIndex = videoDevices.firstIndex(of: current) ?? 0
+        } else {
+            selectedIndex = 0
+        }
+
         var nextIndex = selectedIndex + 1
         if nextIndex == videoDevices.endIndex {
             nextIndex = 0
         }
-        
+
         let nextDevice = videoDevices[nextIndex]
         changeCaptureDevice(to: nextDevice)
         AVCaptureDevice.userPreferredCamera = nextDevice
     }
-    
+
     // 更换捕获设备的方法。
     private func changeCaptureDevice(to device: AVCaptureDevice) {
-        guard let currentInput = activeVideoInput else { fatalError() }
-        
+        // 安全检查：如果没有当前输入，直接尝试添加新设备
+        guard let currentInput = activeVideoInput else {
+            logger.warning("No active video input, attempting to add new device directly.")
+            captureSession.beginConfiguration()
+            defer { captureSession.commitConfiguration() }
+            do {
+                activeVideoInput = try addInput(for: device)
+                createRotationCoordinator(for: device)
+                observeSubjectAreaChanges(of: device)
+                updateCaptureCapabilities()
+            } catch {
+                logger.error("Failed to add new device: \(error)")
+            }
+            return
+        }
+
         captureSession.beginConfiguration()
         defer { captureSession.commitConfiguration() }
-        
+
         captureSession.removeInput(currentInput)
         do {
             activeVideoInput = try addInput(for: device)
@@ -167,15 +217,18 @@ actor CaptureService {
             observeSubjectAreaChanges(of: device)
             updateCaptureCapabilities()
         } catch {
+            // 恢复原来的输入
             captureSession.addInput(currentInput)
         }
     }
     
     // 监控系统首选相机状态的方法。
     private func monitorSystemPreferredCamera() {
-        Task {
+        systemPreferredCameraTask?.cancel()
+        systemPreferredCameraTask = Task {
             for await camera in systemPreferredCamera.changes {
-                if let camera, currentDevice != camera {
+                guard !Task.isCancelled else { break }
+                if let camera, let current = activeVideoInput?.device, current != camera {
                     logger.debug("Switching camera selection to the system-preferred camera.")
                     changeCaptureDevice(to: camera)
                 }
@@ -209,7 +262,7 @@ actor CaptureService {
     
     // 更新预览旋转的方法。
     private func updatePreviewRotation(_ angle: CGFloat) {
-        let previewLayer = videoPreviewLayer
+        guard let previewLayer = videoPreviewLayer else { return }
         Task { @MainActor in
             previewLayer.connection?.videoRotationAngle = angle
         }
@@ -220,17 +273,18 @@ actor CaptureService {
         outputServices.forEach { $0.setVideoRotationAngle(angle) }
     }
     
-    // 获取视频预览层。
-    private var videoPreviewLayer: AVCaptureVideoPreviewLayer {
-        guard let previewLayer = captureSession.connections.compactMap({ $0.videoPreviewLayer }).first else {
-            fatalError("The app is misconfigured. The capture session should have a connection to a preview layer.")
-        }
-        return previewLayer
+    // 获取视频预览层（可能为 nil）。
+    private var videoPreviewLayer: AVCaptureVideoPreviewLayer? {
+        return captureSession.connections.compactMap({ $0.videoPreviewLayer }).first
     }
-    
+
     // 执行对焦和曝光操作的方法。
     func focusAndExpose(at point: CGPoint) {
-        let devicePoint = videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: point)
+        guard let previewLayer = videoPreviewLayer else {
+            logger.warning("No preview layer available for focus operation.")
+            return
+        }
+        let devicePoint = previewLayer.captureDevicePointConverted(fromLayerPoint: point)
         do {
             try focusAndExpose(at: devicePoint, isUserInitiated: true)
         } catch {
@@ -248,25 +302,29 @@ actor CaptureService {
         }
     }
     private var subjectAreaChangeTask: Task<Void, Never>?
+    private var systemPreferredCameraTask: Task<Void, Never>?
     
     // 执行对焦和曝光的方法。
     private func focusAndExpose(at devicePoint: CGPoint, isUserInitiated: Bool) throws {
-        let device = currentDevice
+        guard let device = currentDevice else {
+            logger.warning("No current device available for focus/expose operation.")
+            return
+        }
         try device.lockForConfiguration()
-        
+
         let focusMode = isUserInitiated ? AVCaptureDevice.FocusMode.autoFocus : .continuousAutoFocus
         if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(focusMode) {
             device.focusPointOfInterest = devicePoint
             device.focusMode = focusMode
         }
-        
+
         let exposureMode = isUserInitiated ? AVCaptureDevice.ExposureMode.autoExpose : .continuousAutoExposure
         if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(exposureMode) {
             device.exposurePointOfInterest = devicePoint
             device.exposureMode = exposureMode
         }
         device.isSubjectAreaChangeMonitoringEnabled = isUserInitiated
-        
+
         device.unlockForConfiguration()
     }
     
@@ -287,26 +345,32 @@ actor CaptureService {
     
     // 设置 HDR 视频捕获的方法。
     func setHDRVideoEnabled(_ isEnabled: Bool) {
+        guard let device = currentDevice else {
+            logger.warning("No current device available for HDR configuration.")
+            return
+        }
         captureSession.beginConfiguration()
         defer { captureSession.commitConfiguration() }
         do {
-            if isEnabled, let format = currentDevice.activeFormat10BitVariant {
-                try currentDevice.lockForConfiguration()
-                currentDevice.activeFormat = format
-                currentDevice.unlockForConfiguration()
+            if isEnabled, let format = device.activeFormat10BitVariant {
+                try device.lockForConfiguration()
+                device.activeFormat = format
+                device.unlockForConfiguration()
                 isHDRVideoEnabled = true
             } else {
                 captureSession.sessionPreset = .high
                 isHDRVideoEnabled = false
             }
         } catch {
-            logger.error("Unable to obtain lock on device and can’t enable HDR video capture.")
+            logger.error("Unable to obtain lock on device and can't enable HDR video capture.")
         }
     }
-    
+
     // 更新捕获服务的能力。
     private func updateCaptureCapabilities() {
-        outputServices.forEach { $0.updateConfiguration(for: currentDevice) }
+        if let device = currentDevice {
+            outputServices.forEach { $0.updateConfiguration(for: device) }
+        }
         switch captureMode {
         case .photo:
             captureCapabilities = photoCapture.capabilities
