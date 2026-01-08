@@ -111,17 +111,53 @@ class ClusterAnnotationView: MKAnnotationView {
     private var currentImageUrl: URL?
     private var contentWidth: CGFloat = 0
     private var contentHeight: CGFloat = 0
+    private var isShowingPlaceholder: Bool = false
+
+    // 通知观察者
+    private var imageCacheObserver: NSObjectProtocol?
 
     // MARK: - Initialization
 
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         setupViews()
+        setupNotificationObserver()
     }
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupViews()
+        setupNotificationObserver()
+    }
+
+    deinit {
+        if let observer = imageCacheObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    // MARK: - Notification
+
+    private func setupNotificationObserver() {
+        imageCacheObserver = NotificationCenter.default.addObserver(
+            forName: .imageCacheDidLoadImage,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleImageCacheNotification(notification)
+        }
+    }
+
+    private func handleImageCacheNotification(_ notification: Notification) {
+        guard isShowingPlaceholder,
+              let url = notification.userInfo?["url"] as? URL,
+              let currentUrl = currentImageUrl,
+              url.absoluteString == currentUrl.absoluteString else {
+            return
+        }
+
+        // 图片已缓存，重新加载
+        loadThumbnail(from: currentUrl)
     }
 
     // MARK: - Setup
@@ -276,7 +312,10 @@ class ClusterAnnotationView: MKAnnotationView {
 
     private func loadThumbnail(from url: URL) {
         currentImageUrl = url
-        activityIndicator.startAnimating()
+        isShowingPlaceholder = false
+
+        // 显示加载中状态
+        showLoadingState()
 
         // 聚合图标明确使用原图，永不白化（即使代表图 fadeScore >= 90）
         ImageCache.shared.loadImage(
@@ -285,19 +324,38 @@ class ClusterAnnotationView: MKAnnotationView {
         ) { [weak self] loadedImage in
             // 回调已统一在主线程，无需再 DispatchQueue.main.async
             guard let self = self, self.currentImageUrl == url else { return }
-            self.activityIndicator.stopAnimating()
+            self.hideLoadingState()
             if let image = loadedImage {
                 self.thumbnailImageView.image = image
+                self.thumbnailImageView.contentMode = .scaleAspectFill
+                self.isShowingPlaceholder = false
             } else {
-                self.showPlaceholder()
+                self.showFailedState()
             }
         }
     }
 
+    /// 显示加载中状态
+    private func showLoadingState() {
+        ImagePlaceholderUIKit.configureForLoading(thumbnailImageView, pointSize: 24)
+        activityIndicator.startAnimating()
+    }
+
+    /// 隐藏加载状态
+    private func hideLoadingState() {
+        ImagePlaceholderUIKit.removeAnimation(from: thumbnailImageView)
+        activityIndicator.stopAnimating()
+    }
+
+    /// 显示加载失败状态
+    private func showFailedState() {
+        ImagePlaceholderUIKit.configureForFailed(thumbnailImageView, pointSize: 24)
+        isShowingPlaceholder = true
+    }
+
+    /// 兼容旧方法名
     private func showPlaceholder() {
-        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
-        thumbnailImageView.image = UIImage(systemName: "photo", withConfiguration: config)
-        thumbnailImageView.tintColor = .white
+        showFailedState()
     }
 
     // MARK: - Touch Handling
@@ -333,6 +391,7 @@ class ClusterAnnotationView: MKAnnotationView {
         thumbnailImageView.image = nil
         badgeLabel.text = nil
         currentImageUrl = nil
+        isShowingPlaceholder = false
         activityIndicator.stopAnimating()
         transform = .identity
         alpha = 1.0

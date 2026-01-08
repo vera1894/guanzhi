@@ -53,13 +53,19 @@ enum AnnotationType {
     case nearbyShare
 }
 
+/// 图片加载状态
+private enum ImageLoadState {
+    case loading
+    case loaded(UIImage)
+    case failed
+}
+
 struct MapAnnotationView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var searchViewModel: SearchViewModel
     var animationNamespace: Namespace.ID
     let annotation: CustomAnnotation
-    @State private var image: UIImage?
-    @State private var variableValue: Double = 0.0
+    @State private var loadState: ImageLoadState = .loading
     @State private var isPressed: Bool = false
     var isExpanded: Bool {
             (annotation.id == searchViewModel.selectedAnnotationID) && /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown
@@ -72,7 +78,15 @@ struct MapAnnotationView: View {
         self.onTap = onTap
 //        _viewModel = StateObject(wrappedValue: MapAnnotationViewModel(annotation: annotation))
         }
-    
+
+    /// 获取已加载的图片（用于 onTap）
+    private var loadedImage: UIImage? {
+        if case .loaded(let image) = loadState {
+            return image
+        }
+        return nil
+    }
+
     var body: some View {
         ZStack(alignment: .center) {
             if !searchViewModel.isShareDetailOverlayShown/*appState.isShareImageExpanded*/ {
@@ -81,38 +95,30 @@ struct MapAnnotationView: View {
                     .offset(y: 32)
             }
 
-            if let uiImage = image {
+            switch loadState {
+            case .loaded(let uiImage):
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .clipShape(Circle())
                     .frame(width: 64, height: 64)
                     .overlay(Circle().stroke(Color.black, lineWidth: 4))
-//                    .matchedGeometryEffect(id: "sharedElement\(annotation.id)", in: animationNamespace, isSource: true)
-            } else {
-                // 显示占位图或加载指示器
-                Image(systemName: "timelapse", variableValue: variableValue)
-                    .resizable()
-                    .scaledToFill()
-                    .background(Color("color-primary"))
-                    .clipShape(Circle())
-                    .symbolEffect(.variableColor.iterative.dimInactiveLayers.reversing)
-                    .frame(width: 64, height: 64)
-                    .overlay(Circle().stroke(Color.black, lineWidth: 4))
+
+            case .loading:
+                // 加载中状态
+                CircularImagePlaceholderView(state: .loading, size: 64)
                     .onAppear {
                         loadImage()
-                        withAnimation(
-                            Animation.linear(duration: 5.0)
-                                .repeatForever(autoreverses: true)
-                        ) {
-                            self.variableValue = 1.0
-                        }
                     }
+
+            case .failed:
+                // 加载失败状态
+                CircularImagePlaceholderView(state: .failed, size: 64)
             }
-            
+
         }
         .onTapGesture {
-                    onTap(image)
+                    onTap(loadedImage)
                 }
 //        .coordinateSpace(name: "shared")
         .compositingGroup()
@@ -138,12 +144,19 @@ struct MapAnnotationView: View {
     }
 
     private func loadImage() {
-            guard let imageUrl = annotation.imageUrl else { return }
+            guard let imageUrl = annotation.imageUrl else {
+                loadState = .failed
+                return
+            }
             ImageCache.shared.loadImage(from: imageUrl) { loadedImage in
-                self.image = loadedImage
+                if let image = loadedImage {
+                    self.loadState = .loaded(image)
+                } else {
+                    self.loadState = .failed
+                }
             }
         }
-    
+
 }
 
 extension MKCoordinateRegion: Equatable {

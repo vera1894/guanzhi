@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+/// 列表项图片加载状态
+private enum ListImageLoadState {
+    case loading
+    case loaded(UIImage)
+    case failed
+}
+
 struct ShareSingleView: View {
     let share: ResponsedShare
     /// 可选的点击回调，如果提供则使用它，否则使用内部的 showShareDetail()
@@ -17,37 +24,28 @@ struct ShareSingleView: View {
     @EnvironmentObject var searchViewModel: SearchViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
 
-    @State private var image: UIImage?
-    @State private var variableValue: Double = 0.0
+    @State private var loadState: ListImageLoadState = .loading
     @State private var isPressed: Bool = false
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: Constants.spacingSpacingXs) {
-            
-            if let uiImage = image {
+
+            switch loadState {
+            case .loaded(let uiImage):
                 Image(uiImage: uiImage)
                   .resizable()
                   .aspectRatio(contentMode: .fill)
                   .frame(width: 120, height: 120)
                   .clipped()
-            } else {
-                Rectangle()
-                  .foregroundColor(Color("color-primary"))
-                  .frame(width: 120, height: 120)
-                  .overlay {
-                      Image(systemName: "timelapse", variableValue: variableValue)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 60, height: 60)
-                        .clipped()
-                        .onAppear {
-                            loadImage()
-                            withAnimation(Animation.linear(duration: 5.0).repeatForever(autoreverses: true)) {
-                                self.variableValue = 1.0
-                            }
-                        }
-                  }
-                
+
+            case .loading:
+                ImagePlaceholderView(state: .loading, size: 120)
+                    .onAppear {
+                        loadImage()
+                    }
+
+            case .failed:
+                ImagePlaceholderView(state: .failed, size: 120)
             }
 //            Rectangle()
 //              .foregroundColor(.clear)
@@ -120,15 +118,22 @@ struct ShareSingleView: View {
     }
     
     private func loadImage() {
-        if let url = ephemeralGetThumbnailOrPhotoURL(responsedShare: share) {
-            let fadeScore = share.fadeScore ?? 0
-            // 使用统一 API，传入 fadeScore 以支持白化效果
-            ImageCache.shared.loadImage(
-                from: url,
-                variant: .fadeVeil(fadeScore: fadeScore)
-            ) { downloaded in
-                // 回调已统一在主线程，无需再 DispatchQueue.main.async
-                self.image = downloaded
+        guard let url = ephemeralGetThumbnailOrPhotoURL(responsedShare: share) else {
+            loadState = .failed
+            return
+        }
+
+        let fadeScore = share.fadeScore ?? 0
+        // 使用统一 API，传入 fadeScore 以支持白化效果
+        ImageCache.shared.loadImage(
+            from: url,
+            variant: .fadeVeil(fadeScore: fadeScore)
+        ) { downloaded in
+            // 回调已统一在主线程，无需再 DispatchQueue.main.async
+            if let image = downloaded {
+                self.loadState = .loaded(image)
+            } else {
+                self.loadState = .failed
             }
         }
     }

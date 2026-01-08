@@ -60,6 +60,7 @@
 		D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DB642E9392618C911A51E04 /* Pods_guanzhi.framework */; };
 		D7C2D76C206F453ABA110F9B /* CustomMKAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FECCE70CD6BC4F628AF06E1A /* CustomMKAnnotationView.swift */; };
 		DB6F08A47BD540E5AB665F26 /* StickerSummaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1EC928C3DB4102AEED623C /* StickerSummaryItem.swift */; };
+		C34BE5946E7B453DB58B9BDA /* ImagePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D78E09AE706E44768C4F49B7 /* ImagePlaceholder.swift */; };
 		DDC8647E362B465EBE7DE883 /* FadeVeilProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F62122E3C8C463A80B6614A /* FadeVeilProcessor.swift */; };
 		E979AE900B14459C87BA8313 /* StickerAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC24F21D1512454D951EC14F /* StickerAvailability.swift */; };
 		EA08C3971EB94B91940E3EC4 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FDC1146805F46359FD7DBEE /* NetworkMonitor.swift */; };
@@ -197,6 +198,7 @@
 		85B32ABF81BE56D4F7168B76 /* Pods-guanzhi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-guanzhi.release.xcconfig"; path = "Target Support Files/Pods-guanzhi/Pods-guanzhi.release.xcconfig"; sourceTree = "<group>"; };
 		9F1EC928C3DB4102AEED623C /* StickerSummaryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerSummaryItem.swift; sourceTree = "<group>"; };
 		9F62122E3C8C463A80B6614A /* FadeVeilProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FadeVeilProcessor.swift; sourceTree = "<group>"; };
+		D78E09AE706E44768C4F49B7 /* ImagePlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePlaceholder.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F647889012ABCD /* OverlaySheetContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySheetContainer.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ConfettiParticleFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiParticleFactory.swift; sourceTree = "<group>"; };
 		AE80580CFFFA49BE843C5C86 /* StickerSummaryBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerSummaryBar.swift; sourceTree = "<group>"; };
@@ -405,6 +407,7 @@
 				75AB86BA284F488E99E629D6 /* UIKitListKit */,
 				OVERLAY1234567890ABCDEF /* OverlaySheet */,
 				9F62122E3C8C463A80B6614A /* FadeVeilProcessor.swift */,
+				D78E09AE706E44768C4F49B7 /* ImagePlaceholder.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -1023,6 +1026,7 @@
 				0ABB5751E2DB40C9B527C928 /* MKMapViewCoordinator.swift in Sources */,
 				D7C2D76C206F453ABA110F9B /* CustomMKAnnotationView.swift in Sources */,
 				AA90551675D740C2A419D7DE /* ClusterAnnotationView.swift in Sources */,
+				C34BE5946E7B453DB58B9BDA /* ImagePlaceholder.swift in Sources */,
 				60051847F1CB4F76BA022636 /* ClusterShareListView.swift in Sources */,
 				FF5D24192D23DA2700C1D463 /* SingleToastView.swift in Sources */,
 				FF5D24112D23965700C1D463 /* GeneralFunctions.swift in Sources */,

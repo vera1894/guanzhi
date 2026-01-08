@@ -2049,6 +2049,13 @@ enum ImageVariant: Hashable {
     }
 }
 
+// MARK: - 图片缓存通知
+
+extension Notification.Name {
+    /// 图片加载成功通知（userInfo 包含 "url": URL）
+    static let imageCacheDidLoadImage = Notification.Name("imageCacheDidLoadImage")
+}
+
 // MARK: - 图片缓存类
 
 /// 图片缓存类，使用 NSCache 缓存图片
@@ -2064,6 +2071,10 @@ class ImageCache {
     // 并发去重：记录正在处理的请求
     private var inFlightRequests: [String: [(UIImage?) -> Void]] = [:]
     private let lock = NSLock()
+
+    // 记录已通知的 URL（避免重复通知）
+    private var notifiedUrls: Set<String> = []
+    private let notifiedUrlsLock = NSLock()
 
     // MARK: - 基础方法
 
@@ -2109,7 +2120,7 @@ class ImageCache {
         // 3. 加载原图（单例不需要 weak self）
         loadOriginalImage(from: url) { originalImage in
             guard let originalImage = originalImage else {
-                self.completeRequest(cacheKey: cacheKey, image: nil)
+                self.completeRequest(cacheKey: cacheKey, image: nil, originalUrl: url)
                 return
             }
 
@@ -2121,16 +2132,16 @@ class ImageCache {
                         fadeScore: variant.fadeScore
                     )
                     self.setImage(processed, forKey: cacheKey)
-                    self.completeRequest(cacheKey: cacheKey, image: processed)
+                    self.completeRequest(cacheKey: cacheKey, image: processed, originalUrl: url)
                 }
             } else {
-                self.completeRequest(cacheKey: cacheKey, image: originalImage)
+                self.completeRequest(cacheKey: cacheKey, image: originalImage, originalUrl: url)
             }
         }
     }
 
     /// 完成请求并通知所有等待者（统一回主线程）
-    private func completeRequest(cacheKey: String, image: UIImage?) {
+    private func completeRequest(cacheKey: String, image: UIImage?, originalUrl: URL? = nil) {
         lock.lock()
         let waiters = inFlightRequests.removeValue(forKey: cacheKey) ?? []
         lock.unlock()
@@ -2140,6 +2151,32 @@ class ImageCache {
             for completion in waiters {
                 completion(image)
             }
+
+            // 图片加载成功时，发送通知（用于更新显示占位图的标注）
+            if let image = image, let url = originalUrl {
+                self.notifyImageLoaded(url: url)
+            }
+        }
+    }
+
+    /// 发送图片加载成功通知（避免重复通知同一 URL）
+    private func notifyImageLoaded(url: URL) {
+        let urlString = url.absoluteString
+
+        notifiedUrlsLock.lock()
+        let alreadyNotified = notifiedUrls.contains(urlString)
+        if !alreadyNotified {
+            notifiedUrls.insert(urlString)
+        }
+        notifiedUrlsLock.unlock()
+
+        // 只在首次加载成功时发送通知
+        if !alreadyNotified {
+            NotificationCenter.default.post(
+                name: .imageCacheDidLoadImage,
+                object: nil,
+                userInfo: ["url": url]
+            )
         }
     }
 

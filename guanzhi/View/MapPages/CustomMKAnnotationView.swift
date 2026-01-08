@@ -114,16 +114,22 @@ class CustomMKAnnotationView: MKAnnotationView {
 
     private(set) var thumbnailImage: UIImage?
     private var currentImageUrl: URL?
+    private var currentFadeScore: Int = 0
+    private var isShowingPlaceholder: Bool = false
 
     // 缓存计算值
     private var contentWidth: CGFloat = 0
     private var contentHeight: CGFloat = 0
+
+    // 通知观察者
+    private var imageCacheObserver: NSObjectProtocol?
 
     // MARK: - Initialization
 
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         setupViews()
+        setupNotificationObserver()
 
         // Stage 2: 启用聚合功能
         clusteringIdentifier = "share"
@@ -132,6 +138,37 @@ class CustomMKAnnotationView: MKAnnotationView {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupViews()
+        setupNotificationObserver()
+    }
+
+    deinit {
+        if let observer = imageCacheObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    // MARK: - Notification
+
+    private func setupNotificationObserver() {
+        imageCacheObserver = NotificationCenter.default.addObserver(
+            forName: .imageCacheDidLoadImage,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleImageCacheNotification(notification)
+        }
+    }
+
+    private func handleImageCacheNotification(_ notification: Notification) {
+        guard isShowingPlaceholder,
+              let url = notification.userInfo?["url"] as? URL,
+              let currentUrl = currentImageUrl,
+              url.absoluteString == currentUrl.absoluteString else {
+            return
+        }
+
+        // 图片已缓存，重新加载
+        loadThumbnail(from: currentUrl, fadeScore: currentFadeScore)
     }
 
     // MARK: - Setup
@@ -298,7 +335,11 @@ class CustomMKAnnotationView: MKAnnotationView {
 
     private func loadThumbnail(from url: URL, fadeScore: Int) {
         currentImageUrl = url
-        activityIndicator.startAnimating()
+        currentFadeScore = fadeScore
+        isShowingPlaceholder = false
+
+        // 显示加载中状态
+        showLoadingState()
 
         // 使用统一 API，传入 fadeScore 以支持白化效果
         ImageCache.shared.loadImage(
@@ -307,20 +348,39 @@ class CustomMKAnnotationView: MKAnnotationView {
         ) { [weak self] loadedImage in
             // 回调已统一在主线程，无需再 DispatchQueue.main.async
             guard let self = self, self.currentImageUrl == url else { return }
-            self.activityIndicator.stopAnimating()
+            self.hideLoadingState()
             if let image = loadedImage {
                 self.thumbnailImage = image
                 self.thumbnailImageView.image = image
+                self.thumbnailImageView.contentMode = .scaleAspectFill
+                self.isShowingPlaceholder = false
             } else {
-                self.showPlaceholder()
+                self.showFailedState()
             }
         }
     }
 
+    /// 显示加载中状态
+    private func showLoadingState() {
+        ImagePlaceholderUIKit.configureForLoading(thumbnailImageView, pointSize: 24)
+        activityIndicator.startAnimating()
+    }
+
+    /// 隐藏加载状态
+    private func hideLoadingState() {
+        ImagePlaceholderUIKit.removeAnimation(from: thumbnailImageView)
+        activityIndicator.stopAnimating()
+    }
+
+    /// 显示加载失败状态
+    private func showFailedState() {
+        ImagePlaceholderUIKit.configureForFailed(thumbnailImageView, pointSize: 24)
+        isShowingPlaceholder = true
+    }
+
+    /// 兼容旧方法名
     private func showPlaceholder() {
-        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
-        thumbnailImageView.image = UIImage(systemName: "photo", withConfiguration: config)
-        thumbnailImageView.tintColor = .white
+        showFailedState()
     }
 
     // MARK: - Touch Handling
@@ -356,6 +416,8 @@ class CustomMKAnnotationView: MKAnnotationView {
         thumbnailImage = nil
         thumbnailImageView.image = nil
         currentImageUrl = nil
+        currentFadeScore = 0
+        isShowingPlaceholder = false
         activityIndicator.stopAnimating()
         transform = .identity
         alpha = 1.0
