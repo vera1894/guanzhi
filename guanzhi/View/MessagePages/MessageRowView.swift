@@ -359,7 +359,7 @@ struct AggregatedStickerRowView: View {
             message: NotificationMessage(
                 id: 2,
                 type: .stickerReceived,
-                content: "李四 给你的分享贴了「珍馐」",
+                content: "李四 给你的观之贴了「珍馐」",
                 shareId: 789,
                 commentId: nil,
                 fromUserId: 22,

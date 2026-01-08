@@ -952,6 +952,63 @@ HostingTableView(
 **应用场景**：
 - 聚合列表（ClusterList）中的观之列表
 
+### 3. ImagePlaceholder（图片占位符组件）
+
+**位置**：`View/Shared/ImagePlaceholder.swift`
+
+**状态**：已完成（2026-01-08）
+
+统一的图片加载状态占位符组件，提供一致的加载中/失败视觉反馈。
+
+**SF 符号**：
+| 状态 | 符号 | 效果 |
+|------|------|------|
+| 加载中 | `wand.and.rays.inverse` | 变量颜色动画（迭代、反向）|
+| 加载失败 | `photo.badge.exclamationmark` | 静态图标 |
+
+**提供的组件**：
+```swift
+// SwiftUI 方形占位符（用于列表项）
+ImagePlaceholderView(state: .loading, size: 120)
+ImagePlaceholderView(state: .failed, size: 120)
+
+// SwiftUI 圆形占位符（用于地图标注）
+CircularImagePlaceholderView(state: .loading, size: 64)
+CircularImagePlaceholderView(state: .failed, size: 64)
+
+// UIKit 辅助方法（用于 MKAnnotationView）
+ImagePlaceholderUIKit.configureForLoading(imageView, pointSize: 24)
+ImagePlaceholderUIKit.configureForFailed(imageView, pointSize: 24)
+```
+
+**应用场景**：
+| 视图 | 组件类型 |
+|------|----------|
+| `CustomMKAnnotationView` | UIKit（脉冲动画）|
+| `ClusterAnnotationView` | UIKit（脉冲动画）|
+| `MapAnnotationView` | SwiftUI 圆形 |
+| `ShareSingleView` | SwiftUI 方形 |
+
+**图片缓存通知机制**（2026-01-08）：
+
+当图片加载失败显示占位符后，如果该图片稍后被其他地方成功加载（如详情页），标注视图会自动更新。
+
+```swift
+// ImageCache 发送通知
+NotificationCenter.default.post(
+    name: .imageCacheDidLoadImage,
+    object: nil,
+    userInfo: ["url": url]
+)
+
+// 标注视图监听并刷新
+NotificationCenter.default.addObserver(
+    forName: .imageCacheDidLoadImage, ...
+) { notification in
+    // 如果当前显示占位符且 URL 匹配，重新加载
+}
+```
+
 ---
 
 ## 相关文档索引
@@ -973,6 +1030,8 @@ HostingTableView(
 | 褪色白化效果 | `projectBasicInfo/logs/2026-01-06-fade-veil-processor-complete-cc.md` | fadeScore>=90缩略图白化 |
 | fadeScore=100隐藏 | `projectBasicInfo/logs/2026-01-06-fade-score-100-hide-plan.md` | 已褪色观之Home Map不可见 |
 | 用户档案SSOT重构 | `projectBasicInfo/logs/2026-01-07-user-profile-ssot-implementation-cc.md` | 统一用户数据模型+等级显示修复 |
+| 图片占位符统一+通知修复 | `projectBasicInfo/logs/2026-01-08-image-placeholder-unification-cc.md` | 占位符组件+缓存通知+OneCode修复 |
+| 通知术语统一 | `projectBasicInfo/logs/2026-01-08-notification-terminology-update-cc.md` | 通知模板"分享"→"观之" |
 
 ---
 

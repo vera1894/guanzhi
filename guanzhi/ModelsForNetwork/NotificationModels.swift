@@ -44,10 +44,10 @@ enum NotificationType: String, Codable {
     case levelUp = "LEVEL_UP"               // 用户升级
     case userWarned = "USER_WARNED"         // 用户被警告
     case userFrozen = "USER_FROZEN"         // 用户被冻结
-    case shareRemoved = "SHARE_REMOVED"     // 分享被删除
+    case shareRemoved = "SHARE_REMOVED"     // 观之被删除
     case reportResult = "REPORT_RESULT"     // 举报处理结果
-    case fadeWarning = "FADE_WARNING"       // 分享即将褪色
-    case fadeComplete = "FADE_COMPLETE"     // 分享已褪色
+    case fadeWarning = "FADE_WARNING"       // 观之即将褪色
+    case fadeComplete = "FADE_COMPLETE"     // 观之已褪色
 
     case unknown = "UNKNOWN"
 
@@ -528,7 +528,7 @@ enum DisplayableMessage: Identifiable {
     }
 }
 
-/// 聚合的贴纸通知（同一分享的多个贴纸通知合并显示）
+/// 聚合的贴纸通知（同一观之的多个贴纸通知合并显示）
 struct AggregatedStickerNotification: Identifiable {
     let shareId: Int64
     let notifications: [NotificationMessage]
@@ -616,7 +616,7 @@ struct AggregatedStickerNotification: Identifiable {
         }
     }
 
-    /// Deep Link（跳转到分享详情）
+    /// Deep Link（跳转到观之详情）
     var deepLink: String {
         "guanzhi://share/\(shareId)"
     }

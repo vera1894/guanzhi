@@ -181,7 +181,7 @@ struct MessagesView: View {
                 print("📬 系统通知 deepLink，显示详情 Sheet")
                 selectedSystemMessage = message
             } else if url.host == "share" {
-                // 分享相关的 Deep Link
+                // 观之相关的 Deep Link
                 print("📬 使用 Deep Link 导航: \(deepLink)")
                 handleDeepLink(url)
             } else {
@@ -190,8 +190,8 @@ struct MessagesView: View {
                 selectedSystemMessage = message
             }
         } else if let shareId = message.shareId {
-            // 跳转到分享详情
-            print("📬 跳转到分享详情: \(shareId)")
+            // 跳转到观之详情
+            print("📬 跳转到观之详情: \(shareId)")
             navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(shareId)"))
         } else {
             // 系统消息（无 deepLink 和 shareId）- 显示详情 Sheet
@@ -212,10 +212,10 @@ struct MessagesView: View {
             if pathComponents.count >= 4,
                pathComponents[2] == "comment",
                let commentId = Int64(pathComponents[3]) {
-                // 跳转到分享详情并定位评论
+                // 跳转到观之详情并定位评论
                 navigationCoordinator.path.append(Route.shareComment(shareId: shareId, commentId: commentId))
             } else {
-                // 只跳转到分享详情
+                // 只跳转到观之详情
                 navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(shareId)"))
             }
         }
@@ -229,7 +229,7 @@ struct MessagesView: View {
             await viewModel.markAsReadBatch(aggregation.notificationIds)
         }
 
-        // 跳转到分享详情
+        // 跳转到观之详情
         navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(aggregation.shareId)"))
     }
 }
