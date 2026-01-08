@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.3
-**最后更新**: 2026-01-07（用户档案 SSOT 重构）
+**文档版本**: v3.4
+**最后更新**: 2026-01-08（通知 channel 语义统一）
 
 ---
 
@@ -434,6 +434,21 @@ guanzhiApp.swift                              # App 启动时预加载
 **APNs 环境**：
 - DEBUG 模式：`sandbox`（开发环境）
 - RELEASE 模式：`production`（生产环境）
+
+**Channel 与 Provider 语义**（2026-01-08 统一）：
+
+通知系统采用两层抽象设计：
+
+| 层面 | 字段 | 可选值 | 说明 |
+|------|------|--------|------|
+| 业务层 | `channel` | `push` / `inApp` | 通知渠道类型 |
+| 技术层 | `provider` | `apns` / `fcm` | 推送服务提供商（运行时决定）|
+
+**设计原则**：
+- 数据库模板表 `notification_template.channel` 存储业务层渠道
+- 代码查询时使用 `channel='push'`（非 `apns`）
+- 具体使用 APNs 还是 FCM 由运行时设备类型决定
+- 这样设计便于未来扩展 Android 推送支持
 
 #### 6.2 消息页面（MessagesView）
 
@@ -1032,6 +1047,7 @@ NotificationCenter.default.addObserver(
 | 用户档案SSOT重构 | `projectBasicInfo/logs/2026-01-07-user-profile-ssot-implementation-cc.md` | 统一用户数据模型+等级显示修复 |
 | 图片占位符统一+通知修复 | `projectBasicInfo/logs/2026-01-08-image-placeholder-unification-cc.md` | 占位符组件+缓存通知+OneCode修复 |
 | 通知术语统一 | `projectBasicInfo/logs/2026-01-08-notification-terminology-update-cc.md` | 通知模板"分享"→"观之" |
+| 通知 channel 语义统一 | `projectBasicInfo/logs/2026-01-08-notification-channel-unification-cc.md` | apns→push 统一抽象层 |
 
 ---
 
