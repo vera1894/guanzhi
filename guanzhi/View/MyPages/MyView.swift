@@ -166,7 +166,7 @@ struct MyView: View {
             timing: .short,
             isAutoClose: true
         ))
-        toastManager.show(newItem)
+        toastManager.showIfNotPresent(newItem)
     }
 }
 

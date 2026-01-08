@@ -14,6 +14,7 @@ struct OthersView: View {
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var searchViewModel: SearchViewModel
+    @EnvironmentObject var toastManager: ToastManager
     @State private var navigationPathCount: Int = 0
 
     let userId: Int
@@ -52,7 +53,10 @@ struct OthersView: View {
                 ProfileHeaderView(
                     displayModel: displayModel,
                     mode: .other,
-                    cachedAvatarImage: nil
+                    cachedAvatarImage: nil,
+                    onOneCodeTap: {
+                        showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
+                    }
                 )
 
                 VStack {
@@ -86,7 +90,10 @@ struct OthersView: View {
                 ProfileHeaderView(
                     displayModel: displayModel,
                     mode: .other,
-                    cachedAvatarImage: nil
+                    cachedAvatarImage: nil,
+                    onOneCodeTap: {
+                        showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
+                    }
                 )
 
                 VStack {
@@ -178,6 +185,18 @@ struct OthersView: View {
             }
         }
     }
+
+    private func showNotification(message: String) {
+        let newItem = ToastItem(style: .notificationOnly(
+            title: message,
+            symbol: "",
+            tint: Color("color-primary"),
+            isUserInteractionEnabled: true,
+            timing: .short,
+            isAutoClose: true
+        ))
+        toastManager.showIfNotPresent(newItem)
+    }
 }
 
 // MARK: - Preview
@@ -210,5 +229,6 @@ struct OthersView: View {
         .environmentObject(NavigationCoordinator())
         .environmentObject(manager)
         .environmentObject(SearchViewModel())
+        .environmentObject(ToastManager())
 }
 
