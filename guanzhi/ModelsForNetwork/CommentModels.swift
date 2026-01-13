@@ -204,37 +204,15 @@ extension Notification.Name {
 }
 
 // MARK: - 时间格式化工具
+
+/// 格式化评论时间字符串为相对时间
+/// - Parameter dateString: 后端返回的时间字符串（UTC 语义）
+/// - Returns: 格式化后的相对时间字符串
+/// 使用 TimeKit 统一处理（后端已于 2026-01-11 统一为 UTC）
+@MainActor
 func formatCommentTime(_ dateString: String) -> String {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-    formatter.locale = Locale(identifier: "zh_CN")
-
-    guard let date = formatter.date(from: dateString) else {
-        // 尝试其他格式
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        guard let date2 = formatter.date(from: dateString) else {
-            return dateString
-        }
-        return formatRelativeTime(date2)
+    guard let date = ServerTime.parse(string: dateString, assumedTimezone: .utc) else {
+        return dateString
     }
-    return formatRelativeTime(date)
-}
-
-private func formatRelativeTime(_ date: Date) -> String {
-    let now = Date()
-    let interval = now.timeIntervalSince(date)
-
-    if interval < 60 {
-        return "刚刚"
-    } else if interval < 3600 {
-        return "\(Int(interval / 60))分钟前"
-    } else if interval < 86400 {
-        return "\(Int(interval / 3600))小时前"
-    } else if interval < 86400 * 7 {
-        return "\(Int(interval / 86400))天前"
-    } else {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd"
-        return formatter.string(from: date)
-    }
+    return TimeDisplay.shared.smartTime(from: date)
 }

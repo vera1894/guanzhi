@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.4
-**最后更新**: 2026-01-08（通知 channel 语义统一）
+**文档版本**: v3.6
+**最后更新**: 2026-01-13（褪色通知幂等修复部署完成）
 
 ---
 
@@ -535,14 +535,25 @@ extension Notification.Name {
 | `UserNotificationPreferenceService` | 用户偏好查询和管理 |
 | `NotificationRateLimitService` | Redis 滑动窗口限流，防止通知轰炸 |
 
-**频率控制配置**：
-| 事件 | 频率限制 | 冷却时间 |
-|------|----------|----------|
-| 评论回复 | 20次/小时 | 30秒 |
-| 评论点赞 | 30次/小时 | 60秒 |
-| 新评论 | 20次/小时 | 30秒 |
-| 收到贴纸 | 15次/小时 | 60秒 |
-| 系统通知 | 无限制 | 无 |
+**频率控制配置**（2026-01-13 更新）：
+| 事件 | 频率限制 | 冷却时间 | 可关闭 | 说明 |
+|------|----------|----------|--------|------|
+| 评论回复 | 20次/小时 | 30秒 | ✅ | |
+| 评论点赞 | 30次/小时 | 60秒 | ✅ | |
+| 新评论 | 20次/小时 | 30秒 | ✅ | |
+| 收到贴纸 | 15次/小时 | 60秒 | ✅ | |
+| 系统通知 | 无限制 | 无 | ✅ | |
+| 用户升级 | 无限制 | 无 | ✅ | |
+| 用户被警告 | 无限制 | 无 | ❌ | 管理类必达通知 |
+| 用户被冻结 | 无限制 | 无 | ❌ | 管理类必达通知 |
+| 观之被删除 | 无限制 | 无 | ❌ | 管理类必达通知 |
+| 举报处理结果 | 无限制 | 无 | ❌ | 管理类必达通知 |
+| 褪色预警 | 每share1次 | 24小时 | ✅ | 唯一索引幂等 |
+| 完全褪色 | 每share1次 | 无 | ✅ | 唯一索引幂等 |
+
+**幂等说明**（2026-01-13 新增）：
+- `FADE_WARNING` 和 `FADE_COMPLETE` 通过 `notification` 表的唯一索引 `(user_id, type, share_id)` 保证每条观之只通知一次
+- 管理类通知（警告/冻结/删除/举报结果）不受用户偏好影响，确保必达
 
 **新增 API**：
 | 接口 | 方法 | 路径 | 说明 |
@@ -858,7 +869,7 @@ ProfileHeaderView(
 | `sticker_level_quota_override` | 等级-贴纸限额覆盖配置 | 使用中 |
 | `share_view_log` | 观之浏览记录 | 使用中 |
 | `admin_operation_log` | 管理操作日志 | 使用中 |
-| `notification` | 通知消息记录 | 使用中（2025-12-30 新增）|
+| `notification` | 通知消息记录（含唯一索引 `uk_user_type_share`）| 使用中（2026-01-13 更新）|
 | `device` | 设备 Token 注册 | 使用中（2025-12-29 新增）|
 | `notification_event_config` | 通知事件配置（V1.5）| 使用中（2025-12-30 新增）|
 | `notification_template` | 通知模板（V1.5）| 使用中（2025-12-30 新增）|
@@ -1048,6 +1059,9 @@ NotificationCenter.default.addObserver(
 | 图片占位符统一+通知修复 | `projectBasicInfo/logs/2026-01-08-image-placeholder-unification-cc.md` | 占位符组件+缓存通知+OneCode修复 |
 | 通知术语统一 | `projectBasicInfo/logs/2026-01-08-notification-terminology-update-cc.md` | 通知模板"分享"→"观之" |
 | 通知 channel 语义统一 | `projectBasicInfo/logs/2026-01-08-notification-channel-unification-cc.md` | apns→push 统一抽象层 |
+| Time SSOT 时区统一方案 | `projectBasicInfo/logs/2026-01-10-time-ssot-plan-cc.md` | UTC 时区 SSOT 设计 |
+| 后端时区修复完成 | `projectBasicInfo/logs/2026-01-11-backend-time-ssot-completion.md` | JDBC 时区配置 + 验证器 |
+| 褪色通知幂等修复 | `projectBasicInfo/logs/2026-01-13-fade-notification-idempotent-fix-cc.md` | 唯一索引幂等 + 重复推送修复 |
 
 ---
 

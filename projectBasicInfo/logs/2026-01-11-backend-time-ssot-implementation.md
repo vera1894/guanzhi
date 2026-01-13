@@ -1,9 +1,11 @@
 # 后端 Time SSOT 实施计划
 
-**版本**: v2.9（放行版）
+**版本**: v2.9（放行版）→ v3.0（已完成）
 **创建日期**: 2026-01-11
 **更新日期**: 2026-01-11
-**状态**: **已通过审查，可实施**
+**状态**: **已完成并部署验证通过** ✅
+
+> **完成报告**：见 `2026-01-11-backend-time-ssot-completion.md`
 
 > v2.9 更新（根据 GPT 最终放行审查）：
 > - **Druid init-sqls**：改成数组写法（避免 Spring binder 不解析导致失效）
@@ -130,14 +132,16 @@ SHOW COLUMNS FROM share_view_log LIKE 'created_at';
 SHOW COLUMNS FROM notification LIKE 'created_at';
 ```
 
-**记录结果**（执行后填写）：
+**记录结果**（2026-01-11 执行）：
 
 | 表 | 字段 | 类型 | 说明 |
 |----|------|------|------|
-| guanzhi | create_date | ___ | |
-| share_comment | created_at | ___ | |
-| share_view_log | created_at | ___ | |
-| notification | created_at | ___ | |
+| guanzhi | create_date | datetime | 不带时区，存什么就是什么 |
+| share_comment | created_at | datetime | 不带时区，存什么就是什么 |
+| share_view_log | created_at | datetime | 不带时区，存什么就是什么 |
+| notification | created_at | datetime | 不带时区，存什么就是什么 |
+
+**结论**：全部是 DATETIME 类型，`SET time_zone = '+00:00'` 是纪律保障，需确保写入时已是 UTC。
 
 **处理规则**：
 - 如果是 **TIMESTAMP**：`SET time_zone = '+00:00'` 是关键保障

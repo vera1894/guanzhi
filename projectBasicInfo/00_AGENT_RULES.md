@@ -1,7 +1,7 @@
 # AI Agent 使用规则
 
-**文档版本**: v1.3
-**最后更新**: 2026-01-06
+**文档版本**: v1.4
+**最后更新**: 2026-01-10
 
 ---
 
@@ -16,6 +16,28 @@
 5. **`04_TERMINOLOGY.md`** - 术语规范字典（UI 文案使用「观之」）
 6. **`99_SERVER_OPERATIONS_RULES.md`** - 服务器操作规则（**服务器操作前必读**）
 7. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
+
+### 强制执行机制（Claude Code SessionStart Hook）
+
+**问题背景**：Agent 在会话延续或上下文压缩后，可能跳过阅读项目规则直接开始工作，导致违反规范（如文件存放位置错误、术语使用错误等）。
+
+**解决方案**：使用 Claude Code 的 **SessionStart Hook**，在每次会话开始时自动提醒 Agent 阅读项目规则。
+
+**已配置文件**：
+
+1. `.claude/settings.json` - Hook 配置
+2. `.claude/hooks/load-project-rules.sh` - 规则加载脚本
+
+**Hook 工作原理**：
+- 每次 Claude Code 会话开始时，自动执行 `load-project-rules.sh`
+- 脚本输出项目规则提醒，确保 Agent 在开始工作前了解规范
+- 提醒内容包括：必读文档列表、日志存放规范、术语规范
+
+**如需修改提醒内容**：
+编辑 `.claude/hooks/load-project-rules.sh` 文件
+
+**备选方案**：如果 Hook 未生效，Agent 应在每次会话开始时主动声明：
+> "我将先阅读项目规则（projectBasicInfo/00_AGENT_RULES.md）再开始工作。"
 
 ---
 

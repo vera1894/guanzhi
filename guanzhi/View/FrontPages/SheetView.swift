@@ -11,6 +11,7 @@ import MapKit
 struct SheetView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var searchViewModel: SearchViewModel
+    @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
     @State private var search: String = ""
     @State private var locationService = LocationService(completer: .init())
 //    @Binding var searchResults: [SearchResult]
@@ -65,6 +66,8 @@ struct SheetView: View {
                 
                 if currentDetent == .height(Constants.sheetCollapsedHeight) && !isSearchFieldFocused { // 根据 BottomSheet 的状态隐藏或显示
                     Button(action: {
+                        // 【Onboarding】点击发布按钮，完成提示 D
+                        onboardingCoordinator.handleEvent(.publishButtonTapped)
                         // 分享地点-胶囊按钮hug
                         appState.isShowingCameraView = true
                         appState.isShowingSearchView = false
@@ -72,6 +75,7 @@ struct SheetView: View {
                         Text("📷 发布观之")
                     }
                     .buttonStyle(ButtonStyle_capsuleHugPrimary(isEnabled: true))
+                    .onboardingHighlight(onboardingCoordinator.currentStep == .publishReminder)
                     
                 } else {
                     Button{

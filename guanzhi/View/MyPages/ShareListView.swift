@@ -140,14 +140,12 @@ struct ShareListView: View {
         
     }
     
+    @MainActor
     private func formattedDate(_ timeInterval: Int) -> String {
-            // 这里假设 createDate = 秒级或毫秒级 => 需要看实际
-            // 你可能要 /1000.0
-            let date = Date(timeIntervalSince1970: TimeInterval(timeInterval / 1000))
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm"
-            return formatter.string(from: date)
-        }
+        // 使用 TimeKit 统一处理时间（后端已统一 UTC）
+        let date = ServerTime.parse(milliseconds: timeInterval)
+        return TimeDisplay.shared.absoluteTime(from: date, style: .fixedFormat("yyyy-MM-dd HH:mm"))
+    }
 }
 
 struct TabButton: View {

@@ -102,13 +102,43 @@ enum NotificationType: String, Codable {
         }
     }
 
-    /// 是否需要特殊图标（非用户头像）
+    /// 是否需要特殊图标（非观之缩略图）
+    /// 与特定观之相关的消息应该显示观之缩略图，纯系统消息才显示系统图标
     var usesSystemIcon: Bool {
         switch self {
+        // 互动消息：显示观之缩略图
         case .commentReply, .commentLike, .newComment, .stickerReceived:
             return false
+        // 褪色相关：显示观之缩略图（因为是针对特定观之的）
+        case .fadeWarning, .fadeComplete, .shareRemoved:
+            return false
+        // 纯系统消息：显示系统图标
         default:
             return true
+        }
+    }
+
+    /// 系统消息的 SF Symbol 图标名称
+    var systemIconName: String {
+        switch self {
+        case .system:
+            return "megaphone.fill"           // 系统通知
+        case .levelUp:
+            return "arrow.up.circle.fill"     // 升级
+        case .userWarned:
+            return "exclamationmark.triangle.fill"  // 警告
+        case .userFrozen:
+            return "snowflake"                // 冻结
+        case .shareRemoved:
+            return "trash.fill"               // 内容被删除
+        case .reportResult:
+            return "checkmark.shield.fill"    // 举报结果
+        case .fadeWarning:
+            return "clock.badge.exclamationmark.fill"  // 即将褪色
+        case .fadeComplete:
+            return "moon.zzz.fill"            // 已褪色
+        default:
+            return "bell.fill"                // 默认铃铛
         }
     }
 
@@ -122,42 +152,19 @@ enum NotificationType: String, Codable {
 // MARK: - 时间格式化辅助
 
 /// 通知模块专用的时间格式化工具
+/// 使用 TimeKit 统一处理时间
 private enum NotificationDateHelper {
-    /// 格式化为相对时间显示
+    /// 格式化为相对时间显示（MainActor，用于 UI）
+    /// 使用 TimeDisplay.shared.smartTime() 统一处理
+    @MainActor
     static func formatRelativeTime(_ date: Date) -> String {
-        let now = Date()
-        let interval = now.timeIntervalSince(date)
-
-        if interval < 0 {
-            return "刚刚"
-        } else if interval < 60 {
-            return "刚刚"
-        } else if interval < 3600 {
-            let minutes = Int(interval / 60)
-            return "\(minutes)分钟前"
-        } else if interval < 86400 {
-            let hours = Int(interval / 3600)
-            return "\(hours)小时前"
-        } else if interval < 86400 * 2 {
-            return "昨天"
-        } else if interval < 86400 * 7 {
-            let days = Int(interval / 86400)
-            return "\(days)天前"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM-dd"
-            formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
-            return formatter.string(from: date)
-        }
+        return TimeDisplay.shared.smartTime(from: date)
     }
 
-    /// 格式化为北京时间字符串（用于编码）
-    static func formatToShanghaiString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter.string(from: date)
+    /// 格式化为 UTC 字符串（用于编码，非 MainActor）
+    /// 使用 ServerTime.formatUTCString() 统一处理
+    static func formatToUTCString(_ date: Date) -> String {
+        return ServerTime.formatUTCString(date)
     }
 }
 
@@ -173,6 +180,7 @@ struct NotificationMessage: Identifiable, Codable {
     let fromUserId: Int?
     let fromUserName: String?
     let fromUserAvatar: String?
+    let shareThumbnail: String?  // 相关观之的缩略图 URL
     let statusCode: Int          // 0 = UNREAD, 1 = READ
     let createdAtDate: Date      // 解析后的日期
     let deepLink: String?
@@ -189,6 +197,7 @@ struct NotificationMessage: Identifiable, Codable {
         fromUserId = try container.decodeIfPresent(Int.self, forKey: .fromUserId)
         fromUserName = try container.decodeIfPresent(String.self, forKey: .fromUserName)
         fromUserAvatar = try container.decodeIfPresent(String.self, forKey: .fromUserAvatar)
+        shareThumbnail = try container.decodeIfPresent(String.self, forKey: .shareThumbnail)
         deepLink = try container.decodeIfPresent(String.self, forKey: .deepLink)
 
         // 解析 status（后端返回数字 0/1）
@@ -198,55 +207,24 @@ struct NotificationMessage: Identifiable, Codable {
         createdAtDate = NotificationMessage.parseCreatedAt(from: container)
     }
 
-    /// 解析 createdAt，支持字符串格式和数组格式
+    /// 解析 createdAtMs（毫秒时间戳）
+    /// 后端字段名为 createdAtMs，返回毫秒级 UTC 时间戳
     private static func parseCreatedAt(from container: KeyedDecodingContainer<CodingKeys>) -> Date {
-        // 尝试解析字符串格式
-        if let dateString = try? container.decode(String.self, forKey: .createdAt) {
-            return parseDateTimeString(dateString, timezone: "UTC")
+        // 解析毫秒时间戳（后端字段名 createdAtMs）
+        if let timestamp = try? container.decode(Int64.self, forKey: .createdAtMs) {
+            let result = ServerTime.parse(milliseconds: timestamp)
+            print("📅 [Notification] 解析时间戳: \(timestamp) -> \(result)")
+            return result
         }
-        // 尝试解析数组格式（后端返回 UTC 时间）
-        if let dateArray = try? container.decode([Int].self, forKey: .createdAt) {
-            return parseLocalDateTimeArray(dateArray, timezone: "UTC")
-        }
+        print("⚠️ [Notification] 时间解析失败，使用当前时间")
         return Date()
-    }
-
-    /// 解析时间字符串
-    private static func parseDateTimeString(_ dateString: String, timezone: String) -> Date {
-        let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(identifier: timezone)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        if let date = formatter.date(from: dateString) { return date }
-
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-        if let date = formatter.date(from: dateString) { return date }
-
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        if let date = formatter.date(from: dateString) { return date }
-
-        return Date()
-    }
-
-    /// 解析时间数组（后端返回 UTC 时间）
-    private static func parseLocalDateTimeArray(_ arr: [Int], timezone: String) -> Date {
-        guard arr.count >= 5 else { return Date() }
-        var components = DateComponents()
-        components.year = arr[0]
-        components.month = arr[1]
-        components.day = arr[2]
-        components.hour = arr[3]
-        components.minute = arr[4]
-        components.second = arr.count > 5 ? arr[5] : 0
-        components.timeZone = TimeZone(identifier: timezone)
-        return Calendar.current.date(from: components) ?? Date()
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, type, content, shareId, commentId
-        case fromUserId, fromUserName, fromUserAvatar
-        case status, createdAt, deepLink
+        case fromUserId, fromUserName, fromUserAvatar, shareThumbnail
+        case status, deepLink
+        case createdAtMs  // 后端返回毫秒时间戳字段名
     }
 
     /// 编码（Encodable 协议要求）
@@ -260,10 +238,11 @@ struct NotificationMessage: Identifiable, Codable {
         try container.encodeIfPresent(fromUserId, forKey: .fromUserId)
         try container.encodeIfPresent(fromUserName, forKey: .fromUserName)
         try container.encodeIfPresent(fromUserAvatar, forKey: .fromUserAvatar)
+        try container.encodeIfPresent(shareThumbnail, forKey: .shareThumbnail)
         try container.encode(statusCode, forKey: .status)
-        // 转换为字符串格式
-        let dateString = NotificationDateHelper.formatToShanghaiString(createdAtDate)
-        try container.encode(dateString, forKey: .createdAt)
+        // 转换为毫秒时间戳
+        let timestamp = Int64(createdAtDate.timeIntervalSince1970 * 1000)
+        try container.encode(timestamp, forKey: .createdAtMs)
         try container.encodeIfPresent(deepLink, forKey: .deepLink)
     }
 
@@ -277,6 +256,7 @@ struct NotificationMessage: Identifiable, Codable {
         fromUserId: Int? = nil,
         fromUserName: String? = nil,
         fromUserAvatar: String? = nil,
+        shareThumbnail: String? = nil,
         statusCode: Int,
         createdAtDate: Date,
         deepLink: String? = nil
@@ -289,6 +269,7 @@ struct NotificationMessage: Identifiable, Codable {
         self.fromUserId = fromUserId
         self.fromUserName = fromUserName
         self.fromUserAvatar = fromUserAvatar
+        self.shareThumbnail = shareThumbnail
         self.statusCode = statusCode
         self.createdAtDate = createdAtDate
         self.deepLink = deepLink
@@ -304,7 +285,8 @@ struct NotificationMessage: Identifiable, Codable {
         statusCode == 0
     }
 
-    /// 格式化的时间显示
+    /// 格式化的时间显示（MainActor，用于 UI）
+    @MainActor
     var formattedTime: String {
         NotificationDateHelper.formatRelativeTime(date)
     }
@@ -319,6 +301,16 @@ struct NotificationMessage: Identifiable, Codable {
         }
     }
 
+    /// 观之缩略图 URL
+    var shareThumbnailURL: URL? {
+        guard let thumbnail = shareThumbnail, !thumbnail.isEmpty else { return nil }
+        if thumbnail.hasPrefix("http") {
+            return URL(string: thumbnail)
+        } else {
+            return URL(string: "\(Constants.BASE_HOST)\(thumbnail)")
+        }
+    }
+
     /// 创建已读版本
     func asRead() -> NotificationMessage {
         return NotificationMessage(
@@ -330,6 +322,7 @@ struct NotificationMessage: Identifiable, Codable {
             fromUserId: fromUserId,
             fromUserName: fromUserName,
             fromUserAvatar: fromUserAvatar,
+            shareThumbnail: shareThumbnail,
             statusCode: 1,  // 1 = READ
             createdAtDate: createdAtDate,
             deepLink: deepLink
@@ -601,7 +594,8 @@ struct AggregatedStickerNotification: Identifiable {
         notifications.map { $0.date }.max() ?? Date()
     }
 
-    /// 格式化的时间显示
+    /// 格式化的时间显示（MainActor，用于 UI）
+    @MainActor
     var formattedTime: String {
         NotificationDateHelper.formatRelativeTime(latestTime)
     }
@@ -613,6 +607,16 @@ struct AggregatedStickerNotification: Identifiable {
             return URL(string: avatar)
         } else {
             return URL(string: "\(Constants.BASE_HOST)\(avatar)")
+        }
+    }
+
+    /// 观之缩略图 URL（从第一个通知获取，因为都是同一个观之）
+    var shareThumbnailURL: URL? {
+        guard let thumbnail = notifications.first?.shareThumbnail, !thumbnail.isEmpty else { return nil }
+        if thumbnail.hasPrefix("http") {
+            return URL(string: thumbnail)
+        } else {
+            return URL(string: "\(Constants.BASE_HOST)\(thumbnail)")
         }
     }
 

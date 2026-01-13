@@ -192,6 +192,12 @@ enum Route: Hashable, Codable { //用于页面导航
 
 class NavigationCoordinator: ObservableObject {
     @Published var path = NavigationPath()
+
+    // MARK: - 消息页面滚动位置记忆
+    /// 用于恢复 MessagesView 的滚动位置（从详情返回时）
+    @Published var messagesScrolledItemId: String?
+    /// 是否已执行过滚动恢复（防止重复触发）
+    @Published var messagesDidRestore: Bool = false
 }
 
 

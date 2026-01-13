@@ -12,6 +12,7 @@ struct ShareDetailsCardView: View {
     @EnvironmentObject var searchViewModel: SearchViewModel
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
     @Binding var isFullScreen: Bool
     @Binding var isAtTop: Bool
     @Binding var dragOffset: CGFloat
@@ -503,6 +504,7 @@ struct ShareDetailsCardView: View {
                     }
                 }
             }
+            .onboardingHighlight(onboardingCoordinator.currentStep == .openStickerPanel)
 
             // 评论按钮
             Button {
@@ -648,6 +650,7 @@ struct BlurView: UIViewRepresentable {
     .environmentObject(SearchViewModel())
     .environmentObject(UserProfileManager())
     .environmentObject(NavigationCoordinator())
+    .environmentObject(OnboardingCoordinator())
 }
 
 

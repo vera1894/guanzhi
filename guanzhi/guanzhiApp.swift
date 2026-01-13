@@ -129,6 +129,7 @@ struct guanzhiApp: App {
     @StateObject var userProfileManager = UserProfileManager()
     @Namespace private var globalAnimationNamespace
     @StateObject var navigationCoordinator = NavigationCoordinator()
+    @StateObject var onboardingCoordinator = OnboardingCoordinator()
 
     init() {
         _ = CoordinateConverter.shared
@@ -208,8 +209,13 @@ struct guanzhiApp: App {
                 .modelContainer(for: [Share.self, MediaFile.self, LocalUserProfile.self, UserProfile.self])
 
                 GlobalToastContainerView()
+
+                // 【Onboarding】统一在 App 根视图挂载 Banner，避免多处重复
+                OnboardingBannerView()
+                    .environmentObject(onboardingCoordinator)
             }
             .environmentObject(toastManager)
+            .environmentObject(onboardingCoordinator)
             .ignoresSafeArea()
             // Deep Link 处理
             .onOpenURL { url in
@@ -228,6 +234,8 @@ struct guanzhiApp: App {
             }
             // 处理冷启动时缓存的 Deep Link
             .onAppear {
+                // 【Onboarding】注入 appState 引用
+                onboardingCoordinator.appState = appState
                 // SSOT: 启动时检查，如果未登录则清空缓存（防止残留数据）
                 userProfileManager.checkAndClearIfNotLoggedIn()
                 handlePendingDeepLink()

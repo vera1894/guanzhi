@@ -158,6 +158,7 @@ struct ShareDetailView: View {
     @Environment(\.appState) var appState
     @ObservedObject var searchViewModel: SearchViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
     var animationNamespace: Namespace.ID
     var annotationID: String                        // 当前分享的 ID（从导航传入）
     var highlightCommentId: Int64? = nil            // 需要高亮的评论 ID（从推送通知跳转时传入）
@@ -675,10 +676,7 @@ struct ShareDetailView: View {
                     cardDragIsActive: $cardDragIsActive,
                     highlightCommentId: highlightCommentId,
                     interactionViewModel: interactionViewModel,
-                    onStickerTap: {
-                        // 显示贴纸面板
-                        interactionViewModel.isStickerPanelVisible = true
-                    }
+                    onStickerTap: handleStickerPanelTap
                 )
                 .environmentObject(searchViewModel)
                 .zIndex(1)
@@ -744,6 +742,9 @@ struct ShareDetailView: View {
         // │  - 加载贴纸可用性                                                    │
         // └─────────────────────────────────────────────────────────────────────┘
         .onAppear {
+            // 【Onboarding】触发详情页出现事件（用于步骤 C1）
+            triggerOnboardingDetailAppeared()
+
             // 标记进入分享详情页
             appState.isInShareDetailView = true
 
@@ -1177,12 +1178,26 @@ struct ShareDetailView: View {
         }
     }
 
+    /// 处理贴纸面板打开（用于 Onboarding 步骤 C2）
+    private func handleStickerPanelTap() {
+        onboardingCoordinator.handleEvent(.stickerPanelOpened)
+        interactionViewModel.isStickerPanelVisible = true
+    }
+
+    /// 触发 Onboarding 详情页出现事件（提取方法帮助编译器类型检查）
+    private func triggerOnboardingDetailAppeared() {
+        onboardingCoordinator.handleEvent(.detailPageAppeared)
+    }
+
     /// 处理贴纸使用动作
     /// - Parameter sticker: 被使用的贴纸定义
     private func handleStickerUse(_ sticker: StickerDefinition) {
         #if DEBUG
         print("🎯 [ShareDetailView] 使用贴纸: \(sticker.displayName) (\(sticker.kind))")
         #endif
+
+        // 【Onboarding】使用贴纸，完成提示 C2
+        onboardingCoordinator.handleEvent(.stickerUsed)
 
         // ✅ 使用 ViewModel 的统一方法处理所有贴纸类型
         // - 投票类贴纸：走 vote API

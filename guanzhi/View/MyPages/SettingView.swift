@@ -11,13 +11,16 @@ struct SettingView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var userProfileManager: UserProfileManager
+    @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
     @State private var isLoggingout = false
     @State private var showAgreement = false
-    
+    @State private var showResetOnboardingConfirm = false  // 重置操作提示确认
+
     var items = [
         "账号与绑定",
         "通知设置",
         "用户协议与隐私政策",
+        "操作提示",
         "清理缓存",
         "退出登录",
         "系统版本"
@@ -103,6 +106,18 @@ struct SettingView: View {
         .sheet(isPresented: $showAgreement) {
             UserAgreementView()
         }
+        .alert("重置操作提示", isPresented: $showResetOnboardingConfirm) {
+            Button("重置", role: .destructive) {
+                // 先重置状态（清空 completedSteps），再返回主页
+                // 这样主页事件触发时状态已经是干净的
+                onboardingCoordinator.resetOnboarding()
+                // 返回主页
+                navigationCoordinator.path = NavigationPath()
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("重置后将重新显示新手引导提示")
+        }
     }
 
     // 根据不同的列表项执行操作
@@ -114,6 +129,8 @@ struct SettingView: View {
             navigationCoordinator.path.append(Route.notificationSettingsView)
         case "用户协议与隐私政策":
             showAgreement = true  // 显示用户协议 sheet
+        case "操作提示":
+            showResetOnboardingConfirm = true  // 显示重置确认对话框
         case "清理缓存":
             print("清理缓存中...")
         case "退出登录":
@@ -181,4 +198,7 @@ struct UserAgreementView: View {
 #Preview {
     SettingView()
         .environment(\.appState, AppStateModel())
+        .environmentObject(NavigationCoordinator())
+        .environmentObject(UserProfileManager())
+        .environmentObject(OnboardingCoordinator())
 }

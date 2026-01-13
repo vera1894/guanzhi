@@ -62,18 +62,20 @@ struct MessageRowView: View {
     @ViewBuilder
     private var avatarView: some View {
         if message.type.usesSystemIcon {
-            // 系统类消息使用 App Logo（包括 V2.0 的升级/警告/褪色等）
-            Image("AppLogo")
-                .resizable()
-                .scaledToFill()
+            // 系统类消息使用系统图标
+            Circle()
+                .fill(Color("color-primary").opacity(0.15))
                 .frame(width: 44, height: 44)
-                .clipShape(Circle())
                 .overlay(
-                    Circle()
-                        .stroke(Color("color-primary").opacity(0.2), lineWidth: 1)
+                    Image(systemName: message.type.systemIconName)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(Color("color-primary"))
                 )
+        } else if let shareId = message.shareId {
+            // 互动消息显示观之缩略图（本地缓存优先 + 异步加载）
+            ShareThumbnailView(shareId: shareId, size: 44, cornerRadius: 8)
         } else if let avatarURL = message.avatarURL {
-            // 用户头像
+            // 没有关联观之时显示用户头像
             AsyncImage(url: avatarURL) { phase in
                 switch phase {
                 case .empty:
@@ -101,6 +103,16 @@ struct MessageRowView: View {
             .frame(width: 44, height: 44)
             .overlay(
                 Image(systemName: "person.fill")
+                    .foregroundColor(.gray)
+            )
+    }
+
+    private var placeholderThumbnail: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color.gray.opacity(0.2))
+            .frame(width: 44, height: 44)
+            .overlay(
+                Image(systemName: "photo")
                     .foregroundColor(.gray)
             )
     }
@@ -214,14 +226,8 @@ struct AggregatedStickerRowView: View {
 
     @ViewBuilder
     private var avatarView: some View {
-        let users = aggregation.users
-        if users.count == 1 {
-            // 单用户头像
-            singleAvatarView(avatar: users[0].avatar)
-        } else {
-            // 多用户叠加头像
-            multiAvatarView(users: users)
-        }
+        // 聚合消息使用 shareId 显示观之缩略图（本地缓存优先 + 异步加载）
+        ShareThumbnailView(shareId: aggregation.shareId, size: 44, cornerRadius: 8)
     }
 
     @ViewBuilder
@@ -309,6 +315,16 @@ struct AggregatedStickerRowView: View {
             .frame(width: 44, height: 44)
             .overlay(
                 Image(systemName: "person.fill")
+                    .foregroundColor(.gray)
+            )
+    }
+
+    private var placeholderThumbnail: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color.gray.opacity(0.2))
+            .frame(width: 44, height: 44)
+            .overlay(
+                Image(systemName: "photo")
                     .foregroundColor(.gray)
             )
     }

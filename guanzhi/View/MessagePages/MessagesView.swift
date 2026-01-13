@@ -52,38 +52,61 @@ struct MessagesView: View {
                 }
                 Spacer()
             } else {
-                // 消息列表
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(viewModel.displayableMessages) { item in
-                            switch item {
-                            case .single(let message):
-                                MessageRowView(message: message) {
-                                    handleMessageTap(message)
-                                }
-                            case .aggregatedStickers(let agg):
-                                AggregatedStickerRowView(aggregation: agg) {
-                                    handleAggregatedStickerTap(agg)
-                                }
-                            }
-                            Divider()
-                                .padding(.leading, 68)
-                        }
-
-                        // 加载更多
-                        if viewModel.hasMore {
-                            ProgressView()
-                                .padding()
-                                .onAppear {
-                                    Task {
-                                        await viewModel.loadMore()
+                // 消息列表（使用 ScrollViewReader 恢复位置）
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(viewModel.displayableMessages) { item in
+                                Group {
+                                    switch item {
+                                    case .single(let message):
+                                        MessageRowView(message: message) {
+                                            // 保存当前点击的消息 ID 到 NavigationCoordinator
+                                            print("✅ [Messages] 保存滚动位置 id=\(item.id)")
+                                            navigationCoordinator.messagesScrolledItemId = item.id
+                                            navigationCoordinator.messagesDidRestore = false
+                                            handleMessageTap(message)
+                                        }
+                                    case .aggregatedStickers(let agg):
+                                        AggregatedStickerRowView(aggregation: agg) {
+                                            // 保存当前点击的消息 ID 到 NavigationCoordinator
+                                            print("✅ [Messages] 保存滚动位置 id=\(item.id)")
+                                            navigationCoordinator.messagesScrolledItemId = item.id
+                                            navigationCoordinator.messagesDidRestore = false
+                                            handleAggregatedStickerTap(agg)
+                                        }
                                     }
                                 }
+                                .id(item.id)
+
+                                Divider()
+                                    .padding(.leading, 68)
+                            }
+
+                            // 加载更多
+                            if viewModel.hasMore {
+                                ProgressView()
+                                    .padding()
+                                    .onAppear {
+                                        Task {
+                                            await viewModel.loadMore()
+                                        }
+                                    }
+                            }
                         }
+                        .transaction { $0.animation = nil }  // 禁用内容变化时的隐式动画
                     }
-                }
-                .refreshable {
-                    await viewModel.refresh()
+                    .refreshable {
+                        await viewModel.refresh()
+                    }
+                    // 恢复滚动位置：当数据数量变化时检查
+                    .onChange(of: viewModel.displayableMessages.count) { _, _ in
+                        restoreScrollIfPossible(proxy)
+                    }
+                    // 恢复滚动位置：onAppear 时也检查（返回时触发）
+                    .onAppear {
+                        restoreScrollIfPossible(proxy)
+                    }
                 }
             }
         }
@@ -142,10 +165,9 @@ struct MessagesView: View {
             }
             Button("取消", role: .cancel) {}
         }
-        .onAppear {
-            Task {
-                await viewModel.loadInitialData()
-            }
+        .task {
+            // 只在首次加载数据，返回时不刷新（避免覆盖滚动恢复）
+            await viewModel.loadIfNeeded()
         }
         .onDisappear {
             if navigationCoordinator.path.isEmpty {
@@ -157,7 +179,7 @@ struct MessagesView: View {
                 await viewModel.refresh()
             }
         }
-        // 系统消息详情 Sheet
+        // 系统消息详情 Sheet（仅用于无 shareId 的纯系统消息）
         .sheet(item: $selectedSystemMessage) { message in
             SystemMessageDetailView(message: message)
         }
@@ -166,35 +188,20 @@ struct MessagesView: View {
     // MARK: - 消息点击处理
 
     private func handleMessageTap(_ message: NotificationMessage) {
-        print("📬 点击消息: id=\(message.id), type=\(message.type), deepLink=\(message.deepLink ?? "nil"), shareId=\(message.shareId ?? -1)")
-
         // 标记已读
         Task {
             await viewModel.markAsRead(message)
         }
 
-        // 判断跳转方式
-        if let deepLink = message.deepLink, !deepLink.isEmpty, let url = URL(string: deepLink) {
-            // 检查是否为系统通知的 deepLink（guanzhi://notifications）
-            if url.host == "notifications" || url.host == "notification" {
-                // 系统消息 - 显示详情 Sheet
-                print("📬 系统通知 deepLink，显示详情 Sheet")
-                selectedSystemMessage = message
-            } else if url.host == "share" {
-                // 观之相关的 Deep Link
-                print("📬 使用 Deep Link 导航: \(deepLink)")
-                handleDeepLink(url)
-            } else {
-                // 其他未知 deepLink - 显示详情 Sheet
-                print("📬 未知 deepLink 类型，显示详情 Sheet")
-                selectedSystemMessage = message
-            }
-        } else if let shareId = message.shareId {
-            // 跳转到观之详情
+        // 简化的跳转逻辑：
+        // 1. 有 shareId 的消息（评论、点赞、贴纸、褪色等）→ 直接跳转观之详情
+        // 2. 无 shareId 的纯系统消息（升级、警告、冻结等）→ 显示详情弹窗
+        if let shareId = message.shareId {
+            // 跳转到观之详情页面
             print("📬 跳转到观之详情: \(shareId)")
             navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(shareId)"))
         } else {
-            // 系统消息（无 deepLink 和 shareId）- 显示详情 Sheet
+            // 纯系统消息 - 显示详情 Sheet
             print("📬 显示系统消息详情 Sheet")
             selectedSystemMessage = message
         }
@@ -232,6 +239,63 @@ struct MessagesView: View {
         // 跳转到观之详情
         navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(aggregation.shareId)"))
     }
+
+    // MARK: - 滚动位置辅助
+
+    /// 恢复滚动位置（如果需要）
+    @MainActor
+    private func restoreScrollIfPossible(_ proxy: ScrollViewProxy) {
+        // 检查是否已恢复
+        guard !navigationCoordinator.messagesDidRestore else {
+            print("📬 [Messages] restoreScrollIfPossible: 已恢复过，跳过")
+            return
+        }
+
+        // 检查是否有目标 ID
+        guard let targetId = navigationCoordinator.messagesScrolledItemId else {
+            print("📬 [Messages] restoreScrollIfPossible: 无目标 ID，跳过")
+            return
+        }
+
+        // 检查目标 ID 是否存在于列表中
+        let exists = viewModel.displayableMessages.contains(where: { $0.id == targetId })
+        print("📬 [Messages] restoreScrollIfPossible: targetId=\(targetId), exists=\(exists), count=\(viewModel.displayableMessages.count)")
+
+        guard exists else {
+            return
+        }
+
+        // 立即标记已恢复（在执行滚动前，避免重复触发）
+        navigationCoordinator.messagesDidRestore = true
+        print("🟢 [Messages] 执行滚动恢复到 id=\(targetId)")
+
+        // 计算动态 anchor
+        let anchor = dynamicAnchor(for: targetId)
+
+        // 延迟一帧执行（等布局完成）+ 禁用动画
+        DispatchQueue.main.async {
+            withTransaction(Transaction(animation: nil)) {
+                proxy.scrollTo(targetId, anchor: anchor)
+            }
+            print("🟢 [Messages] scrollTo 完成")
+        }
+    }
+
+    /// 根据 index 动态选择 anchor，避免边缘过冲跳动
+    private func dynamicAnchor(for targetId: String) -> UnitPoint {
+        guard let index = viewModel.displayableMessages.firstIndex(where: { $0.id == targetId }) else {
+            return .center
+        }
+        let count = viewModel.displayableMessages.count
+        // 靠近顶部用 .top，靠近底部用 .bottom，中间用 .center
+        if index <= 1 {
+            return .top
+        } else if index >= max(0, count - 2) {
+            return .bottom
+        } else {
+            return .center
+        }
+    }
 }
 
 // MARK: - MessagesViewModel
@@ -250,10 +314,24 @@ class MessagesViewModel: ObservableObject {
     /// 各分类是否有未读消息（从消息列表计算）
     @Published var hasUnreadByCategory: [MessageCategory: Bool] = [:]
 
+    /// 是否已完成首次加载（避免返回时重复刷新）
+    var didInitialLoad = false
+
     private var currentPage = 1
     private let pageSize = 20
 
-    // MARK: - 加载初始数据
+    // MARK: - 加载初始数据（仅首次）
+
+    func loadIfNeeded() async {
+        guard !didInitialLoad else {
+            print("📬 [Messages] loadIfNeeded: 已加载过，跳过")
+            return
+        }
+        didInitialLoad = true
+        print("📬 [Messages] loadIfNeeded: 首次加载")
+        await loadUnreadCounts()
+        await refresh()
+    }
 
     func loadInitialData() async {
         await loadUnreadCounts()
@@ -454,6 +532,8 @@ class MessagesViewModel: ObservableObject {
 }
 
 // MARK: - 系统消息详情视图
+// 仅用于纯系统消息（升级、警告、冻结等无 shareId 的消息）
+// 有 shareId 的消息会直接跳转到观之详情页面
 
 struct SystemMessageDetailView: View {
     let message: NotificationMessage
@@ -465,14 +545,14 @@ struct SystemMessageDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // 图标和标题
                     HStack(spacing: 12) {
-                        Image("AppLogo")
-                            .resizable()
-                            .scaledToFill()
+                        // 系统图标
+                        Circle()
+                            .fill(Color("color-primary").opacity(0.15))
                             .frame(width: 48, height: 48)
-                            .clipShape(Circle())
                             .overlay(
-                                Circle()
-                                    .stroke(Color("color-primary").opacity(0.2), lineWidth: 1)
+                                Image(systemName: message.type.systemIconName)
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundColor(Color("color-primary"))
                             )
 
                         VStack(alignment: .leading, spacing: 4) {

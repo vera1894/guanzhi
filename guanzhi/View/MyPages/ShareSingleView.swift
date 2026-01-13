@@ -109,12 +109,11 @@ struct ShareSingleView: View {
         
     }
     // MARK: - Helper
+    @MainActor
     private func dateStringFrom(_ createDate: Int) -> String {
-        let ts = TimeInterval(createDate / 1000)
-        let date = Date(timeIntervalSince1970: ts)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy.MM.dd HH:mm"
-        return formatter.string(from: date)
+        // 使用 TimeKit 统一处理时间（后端已统一 UTC）
+        let date = ServerTime.parse(milliseconds: createDate)
+        return TimeDisplay.shared.absoluteTime(from: date, style: .fixedFormat("yyyy.MM.dd HH:mm"))
     }
     
     private func loadImage() {

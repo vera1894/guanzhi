@@ -26,6 +26,7 @@ struct ClusterShareListView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var searchViewModel: SearchViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
 
     /// 冻结的列表数据快照，避免 body 重算时数据源抖动导致布局修正
     @State private var stableShares: [ResponsedShare] = []
@@ -77,6 +78,8 @@ struct ClusterShareListView: View {
                                 // 点击时延迟关闭聚合列表 sheet，确保导航先执行
                                 .simultaneousGesture(
                                     TapGesture().onEnded { _ in
+                                        // 【Onboarding】触发标注点击事件（用于步骤 B）
+                                        onboardingCoordinator.handleEvent(.annotationTapped)
                                         // 延迟 0.1 秒关闭，确保 ShareSingleView 的导航先执行
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                             onDismiss(true, share.id)  // 进入详情，传递点击的 share ID
@@ -236,4 +239,5 @@ struct ClusterShareListView: View {
     .environment(\.appState, AppStateModel())
     .environmentObject(SearchViewModel())
     .environmentObject(NavigationCoordinator())
+    .environmentObject(OnboardingCoordinator())
 }

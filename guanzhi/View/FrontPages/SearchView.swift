@@ -34,6 +34,7 @@ struct SearchView: View {
     @EnvironmentObject var toastManager: ToastManager
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
 //    @StateObject var navigationCoordinator = NavigationCoordinator()
     
     @State private var detents: Set<PresentationDetent> = [.height(Constants.sheetCollapsedHeight), .fraction(Constants.sheetExpandedFraction)]
@@ -69,6 +70,8 @@ struct SearchView: View {
     // MARK: - 标注点击处理（Stage 1 提取，供 SwiftUI Map 和 MKMapView 共用）
     private func handleAnnotationTap(annotation: CustomAnnotation, thumbnailImage: UIImage?) {
         print("点击标注")
+        // 【Onboarding】发送标注点击事件
+        onboardingCoordinator.handleEvent(.annotationTapped)
         searchViewModel.selectAnnotation(annotation, thumbnailImage: thumbnailImage)
         withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.4)) {
             appState.isShowingSearchView = false
@@ -138,6 +141,8 @@ struct SearchView: View {
                 row: { share in
                     ShareSingleView(share: share, onTap: {
                         print("🔷 [ClusterList] 点击了 share.id=\(share.id)")
+                        // 【Onboarding】触发标注点击事件（用于步骤 B）
+                        onboardingCoordinator.handleEvent(.annotationTapped)
                         // 保存状态用于恢复
                         savedClusterAnnotations = clusterAnnotations
                         savedClusterListDetent = clusterListDetent
@@ -270,6 +275,8 @@ struct SearchView: View {
                                 onClusterTap: { annotations in
                                     // Stage 2: 聚合点击 -> 显示列表，同时隐藏搜索栏 sheet
                                     print("点击聚合，包含 \(annotations.count) 个标注")
+                                    // 【Onboarding】点击聚合标注也视为完成步骤 B
+                                    onboardingCoordinator.handleEvent(.annotationTapped)
                                     clusterAnnotations = annotations
                                     clusterListSession = UUID()  // 新会话，重置内部 @State
 
@@ -433,7 +440,15 @@ struct SearchView: View {
                                 .animation(.spring(response: 0.3), value: searchViewModel.nearbySharesState.hasError)
                             }
                         }
-                        .sheet(isPresented: $appState.isShowingSearchView) { // 显示 SheetView
+                        // 【Onboarding】底部 Sheet 控制：A-B 未完成时隐藏
+                        .sheet(isPresented: Binding(
+                            get: { appState.isShowingSearchView && !onboardingCoordinator.shouldBlockHomeSheet },
+                            set: { newValue in
+                                if !onboardingCoordinator.shouldBlockHomeSheet {
+                                    appState.isShowingSearchView = newValue
+                                }
+                            }
+                        )) { // 显示 SheetView
                             SheetView(
                                 currentDetent: $currentDetent,
                                 onLocationSelected: { coordinate, title in
@@ -555,6 +570,8 @@ struct SearchView: View {
                 .ignoresSafeArea(.all)
                 .onChange(of: appState.isPushedGuanzhi) { oldValue, newValue in
                     if newValue {
+                        // 【Onboarding】触发发布成功事件（用于步骤 D/E）
+                        onboardingCoordinator.handleEvent(.sharePublished)
                         showNotification()
                         // Refresh map data with a delay to ensure server indexing
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -583,6 +600,9 @@ struct SearchView: View {
             } //else
         } //ToastRootView
         .onAppear {
+            // 【Onboarding】主页出现事件
+            onboardingCoordinator.handleEvent(.homePageAppeared)
+
             if searchViewModel.context == nil {
                 searchViewModel.context = context
                 searchViewModel.appState = appState
@@ -619,10 +639,37 @@ struct SearchView: View {
                 }
             }
         }
+        // 【Onboarding】监听从详情页返回，触发 homePageFullyVisible
+        // 注意：只有从详情页返回时才触发，关闭聚合列表不触发
+        .onChange(of: navigationCoordinator.path.isEmpty) { oldValue, isEmpty in
+            // 从详情页返回（导航模式）：path 从非空变成空
+            if isEmpty && !oldValue && !searchViewModel.isShareDetailOverlayShown {
+                // 延迟 1 秒检查聚合列表状态，等待 UI 完全稳定（详情页消失、聚合列表恢复）后再决定是否显示 D
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    onboardingCoordinator.handleHomePageFullyVisible(isClusterListShowing: isShowingClusterList)
+                }
+            }
+        }
+        .onChange(of: searchViewModel.isShareDetailOverlayShown) { oldValue, isShowing in
+            // 从详情页返回（overlay 模式）：isShowing 从 true 变成 false
+            if !isShowing && oldValue && navigationCoordinator.path.isEmpty {
+                // 延迟 1 秒检查聚合列表状态，等待 UI 完全稳定（详情页消失、聚合列表恢复）后再决定是否显示 D
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    onboardingCoordinator.handleHomePageFullyVisible(isClusterListShowing: isShowingClusterList)
+                }
+            }
+        }
+        // 【Onboarding】监听聚合列表关闭，触发待显示的 D
+        .onChange(of: isShowingClusterList) { oldValue, isShowing in
+            // 聚合列表从显示变成隐藏
+            if !isShowing && oldValue {
+                onboardingCoordinator.handleEvent(.clusterListDismissed)
+            }
+        }
 //        .disabled(appState.isShareImageExpanded)
-        .task{
-            locationManager.requestLocation()
-            if !appState.didShowWelcomeToast {
+        // 【Onboarding】监听所有步骤完成后显示欢迎语
+        .onChange(of: onboardingCoordinator.isAllStepsCompleted) { _, isCompleted in
+            if isCompleted && !appState.didShowWelcomeToast {
                 appState.didShowWelcomeToast = true
                 let newItem = ToastItem(style: .notificationOfWelcome(
                     title: "🌍世界虽大 吾可观之👀",
@@ -634,6 +681,9 @@ struct SearchView: View {
                 ))
                 toastManager.show(newItem)
             }
+        }
+        .task{
+            locationManager.requestLocation()
 
             // 登录后请求通知权限并注册 APNs
             if OTOLoginStatusManager.shared.isLoggedIn {

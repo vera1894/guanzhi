@@ -146,6 +146,19 @@ enum ServerTime {
     static func parseOrDefault(array: [Int], timezone: TimeZone = .utc, default defaultDate: Date = Date()) -> Date {
         return parse(array: array, timezone: timezone) ?? defaultDate
     }
+
+    // MARK: - 编码方法（Date → String，用于网络请求/存储）
+
+    /// 格式化为 UTC 字符串（用于编码/存储，非 UI）
+    /// - Parameter date: Date 对象
+    /// - Returns: UTC 时间字符串，格式 "yyyy-MM-dd'T'HH:mm:ss"
+    static func formatUTCString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = .utc
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.string(from: date)
+    }
 }
 
 // MARK: - TimeZone 扩展

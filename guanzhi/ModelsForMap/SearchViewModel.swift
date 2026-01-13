@@ -339,9 +339,11 @@ class SearchViewModel: ObservableObject {
 //                    print("分享已被删除，ID: \(share.id)，跳过")
                 } else {
                     // 创建新分享，插入数据库
+                    // 使用 TimeKit 统一处理时间（后端已统一 UTC）
+                    let correctedDate = ServerTime.parse(milliseconds: share.createDate)
                     let newShare = Share(
                         id: Int64(share.id),
-                        createDate: Date(timeIntervalSince1970: TimeInterval(share.createDate / 1000)),
+                        createDate: correctedDate,
                         userId: Int64(share.userId),
                         data: share.data,
                         longitude: share.longitude,
@@ -382,7 +384,8 @@ class SearchViewModel: ObservableObject {
     // 更新已有分享的数据
     func updateShare(_ share: Share, with responsedShare: ResponsedShare) {
         // 更新分享的各个属性
-        share.createDate = Date(timeIntervalSince1970: TimeInterval(responsedShare.createDate / 1000))
+        // 使用 TimeKit 统一处理时间（后端已统一 UTC）
+        share.createDate = ServerTime.parse(milliseconds: responsedShare.createDate)
         share.data = responsedShare.data
         share.longitude = responsedShare.longitude
         share.latitude = responsedShare.latitude
@@ -832,9 +835,10 @@ class SearchViewModel: ObservableObject {
                 updateShare(existingShare, with: shareData)
             } else {
                 // 添加新分享
+                // 使用 TimeKit 统一处理时间（后端已统一 UTC）
                 let newShare = Share(
                     id: Int64(shareData.id),
-                    createDate: Date(timeIntervalSince1970: TimeInterval(shareData.createDate / 1000)),
+                    createDate: ServerTime.parse(milliseconds: shareData.createDate),
                     userId: Int64(shareData.userId),
                     data: shareData.data,
                     longitude: shareData.longitude,
@@ -1848,18 +1852,9 @@ class SearchViewModel: ObservableObject {
     }
     
     // 将时间戳转换为实际时间
+    // 使用 TimeKit 统一处理时间显示
     func formattedDate(from timestamp: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .medium
-        formatter.locale = Locale(identifier: "zh_CN") // 设置为中文格式
-        formatter.timeZone = TimeZone.current // 显式指定当前设备时区
-        
-        // 转换输入的时间为 UTC 时间
-        let utcTimestamp = timestamp.addingTimeInterval(+8 * 3600) // 减去 +8 小时，转换为 UTC 时间
-        
-        // 返回根据设备当前时区格式化后的时间字符串
-        return formatter.string(from: utcTimestamp)
+        return TimeDisplay.shared.absoluteTime(from: timestamp, style: .medium)
     }
     
 }
