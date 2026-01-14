@@ -125,6 +125,7 @@
 		FF6C0DC32F12A73F00CC0C8C /* ServerTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6C0DC12F12A73F00CC0C8C /* ServerTime.swift */; };
 		FF6C0DC42F12A74000CC0C8C /* TimeDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6C0DC22F12A73F00CC0C8C /* TimeDisplay.swift */; };
 		FF6C0DC72F15385800CC0C8C /* ShareThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6C0DC62F15385800CC0C8C /* ShareThumbnailView.swift */; };
+		FF6C0DCA2F161E5E00CC0C8C /* SwipeActions in Frameworks */ = {isa = PBXBuildFile; productRef = FF6C0DC92F161E5E00CC0C8C /* SwipeActions */; };
 		FF6C38AD2D549956006966A7 /* MainMapContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6C38AC2D549956006966A7 /* MainMapContent.swift */; };
 		FF769B4F2D66DF1400321540 /* EditNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B4E2D66DF1400321540 /* EditNameView.swift */; };
 		FF769B512D68631300321540 /* EditOneCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF769B502D68631300321540 /* EditOneCodeView.swift */; };
@@ -371,6 +372,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */,
+				FF6C0DCA2F161E5E00CC0C8C /* SwipeActions in Frameworks */,
 				FF58E7322CFEF8F900CC139B /* NavigationTransitions in Frameworks */,
 				FF58E72C2CFE913A00CC139B /* SwiftUIIntrospect in Frameworks */,
 			);
@@ -951,6 +953,7 @@
 			packageReferences = (
 				FF58E72A2CFE913A00CC139B /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 				FF58E7302CFEF8F900CC139B /* XCRemoteSwiftPackageReference "swiftui-navigation-transitions" */,
+				FF6C0DC82F161E5E00CC0C8C /* XCRemoteSwiftPackageReference "SwipeActions" */,
 			);
 			productRefGroup = D1CE06162B526930001303F2 /* Products */;
 			projectDirPath = "";
@@ -1421,6 +1424,14 @@
 				minimumVersion = 0.14.0;
 			};
 		};
+		FF6C0DC82F161E5E00CC0C8C /* XCRemoteSwiftPackageReference "SwipeActions" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/aheze/SwipeActions";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1433,6 +1444,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FF58E7302CFEF8F900CC139B /* XCRemoteSwiftPackageReference "swiftui-navigation-transitions" */;
 			productName = NavigationTransitions;
+		};
+		FF6C0DC92F161E5E00CC0C8C /* SwipeActions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FF6C0DC82F161E5E00CC0C8C /* XCRemoteSwiftPackageReference "SwipeActions" */;
+			productName = SwipeActions;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

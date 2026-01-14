@@ -1,7 +1,7 @@
 # AI Agent 使用规则
 
-**文档版本**: v1.4
-**最后更新**: 2026-01-10
+**文档版本**: v1.5
+**最后更新**: 2026-01-14
 
 ---
 
@@ -14,8 +14,9 @@
 3. **`02_CONNECTIONS.private.md`** - 了解服务器连接信息（如需部署）
 4. **`03_CREDENTIALS.private.md`** - 了解凭证信息（如需认证）
 5. **`04_TERMINOLOGY.md`** - 术语规范字典（UI 文案使用「观之」）
-6. **`99_SERVER_OPERATIONS_RULES.md`** - 服务器操作规则（**服务器操作前必读**）
-7. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
+6. **`05_DEPLOYMENT_SSOT.md`** - **部署操作 SSOT**（部署前必读，含 SSM/S3 最佳实践）
+7. **`99_SERVER_OPERATIONS_RULES.md`** - 服务器操作通用规则
+8. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
 
 ### 强制执行机制（Claude Code SessionStart Hook）
 
@@ -195,7 +196,9 @@ guanzhi/                          # 项目根目录（Monorepo）
 │   ├── 01_PROJECT_OVERVIEW.md   # 项目概述
 │   ├── 02_CONNECTIONS.private.md # 连接信息（敏感）
 │   ├── 03_CREDENTIALS.private.md # 凭证信息（敏感）
-│   ├── 99_SERVER_OPERATIONS_RULES.md # 服务器操作规则
+│   ├── 04_TERMINOLOGY.md        # 术语规范
+│   ├── 05_DEPLOYMENT_SSOT.md    # 部署操作 SSOT（SSM/S3 最佳实践）
+│   ├── 99_SERVER_OPERATIONS_RULES.md # 服务器操作通用规则
 │   └── logs/                     # 操作日志
 │
 ├── guanzhi/                      # iOS 客户端（SwiftUI）
@@ -211,6 +214,7 @@ guanzhi/                          # 项目根目录（Monorepo）
 
 | 任务 | 关键信息来源 |
 |------|-------------|
+| **后端部署** | **`05_DEPLOYMENT_SSOT.md`**（SSM/S3 命令模板、验收清单） |
 | 服务器操作 | `99_SERVER_OPERATIONS_RULES.md`、`02_CONNECTIONS.private.md` |
 | 部署 admin-web | `02_CONNECTIONS.private.md`、`logs/` 下的部署日志 |
 | 后端开发 | `Server/onettoo/`、`重要项目信息/项目结构说明.md` |

@@ -151,6 +151,8 @@ enum OTORequest {
     case markNotificationRead(id: Int64)
     /// 标记全部已读（可选指定分类）
     case markAllNotificationsRead(category: String?)
+    /// 删除单条通知
+    case deleteNotification(id: Int64)
     /// 获取通知偏好设置
     case getNotificationPreferences
     /// 更新通知偏好设置
@@ -530,6 +532,14 @@ extension OTORequest {
                     path: "/api/notifications/read-all",
                     method: .put,
                     param: param
+                )
+
+            // 删除单条通知
+            case .deleteNotification(let id):
+                return .init(
+                    path: "/api/notifications/\(id)",
+                    method: .delete,
+                    param: [:]
                 )
 
             // 获取通知偏好设置

@@ -59,8 +59,8 @@
 
 ### 已更新 03_CREDENTIALS.private.md
 
-- **MySQL 生产密码**: `oneAa123123!.`
-- **Redis 生产密码**: `onettoo-redis-2023-onettoo.`
+- **MySQL 生产密码**: `<见服务器 .env>`
+- **Redis 生产密码**: `<见服务器 .env>`
 - 补充连接命令示例
 
 ---

@@ -25,7 +25,7 @@
 
 | 原始值 | 转义后 |
 |--------|--------|
-| `oneAa123123!.` | `oneAa123123\!.` |
+| `<密码含!字符>` | `<密码含\!字符>` |
 | `#!/bin/bash` | `#\!/bin/bash` |
 
 导致数据库密码错误，应用无法连接数据库。
@@ -34,8 +34,8 @@
 
 ```bash
 # 这种方式会导致特殊字符被转义
-aws ssm send-command --parameters 'commands=["export DB_PWD='\''oneAa123123!.'\''"]'
-# SSM 实际执行的是: export DB_PWD='oneAa123123\!.'
+aws ssm send-command --parameters 'commands=["export DB_PWD='\''<含!的密码>'\''"]'
+# SSM 实际执行的是: export DB_PWD='<含\!的密码>'
 ```
 
 ---

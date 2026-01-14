@@ -15,6 +15,8 @@ projectBasicInfo/
 ├── 02_CONNECTIONS.private.md # 服务器连接信息（部署时需要）
 ├── 03_CREDENTIALS.private.md # 凭证信息（认证时需要）
 ├── 04_TERMINOLOGY.md         # 术语规范（UI 使用「观之」）
+├── 05_DEPLOYMENT_SSOT.md     # 部署操作 SSOT（后端部署必读）
+├── 99_SERVER_OPERATIONS_RULES.md # 服务器操作通用规则
 └── logs/                     # 历史操作日志（了解之前做过什么）
 ```
 
@@ -87,3 +89,18 @@ pod update
 - Navigation is handled through a custom NavigationCoordinator
 - Location services integrated with map views
 - Camera functionality implemented with AVFoundation
+
+---
+
+## 任务专用文档索引
+
+根据任务类型，阅读对应的专用文档：
+
+| 任务类型 | 必读文档 |
+|----------|----------|
+| **后端开发**（写 Java 代码） | `Server/onettoo/重要项目信息/项目结构说明.md` |
+| **后端部署**（部署 JAR 到服务器） | `projectBasicInfo/05_DEPLOYMENT_SSOT.md`（部署 SSOT）<br>`projectBasicInfo/02_CONNECTIONS.private.md`（连接信息） |
+| **服务器操作**（Nginx/MySQL/排查） | `projectBasicInfo/99_SERVER_OPERATIONS_RULES.md` |
+| **iOS 开发**（写 Swift 代码） | 本文件（CLAUDE.md） |
+
+> **重要**：后端部署必须遵循 `05_DEPLOYMENT_SSOT.md` 中的流程，使用 systemd 管理服务，禁止使用旧的 `start.sh` 或 `pkill` 方式。

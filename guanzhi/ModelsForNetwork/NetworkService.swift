@@ -46,6 +46,7 @@ struct OTONetwork {
 
             var request = URLRequest(url: finalURL)
             request.httpMethod = req.request.method.rawValue
+            print("📝 HTTP 方法: \(request.httpMethod ?? "nil")")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
             if OTOLoginStatusManager.shared.isLoggedIn, let token = OTOLoginStatusManager.shared.getToken() {

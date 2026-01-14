@@ -118,6 +118,31 @@ class NotificationService {
         print("✅ NotificationService: \(categoryDesc)通知已标记为已读")
     }
 
+    // MARK: - 删除通知
+
+    /// 删除单条通知
+    /// - Parameter id: 通知 ID
+    func deleteNotification(id: Int64) async throws {
+        print("📬 NotificationService: 删除通知 \(id)...")
+
+        let data = try await OTONetwork.request(.deleteNotification(id: id))
+
+        // 打印原始响应用于调试
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("📬 NotificationService: 删除响应 = \(jsonString)")
+        }
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(NotificationActionResponse.self, from: data)
+
+        guard response.respCode == 0 else {
+            print("❌ NotificationService: 删除通知失败 - \(response.respMsg ?? "未知错误")")
+            throw OTONetworkError.customError(response.respMsg ?? "删除通知失败")
+        }
+
+        print("✅ NotificationService: 通知 \(id) 已删除")
+    }
+
     // MARK: - 通知偏好设置 (V1.5)
 
     /// 获取用户通知偏好设置

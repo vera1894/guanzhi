@@ -1,0 +1,30 @@
+## guanzhi 项目后端操作规则
+
+### 任务专用文档索引
+
+| 任务类型 | 必读文档 |
+|----------|----------|
+| 后端开发（写 Java 代码） | `Server/onettoo/重要项目信息/项目结构说明.md` |
+| 后端部署（部署 JAR） | `projectBasicInfo/05_DEPLOYMENT_SSOT.md` + `02_CONNECTIONS.private.md` |
+| 服务器操作 | `projectBasicInfo/99_SERVER_OPERATIONS_RULES.md` |
+
+### 后端部署核心规则
+
+1. **必须使用 systemd**：`systemctl restart onettoo`
+2. **禁止使用**：`start.sh`、`pkill`、`nohup`
+3. **SSM 命令**：用 `send-command` 而非 `start-session`
+4. **S3 上传**：必须加 `--cli-read-timeout 300`
+5. **文件传输**：presigned URL + curl 模式
+6. **验收**：检查 `/version` 接口的 buildTime
+
+### 目录结构
+
+服务器使用 releases/current 架构：
+- `/home/ec2-user/releases/vX.Y.Z/app.jar` - 版本目录
+- `/home/ec2-user/current` - 软链接指向当前版本
+- `/home/ec2-user/.env` - 环境变量（权限 600）
+
+### 安全规则
+
+- 禁止在文档中写密钥（DB_PWD、REDIS_PWD、JWT_SECRET）
+- 密钥只存在于服务器 `.env` 文件

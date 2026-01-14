@@ -1,5 +1,5 @@
 {
-  "originHash" : "88dfeaed86ebb1209d0e1d67cdbcd78aff7c2b51dbcbd3870c4456a0dcdaa5c0",
+  "originHash" : "46c774ebdfb581f17ad2d2e3aa10bb63cd25c45e84d9d403d2b272915c457709",
   "pins" : [
     {
       "identity" : "clustermap",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "76ae9c621422a1f38c30a07c8b7636994b669484",
         "version" : "0.14.0"
+      }
+    },
+    {
+      "identity" : "swipeactions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aheze/SwipeActions",
+      "state" : {
+        "revision" : "41e6f6dce02d8cfa164f8c5461a41340850ca3ab",
+        "version" : "1.1.0"
       }
     }
   ],

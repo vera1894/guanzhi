@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import SwipeActions
+import UIKit
 
 struct MessagesView: View {
     @Environment(\.appState) var appState
@@ -15,6 +17,11 @@ struct MessagesView: View {
     @StateObject private var viewModel = MessagesViewModel()
     @State private var showMoreMenu = false
     @State private var selectedSystemMessage: NotificationMessage? = nil
+
+    /// 当前展开 swipe 的行 ID
+    @State private var openedSwipeId: String? = nil
+    /// 当前处于"确认删除"态的行 ID
+    @State private var confirmingDeleteId: String? = nil
 
     /// 当前分类是否有未读消息
     private var hasUnreadMessages: Bool {
@@ -52,40 +59,19 @@ struct MessagesView: View {
                 }
                 Spacer()
             } else {
-                // 消息列表（使用 ScrollViewReader 恢复位置）
+                // 消息列表（使用 ScrollView + LazyVStack + SwipeActions 库）
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(viewModel.displayableMessages) { item in
-                                Group {
-                                    switch item {
-                                    case .single(let message):
-                                        MessageRowView(message: message) {
-                                            // 保存当前点击的消息 ID 到 NavigationCoordinator
-                                            print("✅ [Messages] 保存滚动位置 id=\(item.id)")
-                                            navigationCoordinator.messagesScrolledItemId = item.id
-                                            navigationCoordinator.messagesDidRestore = false
-                                            handleMessageTap(message)
-                                        }
-                                    case .aggregatedStickers(let agg):
-                                        AggregatedStickerRowView(aggregation: agg) {
-                                            // 保存当前点击的消息 ID 到 NavigationCoordinator
-                                            print("✅ [Messages] 保存滚动位置 id=\(item.id)")
-                                            navigationCoordinator.messagesScrolledItemId = item.id
-                                            navigationCoordinator.messagesDidRestore = false
-                                            handleAggregatedStickerTap(agg)
-                                        }
-                                    }
-                                }
-                                .id(item.id)
-
-                                Divider()
-                                    .padding(.leading, 68)
+                                swipeableRow(for: item)
+                                    .id(item.id)
                             }
 
                             // 加载更多
                             if viewModel.hasMore {
                                 ProgressView()
+                                    .frame(maxWidth: .infinity)
                                     .padding()
                                     .onAppear {
                                         Task {
@@ -94,9 +80,11 @@ struct MessagesView: View {
                                     }
                             }
                         }
-                        .transaction { $0.animation = nil }  // 禁用内容变化时的隐式动画
                     }
                     .refreshable {
+                        // 刷新时清空状态
+                        openedSwipeId = nil
+                        confirmingDeleteId = nil
                         await viewModel.refresh()
                     }
                     // 恢复滚动位置：当数据数量变化时检查
@@ -175,6 +163,9 @@ struct MessagesView: View {
             }
         }
         .onChange(of: viewModel.selectedCategory) { _, _ in
+            // 切换分类时清空状态
+            openedSwipeId = nil
+            confirmingDeleteId = nil
             Task {
                 await viewModel.refresh()
             }
@@ -240,11 +231,107 @@ struct MessagesView: View {
         navigationCoordinator.path.append(Route.shareDetailView(annotationID: "\(aggregation.shareId)"))
     }
 
+    // MARK: - 可滑动的消息行
+
+    /// 使用 SwipeActions 库构建可滑动的行
+    @ViewBuilder
+    private func swipeableRow(for item: DisplayableMessage) -> some View {
+        let isConfirming = confirmingDeleteId == item.id
+
+        SwipeView {
+            // 行内容
+            VStack(spacing: 0) {
+                switch item {
+                case .single(let message):
+                    MessageRowView(message: message) {
+                        // 保存当前点击的消息 ID 到 NavigationCoordinator
+                        print("✅ [Messages] 保存滚动位置 id=\(item.id)")
+                        navigationCoordinator.messagesScrolledItemId = item.id
+                        navigationCoordinator.messagesDidRestore = false
+                        // 关闭 swipe 状态
+                        openedSwipeId = nil
+                        confirmingDeleteId = nil
+                        handleMessageTap(message)
+                    }
+                case .aggregatedStickers(let agg):
+                    AggregatedStickerRowView(aggregation: agg) {
+                        // 保存当前点击的消息 ID 到 NavigationCoordinator
+                        print("✅ [Messages] 保存滚动位置 id=\(item.id)")
+                        navigationCoordinator.messagesScrolledItemId = item.id
+                        navigationCoordinator.messagesDidRestore = false
+                        // 关闭 swipe 状态
+                        openedSwipeId = nil
+                        confirmingDeleteId = nil
+                        handleAggregatedStickerTap(agg)
+                    }
+                }
+
+                Divider()
+                    .padding(.leading, 68)
+            }
+            .background(Color(UIColor.systemBackground))
+        } trailingActions: { context in
+            // 删除按钮（二段式确认）
+            SwipeAction {
+                if isConfirming {
+                    // 第二次点击：执行删除
+                    Task {
+                        await performDelete(item: item)
+                        confirmingDeleteId = nil
+                        openedSwipeId = nil
+                        context.state.wrappedValue = .closed
+                    }
+                } else {
+                    // 第一次点击：进入确认态，保持展开
+                    confirmingDeleteId = item.id
+                    // 保持展开状态
+                    context.state.wrappedValue = .expanded
+                }
+            } label: { _ in
+                // 根据状态显示不同文案和颜色
+                Text(isConfirming ? "确认删除" : "删除")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: isConfirming ? 90 : 70)
+                    .frame(maxHeight: .infinity)
+                    .background(isConfirming ? Color.red : Color.orange)
+            } background: { _ in
+                isConfirming ? Color.red : Color.orange
+            }
+        }
+        .swipeActionsStyle(.mask)
+        .swipeActionCornerRadius(0)
+        .swipeActionsMaskCornerRadius(0)
+        .swipeMinimumDistance(20)
+        .onChange(of: openedSwipeId) { _, newValue in
+            // 当其他行展开时，关闭当前行
+            if newValue != item.id && newValue != nil {
+                confirmingDeleteId = nil
+            }
+        }
+    }
+
+    // MARK: - 删除处理
+
+    /// 执行删除操作
+    private func performDelete(item: DisplayableMessage) async {
+        print("🗑️ [Messages] 执行删除 id=\(item.id)")
+        switch item {
+        case .single(let message):
+            await viewModel.deleteNotification(message.id)
+        case .aggregatedStickers(let agg):
+            await viewModel.deleteAggregatedNotifications(agg.notificationIds)
+        }
+    }
+
     // MARK: - 滚动位置辅助
 
     /// 恢复滚动位置（如果需要）
     @MainActor
     private func restoreScrollIfPossible(_ proxy: ScrollViewProxy) {
+        // 确认删除态时不执行滚动恢复，避免和 swipe 动画冲突
+        guard confirmingDeleteId == nil else { return }
+
         // 检查是否已恢复
         guard !navigationCoordinator.messagesDidRestore else {
             print("📬 [Messages] restoreScrollIfPossible: 已恢复过，跳过")
@@ -470,6 +557,49 @@ class MessagesViewModel: ObservableObject {
         // 刷新未读数
         await loadUnreadCounts()
 
+        // 刷新全局红点
+        await NotificationBadgeManager.shared.refresh()
+    }
+
+    // MARK: - 删除通知
+
+    /// 删除单条通知
+    func deleteNotification(_ id: Int64) async {
+        print("📬 删除通知 id=\(id)")
+        do {
+            try await NotificationService.shared.deleteNotification(id: id)
+
+            // 从本地列表移除
+            messages.removeAll { $0.id == id }
+            // 重新聚合
+            aggregateMessages()
+
+            // 刷新未读数
+            await loadUnreadCounts()
+            // 刷新全局红点
+            await NotificationBadgeManager.shared.refresh()
+
+            print("✅ 通知 \(id) 已删除")
+        } catch {
+            print("❌ 删除通知失败: \(error)")
+        }
+    }
+
+    /// 删除聚合通知中的所有消息
+    func deleteAggregatedNotifications(_ ids: [Int64]) async {
+        print("📬 批量删除通知 ids=\(ids)")
+        for id in ids {
+            do {
+                try await NotificationService.shared.deleteNotification(id: id)
+                messages.removeAll { $0.id == id }
+            } catch {
+                print("❌ 删除通知失败 (id=\(id)): \(error)")
+            }
+        }
+        // 重新聚合
+        aggregateMessages()
+        // 刷新未读数
+        await loadUnreadCounts()
         // 刷新全局红点
         await NotificationBadgeManager.shared.refresh()
     }
