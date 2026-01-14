@@ -98,11 +98,14 @@ struct ShareSingleView: View {
         .padding(.horizontal, Constants.spacingSpacingM)
         .padding(.vertical, Constants.spacingSpacingXs)
         .frame(maxWidth: .infinity, maxHeight: 133,alignment: .topLeading)
+        .contentShape(Rectangle())  // 扩大点击区域到整个 frame（包括空白处）
         .onTapGesture {
-            // 如果外部提供了 onTap 回调，使用它；否则使用内部的 showShareDetail()
             if let onTap = onTap {
+                // 有回调时：只执行回调，由调用方负责导航
+                // （避免重复导航导致详情页出现两层）
                 onTap()
             } else {
+                // 无回调时：使用默认导航
                 showShareDetail()
             }
         }

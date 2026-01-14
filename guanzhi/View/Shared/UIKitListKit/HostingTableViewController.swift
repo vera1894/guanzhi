@@ -110,6 +110,7 @@ class HostingTableViewController<Item, ID: Hashable, RowView: View>: UITableView
     // MARK: - 滚动恢复
 
     /// 滚动到指定 ID（必须在 reload + layout 之后调用）
+    /// 智能滚动：如果目标行已在可视区域内，则不滚动；否则滚动到中间
     func scrollToItemIfNeeded() {
         guard let targetID = restoreToID,
               let index = items.firstIndex(where: { $0[keyPath: idKeyPath] == targetID }) else { return }
@@ -123,11 +124,20 @@ class HostingTableViewController<Item, ID: Hashable, RowView: View>: UITableView
             // 检查 indexPath 是否有效
             guard index < self.items.count else { return }
 
-            self.tableView.scrollToRow(
-                at: indexPath,
-                at: .middle,
-                animated: false
-            )
+            // 检查目标行是否已经在可视区域内
+            if let visibleRows = self.tableView.indexPathsForVisibleRows,
+               visibleRows.contains(indexPath) {
+                // 目标行已可见，不需要滚动，保持原位置
+                print("📍 [HostingTableView] 目标行 \(index) 已在可视区域，跳过滚动")
+            } else {
+                // 目标行不可见，滚动到中间位置
+                print("📍 [HostingTableView] 目标行 \(index) 不在可视区域，滚动到中间")
+                self.tableView.scrollToRow(
+                    at: indexPath,
+                    at: .middle,
+                    animated: false
+                )
+            }
 
             // 消费型，用完即清
             self.restoreToID = nil

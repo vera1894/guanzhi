@@ -23,6 +23,9 @@ class UserTimelineViewModel: ObservableObject {
         loadingState.isLoading
     }
 
+    /// 是否已完成首次加载（避免返回时重复刷新，覆盖滚动恢复）
+    var didInitialLoad = false
+
     /// 当前请求参数（用于网络恢复时重试）
     private var lastUserId: Int?
     private var lastLat: Double?
@@ -123,5 +126,34 @@ class UserTimelineViewModel: ObservableObject {
     /// 手动重试
     func retry() {
         retryLastFetch()
+    }
+
+    // MARK: - 防重复加载（用于滚动恢复）
+
+    /// 仅在首次时加载数据，返回时跳过（避免覆盖滚动恢复）
+    func loadIfNeeded(
+        userId: Int,
+        lat: Double,
+        lon: Double,
+        radius: Double = 10
+    ) async throws {
+        guard !didInitialLoad else {
+            print("📋 [UserTimelineViewModel] loadIfNeeded: 已加载过，跳过（保持滚动位置）")
+            return
+        }
+        didInitialLoad = true
+        print("📋 [UserTimelineViewModel] loadIfNeeded: 首次加载")
+        try await fetchUserShareList(userId: userId, lat: lat, lon: lon, radius: radius)
+    }
+
+    /// 强制刷新（用户主动下拉刷新时使用）
+    func forceRefresh(
+        userId: Int,
+        lat: Double,
+        lon: Double,
+        radius: Double = 10
+    ) async throws {
+        print("📋 [UserTimelineViewModel] forceRefresh: 强制刷新")
+        try await fetchUserShareList(userId: userId, lat: lat, lon: lon, radius: radius)
     }
 }

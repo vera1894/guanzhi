@@ -284,7 +284,7 @@ extension OTORequest {
             //查询分享详情
             case .fetchShareDetail(let id):
                 return .init(
-                    path: "/api/guan/share/detail",
+                    path: "/api/guan/share/info",
                     method: .post,
                     param: ["id": id]
                 )

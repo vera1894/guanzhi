@@ -2,7 +2,7 @@
 
 **日期**: 2026-01-14
 **作者**: Claude Code
-**状态**: 待实施
+**状态**: ✅ 已完成（详见 `2026-01-14-sharelist-scroll-memory-complete-cc.md`）
 
 ---
 

@@ -85,7 +85,7 @@ struct OTONetwork {
             }
 
             if let responseString = String(data: data, encoding: .utf8) {
-                print("✅ 返回数据: \(responseString)")
+//                print("✅ 返回数据: \(responseString)") //返回数据日志
             }
             print("=============请求结束=============\n")
             return data

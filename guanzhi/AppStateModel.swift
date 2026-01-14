@@ -198,6 +198,84 @@ class NavigationCoordinator: ObservableObject {
     @Published var messagesScrolledItemId: String?
     /// 是否已执行过滚动恢复（防止重复触发）
     @Published var messagesDidRestore: Bool = false
+
+    // MARK: - 观之列表滚动位置记忆
+    /// 滚动记忆状态字典，按 (userId, tab) 分开存储
+    @Published var shareListScrollStates: [ShareListScrollKey: ShareListScrollState] = [:]
+
+    /// 保存观之列表滚动位置（只保存 shareId，不改变 didRestore）
+    func saveShareListScrollPosition(userId: Int, tab: ShareListTab, shareId: Int) {
+        let key = ShareListScrollKey(userId: userId, tab: tab)
+        // 保留现有的 didRestore 状态，只更新 lastShareId
+        var state = shareListScrollStates[key] ?? ShareListScrollState()
+        state.lastShareId = shareId
+        // 注意：不在这里设置 didRestore = false，而是在导航路径增加时设置
+        shareListScrollStates[key] = state
+        print("📍 [ShareList] 保存滚动位置: userId=\(userId), tab=\(tab), shareId=\(shareId)")
+    }
+
+    /// 准备恢复（在进入详情页时调用，设置 pendingRestore = true）
+    func prepareShareListRestore(userId: Int, tab: ShareListTab) {
+        let key = ShareListScrollKey(userId: userId, tab: tab)
+        if var state = shareListScrollStates[key] {
+            state.pendingRestore = true
+            state.didRestore = false
+            shareListScrollStates[key] = state
+            print("📍 [ShareList] 准备恢复: userId=\(userId), tab=\(tab), pendingRestore=true")
+        }
+    }
+
+    /// 标记恢复完成
+    func markShareListRestoreComplete(userId: Int, tab: ShareListTab) {
+        let key = ShareListScrollKey(userId: userId, tab: tab)
+        if var state = shareListScrollStates[key] {
+            state.pendingRestore = false
+            state.didRestore = true
+            shareListScrollStates[key] = state
+        }
+    }
+
+    /// 获取观之列表滚动状态
+    func getShareListScrollState(userId: Int, tab: ShareListTab) -> ShareListScrollState? {
+        let key = ShareListScrollKey(userId: userId, tab: tab)
+        return shareListScrollStates[key]
+    }
+
+    /// 更新观之列表滚动状态
+    func updateShareListScrollState(userId: Int, tab: ShareListTab, state: ShareListScrollState) {
+        let key = ShareListScrollKey(userId: userId, tab: tab)
+        shareListScrollStates[key] = state
+    }
+
+    /// 重置观之列表的 didRestore 标记（切换 tab 或 userId 时调用）
+    func resetShareListDidRestore(userId: Int, tab: ShareListTab) {
+        let key = ShareListScrollKey(userId: userId, tab: tab)
+        if var state = shareListScrollStates[key] {
+            state.didRestore = false
+            shareListScrollStates[key] = state
+        }
+    }
+}
+
+// MARK: - 观之列表滚动记忆类型
+
+/// 观之列表 Tab 枚举
+enum ShareListTab: Int, Hashable {
+    case all = 0      // 全部观之
+    case faded = 1    // 已褪色
+}
+
+/// 滚动记忆 Key（按 userId + tab 区分）
+struct ShareListScrollKey: Hashable {
+    let userId: Int
+    let tab: ShareListTab
+}
+
+/// 滚动记忆状态
+struct ShareListScrollState {
+    var lastShareId: Int? = nil
+    var didRestore: Bool = false
+    var pendingRestore: Bool = false  // 标记是否有待恢复（等待详情页消失后执行）
 }
 
 
