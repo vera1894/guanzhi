@@ -35,14 +35,39 @@ class UserTimelineViewModel: ObservableObject {
     /// 网络监听
     private var networkRestoredCancellable: AnyCancellable?
     private var networkChangedCancellable: AnyCancellable?
+    /// 删除通知监听
+    private var shareDeletedCancellable: AnyCancellable?
 
     init() {
         setupNetworkMonitoring()
+        setupDeleteNotificationListener()
     }
 
     deinit {
         networkRestoredCancellable?.cancel()
         networkChangedCancellable?.cancel()
+        shareDeletedCancellable?.cancel()
+    }
+
+    /// 设置删除通知监听
+    private func setupDeleteNotificationListener() {
+        shareDeletedCancellable = NotificationCenter.default
+            .publisher(for: .shareDidDelete)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self,
+                      let shareId = notification.userInfo?["shareId"] as? Int else { return }
+                print("📋 [UserTimelineViewModel] 收到删除通知，shareId=\(shareId)")
+                self.removeShare(id: shareId)
+            }
+    }
+
+    /// 从列表中移除指定的分享
+    private func removeShare(id: Int) {
+        if let index = userShares.firstIndex(where: { $0.id == id }) {
+            userShares.remove(at: index)
+            print("📋 [UserTimelineViewModel] 已从列表移除 shareId=\(id)，剩余 \(userShares.count) 条")
+        }
     }
 
     /// 设置网络恢复监听

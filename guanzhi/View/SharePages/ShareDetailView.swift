@@ -80,6 +80,8 @@ import SwiftData
 extension Notification.Name {
     /// 分享详情页退出通知（用于恢复聚合列表）
     static let shareDetailDidDisappear = Notification.Name("shareDetailDidDisappear")
+    /// 分享已删除通知（userInfo 包含 "shareId": Int）
+    static let shareDidDelete = Notification.Name("shareDidDelete")
 }
 
 // MARK: - ═══════════════════════════════════════════════════════════════════
@@ -1334,7 +1336,14 @@ struct ShareDetailView: View {
                     viewModel.annotations.remove(at: index)
                 }
 
-                // 3. 清理选中的分享
+                // 3. 发送删除通知（让 UserTimelineViewModel 等监听者更新）
+                NotificationCenter.default.post(
+                    name: .shareDidDelete,
+                    object: nil,
+                    userInfo: ["shareId": Int(shareId)]
+                )
+
+                // 4. 清理选中的分享
                 viewModel.selectedAnnotation = nil
                 viewModel.selectedAnnotationID = nil
                 viewModel.selectedShare = nil
@@ -1382,12 +1391,19 @@ struct ShareDetailView: View {
                         searchViewModel.annotations.remove(at: index)
                     }
 
-                    // 3. 清理选中的分享
+                    // 3. 发送删除通知（让 UserTimelineViewModel 等监听者更新）
+                    NotificationCenter.default.post(
+                        name: .shareDidDelete,
+                        object: nil,
+                        userInfo: ["shareId": Int(shareId)]
+                    )
+
+                    // 4. 清理选中的分享
                     searchViewModel.selectedAnnotation = nil
                     searchViewModel.selectedAnnotationID = nil
                     searchViewModel.selectedShare = nil
 
-                    // 4. 退出详情页面
+                    // 5. 退出详情页面
                     if appState.useOverlayMode {
                         searchViewModel.isShareDetailOverlayShown = false
                     } else {
