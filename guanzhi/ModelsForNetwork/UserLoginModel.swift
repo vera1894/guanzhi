@@ -48,29 +48,38 @@ class UserLoginModel: ObservableObject {
     func sendCode(phNumber: String) {
             DispatchQueue.main.async {
                 Task {
-                    print("📱 开始发送验证码到: \(phNumber)")
+                    #if DEBUG
+                    print("📱 开始发送验证码")
+                    #endif
                     do {
                         let data = try await OTONetwork.request(.SendVerifiedCode(phoneNumber: phNumber))
+                        #if DEBUG
                         print("📱 成功接收发送验证码响应")
-                        
+                        #endif
+
                         let decoder = JSONDecoder()
                         let response = try decoder.decode(OTOResponseModel<EmptyData>.self, from: data)
-                        
+
+                        #if DEBUG
                         print("📱 respCode: \(response.respCode)")
                         print("📱 respMsg: \(response.respMsg ?? "无消息")")
-                        
+                        #endif
+
                         if response.respCode == 0 {
+                            #if DEBUG
                             print("✅ 验证码发送成功")
+                            #endif
                             self.sendStatus = true
                         } else {
+                            #if DEBUG
                             print("❌ 验证码发送失败")
+                            #endif
                         }
                         self.noticeText = response.respMsg ?? ""
                     } catch {
-                        print("❌ 发送验证码失败")
-                        print("❌ 错误类型: \(type(of: error))")
-                        print("❌ 错误信息: \(error.localizedDescription)")
-                        print("❌ 错误详情: \(error)")
+                        #if DEBUG
+                        print("❌ 发送验证码失败: \(error.localizedDescription)")
+                        #endif
                     }
                 }
             }
@@ -142,40 +151,48 @@ class UserLoginModel: ObservableObject {
     func getUserInfo(){
         DispatchQueue.main.async {
             Task {
+                #if DEBUG
                 print("👤 开始获取用户信息...")
+                #endif
                 do {
                     let data = try await OTONetwork.request(.userInfo)
+                    #if DEBUG
                     print("👤 成功接收用户信息数据")
-                    
+                    #endif
+
                     let decoder = JSONDecoder()
                     let response = try decoder.decode(OTOResponseModel<dataModel>.self, from: data)
-                    
+
+                    #if DEBUG
                     print("👤 respCode: \(response.respCode)")
-                    print("👤 respMsg: \(response.respMsg ?? "无消息")")
-                    
+                    #endif
+
                     if response.respCode == 0 {
                         if let datas = response.datas {
                             self.userName = datas.nickname ?? "用户"
                             self.userId = datas.id ?? -1
-                            print("✅ 请求成功")
-                            print("✅ 用户昵称: \(self.userName)")
-                            print("✅ 用户ID: \(self.userId)")
-                            
+                            #if DEBUG
+                            print("✅ 用户信息获取成功")
+                            #endif
+
                             // 保存用户ID到 OTOLoginStatusManager
                             OTOLoginStatusManager.shared.setUserID(self.userId)
                         } else {
+                            #if DEBUG
                             print("⚠️ datas 为 nil")
+                            #endif
                         }
                     } else {
+                        #if DEBUG
                         print("❌ 请求失败，respCode: \(response.respCode)")
+                        #endif
                     }
                     self.noticeText = response.respMsg ?? ""
-                    
+
                 } catch {
-                    print("❌ 获取用户信息失败")
-                    print("❌ 错误类型: \(type(of: error))")
-                    print("❌ 错误信息: \(error.localizedDescription)")
-                    print("❌ 错误详情: \(error)")
+                    #if DEBUG
+                    print("❌ 获取用户信息失败: \(error.localizedDescription)")
+                    #endif
                 }
             }
         }
@@ -231,6 +248,52 @@ class OTOLoginStatusManager {
 
     func getToken() -> String? {
         return KeychainService.shared.getString(forKey: KeychainService.Keys.loginToken)
+    }
+
+    /// 检查 Token 是否已过期（仅当能成功解析 JWT 且 exp 字段存在时才判断）
+    /// - Returns: true 表示 Token 确认已过期；false 表示未过期或无法判断（让后端决定）
+    func isTokenExpired() -> Bool {
+        guard let token = getToken() else { return true }
+
+        // JWT 格式: header.payload.signature
+        let parts = token.components(separatedBy: ".")
+        // 如果不是标准 JWT 格式，假设未过期，让后端判断
+        guard parts.count == 3 else {
+            #if DEBUG
+            print("⚠️ Token 不是标准 JWT 格式，跳过客户端过期检测")
+            #endif
+            return false
+        }
+
+        // 解析 payload（Base64 编码）
+        var payload = parts[1]
+        // Base64 需要补齐到 4 的倍数
+        let remainder = payload.count % 4
+        if remainder > 0 {
+            payload = payload.padding(toLength: payload.count + 4 - remainder, withPad: "=", startingAt: 0)
+        }
+
+        guard let payloadData = Data(base64Encoded: payload),
+              let json = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+              let exp = json["exp"] as? TimeInterval else {
+            // 无法解析 payload 或没有 exp 字段，假设未过期，让后端判断
+            #if DEBUG
+            print("⚠️ 无法解析 JWT payload 或缺少 exp 字段，跳过客户端过期检测")
+            #endif
+            return false
+        }
+
+        // 检查是否过期（预留 60 秒缓冲）
+        let expirationDate = Date(timeIntervalSince1970: exp)
+        let isExpired = expirationDate.addingTimeInterval(-60) < Date()
+
+        #if DEBUG
+        if isExpired {
+            print("⚠️ Token 已过期，过期时间: \(expirationDate)")
+        }
+        #endif
+
+        return isExpired
     }
 
     func getUserID() -> Int {

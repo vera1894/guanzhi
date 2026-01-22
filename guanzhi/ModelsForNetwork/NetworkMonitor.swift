@@ -119,4 +119,6 @@ extension Notification.Name {
     static let networkRestored = Notification.Name("com.guanzhi.networkRestored")
     /// 网络类型切换（WiFi ↔ 蜂窝）
     static let networkChanged = Notification.Name("com.guanzhi.networkChanged")
+    /// Token 已过期，需要重新登录
+    static let tokenExpired = Notification.Name("com.guanzhi.tokenExpired")
 }

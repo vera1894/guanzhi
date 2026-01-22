@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.7
-**最后更新**: 2026-01-22（地图标注点击修复）
+**文档版本**: v3.8
+**最后更新**: 2026-01-22（公测前安全修复 P0/P1/P2）
 
 ---
 
@@ -36,9 +36,14 @@ guanzhi/                          # 项目根目录
 │   │   ├── UserProfileDisplayModel.swift   # UI 展示模型
 │   │   └── UserProfileMapper.swift         # 数据映射
 │   ├── ModelsForNetwork/         # 网络请求模型
+│   │   └── KeychainService.swift # Keychain 安全存储封装
 │   ├── ModelsForMap/             # 地图相关模型
 │   ├── CameraViews/              # 相机视图
-│   └── CaptureFunctions/         # 拍摄功能
+│   ├── CaptureFunctions/         # 拍摄功能
+│   ├── Support/                  # 支持工具
+│   │   └── Logger.swift          # 调试日志工具（仅 DEBUG）
+│   └── Configuration/            # 配置文件
+│       └── Secrets.xcconfig.example  # 敏感配置模板
 │
 ├── Server/onettoo/               # Java 后端
 │   ├── src/main/java/            # Java 源码
@@ -48,7 +53,8 @@ guanzhi/                          # 项目根目录
 │   │       ├── mapper/           # MyBatis Mapper
 │   │       ├── model/            # 数据模型
 │   │       └── dto/              # 数据传输对象
-│   └── src/main/resources/       # 配置文件
+│   ├── src/main/resources/       # 配置文件
+│   └── .env.example              # 环境变量模板（2026-01-22 新增）
 │
 ├── admin-web/                    # 管理后台（Vue 3）
 │   ├── src/views/                # 页面组件
@@ -75,11 +81,21 @@ guanzhi/                          # 项目根目录
 | 网络请求 | Alamofire |
 | 包管理 | CocoaPods |
 | 状态管理 | ObservableObject + Environment |
+| Token 存储 | iOS Keychain（2026-01-22 安全升级）|
 
 **打开方式**：
 ```bash
 open guanzhi.xcworkspace
 ```
+
+**安全存储**（2026-01-22 公测前安全修复）：
+- **Token 存储**：登录 Token 存储在 iOS Keychain，不再使用 UserDefaults
+- **敏感配置**：API Key 等通过 `Secrets.xcconfig` + `Info.plist` 注入，不硬编码
+- **调试日志**：使用 `Logger` 工具，仅 DEBUG 模式输出
+- **相关文件**：
+  - `ModelsForNetwork/KeychainService.swift` - Keychain 操作封装
+  - `Support/Logger.swift` - 条件日志工具
+  - `Configuration/Secrets.xcconfig.example` - 敏感配置模板
 
 **缓存管理注意事项**：
 - 媒体文件缓存存储在 `Library/Caches/` 目录
@@ -98,6 +114,7 @@ open guanzhi.xcworkspace
 | 数据库 | MySQL 9.x |
 | 缓存 | Redis |
 | 连接池 | Druid 1.2.20 |
+| 敏感配置 | 环境变量（2026-01-22 安全升级）|
 
 **本地启动**：
 ```bash
@@ -105,6 +122,22 @@ cd Server/onettoo
 ./mvnw spring-boot:run
 # 服务端口: 8085
 ```
+
+**敏感配置管理**（2026-01-22 公测前安全修复）：
+- 敏感配置（JWT 密钥、API 凭证等）已迁移到环境变量
+- 本地开发需创建 `.env` 文件，参考 `.env.example` 模板
+- 生产环境通过 systemd 的 `EnvironmentFile` 加载
+- **环境变量清单**：
+  | 变量 | 说明 |
+  |------|------|
+  | `JWT_SECRET` | JWT 签名密钥 |
+  | `KNIFE4J_USER` / `KNIFE4J_PWD` | API 文档认证 |
+  | `ADMIN_PHONE` | 管理员手机号 |
+  | `APNS_*` | APNs 推送配置 |
+  | `CORS_ORIGINS` | 允许的跨域来源 |
+- **生产环境安全**：
+  - Druid 监控面板已关闭
+  - CORS 收敛为配置化白名单
 
 ### 管理后台 (`admin-web/`)
 
@@ -1098,6 +1131,8 @@ View/MapPages/
 | 后端时区修复完成 | `projectBasicInfo/logs/2026-01-11-backend-time-ssot-completion.md` | JDBC 时区配置 + 验证器 |
 | 褪色通知幂等修复 | `projectBasicInfo/logs/2026-01-13-fade-notification-idempotent-fix-cc.md` | 唯一索引幂等 + 重复推送修复 |
 | 地图标注点击修复 | `projectBasicInfo/logs/2026-01-22-map-annotation-tap-fix-cc.md` | touchesEnded 绕过 didSelect |
+| **公测前安全审计** | `projectBasicInfo/logs/2026-01-22-pre-beta-security-audit-cc.md` | P0/P1/P2/P3 安全问题清单 |
+| **安全修复完成报告** | `projectBasicInfo/logs/2026-01-22-security-fixes-complete-cc.md` | Token Keychain 存储、环境变量等 |
 
 ---
 

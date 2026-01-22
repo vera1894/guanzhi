@@ -167,6 +167,7 @@
 		FFAC90612C78848300FA7374 /* CameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1292C78787800AF7086 /* CameraModel.swift */; };
 		FFC00A382ECC195F00413F1A /* LivePhotoPackager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */; };
 		FFC7F9972F220A5F00953AE5 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC7F9962F220A5F00953AE5 /* KeychainService.swift */; };
+		FFC7F9992F220FD900953AE5 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC7F9982F220FD900953AE5 /* Logger.swift */; };
 		FFD24BE92C50E27A00BCE228 /* ProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */; };
 		FFD24BEB2C58B85700BCE228 /* LookAroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */; };
 		FFDDA3802D55B0F00027ED26 /* ZoomSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDDA37F2D55B0F00027ED26 /* ZoomSliderView.swift */; };
@@ -355,6 +356,7 @@
 		FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotation.swift; sourceTree = "<group>"; };
 		FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoPackager.swift; sourceTree = "<group>"; };
 		FFC7F9962F220A5F00953AE5 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		FFC7F9982F220FD900953AE5 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
 		FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookAroundView.swift; sourceTree = "<group>"; };
 		FFDDA37F2D55B0F00027ED26 /* ZoomSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomSliderView.swift; sourceTree = "<group>"; };
@@ -597,6 +599,7 @@
 		FF3CD12A2C78788900AF7086 /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				FFC7F9982F220FD900953AE5 /* Logger.swift */,
 				FF6BC4F02C7C18CC00423660 /* CaptureExtensions.swift */,
 				FF6BC4EE2C7C18CC00423660 /* FoundationExtensions.swift */,
 				FF6BC4EF2C7C18CC00423660 /* ViewExtensions.swift */,
@@ -1105,6 +1108,7 @@
 				FF9DB79A2EEA4FF600374E02 /* StickerDefinition.swift in Sources */,
 				B7BE2E3D2F3D4738B2F72670 /* StickerKind.swift in Sources */,
 				DB6F08A47BD540E5AB665F26 /* StickerSummaryItem.swift in Sources */,
+				FFC7F9992F220FD900953AE5 /* Logger.swift in Sources */,
 				ABFC26C737DE40DA8A012A67 /* StickerSummaryBar.swift in Sources */,
 				41537D177F504F5BB9A67838 /* StickerSummaryOverlay.swift in Sources */,
 				E979AE900B14459C87BA8313 /* StickerAvailability.swift in Sources */,

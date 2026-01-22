@@ -309,5 +309,5 @@ struct guanzhiApp: App {
     }
 }
 
-/// A global logger for the app.  为应用程序定义一个全局的 logger 实例，用于日志记录
-let logger = Logger()
+/// 系统日志实例（用于相机等底层模块，使用 Apple os.Logger API）
+let logger = os.Logger()

@@ -1235,7 +1235,8 @@ struct ShareDetailView: View {
     // MARK:   ⚙️ 更多操作菜单
     // MARK: - ═══════════════════════════════════════════════════════════════════
 
-    /// 显示更多操作 ActionSheet（分享/删除/举报）
+    /// 显示更多操作 ActionSheet（删除/举报）
+    /// 注：分享功能计划在后续版本实现
     func showMoreActionsSheet() {
         // 捕获需要的上下文
         let viewModel = searchViewModel
@@ -1243,11 +1244,6 @@ struct ShareDetailView: View {
         let navigationCoordinator = navigationCoordinator
 
         let alert = UIAlertController(title: "更多操作", message: nil, preferredStyle: .actionSheet)
-
-        // 分享按钮
-        alert.addAction(UIAlertAction(title: "分享至", style: .default) { _ in
-            // TODO: 实现分享功能
-        })
 
         // 删除或举报按钮
         if isMyShare {
@@ -1262,8 +1258,9 @@ struct ShareDetailView: View {
                 }
             })
         } else {
-            alert.addAction(UIAlertAction(title: "举报", style: .destructive) { _ in
-                // TODO: 实现举报功能
+            alert.addAction(UIAlertAction(title: "举报", style: .default) { _ in
+                // 显示举报功能即将上线提示
+                Self.showComingSoonAlert(title: "举报功能即将上线", message: "感谢您的反馈，我们正在完善此功能。如遇紧急情况，请通过「我的 - 设置 - 意见反馈」联系我们。")
             })
         }
 
@@ -1273,6 +1270,15 @@ struct ShareDetailView: View {
         // 展示弹窗
         DispatchQueue.main.async {
             UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+        }
+    }
+
+    /// 显示功能即将上线提示
+    private static func showComingSoonAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
         }
     }
 

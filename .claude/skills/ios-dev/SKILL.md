@@ -38,5 +38,16 @@ description: iOS 客户端开发指南。进入 Swift 代码前的必读清单�
 - 重大操作或修复需在 `projectBasicInfo/logs/` 记录，文件名格式 `YYYY-MM-DD-主题-角色.md`
 
 ## 更新项目信息（当用户说"更新项目信息"时）
-1. **检查并更新过时信息**：查找项目文档（`projectBasicInfo/01_PROJECT_OVERVIEW.md`、代码注释等）中与本次修改相关的描述，覆盖过时内容
-2. **添加日志**：在 `projectBasicInfo/logs/` 目录下创建日志文件，记录修改内容、原因和解决方案
+
+⚠️ **必须按顺序执行以下两步，缺一不可：**
+
+**第一步：更新项目文档**（不可跳过）
+- 读取 `projectBasicInfo/01_PROJECT_OVERVIEW.md`
+- 查找与本次修改相关的描述（技术栈、文件结构、功能说明等）
+- 将过时内容更新为最新状态
+- 如有新增文件/功能，添加到对应章节
+
+**第二步：添加日志**
+- 在 `projectBasicInfo/logs/` 目录下创建日志文件
+- 文件名格式：`YYYY-MM-DD-主题-cc.md`
+- 记录修改内容、原因和解决方案

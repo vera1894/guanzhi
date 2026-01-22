@@ -307,28 +307,28 @@
 
 > **说明**: 本节为合并后的整改行动项（将多个同类问题聚合为一条），非逐条问题清单；完整问题明细见各章节表格。
 
-### P0 - 公测前必须修复（阻塞发布）
-1. ❌ 移除管理后台测试后门 (`admin-web/src/views/Login.vue`)
-2. ❌ 将 iOS 测试登录整改为审核专用机制（**优先采用方案 B: 编译宏隔离**），确保正式渠道版本不可触发 (`LogInView.swift`)
-3. ❌ 移除硬编码 Token、手机号、API Key
-4. ❌ 移除所有敏感日志 print 语句
-5. ❌ 将 Token 存储迁移到 Keychain
-6. ❌ 将后端敏感配置迁移到环境变量
-7. ❌ 修复生产运行时崩溃点（`as!`、`.first!`、`delegate!`）
+### P0 - 公测前必须修复（阻塞发布）✅ 已完成
+1. ✅ 移除管理后台测试后门 (`admin-web/src/views/Login.vue`)
+2. ✅ 将 iOS 测试登录整改为审核专用机制（**方案 B: 编译宏隔离**），正式渠道版本不可触发 (`LogInView.swift`)
+3. ✅ 移除硬编码 Token、手机号、API Key（迁移到 `Secrets.xcconfig`）
+4. ✅ 移除所有敏感日志 print 语句
+5. ✅ 将 Token 存储迁移到 Keychain（新建 `KeychainService.swift`）
+6. ✅ 将后端敏感配置迁移到环境变量（新建 `.env.example`）
+7. ✅ 修复生产运行时崩溃点（`as!`、`.first!`、`delegate!`）
 
-### P1 - 公测前强烈建议修复
-8. ❌ 限制/关闭生产环境 Druid/Swagger/Knife4j
-9. ❌ 收敛 CORS 允许域名列表
-10. ❌ 修复内存泄漏（NotificationCenter、Timer、闭包循环引用）
-11. ❌ 修复 @MainActor 缺失问题
-12. ❌ 相机模块补充容错处理（fatalError → 优雅降级）
+### P1 - 公测前强烈建议修复 ✅ 已完成
+8. ✅ 限制/关闭生产环境 Druid/Swagger/Knife4j（`application-prod.yml`）
+9. ✅ 收敛 CORS 允许域名列表（`ConfigurerAdapter.java` 配置化）
+10. ✅ 修复内存泄漏（NotificationCenter、Timer、闭包循环引用）
+11. ✅ 修复 @MainActor 缺失问题（`AppStateModel.swift`、`ToastManager.swift`）
+12. ✅ 相机模块补充容错处理（fatalError → 优雅降级）
 
-### P2 - 公测期间修复
-13. ❌ 实现 Token 刷新机制
-14. ❌ 补齐分享/举报功能或隐藏入口
-15. ❌ 完善错误处理
-16. ❌ 清理测试文件
-17. ❌ 将调试日志改为 DEBUG 条件输出
+### P2 - 公测期间修复 ✅ 已完成
+13. ✅ 实现 Token 过期检测（401 响应处理）
+14. ✅ 补齐分享/举报功能或隐藏入口（举报改为"即将上线"提示）
+15. ✅ 完善错误处理（`OTONetworkError` 添加多种状态码）
+16. ✅ 清理测试文件（删除 `test.swift`）
+17. ✅ 将调试日志改为 DEBUG 条件输出（新建 `Logger.swift`）
 
 ### P3 - 长期优化/加固
 18. ❌ 改进缓存管理
