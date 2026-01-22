@@ -1137,8 +1137,7 @@ View/MapPages/
 | 后端时区修复完成 | `projectBasicInfo/logs/2026-01-11-backend-time-ssot-completion.md` | JDBC 时区配置 + 验证器 |
 | 褪色通知幂等修复 | `projectBasicInfo/logs/2026-01-13-fade-notification-idempotent-fix-cc.md` | 唯一索引幂等 + 重复推送修复 |
 | 地图标注点击修复 | `projectBasicInfo/logs/2026-01-22-map-annotation-tap-fix-cc.md` | touchesEnded 绕过 didSelect |
-| **公测前安全审计** | `projectBasicInfo/logs/2026-01-22-pre-beta-security-audit-cc.md` | P0/P1/P2/P3 安全问题清单 |
-| **安全修复完成报告** | `projectBasicInfo/logs/2026-01-22-security-fixes-complete-cc.md` | Token Keychain 存储、环境变量等 |
+| **公测前安全审计与修复** | `projectBasicInfo/logs/2026-01-22-pre-beta-security-audit-cc.md` | P0/P1/P2/P3 安全审计 + 修复详情 + 部署验证 |
 
 ---
 
