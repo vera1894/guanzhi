@@ -1,5 +1,5 @@
 {
-  "originHash" : "5bb6ac68bacedf0686808cc0e9ab7ade4ae8f8b867df6204136418ce1c10b9be",
+  "originHash" : "53c82bff9f8beac14470b1b3c834cfbc68b5d5141785306588195b3970b08b16",
   "pins" : [
     {
       "identity" : "swiftui-introspect",
@@ -11,21 +11,12 @@
       }
     },
     {
-      "identity" : "swiftui-navigation-transitions",
+      "identity" : "swipeactions",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/davdroman/swiftui-navigation-transitions",
+      "location" : "https://github.com/aheze/SwipeActions",
       "state" : {
-        "revision" : "4148cc224e5dba72a7d7052d2fe211c83a2a78e9",
-        "version" : "0.15.1"
-      }
-    },
-    {
-      "identity" : "xctest-dynamic-overlay",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
-      "state" : {
-        "revision" : "39de59b2d47f7ef3ca88a039dff3084688fe27f4",
-        "version" : "1.5.2"
+        "revision" : "41e6f6dce02d8cfa164f8c5461a41340850ca3ab",
+        "version" : "1.1.0"
       }
     }
   ],

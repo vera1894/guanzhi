@@ -79,7 +79,6 @@
 		FF4ED5BB2DAA6D0C0017131B /* UserAgreement.txt in Resources */ = {isa = PBXBuildFile; fileRef = FF4ED5BA2DAA6D0C0017131B /* UserAgreement.txt */; };
 		FF4ED5BD2DAA74900017131B /* AppVersionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF4ED5BC2DAA74900017131B /* AppVersionManager.swift */; };
 		FF58E72C2CFE913A00CC139B /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = FF58E72B2CFE913A00CC139B /* SwiftUIIntrospect */; };
-		FF58E7322CFEF8F900CC139B /* NavigationTransitions in Frameworks */ = {isa = PBXBuildFile; productRef = FF58E7312CFEF8F900CC139B /* NavigationTransitions */; };
 		FF5C360A2CD78B82001D7D32 /* SharesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5C36092CD78B1C001D7D32 /* SharesData.swift */; };
 		FF5D24112D23965700C1D463 /* GeneralFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D24102D23965200C1D463 /* GeneralFunctions.swift */; };
 		FF5D24132D23C16300C1D463 /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D24122D23C16300C1D463 /* ToastManager.swift */; };
@@ -373,7 +372,6 @@
 			files = (
 				D5A9026381BEF0E8029D2F21 /* Pods_guanzhi.framework in Frameworks */,
 				FF6C0DCA2F161E5E00CC0C8C /* SwipeActions in Frameworks */,
-				FF58E7322CFEF8F900CC139B /* NavigationTransitions in Frameworks */,
 				FF58E72C2CFE913A00CC139B /* SwiftUIIntrospect in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -952,7 +950,6 @@
 			mainGroup = D1CE060C2B526930001303F2;
 			packageReferences = (
 				FF58E72A2CFE913A00CC139B /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
-				FF58E7302CFEF8F900CC139B /* XCRemoteSwiftPackageReference "swiftui-navigation-transitions" */,
 				FF6C0DC82F161E5E00CC0C8C /* XCRemoteSwiftPackageReference "SwipeActions" */,
 			);
 			productRefGroup = D1CE06162B526930001303F2 /* Products */;
@@ -1416,14 +1413,6 @@
 				minimumVersion = 1.3.0;
 			};
 		};
-		FF58E7302CFEF8F900CC139B /* XCRemoteSwiftPackageReference "swiftui-navigation-transitions" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/davdroman/swiftui-navigation-transitions";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.14.0;
-			};
-		};
 		FF6C0DC82F161E5E00CC0C8C /* XCRemoteSwiftPackageReference "SwipeActions" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aheze/SwipeActions";
@@ -1439,11 +1428,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FF58E72A2CFE913A00CC139B /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */;
 			productName = SwiftUIIntrospect;
-		};
-		FF58E7312CFEF8F900CC139B /* NavigationTransitions */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FF58E7302CFEF8F900CC139B /* XCRemoteSwiftPackageReference "swiftui-navigation-transitions" */;
-			productName = NavigationTransitions;
 		};
 		FF6C0DC92F161E5E00CC0C8C /* SwipeActions */ = {
 			isa = XCSwiftPackageProductDependency;

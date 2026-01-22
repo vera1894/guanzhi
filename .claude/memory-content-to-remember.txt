@@ -1,3 +1,19 @@
+## guanzhi 项目操作速记（跨端）
+
+### 通用/术语/日志
+- 先读 `projectBasicInfo/00_AGENT_RULES.md` + `01_PROJECT_OVERVIEW.md` + `04_TERMINOLOGY.md`
+- UI 文案统一用「观之」，代码模型 `Share`，API/DB `share`，不要改类型/字段/路径
+- 重大操作后在 `projectBasicInfo/logs/` 记录，命名 `YYYY-MM-DD-主题-角色.md`
+
+### iOS 客户端
+- 根目录 `guanzhi/`，打开 `guanzhi.xcworkspace`
+- 时间处理：数组通常 UTC → `TimeZone(identifier: "UTC")`；字符串看后端 `@JsonFormat`（常见 Asia/Shanghai）；显示层用北京时间，参考 `NotificationDateHelper`
+- 缓存：`Library/Caches/` 可能被系统清理，访问前 `fileExists`
+
+### admin-web
+- Node>=16，`npm run dev` / `npm run build`，产物 `admin-web/dist/`
+- 关键：`src/views/`、`src/router/index.js`、`src/utils/request.js`、`vite.config.js`；默认后端 `http://localhost:8085`
+
 ## guanzhi 项目后端操作规则
 
 ### 任务专用文档索引

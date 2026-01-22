@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.6
-**最后更新**: 2026-01-13（褪色通知幂等修复部署完成）
+**文档版本**: v3.7
+**最后更新**: 2026-01-22（地图标注点击修复）
 
 ---
 
@@ -1035,6 +1035,41 @@ NotificationCenter.default.addObserver(
 }
 ```
 
+### 4. 地图标注组件（MKMapView）
+
+**位置**：`View/MapPages/`
+
+**状态**：已完成（2026-01-22 点击修复）
+
+地图标注采用 MKMapView + 自定义 MKAnnotationView 实现，支持聚合和点击交互。
+
+**核心文件**：
+```
+View/MapPages/
+├── MKMapViewWrapper.swift          # UIViewRepresentable 包装器
+├── MKMapViewCoordinator.swift      # MKMapViewDelegate 实现
+├── CustomMKAnnotationView.swift    # 单个标注视图
+└── ClusterAnnotationView.swift     # 聚合标注视图
+```
+
+**聚合抵抗机制**：
+
+`CustomMKAnnotationView` 通过缩小 `frame`（碰撞盒）来减少聚合敏感度：
+- 视觉尺寸：约 84×101pt
+- 碰撞盒尺寸：12×17pt（通过 `clusterResistanceHorizontal/Vertical` 参数控制）
+- 视觉内容通过子视图溢出显示（`clipsToBounds = false`）
+
+**点击机制（重要）**：
+
+⚠️ MKMapView 的 `didSelect` 使用 `frame` 而非 `point(inside:with:)` 判断点击，无法通过重写方法解耦。
+
+| 标注类型 | 点击触发方式 | 原因 |
+|---------|-------------|------|
+| 单个标注 | `touchesEnded` → `onTap` 回调 | 绕过 didSelect，使用完整视觉区域 |
+| 聚合标注 | `didSelect` | frame 本身就是完整尺寸 |
+
+**相关文档**：`projectBasicInfo/logs/2026-01-22-map-annotation-tap-fix-cc.md`
+
 ---
 
 ## 相关文档索引
@@ -1062,6 +1097,7 @@ NotificationCenter.default.addObserver(
 | Time SSOT 时区统一方案 | `projectBasicInfo/logs/2026-01-10-time-ssot-plan-cc.md` | UTC 时区 SSOT 设计 |
 | 后端时区修复完成 | `projectBasicInfo/logs/2026-01-11-backend-time-ssot-completion.md` | JDBC 时区配置 + 验证器 |
 | 褪色通知幂等修复 | `projectBasicInfo/logs/2026-01-13-fade-notification-idempotent-fix-cc.md` | 唯一索引幂等 + 重复推送修复 |
+| 地图标注点击修复 | `projectBasicInfo/logs/2026-01-22-map-annotation-tap-fix-cc.md` | touchesEnded 绕过 didSelect |
 
 ---
 

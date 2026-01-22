@@ -5,7 +5,13 @@ description: 后端操作指南。在进行后端开发、部署或服务器操�
 
 # 后端操作指南技能
 
-当用户需要进行后端相关操作时，根据任务类型指导其阅读正确的文档。
+当用户需要进行后端相关操作时，根据任务类型指导其阅读正确的文档，并遵循项目统一规则。
+
+## 先读文档（必做）
+1. `projectBasicInfo/00_AGENT_RULES.md` - 通用规则、术语与日志要求
+2. `projectBasicInfo/01_PROJECT_OVERVIEW.md` - Monorepo 结构与后端定位
+3. `projectBasicInfo/04_TERMINOLOGY.md` - 观之/Share/share 术语规范
+4. 任务对应的专用文档（见下表）
 
 ## 任务类型识别
 
@@ -24,6 +30,7 @@ description: 后端操作指南。在进行后端开发、部署或服务器操�
 1. **先阅读** `Server/onettoo/重要项目信息/项目结构说明.md`
 2. 了解包结构和命名规范
 3. 遵循现有的代码风格
+4. 术语保持：UI「观之」、代码 `Share`、接口/DB `share`
 
 ## 后端部署指引
 
@@ -77,3 +84,6 @@ AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm start-session --target i-0f6e22ef4fb
 1. 禁止在文档/代码中写密钥值
 2. 密钥只存在于服务器 `/home/ec2-user/.env`
 3. SSM 命令输出可能泄露密钥，避免执行 `cat .env`
+
+## 日志与记录
+- 重大操作（部署、配置调整、复杂 Bug 修复）完成后，在 `projectBasicInfo/logs/` 记录，命名 `YYYY-MM-DD-主题-角色.md`

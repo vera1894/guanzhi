@@ -49,9 +49,9 @@ class CustomMKAnnotationView: MKAnnotationView {
     // 数值越大 = 碰撞盒越小 = 越不容易聚合
     // 数值为 0 = 碰撞盒等于视觉尺寸（默认行为）
     //
-    // 碰撞盒与点击区域已解耦（通过 point(inside:with:) 重写）：
-    // - 碰撞盒可以很小（下限 12pt），让聚合更不敏感
-    // - 点击区域仍然用视觉尺寸（containerView），保证好点击
+    // ⚠️ 重要：MKMapView 的 didSelect 机制使用 frame 而非 point(inside:with:) 判断点击
+    // 因此点击处理改为通过 touchesEnded → onTap 回调实现，绕过 didSelect
+    // 详见：projectBasicInfo/logs/2026-01-22-map-annotation-tap-fix-cc.md
     //
     // 当前视觉尺寸约 84x101pt，碰撞盒下限 12pt
     // 建议范围：0-40（超过 40 后碰撞盒接近下限，效果不再变化）
@@ -116,6 +116,11 @@ class CustomMKAnnotationView: MKAnnotationView {
     private var currentImageUrl: URL?
     private var currentFadeScore: Int = 0
     private var isShowingPlaceholder: Bool = false
+
+    /// 点击回调（绕过 MKMapView 的 didSelect 机制）
+    /// 由于 MKMapView 的 didSelect 使用 frame 判断，而我们的 frame 被缩小用于聚合抵抗
+    /// 所以通过 touchesEnded 直接触发回调，实现点击区域与碰撞盒的真正解耦
+    var onTap: ((CustomAnnotation, UIImage?) -> Void)?
 
     // 缓存计算值
     private var contentWidth: CGFloat = 0
@@ -398,6 +403,12 @@ class CustomMKAnnotationView: MKAnnotationView {
         UIView.animate(withDuration: 0.1) {
             self.transform = .identity
             self.alpha = 1.0
+        }
+
+        // 直接通过 touchesEnded 触发点击回调，绕过 MKMapView 的 didSelect
+        // 这样点击区域由 point(inside:) 决定，而不是 frame
+        if let customAnnotation = annotation as? CustomAnnotation {
+            onTap?(customAnnotation, thumbnailImage)
         }
     }
 

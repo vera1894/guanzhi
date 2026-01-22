@@ -121,6 +121,13 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
 
         annotationView?.configure(with: customAnnotation)
 
+        // 设置点击回调（绕过 MKMapView 的 didSelect 机制）
+        // 由于 frame 被缩小用于聚合抵抗，didSelect 在点击边缘时不会触发
+        // 所以通过 touchesEnded 直接触发回调，实现点击区域与碰撞盒的真正解耦
+        annotationView?.onTap = { [weak self] annotation, thumbnailImage in
+            self?.parent.onAnnotationTap?(annotation, thumbnailImage)
+        }
+
         #if DEBUG
         // 验证 clusteringIdentifier 是否正确设置
         if annotationView?.clusteringIdentifier != "share" {
@@ -132,8 +139,11 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
     }
 
     /// 标注被选中时调用
+    /// 注意：单个标注的点击已改为通过 touchesEnded 触发（见 CustomMKAnnotationView.onTap）
+    /// 这里只处理聚合标注的点击，以实现点击区域与碰撞盒的解耦
     func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {
-        // Stage 2: 聚合标注点击
+
+        // 聚合标注点击：仍通过 didSelect 处理（ClusterAnnotationView 的 frame 是完整尺寸）
         if let clusterAnnotation = annotation as? MKClusterAnnotation {
             let members = clusterAnnotation.memberAnnotations.compactMap { $0 as? CustomAnnotation }
             parent.onClusterTap?(members)
@@ -141,20 +151,13 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
             return
         }
 
-        // 单个标注点击
-        guard let customAnnotation = annotation as? CustomAnnotation else {
+        // 单个标注：不在这里处理，由 CustomMKAnnotationView.touchesEnded 触发 onTap 回调
+        // 这样点击区域由 point(inside:) 决定（完整视觉区域），而不是 frame（缩小的碰撞盒）
+        if annotation is CustomAnnotation {
+            // 只取消选中状态，不触发回调（回调已由 touchesEnded 触发）
+            mapView.deselectAnnotation(annotation, animated: false)
             return
         }
-
-        // 获取标注视图以获取缩略图
-        let annotationView = mapView.view(for: annotation) as? CustomMKAnnotationView
-        let thumbnailImage = annotationView?.thumbnailImage
-
-        // 调用点击回调
-        parent.onAnnotationTap?(customAnnotation, thumbnailImage)
-
-        // 取消选中状态，允许再次点击
-        mapView.deselectAnnotation(annotation, animated: false)
     }
 
     /// 标注视图添加到地图时调用（可用于动画）
