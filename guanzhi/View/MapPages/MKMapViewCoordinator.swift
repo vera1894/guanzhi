@@ -143,6 +143,12 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
     /// 这里只处理聚合标注的点击，以实现点击区域与碰撞盒的解耦
     func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {
 
+        // 用户位置标注：禁用点击，不弹出默认的空白标注
+        if annotation is MKUserLocation {
+            mapView.deselectAnnotation(annotation, animated: false)
+            return
+        }
+
         // 聚合标注点击：仍通过 didSelect 处理（ClusterAnnotationView 的 frame 是完整尺寸）
         if let clusterAnnotation = annotation as? MKClusterAnnotation {
             let members = clusterAnnotation.memberAnnotations.compactMap { $0 as? CustomAnnotation }

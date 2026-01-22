@@ -106,7 +106,7 @@ struct StickerSummaryBar: View {
 
     /// 空状态视图
     private var emptyStateView: some View {
-        Text("还没有贴纸，拖动下方贴纸来互动")
+        Text("还没人使用贴纸，快来贴一张")
             .font(.caption)
             .foregroundColor(.white.opacity(0.6))
             .padding(.horizontal, 16)

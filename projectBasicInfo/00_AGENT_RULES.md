@@ -1,7 +1,7 @@
 # AI Agent 使用规则
 
-**文档版本**: v1.5
-**最后更新**: 2026-01-14
+**文档版本**: v1.6
+**最后更新**: 2026-01-22
 
 ---
 
@@ -17,6 +17,14 @@
 6. **`05_DEPLOYMENT_SSOT.md`** - **部署操作 SSOT**（部署前必读，含 SSM/S3 最佳实践）
 7. **`99_SERVER_OPERATIONS_RULES.md`** - 服务器操作通用规则
 8. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
+9. **`.claude/settings.local.json`** - Claude 本地规则/权限/工具限制（如存在）
+10. **`.claude/skills/*/SKILL.md`** - Claude Skills 规则（按任务匹配触发阅读）
+
+### Claude 规则与 Skills 读取准则
+
+- **把 `.claude/` 下的规则与 Skills 视为本规则的一部分**
+- **不要把 Claude 规则/Skills 内容复制到本文件**，只需在需要时按路径读取并遵循
+- 当任务命中某个 Skill 描述时，先阅读对应 `SKILL.md`，按其流程执行
 
 ### 强制执行机制（Claude Code SessionStart Hook）
 
