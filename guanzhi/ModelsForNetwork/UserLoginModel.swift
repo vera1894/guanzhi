@@ -6,7 +6,6 @@
 //
 
 import Foundation
-//import KeychainAccess
 
 fileprivate let loginTokenKey = "loginTokenKey"
 
@@ -186,25 +185,43 @@ class UserLoginModel: ObservableObject {
 
 class OTOLoginStatusManager {
     static let shared = OTOLoginStatusManager()
-    
+
     private(set) var isLoggedIn: Bool = false
 
     private init() {
+        // 迁移：将旧版 UserDefaults 中的 Token 迁移到 Keychain
+        migrateTokenToKeychainIfNeeded()
         updateLoginStatus()
     }
 
+    /// 迁移旧版 Token 从 UserDefaults 到 Keychain（仅执行一次）
+    private func migrateTokenToKeychainIfNeeded() {
+        let migrationKey = "tokenMigratedToKeychain"
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        // 检查 UserDefaults 中是否有旧 Token
+        if let oldToken = UserDefaults.standard.string(forKey: loginTokenKey) {
+            // 迁移到 Keychain
+            KeychainService.shared.save(oldToken, forKey: KeychainService.Keys.loginToken)
+            // 清除 UserDefaults 中的旧 Token
+            UserDefaults.standard.removeObject(forKey: loginTokenKey)
+        }
+        // 标记迁移完成
+        UserDefaults.standard.set(true, forKey: migrationKey)
+    }
+
     func updateLoginStatus() {
-        isLoggedIn = UserDefaults.standard.string(forKey: loginTokenKey) != nil
+        isLoggedIn = KeychainService.shared.exists(forKey: KeychainService.Keys.loginToken)
     }
 
     func logout() {
-        UserDefaults.standard.removeObject(forKey: loginTokenKey)
+        KeychainService.shared.delete(forKey: KeychainService.Keys.loginToken)
         UserDefaults.standard.removeObject(forKey: "userId")
         updateLoginStatus()
     }
 
     func login(token: String) {
-        UserDefaults.standard.set(token, forKey: loginTokenKey)
+        KeychainService.shared.save(token, forKey: KeychainService.Keys.loginToken)
         updateLoginStatus()
     }
 
@@ -213,7 +230,7 @@ class OTOLoginStatusManager {
     }
 
     func getToken() -> String? {
-        return UserDefaults.standard.string(forKey: loginTokenKey)
+        return KeychainService.shared.getString(forKey: KeychainService.Keys.loginToken)
     }
 
     func getUserID() -> Int {

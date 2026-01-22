@@ -52,9 +52,10 @@ final class MovieCapture: OutputService {
         
         // Start a timer to update the recording time. 启动一个计时器来更新录制时间。
         startMonitoringDuration()
-        
-        delegate = MovieCaptureDelegate()
-        movieOutput.startRecording(to: URL.movieFileURL, recordingDelegate: delegate!)
+
+        let captureDelegate = MovieCaptureDelegate()
+        delegate = captureDelegate
+        movieOutput.startRecording(to: URL.movieFileURL, recordingDelegate: captureDelegate)
     }
     
     /// Stops movie recording. 停止视频录制。

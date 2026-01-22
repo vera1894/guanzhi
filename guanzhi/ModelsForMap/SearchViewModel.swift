@@ -576,7 +576,10 @@ class SearchViewModel: ObservableObject {
             do {
                 let (data, _) = try await URLSession.shared.data(from: mediaFile.url!)
                 // 保存到本地
-                let localURL = getLocalURL(for: mediaFile)
+                guard let localURL = getLocalURL(for: mediaFile) else {
+                    print("无法获取本地存储路径")
+                    return nil
+                }
                 try data.write(to: localURL)
                 mediaFile.localURL = localURL
                 mediaFile.fileSize = Int64(data.count)
@@ -621,7 +624,10 @@ class SearchViewModel: ObservableObject {
         }
         // 生成缩略图的本地文件 URL
         let thumbnailFileName = "\(mediaFile.prefix)_thumbnail.jpg"
-        let thumbnailLocalURL = getLocalThumbnailURL(for: thumbnailFileName)
+        guard let thumbnailLocalURL = getLocalThumbnailURL(for: thumbnailFileName) else {
+            print("无法获取缩略图存储路径")
+            return nil
+        }
 
         do {
             try thumbnailData.write(to: thumbnailLocalURL)
@@ -645,8 +651,10 @@ class SearchViewModel: ObservableObject {
     }
 
     // 获取本地缩略图的存储路径
-    func getLocalThumbnailURL(for fileName: String) -> URL {
-        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+    func getLocalThumbnailURL(for fileName: String) -> URL? {
+        guard let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
         let thumbnailDirectory = cachesDirectory.appendingPathComponent("Thumbnails")
         if !FileManager.default.fileExists(atPath: thumbnailDirectory.path) {
             try? FileManager.default.createDirectory(at: thumbnailDirectory, withIntermediateDirectories: true, attributes: nil)
@@ -1116,7 +1124,10 @@ class SearchViewModel: ObservableObject {
                     do {
                         let (data, _) = try await URLSession.shared.data(from: url)
                         // 保存到本地
-                        let localURL = getLocalURL(for: mediaFile)
+                        guard let localURL = getLocalURL(for: mediaFile) else {
+                            print("无法获取本地存储路径")
+                            return
+                        }
                         try data.write(to: localURL)
                         // 更新数据库
                         mediaFile.localURL = localURL
@@ -1491,7 +1502,10 @@ class SearchViewModel: ObservableObject {
             // 使用自定义的 URLSession（带超时配置）
             let (data, _) = try await mediaDownloadSession.data(from: url)
             // 保存到本地
-            let localURL = getLocalURL(for: mediaFile)
+            guard let localURL = getLocalURL(for: mediaFile) else {
+                print("无法获取本地存储路径")
+                return
+            }
             try data.write(to: localURL)
 
             // 检查文件尺寸（仅对图像和视频文件）
@@ -1786,8 +1800,10 @@ class SearchViewModel: ObservableObject {
     }
     
     //获取媒体文件的本地存储 URL
-    func getLocalURL(for mediaFile: MediaFile) -> URL {
-        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+    func getLocalURL(for mediaFile: MediaFile) -> URL? {
+        guard let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
         let mediaDirectory = cachesDirectory.appendingPathComponent("MediaFiles")
         if !FileManager.default.fileExists(atPath: mediaDirectory.path) {
             try? FileManager.default.createDirectory(at: mediaDirectory, withIntermediateDirectories: true, attributes: nil)

@@ -111,25 +111,13 @@ struct CapturedThumbnailButton: ButtonStyle {
     private let buttonColors = availableColors.shuffled().prefix(4).map { $0 } // 随机选择颜色
     // 定义一组可选颜色
     static let availableColors: [Color] = [.red, .green, .blue, .orange, .pink, .purple, .yellow]
-    @State private var gradientColors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple]
-    @State private var captureboxIsLoading = false
     
     func makeBody(configuration: Self.Configuration) -> some View {
         ZStack {
             configuration.label
         }
         .frame(width: 42, height: isSelected ? 42 : 32)
-//        .background(Color(buttonColors[index])) //if camera.captureboxIsLoading?
-        .background(
-            captureboxIsLoading ?
-            LinearGradient(
-                        gradient: Gradient(colors: gradientColors),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-            .animation(.linear(duration: 1.0).repeatForever(autoreverses: true), value: captureboxIsLoading) as! Color
-                    : Color(buttonColors[index])
-                )
+        .background(Color(buttonColors[index]))
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)

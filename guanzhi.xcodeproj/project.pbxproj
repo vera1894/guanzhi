@@ -166,6 +166,7 @@
 		FFAC90602C78848300FA7374 /* CaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1272C78787800AF7086 /* CaptureService.swift */; };
 		FFAC90612C78848300FA7374 /* CameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3CD1292C78787800AF7086 /* CameraModel.swift */; };
 		FFC00A382ECC195F00413F1A /* LivePhotoPackager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */; };
+		FFC7F9972F220A5F00953AE5 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC7F9962F220A5F00953AE5 /* KeychainService.swift */; };
 		FFD24BE92C50E27A00BCE228 /* ProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */; };
 		FFD24BEB2C58B85700BCE228 /* LookAroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */; };
 		FFDDA3802D55B0F00027ED26 /* ZoomSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFDDA37F2D55B0F00027ED26 /* ZoomSliderView.swift */; };
@@ -353,6 +354,7 @@
 		FF9DB79F2EEAB25500374E02 /* PassthroughSpriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassthroughSpriteView.swift; sourceTree = "<group>"; };
 		FF9EB98A2CA29EC4009A133E /* CustomAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotation.swift; sourceTree = "<group>"; };
 		FFC00A372ECC195F00413F1A /* LivePhotoPackager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoPackager.swift; sourceTree = "<group>"; };
+		FFC7F9962F220A5F00953AE5 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		FFD24BE82C50E27A00BCE228 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
 		FFD24BEA2C58B85700BCE228 /* LookAroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookAroundView.swift; sourceTree = "<group>"; };
 		FFDDA37F2D55B0F00027ED26 /* ZoomSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomSliderView.swift; sourceTree = "<group>"; };
@@ -688,6 +690,7 @@
 		FF5D240A2D23929000C1D463 /* ModelsForNetwork */ = {
 			isa = PBXGroup;
 			children = (
+				FFC7F9962F220A5F00953AE5 /* KeychainService.swift */,
 				3FDC1146805F46359FD7DBEE /* NetworkMonitor.swift */,
 				8392EA8FC04D4389B241F633 /* RetryCoordinator.swift */,
 				6F5CBB93F5C1492B9E396D6C /* DataLoadingState.swift */,
@@ -1065,6 +1068,7 @@
 				FF5D24112D23965700C1D463 /* GeneralFunctions.swift in Sources */,
 				FF9DB79E2EEAA9ED00374E02 /* StickerQueueView.swift in Sources */,
 				D17042C02B542346005683D2 /* SearchView.swift in Sources */,
+				FFC7F9972F220A5F00953AE5 /* KeychainService.swift in Sources */,
 				D19912052B529346002A711A /* Constants.swift in Sources */,
 				FF9DB7882EEA4FDA00374E02 /* AlertStyles.swift in Sources */,
 				FFAC905F2C78848300FA7374 /* CameraView.swift in Sources */,
