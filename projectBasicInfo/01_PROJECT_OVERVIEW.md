@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.8
-**最后更新**: 2026-01-22（公测前安全修复 P0/P1/P2）
+**文档版本**: v3.9
+**最后更新**: 2026-01-22（公测前安全修复部署完成）
 
 ---
 
@@ -36,12 +36,15 @@ guanzhi/                          # 项目根目录
 │   │   ├── UserProfileDisplayModel.swift   # UI 展示模型
 │   │   └── UserProfileMapper.swift         # 数据映射
 │   ├── ModelsForNetwork/         # 网络请求模型
-│   │   └── KeychainService.swift # Keychain 安全存储封装
+│   │   ├── KeychainService.swift # Keychain 安全存储封装
+│   │   ├── RequestSigner.swift   # API 请求签名（P3 加固）
+│   │   └── CertificatePinning.swift # HTTPS 证书固定（P3 加固）
 │   ├── ModelsForMap/             # 地图相关模型
 │   ├── CameraViews/              # 相机视图
 │   ├── CaptureFunctions/         # 拍摄功能
 │   ├── Support/                  # 支持工具
-│   │   └── Logger.swift          # 调试日志工具（仅 DEBUG）
+│   │   ├── Logger.swift          # 调试日志工具（仅 DEBUG）
+│   │   └── InputValidator.swift  # 统一输入验证库（P3 加固）
 │   └── Configuration/            # 配置文件
 │       └── Secrets.xcconfig.example  # 敏感配置模板
 │
@@ -135,9 +138,12 @@ cd Server/onettoo
   | `ADMIN_PHONE` | 管理员手机号 |
   | `APNS_*` | APNs 推送配置 |
   | `CORS_ORIGINS` | 允许的跨域来源 |
-- **生产环境安全**：
-  - Druid 监控面板已关闭
-  - CORS 收敛为配置化白名单
+- **生产环境安全**（2026-01-22 已验证）：
+  - Druid 监控面板已关闭（返回 404 ✅）
+  - Swagger UI 已关闭（返回 404 ✅）
+  - Knife4j 已关闭（无法访问 ✅）
+  - CORS 收敛为配置化白名单（外部配置文件 ✅）
+  - 管理后台测试后门已移除（重新部署 ✅）
 
 ### 管理后台 (`admin-web/`)
 

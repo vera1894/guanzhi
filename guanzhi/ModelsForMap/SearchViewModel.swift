@@ -2087,10 +2087,33 @@ extension Notification.Name {
 
 /// 图片缓存类，使用 NSCache 缓存图片
 /// 支持原图和白化效果图片的加载与缓存
+/// P3 改进：添加内存管理、低内存警告清理、手动清理方法
 class ImageCache {
     static let shared = ImageCache()
+
     private init() {
-        cache.countLimit = 100 // 设置最大缓存大小
+        cache.countLimit = 100 // 最大缓存条目数
+        cache.totalCostLimit = 50 * 1024 * 1024 // 最大 50MB 内存占用
+
+        // 监听低内存警告，自动清理缓存
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMemoryWarning),
+            name: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil
+        )
+
+        // 监听 App 进入后台，清理部分缓存
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     private let cache = NSCache<NSString, UIImage>()
@@ -2103,6 +2126,41 @@ class ImageCache {
     private var notifiedUrls: Set<String> = []
     private let notifiedUrlsLock = NSLock()
 
+    // MARK: - 缓存管理
+
+    /// 清理所有缓存
+    func clearAll() {
+        cache.removeAllObjects()
+
+        notifiedUrlsLock.lock()
+        notifiedUrls.removeAll()
+        notifiedUrlsLock.unlock()
+
+        #if DEBUG
+        print("🧹 ImageCache: 已清理所有缓存")
+        #endif
+    }
+
+    /// 低内存警告时清理缓存
+    @objc private func handleMemoryWarning() {
+        clearAll()
+        #if DEBUG
+        print("⚠️ ImageCache: 收到低内存警告，已清理缓存")
+        #endif
+    }
+
+    /// App 进入后台时清理部分缓存（保留最近使用的）
+    @objc private func handleEnterBackground() {
+        // NSCache 会自动管理，这里只清理通知记录
+        notifiedUrlsLock.lock()
+        notifiedUrls.removeAll()
+        notifiedUrlsLock.unlock()
+
+        #if DEBUG
+        print("📱 ImageCache: App 进入后台，已重置通知记录")
+        #endif
+    }
+
     // MARK: - 基础方法
 
     func image(forKey key: String) -> UIImage? {
@@ -2110,7 +2168,9 @@ class ImageCache {
     }
 
     func setImage(_ image: UIImage, forKey key: String) {
-        cache.setObject(image, forKey: key as NSString)
+        // 计算图片内存占用（宽 × 高 × 4 字节/像素）
+        let cost = Int(image.size.width * image.scale * image.size.height * image.scale * 4)
+        cache.setObject(image, forKey: key as NSString, cost: cost)
     }
 
     // MARK: - 统一图片加载 API

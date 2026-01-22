@@ -173,32 +173,42 @@ struct MyView: View {
 // MARK: - Preview
 
 #Preview("MyView - 带用户数据") {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: UserProfile.self, configurations: config)
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: UserProfile.self, configurations: config)
 
-    // 插入 mock 数据
-    let mockProfile = UserProfile(
-        id: 999,
-        name: "MockCode",
-        nickname: "预览测试昵称",
-        phone: "1234567890",
-        photo: nil,
-        code: nil,
-        createDate: nil,
-        jpushId: nil,
-        titleDOSData: nil,
-        levelCode: "CHONGLANG",
-        pointsTotal: 100
-    )
-    container.mainContext.insert(mockProfile)
+        // 插入 mock 数据
+        let mockProfile = UserProfile(
+            id: 999,
+            name: "MockCode",
+            nickname: "预览测试昵称",
+            phone: "1234567890",
+            photo: nil,
+            code: nil,
+            createDate: nil,
+            jpushId: nil,
+            titleDOSData: nil,
+            levelCode: "CHONGLANG",
+            pointsTotal: 100
+        )
+        container.mainContext.insert(mockProfile)
 
-    let manager = UserProfileManager()
+        let manager = UserProfileManager()
 
-    return MyView()
-        .modelContainer(container)
-        .environment(AppStateModel())
-        .environmentObject(NavigationCoordinator())
-        .environmentObject(manager)
-        .environmentObject(SearchViewModel())
-        .environmentObject(ToastManager())
+        return AnyView(
+            MyView()
+                .modelContainer(container)
+                .environment(AppStateModel())
+                .environmentObject(NavigationCoordinator())
+                .environmentObject(manager)
+                .environmentObject(SearchViewModel())
+                .environmentObject(ToastManager())
+        )
+    } catch {
+        return AnyView(
+            Text("Preview 初始化失败: \(error.localizedDescription)")
+                .foregroundColor(.red)
+                .padding()
+        )
+    }
 }

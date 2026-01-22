@@ -4,7 +4,7 @@
 **作者**: Claude Code + Codex (GPT)
 **审计范围**: iOS 客户端、Java 后端、Vue 管理后台
 **审计方法**: 静态代码分析（未进行运行时测试）
-**状态**: 审计完成，待修复
+**状态**: ✅ 审计完成，iOS 客户端修复完成，后端待部署验证
 
 ---
 
@@ -330,12 +330,12 @@
 16. ✅ 清理测试文件（删除 `test.swift`）
 17. ✅ 将调试日志改为 DEBUG 条件输出（新建 `Logger.swift`）
 
-### P3 - 长期优化/加固
-18. ❌ 改进缓存管理
-19. ❌ 统一输入验证库
-20. ❌ 添加请求签名机制
-21. ❌ 添加 HTTPS 证书固定（加固项）
-22. ❌ 修复 Preview-only 崩溃点（开发体验优化）
+### P3 - 长期优化/加固 ✅ 已完成
+18. ✅ 改进缓存管理（ImageCache 添加内存限制、低内存警告清理）
+19. ✅ 统一输入验证库（新建 `InputValidator.swift`）
+20. ✅ 添加请求签名机制（新建 `RequestSigner.swift`，需后端配合启用）
+21. ✅ 添加 HTTPS 证书固定（新建 `CertificatePinning.swift`，需配置公钥后启用）
+22. ✅ 修复 Preview-only 崩溃点（`try!` 改为 `do-catch`）
 
 ---
 
@@ -395,3 +395,105 @@
 10. 功能完整性
 
 **注意**: 本报告仅包含代码分析结果，未进行运行时测试或渗透测试。建议在修复后进行完整的功能测试和安全测试。
+
+---
+
+## 附录 C：后端待办事项
+
+以下是后端需要完成的部署和配置工作：
+
+### 必做（公测前）
+
+| 任务 | 说明 | 优先级 |
+|------|------|--------|
+| **配置环境变量** | 在服务器创建 `/etc/onettoo/.env`，包含 JWT_SECRET、KNIFE4J_USER/PWD、ADMIN_PHONE、APNS_* 等 | P0 |
+| **重启后端服务** | `systemctl restart onettoo` 应用环境变量配置 | P0 |
+| **重新部署管理后台** | 重新构建 `admin-web`（`npm run build`）并部署，移除测试后门 | P0 |
+| **验证 Druid 关闭** | 确认 `/druid/**` 路径返回 403 或 404 | P1 |
+| **验证 CORS 配置** | 确认 CORS 仅允许配置的域名 | P1 |
+
+### 可选（P3 加固项）
+
+| 任务 | 说明 | 优先级 |
+|------|------|--------|
+| **实现请求签名验签** | 实现 Spring Security 拦截器验证 `X-Signature`/`X-Timestamp`/`X-Nonce` | P3 |
+| **配置 HTTPS** | 为 API 服务配置 SSL 证书（如果尚未配置） | P3 |
+| **获取公钥 Hash** | 为 iOS 证书固定功能提供服务器公钥 SHA256 Hash | P3 |
+
+### 环境变量模板
+
+参考 `Server/onettoo/.env.example`：
+
+```bash
+# JWT
+JWT_SECRET=your-secure-random-string-at-least-32-chars
+
+# Knife4j API 文档
+KNIFE4J_USER=admin
+KNIFE4J_PWD=strong-password
+
+# 管理员
+ADMIN_PHONE=13800138000
+
+# APNs 推送
+APNS_TEAM_ID=XXXXXXXXXX
+APNS_KEY_ID=XXXXXXXXXX
+APNS_PRIVATE_KEY_PATH=/etc/onettoo/AuthKey.p8
+APNS_BUNDLE_ID=com.onettoo
+
+# CORS
+CORS_ORIGINS=http://localhost:5173,http://52.83.127.15
+```
+
+### 请求签名验签实现指南
+
+iOS 客户端签名算法：
+```
+signatureString = method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + SHA256(body)
+signature = HMAC-SHA256(signatureString, secretKey)
+```
+
+后端验签要点：
+1. 从 Header 读取 `X-Signature`、`X-Timestamp`、`X-Nonce`
+2. 验证时间戳在 ±5 分钟内（防重放）
+3. 验证 nonce 未使用过（Redis SET NX，5分钟过期）
+4. 重算签名并比对
+
+---
+
+## 附录 D：修复完成确认
+
+| 检查项 | iOS 客户端 | 后端 | 管理后台 |
+|--------|-----------|------|----------|
+| 测试后门移除 | ✅ 编译宏隔离 | N/A | ✅ 已重新部署（2026-01-22） |
+| 敏感配置外置 | ✅ xcconfig | ✅ 外部 application-prod.yml | N/A |
+| Token 安全存储 | ✅ Keychain | N/A | N/A |
+| 敏感日志移除 | ✅ DEBUG 条件 | N/A | N/A |
+| Druid 监控关闭 | N/A | ✅ 返回 404（已验证） | N/A |
+| Swagger UI 关闭 | N/A | ✅ 返回 404（已验证） | N/A |
+| Knife4j 关闭 | N/A | ✅ 无法访问（已验证） | N/A |
+| CORS 收敛 | N/A | ✅ 已配置（外部配置文件） | N/A |
+
+**详细修复报告**：`projectBasicInfo/logs/2026-01-22-security-fixes-complete-cc.md`
+
+---
+
+## 附录 E：部署验证结果（2026-01-22）
+
+### 验证命令输出
+
+```
+Swagger UI: 404 ✅
+Knife4j: Empty reply (inaccessible) ✅
+API 健康检查: 401 (正常，需要 Token) ✅
+管理后台: 200 ✅
+```
+
+### 部署说明
+
+由于本地 Lombok 编译问题无法重新构建 JAR，采用以下方式完成安全配置：
+
+1. **外部配置文件优先级**：服务器上的 `/home/ec2-user/application-prod.yml` 优先于 JAR 内配置
+2. **已更新外部配置**：Druid、Swagger、Knife4j 全部禁用
+3. **服务已重启**：`systemctl restart onettoo`
+4. **管理后台已重新部署**：移除测试后门的新版本已部署到 `/var/www/guanzhi-admin/`

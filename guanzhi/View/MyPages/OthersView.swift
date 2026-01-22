@@ -202,33 +202,43 @@ struct OthersView: View {
 // MARK: - Preview
 
 #Preview("OthersView - 带用户数据") {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: UserProfile.self, configurations: config)
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: UserProfile.self, configurations: config)
 
-    // 插入 mock 数据（他人用户）
-    let mockProfile = UserProfile(
-        id: 123,
-        name: "OtherCode",
-        nickname: "他人昵称",
-        phone: "9876543210",
-        photo: nil,
-        code: nil,
-        createDate: nil,
-        jpushId: nil,
-        titleDOSData: nil,
-        levelCode: "DENGTA",
-        pointsTotal: 500
-    )
-    container.mainContext.insert(mockProfile)
+        // 插入 mock 数据（他人用户）
+        let mockProfile = UserProfile(
+            id: 123,
+            name: "OtherCode",
+            nickname: "他人昵称",
+            phone: "9876543210",
+            photo: nil,
+            code: nil,
+            createDate: nil,
+            jpushId: nil,
+            titleDOSData: nil,
+            levelCode: "DENGTA",
+            pointsTotal: 500
+        )
+        container.mainContext.insert(mockProfile)
 
-    let manager = UserProfileManager()
+        let manager = UserProfileManager()
 
-    return OthersView(userId: 123)
-        .modelContainer(container)
-        .environment(AppStateModel())
-        .environmentObject(NavigationCoordinator())
-        .environmentObject(manager)
-        .environmentObject(SearchViewModel())
-        .environmentObject(ToastManager())
+        return AnyView(
+            OthersView(userId: 123)
+                .modelContainer(container)
+                .environment(AppStateModel())
+                .environmentObject(NavigationCoordinator())
+                .environmentObject(manager)
+                .environmentObject(SearchViewModel())
+                .environmentObject(ToastManager())
+        )
+    } catch {
+        return AnyView(
+            Text("Preview 初始化失败: \(error.localizedDescription)")
+                .foregroundColor(.red)
+                .padding()
+        )
+    }
 }
 
