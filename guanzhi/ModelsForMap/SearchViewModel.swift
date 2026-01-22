@@ -76,6 +76,22 @@ class SearchViewModel: ObservableObject {
     // ✅ MediaItemWrapper 缓存，key 为 "shareId-prefix"，用于复用已有的 wrapper，避免重复创建导致视图重建
     private var mediaItemWrapperCache: [String: MediaItemWrapper] = [:]
 
+    // MARK: - Lifecycle
+
+    deinit {
+        // 显式取消 Combine 订阅
+        networkRestoredCancellable?.cancel()
+        networkRestoredCancellable = nil
+        networkChangedCancellable?.cancel()
+        networkChangedCancellable = nil
+        // 取消进行中的任务
+        currentFetchTask?.cancel()
+        currentDetailTask?.cancel()
+        #if DEBUG
+        print("🧹 SearchViewModel deinit - 资源已清理")
+        #endif
+    }
+
     // MARK: - 媒体下载重试机制
     /// 失败的下载任务队列（用于网络恢复时重试）
     private var failedDownloads: [(mediaFile: MediaFile, wrapper: MediaItemWrapper)] = []

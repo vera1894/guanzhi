@@ -13,7 +13,7 @@ import Photos
 
 
 private struct AppStateKey: EnvironmentKey {
-    static var defaultValue = AppStateModel()
+    @MainActor static var defaultValue = AppStateModel()
 }
 
 extension EnvironmentValues {
@@ -23,7 +23,6 @@ extension EnvironmentValues {
     }
 }
 
-//@MainActor
 protocol AppState: AnyObject {
     
     var isShowingCameraView: Bool { get set }
@@ -57,7 +56,8 @@ protocol AppState: AnyObject {
     var savedShowingResultCardView: Bool? { get set }
 }
 
-@Observable 
+@Observable
+@MainActor
 class AppStateModel: AppState {
     // 定义所有窗口的显示开关变量
     var isShowingCameraView: Bool = false

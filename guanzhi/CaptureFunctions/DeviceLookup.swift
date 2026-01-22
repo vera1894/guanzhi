@@ -71,12 +71,12 @@ final class DeviceLookup {
             cameras.append(externalCamera)
         }
         
-        // 在非模拟器环境中，如果没有找到摄像头，则抛出致命错误。
-#if !targetEnvironment(simulator)
+        // 如果没有找到摄像头，记录警告并返回空数组（让调用方处理）
         if cameras.isEmpty {
-            fatalError("No camera devices are found on this system.")
+            #if DEBUG
+            print("⚠️ DeviceLookup: 未找到可用的摄像头设备")
+            #endif
         }
-#endif
         return cameras
     }
 }

@@ -35,9 +35,12 @@ final class MovieCapture: OutputService {
     func startRecording() {
         // Return early if already recording. 如果已经在录制，提前返回。
         guard !movieOutput.isRecording else { return }
-        
+
         guard let connection = movieOutput.connection(with: .video) else {
-            fatalError("Configuration error. No video connection found.")
+            #if DEBUG
+            print("⚠️ MovieCapture: 配置错误，未找到视频连接")
+            #endif
+            return
         }
 
         // Configure connection for HEVC capture. 配置 HEVC 捕获连接。

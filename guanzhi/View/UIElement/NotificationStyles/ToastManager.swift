@@ -9,6 +9,7 @@
 import SwiftUI
 
 /// 全局的 ToastManager: 管理所有在屏幕顶层显示的 Toast 列表
+@MainActor
 class ToastManager: ObservableObject {
     @Published var toasts: [ToastItem] = []
     

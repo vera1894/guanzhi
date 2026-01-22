@@ -35,7 +35,10 @@ final class VideoEngine: ObservableObject {
     private var timeObserver: Any?
     private var statusObservation: NSKeyValueObservation?
     private var rateObservation: NSKeyValueObservation?
-    
+
+    // ✅ NotificationCenter 观察者 token
+    private var playbackFinishedObserver: NSObjectProtocol?
+
     // ✅ 像素级首帧探测
     private var videoOutput: AVPlayerItemVideoOutput?
     private var displayLink: CADisplayLink?
@@ -160,8 +163,8 @@ final class VideoEngine: ObservableObject {
                     }
                 }
                 
-                // 监听播放结束
-                NotificationCenter.default.addObserver(
+                // 监听播放结束（保存 token 以便后续移除）
+                self.playbackFinishedObserver = NotificationCenter.default.addObserver(
                     forName: .AVPlayerItemDidPlayToEndTime,
                     object: item,
                     queue: .main
@@ -290,18 +293,24 @@ final class VideoEngine: ObservableObject {
             player?.removeTimeObserver(observer)
             timeObserver = nil
         }
-        
+
+        // ✅ 移除 NotificationCenter 观察者
+        if let observer = playbackFinishedObserver {
+            NotificationCenter.default.removeObserver(observer)
+            playbackFinishedObserver = nil
+        }
+
         // ✅ 清理像素探测
         displayLink?.invalidate()
         displayLink = nil
         videoOutput = nil
-        
+
         statusObservation?.invalidate()
         statusObservation = nil
         currentItem = nil
         isReadyToPlay = false
         progress = 0.0
-        
+
         #if DEBUG
         print("🧹 VideoEngine - 清理资源")
         #endif

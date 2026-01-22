@@ -1533,17 +1533,17 @@ struct ShareDetailView: View {
             tryHideCoverForCurrentVideo()
         }
         
-        // ✅ 设置播放完成回调
-        engine.onPlaybackFinished = {
+        // ✅ 设置播放完成回调（使用 weak 避免循环引用：engine → closure → wrapper → videoEngine → engine）
+        engine.onPlaybackFinished = { [weak wrapper] in
             #if DEBUG
             print("✅ [Overlay] 视频播放完成，回到静止")
             #endif
             currentIsPlaying = false
             currentCoverVisible = true
             currentEngine?.stop()
-            
+
             // ✅ 通知 MediaItemView 显示封面
-            wrapper.coverShouldShow = true
+            wrapper?.coverShouldShow = true
         }
         
         // ✅ 如果已经播放过，跳过自动播放
