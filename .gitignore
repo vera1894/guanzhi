@@ -1,6 +1,9 @@
 # 敏感信息文件（包含服务器连接、凭证等）
 *.private.md
 
+# iOS 敏感配置（API Keys 等）
+**/Secrets.xcconfig
+
 # macOS
 .DS_Store
 .AppleDouble

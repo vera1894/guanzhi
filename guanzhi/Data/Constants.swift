@@ -33,8 +33,15 @@ struct Constants{
     static let textColorTxGery: Color = Color(red: 0.61, green: 0.61, blue: 0.61)
     static let textColorTxBlack: Color = Color(red: 0, green: 0, blue: 0)
     
-    //test
-    static let AMAP_API_KEY = "eebca36f478063b51c90efd82a1c8403"
+    // 高德地图 API Key（从 Info.plist 读取，配置在 Secrets.xcconfig）
+    static let AMAP_API_KEY: String = {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "AMAPApiKey") as? String,
+              !key.isEmpty,
+              !key.hasPrefix("$(") else {
+            fatalError("❌ AMAP_API_KEY 未配置。请确保 Secrets.xcconfig 已创建并包含有效的 AMAP_API_KEY")
+        }
+        return key
+    }()
 
     static let BASE_HOST = "https://onettoo.com"
 

@@ -36,13 +36,11 @@ class DeviceService {
     /// 缓存设备 Token
     func cacheDeviceToken(_ token: String) {
         UserDefaults.standard.set(token, forKey: apnsDeviceTokenKey)
-        print("📱 DeviceService: 已缓存设备 Token")
     }
 
     /// 清除缓存的设备 Token
     func clearCachedDeviceToken() {
         UserDefaults.standard.removeObject(forKey: apnsDeviceTokenKey)
-        print("📱 DeviceService: 已清除设备 Token 缓存")
     }
 
     // MARK: - Deep Link 缓存（冷启动用）
@@ -55,13 +53,11 @@ class DeviceService {
     /// 缓存待处理的 Deep Link（冷启动时使用）
     func cachePendingDeepLink(_ deepLink: String) {
         UserDefaults.standard.set(deepLink, forKey: pendingDeepLinkKey)
-        print("🔗 DeviceService: 已缓存待处理 Deep Link: \(deepLink)")
     }
 
     /// 清除待处理的 Deep Link
     func clearPendingDeepLink() {
         UserDefaults.standard.removeObject(forKey: pendingDeepLinkKey)
-        print("🔗 DeviceService: 已清除待处理 Deep Link")
     }
 
     // MARK: - API 调用
@@ -72,7 +68,6 @@ class DeviceService {
     func registerDevice(deviceToken: String) async throws {
         // 检查登录状态
         guard OTOLoginStatusManager.shared.isLoggedIn else {
-            print("⚠️ DeviceService: 用户未登录，跳过设备注册")
             return
         }
 
@@ -97,11 +92,6 @@ class DeviceService {
         let environment = "production"
         #endif
 
-        print("📱 DeviceService: 开始注册设备...")
-        print("   Token: \(deviceToken.prefix(20))...")
-        print("   BundleId: \(bundleId)")
-        print("   Environment: \(environment)")
-
         do {
             let data = try await OTONetwork.request(.registerDevice(
                 deviceToken: deviceToken,
@@ -118,16 +108,9 @@ class DeviceService {
             // datas 可能是数字或 null，使用 Int? 解析
             let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
 
-            if response.respCode == 0 || response.respCode == 200 {
-                print("✅ DeviceService: 设备注册成功")
-            } else {
-                print("❌ DeviceService: 设备注册失败 - \(response.respMsg ?? "未知错误")")
+            if response.respCode != 0 && response.respCode != 200 {
                 throw OTONetworkError.customError(response.respMsg ?? "设备注册失败")
             }
-        } catch {
-            print("❌ DeviceService: 设备注册异常 - \(error.localizedDescription)")
-            print("❌ 错误详情: \(error)")
-            throw error
         }
     }
 
@@ -137,62 +120,37 @@ class DeviceService {
     ///   - newToken: 新的设备 Token
     func updateDeviceToken(oldToken: String, newToken: String) async throws {
         guard OTOLoginStatusManager.shared.isLoggedIn else {
-            print("⚠️ DeviceService: 用户未登录，跳过 Token 更新")
-            // 仍然缓存新 token，等登录后注册
             cacheDeviceToken(newToken)
             return
         }
 
-        print("📱 DeviceService: 开始更新设备 Token...")
+        let data = try await OTONetwork.request(.updateDeviceToken(
+            oldToken: oldToken,
+            newToken: newToken
+        ))
 
-        do {
-            let data = try await OTONetwork.request(.updateDeviceToken(
-                oldToken: oldToken,
-                newToken: newToken
-            ))
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
 
-            let decoder = JSONDecoder()
-            // datas 可能是数字或 null
-            let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
-
-            if response.respCode == 0 || response.respCode == 200 {
-                cacheDeviceToken(newToken)
-                print("✅ DeviceService: 设备 Token 更新成功")
-            } else {
-                print("❌ DeviceService: Token 更新失败 - \(response.respMsg ?? "未知错误")")
-                throw OTONetworkError.customError(response.respMsg ?? "Token 更新失败")
-            }
-        } catch {
-            print("❌ DeviceService: Token 更新异常 - \(error.localizedDescription)")
-            print("❌ 错误详情: \(error)")
-            throw error
+        if response.respCode == 0 || response.respCode == 200 {
+            cacheDeviceToken(newToken)
+        } else {
+            throw OTONetworkError.customError(response.respMsg ?? "Token 更新失败")
         }
     }
 
     /// 设备登出（用户退出登录时调用）
     func logoutDevice() async {
         guard let deviceToken = getCachedDeviceToken() else {
-            print("⚠️ DeviceService: 没有缓存的设备 Token，跳过登出")
             return
         }
 
-        print("📱 DeviceService: 开始注销设备...")
-
         do {
             let data = try await OTONetwork.request(.logoutDevice(deviceToken: deviceToken))
-
             let decoder = JSONDecoder()
-            // datas 可能是数字或 null
-            let response = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
-
-            if response.respCode == 0 || response.respCode == 200 {
-                print("✅ DeviceService: 设备注销成功")
-            } else {
-                print("⚠️ DeviceService: 设备注销返回非成功状态 - \(response.respMsg ?? "")")
-            }
+            _ = try decoder.decode(DeviceApiResponse<Int?>.self, from: data)
         } catch {
-            print("⚠️ DeviceService: 设备注销异常（忽略）- \(error.localizedDescription)")
-            print("⚠️ 错误详情: \(error)")
+            // 忽略登出错误
         }
 
         // 无论成功与否，都清除本地缓存
@@ -216,16 +174,11 @@ class DeviceService {
     /// 用户登录后调用 - 检查是否需要注册设备
     func onUserLogin() {
         guard let cachedToken = getCachedDeviceToken() else {
-            print("📱 DeviceService: 用户登录但没有缓存的设备 Token")
             return
         }
 
         Task {
-            do {
-                try await registerDevice(deviceToken: cachedToken)
-            } catch {
-                print("❌ DeviceService: 登录后设备注册失败 - \(error)")
-            }
+            try? await registerDevice(deviceToken: cachedToken)
         }
     }
 }

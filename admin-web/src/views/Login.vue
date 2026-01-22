@@ -38,9 +38,6 @@
             登录
           </el-button>
         </el-form-item>
-        <div class="test-hint">
-          测试后门: admin / 123456 (仅用于演示)
-        </div>
       </el-form>
     </el-card>
   </div>
@@ -120,14 +117,6 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 测试后门：允许 admin/123456 直接登录
-        if (loginForm.phone === 'admin' && loginForm.code === '123456') {
-          localStorage.setItem('token', 'mock-admin-token')
-          ElMessage.success('登录成功 (测试模式)')
-          router.push('/')
-          return
-        }
-
         // 调用验证码登录接口
         const res = await request.post('/user/checkCodeOrLogin', {
           phone: loginForm.phone,
@@ -211,12 +200,5 @@ const handleLogin = async () => {
 
 .login-button {
   width: 100%;
-}
-
-.test-hint {
-  text-align: center;
-  font-size: 12px;
-  color: #909399;
-  margin-top: 10px;
 }
 </style>

@@ -53,30 +53,23 @@ struct MessageView: View {
                 let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
 
                 if response.respCode == 0 {
-                    print("验证码验证成功")
                     userlogin.loginState = 0
                     if let tokenString = response.datas {
                         userlogin.header = "Bearer " + tokenString
-                        print("登录令牌：", userlogin.header)
                         OTOLoginStatusManager.shared.login(token: userlogin.header)
-                        // 获取用户信息，保存用户ID
                         userlogin.getUserInfo()
-                    } else {
-                        print("datas 不是一个字符串")
                     }
                     next = true
                     isLoading = false
                 } else if response.respCode == -1 && response.respMsg == "1" {
-                    print("需要注册")
                     userlogin.loginState = 1
                     next = true
                     isLoading = false
                 } else {
-                    print(response.respMsg as Any)
                     isLoading = false
                 }
             } catch {
-                print("解码 JSON 时出错：\(error)")
+                // 错误已在 NetworkService 层处理
             }
         }
     }

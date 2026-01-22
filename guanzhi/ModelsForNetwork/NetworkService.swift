@@ -51,9 +51,6 @@ struct OTONetwork {
 
             if OTOLoginStatusManager.shared.isLoggedIn, let token = OTOLoginStatusManager.shared.getToken() {
                 request.setValue(token, forHTTPHeaderField: "Authorization")
-                print("🔑 Authorization Token: \(token)")
-            } else {
-                print("⚠️ 未登录或没有 Token")
             }
 
             // ✅ POST/PUT 请求设置 httpBody
@@ -61,17 +58,11 @@ struct OTONetwork {
                 request.httpBody = try JSONSerialization.data(withJSONObject: req.request.param)
             }
 
-            print("📤 发送请求中...")
             let (data, response) = try await URLSession.shared.data(for: request)
 
             if let httpResponse = response as? HTTPURLResponse {
-                print("📥 HTTP 状态码: \(httpResponse.statusCode)")
-                print("📥 响应头: \(httpResponse.allHeaderFields)")
-                
                 if httpResponse.statusCode != 200 {
-                    print("❌ 服务器返回非 200 状态码")
                     if let errorResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                        print("❌ 错误响应: \(errorResponse)")
                         if let errorMsg = errorResponse["error"] as? String {
                             throw OTONetworkError.customError(errorMsg)
                         }
@@ -84,17 +75,10 @@ struct OTONetwork {
                 }
             }
 
-            if let responseString = String(data: data, encoding: .utf8) {
-//                print("✅ 返回数据: \(responseString)") //返回数据日志
-            }
-            print("=============请求结束=============\n")
             return data
         } catch let error as OTONetworkError {
-            print("❌ OTONetworkError: \(error)")
             throw error
         } catch {
-            print("❌ 网络请求异常: \(error.localizedDescription)")
-            print("❌ 错误详情: \(error)")
             throw error
         }
     }

@@ -34,26 +34,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("📱 APNs 注册成功，Device Token: \(token)")
 
         // 检查是否有旧 token 需要更新
         if let oldToken = DeviceService.shared.getCachedDeviceToken(), oldToken != token {
-            // Token 变化，需要更新
             Task {
-                do {
-                    try await DeviceService.shared.updateDeviceToken(oldToken: oldToken, newToken: token)
-                } catch {
-                    print("❌ 更新设备 Token 失败: \(error)")
-                }
+                try? await DeviceService.shared.updateDeviceToken(oldToken: oldToken, newToken: token)
             }
         } else {
-            // 新 Token 或首次注册
             Task {
-                do {
-                    try await DeviceService.shared.registerDevice(deviceToken: token)
-                } catch {
-                    print("❌ 注册设备失败: \(error)")
-                }
+                try? await DeviceService.shared.registerDevice(deviceToken: token)
             }
         }
     }
