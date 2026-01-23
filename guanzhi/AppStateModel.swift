@@ -54,6 +54,7 @@ protocol AppState: AnyObject {
     var isInShareDetailView: Bool { get set }  // 追踪是否在分享详情页（用于临时隐藏底部sheet）
     var savedShowingSearchView: Bool? { get set }
     var savedShowingResultCardView: Bool? { get set }
+    var shouldRestoreClusterList: Bool { get set }  // 标记是否需要恢复聚合列表（详情返回时）
 }
 
 @Observable
@@ -91,6 +92,11 @@ class AppStateModel: AppState {
     // 保存进入分享详情前的 sheet 状态，用于返回时恢复
     var savedShowingSearchView: Bool? = nil
     var savedShowingResultCardView: Bool? = nil
+
+    /// 标记是否需要恢复聚合列表（从详情页返回时）
+    /// 其他页面（OthersView/MyView）在 onDisappear 时会检查此标志
+    /// 若为 true，则不设置 isShowingSearchView = true，避免覆盖聚合列表恢复逻辑
+    var shouldRestoreClusterList: Bool = false
 }
 
 

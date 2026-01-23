@@ -22,6 +22,10 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
     /// 防回环标志：当程序主动设置 region/camera 时为 true，避免 delegate 回调触发循环
     private var isProgrammaticChange = false
 
+    /// 延迟定位标志：当 centerOnUser 被调用但用户位置尚未可用时为 true
+    /// 位置更新后会自动执行定位并重置此标志
+    private var isPendingCenterOnUser = false
+
     init(parent: MKMapViewWrapper) {
         self.parent = parent
     }
@@ -60,12 +64,24 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
                 pitch: currentCamera.pitch,
                 heading: currentCamera.heading
             )
+            // 确保关闭跟踪模式，避免地图被锁定
+            if mapView.userTrackingMode != .none {
+                mapView.userTrackingMode = .none
+            }
+            isPendingCenterOnUser = false
             setCameraProgrammatically(newCamera, mapView: mapView, animated: true)
             print("🗺️ [Coordinator] Centered on user: \(userLocation.coordinate)")
+
+            // 延迟触发 region 更新回调，确保地图动画完成后标注能正确显示
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self = self else { return }
+                self.parent.onRegionChange?(mapView.region)
+                print("🗺️ [Coordinator] Manually triggered onRegionChange after centerOnUser")
+            }
         } else {
-            print("🗺️ [Coordinator] User location not available yet")
-            // 用户位置还不可用，启用跟踪模式等待
-            mapView.userTrackingMode = .follow
+            print("🗺️ [Coordinator] User location not available yet, will center when location updates")
+            // 设置延迟定位标志，等待 didUpdate userLocation 回调时执行定位
+            isPendingCenterOnUser = true
         }
     }
 
@@ -79,6 +95,7 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
             print("🗺️ [Coordinator] regionDidChange ignored (programmatic)")
             return
         }
+
         print("🗺️ [Coordinator] regionDidChange (user interaction): \(mapView.region.center)")
         // 通过回调更新 ViewModel，而不是直接修改 @Binding
         parent.onRegionChange?(mapView.region)
@@ -176,6 +193,43 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
                     view.alpha = 1
                 }
             }
+        }
+    }
+
+    /// 用户位置更新时调用
+    /// 用于处理延迟定位：当 centerOnUser 被调用时位置尚未可用，在这里补偿执行
+    func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+        // 如果有待处理的定位请求，执行定位
+        guard isPendingCenterOnUser else { return }
+
+        guard let location = userLocation.location else { return }
+
+        print("🗺️ [Coordinator] didUpdate userLocation, executing pending centerOnUser")
+
+        let currentCamera = mapView.camera
+        let newCamera = MKMapCamera(
+            lookingAtCenter: location.coordinate,
+            fromDistance: min(currentCamera.centerCoordinateDistance, 5000),
+            pitch: currentCamera.pitch,
+            heading: currentCamera.heading
+        )
+
+        // 确保关闭跟踪模式
+        if mapView.userTrackingMode != .none {
+            mapView.userTrackingMode = .none
+        }
+
+        isPendingCenterOnUser = false
+        setCameraProgrammatically(newCamera, mapView: mapView, animated: true)
+        print("🗺️ [Coordinator] Pending centerOnUser completed: \(location.coordinate)")
+
+        // 延迟触发 region 更新回调，确保地图动画完成后标注能正确显示
+        // 因为 setCameraProgrammatically 设置了 isProgrammaticChange = true，
+        // regionDidChangeAnimated 不会触发 onRegionChange，需要手动触发
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self = self else { return }
+            self.parent.onRegionChange?(mapView.region)
+            print("🗺️ [Coordinator] Manually triggered onRegionChange after pending centerOnUser")
         }
     }
 }

@@ -19,6 +19,9 @@ struct nameView: View {
     @State private var showNotice = false
     @State private var isLoading = false
 
+    // ✅ 监听登录状态，注册成功后自动 dismiss
+    @ObservedObject var loginManager = OTOLoginStatusManager.shared
+
     var body: some View {
 
         ZStack {  //用于在最底层增加点击收起键盘
@@ -72,7 +75,9 @@ struct nameView: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                 if userlogin.namePassed{
                                     isLoading = false
-                                    next = true
+                                    // ✅ 不设置 next = true
+                                    // register() 中调用了 OTOLoginStatusManager.shared.login()
+                                    // @Published isLoggedIn 变化会自动触发 SearchView 切换
                                 }else{
                                     showNotice = true
                                     isLoading = false
@@ -83,12 +88,7 @@ struct nameView: View {
                                 }
                             .buttonStyle(ButtonStyle_capsuleFillPrimary(isEnabled: userlogin.nickName.count != 0))
                             .disabled(!(userlogin.nickName.count != 0))
-                            .navigationDestination(isPresented: $next) {
-                                SearchView(animationNamespace: fallbackNamespace, userlogin: UserLoginModel())
-                                    .environment(\.appState, AppStateModel())
-                                    .environmentObject(LocationManager())
-                                    .environmentObject(SearchViewModel())
-                            }
+                            // ✅ 已删除 navigationDestination，不再创建新的 SearchView
                     }
                 }
                 .padding(.horizontal)
@@ -100,6 +100,14 @@ struct nameView: View {
             
             }
         .background(Color("color-white"))
+        // ✅ 监听登录状态变化，注册成功后自动 dismiss 整个登录流程
+        .onChange(of: loginManager.isLoggedIn) { oldValue, newValue in
+            if newValue {
+                // 注册成功，dismiss 当前页面
+                // 整个登录流程会被 SearchView 的条件分支自动移除
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
         }
     }
 

@@ -102,7 +102,9 @@ struct LogInView: View {
                             userlogin.loginState = 0
                             OTOLoginStatusManager.shared.login(token: testToken)
                             OTOLoginStatusManager.shared.setUserID(11)
-                            directLogin = true
+                            // ✅ 不设置 directLogin = true
+                            // login() 会触发 @Published isLoggedIn 变化
+                            // guanzhiApp 中的 SearchView 会自动切换到主内容
                         } else if isChecked {
                             nextPage = true
                             userlogin.firstSendMessage = true
@@ -138,17 +140,8 @@ struct LogInView: View {
                     .navigationDestination(isPresented: $nextPage) {
                         MessageView(userlogin: userlogin)
                     }
-                    #if APPSTORE_REVIEW
-                    .navigationDestination(isPresented: $directLogin) {
-                        SearchView(animationNamespace: fallbackNamespace, userlogin: UserLoginModel())
-                            .environment(\.appState, AppStateModel())
-                            .environmentObject(LocationManager())
-                            .environmentObject(SearchViewModel())
-                            .environmentObject(ToastManager())
-                            .environmentObject(UserProfileManager())
-                            .environmentObject(NavigationCoordinator())
-                    }
-                    #endif
+                    // ✅ 已删除 APPSTORE_REVIEW 的 navigationDestination
+                    // 测试登录成功后，guanzhiApp 中的 SearchView 会自动响应 isLoggedIn 变化
                     .padding(.horizontal,Constants.spacingSpacingM)
                     .padding(.bottom)
                     

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 fileprivate let loginTokenKey = "loginTokenKey"
 
@@ -33,16 +34,49 @@ class UserLoginModel: ObservableObject {
     @Published var header: String = ""     // 令牌
     @Published var time : Int = 0 //短信等待时长
     @Published var firstSendMessage: Bool = false //是否已从首页发送验证码
-    
+
     @Published var noticeText: String = "" //提示文字
    // @Published var codePassed: Bool = false //代号是否通过验证
     @Published var namePassed : Bool = false //名字是否通过验证
 
-    
+
     @Published var sendStatus: Bool = false //是否发送成功
    // @Published var image: UIImage = UIImage()
     @Published var userName: String = "" //登录用户昵称
     @Published var userId : Int = -1 //登录用户id
+
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        // 监听登出通知，重置登录流程状态
+        NotificationCenter.default.publisher(for: .userDidLogout)
+            .sink { [weak self] _ in
+                self?.reset()
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - 重置登录流程状态
+
+    /// 重置所有登录流程相关的状态（登出时调用）
+    func reset() {
+        phone = ""
+        code = ""
+        nickName = ""
+        loginState = 1
+        header = ""
+        time = 0
+        firstSendMessage = false
+        noticeText = ""
+        namePassed = false
+        sendStatus = false
+        userName = ""
+        userId = -1
+
+        #if DEBUG
+        print("🔄 UserLoginModel: 登录流程状态已重置")
+        #endif
+    }
     
     
     func sendCode(phNumber: String) {
@@ -200,16 +234,34 @@ class UserLoginModel: ObservableObject {
     
 }
 
-class OTOLoginStatusManager {
+// MARK: - 登录状态通知
+extension Notification.Name {
+    /// 用户登出通知（用于重置地图初始化状态等）
+    static let userDidLogout = Notification.Name("com.guanzhi.userDidLogout")
+    /// 用户 ID 设置成功通知（用于 Onboarding 重新加载正确用户的数据）
+    static let userIdDidSet = Notification.Name("com.guanzhi.userIdDidSet")
+}
+
+class OTOLoginStatusManager: ObservableObject {
     static let shared = OTOLoginStatusManager()
 
-    private(set) var isLoggedIn: Bool = false
+    @Published private(set) var isLoggedIn: Bool = false
 
     private init() {
         // 迁移：将旧版 UserDefaults 中的 Token 迁移到 Keychain
         migrateTokenToKeychainIfNeeded()
-        updateLoginStatus()
+        // 初始化时同步更新状态（不需要异步，因为是初始化）
+        isLoggedIn = KeychainService.shared.exists(forKey: KeychainService.Keys.loginToken)
     }
+
+    // MARK: - Preview 专用（不写 Keychain）
+    #if DEBUG
+    func setLoggedInForPreview(_ value: Bool) {
+        DispatchQueue.main.async {
+            self.isLoggedIn = value
+        }
+    }
+    #endif
 
     /// 迁移旧版 Token 从 UserDefaults 到 Keychain（仅执行一次）
     private func migrateTokenToKeychainIfNeeded() {
@@ -228,18 +280,30 @@ class OTOLoginStatusManager {
     }
 
     func updateLoginStatus() {
-        isLoggedIn = KeychainService.shared.exists(forKey: KeychainService.Keys.loginToken)
+        let loggedIn = KeychainService.shared.exists(forKey: KeychainService.Keys.loginToken)
+        // ✅ 只在主线程更新 @Published 属性
+        DispatchQueue.main.async {
+            self.isLoggedIn = loggedIn
+        }
     }
 
     func logout() {
         KeychainService.shared.delete(forKey: KeychainService.Keys.loginToken)
         UserDefaults.standard.removeObject(forKey: "userId")
-        updateLoginStatus()
+        // ✅ 只在主线程更新 @Published 属性
+        DispatchQueue.main.async {
+            self.isLoggedIn = false
+        }
+        // 发送登出通知，用于重置地图初始化状态等
+        NotificationCenter.default.post(name: .userDidLogout, object: nil)
     }
 
     func login(token: String) {
         KeychainService.shared.save(token, forKey: KeychainService.Keys.loginToken)
-        updateLoginStatus()
+        // ✅ 只在主线程更新 @Published 属性
+        DispatchQueue.main.async {
+            self.isLoggedIn = true
+        }
     }
 
     func getLoginStatus() -> Bool {
@@ -302,6 +366,14 @@ class OTOLoginStatusManager {
 
     func setUserID(_ userId: Int) {
         UserDefaults.standard.set(userId, forKey: "userId")
+
+        // ✅ 发送通知，让 OnboardingCoordinator 重新加载正确用户的数据
+        if userId > 0 {
+            NotificationCenter.default.post(name: .userIdDidSet, object: nil, userInfo: ["userId": userId])
+            #if DEBUG
+            print("📚 [Login] userId 已设置: \(userId)，已发送 userIdDidSet 通知")
+            #endif
+        }
     }
 }
 

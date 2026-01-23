@@ -141,11 +141,10 @@ struct MyView: View {
             }
         }
         .onDisappear {
-//            if navigationCoordinator.path.count < navigationPathCount {
-//                // 导航路径长度减少，说明返回到了上一层
-//                appState.isShowingSearchView = true
-//            }
-            if navigationCoordinator.path.isEmpty {
+            // ✅ 修复：检查是否需要恢复聚合列表
+            // 如果 shouldRestoreClusterList 为 true，说明正在从详情页返回聚合列表
+            // 此时不应设置 isShowingSearchView = true，否则会覆盖聚合列表的恢复逻辑
+            if navigationCoordinator.path.isEmpty && !appState.shouldRestoreClusterList {
                 appState.isShowingSearchView = true
             }
         }

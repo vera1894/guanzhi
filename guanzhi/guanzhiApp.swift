@@ -120,6 +120,11 @@ struct guanzhiApp: App {
     @StateObject var navigationCoordinator = NavigationCoordinator()
     @StateObject var onboardingCoordinator = OnboardingCoordinator()
 
+    // ✅ 登录状态管理（使用 @ObservedObject 绑定单例）
+    @ObservedObject var loginManager = OTOLoginStatusManager.shared
+    // ✅ UserLoginModel 持久化实例
+    @StateObject var userLoginModel = UserLoginModel()
+
     init() {
         _ = CoordinateConverter.shared
         // 预加载贴纸名称（异步，不阻塞启动）
@@ -135,7 +140,7 @@ struct guanzhiApp: App {
                 NavigationStack(path: $navigationCoordinator.path) {
                     SearchView(
                         animationNamespace: globalAnimationNamespace,
-                        userlogin: UserLoginModel()
+                        userlogin: userLoginModel  // ✅ 使用持久化实例
                     )
                     .navigationDestination(for: Route.self) { route in
                         switch route {
@@ -191,6 +196,7 @@ struct guanzhiApp: App {
                     }
                 }
                 .environment(appState)
+                .environmentObject(loginManager)  // ✅ 注入登录状态管理
                 .environmentObject(locationManager)
                 .environmentObject(searchViewModel)
                 .environmentObject(userProfileManager)
@@ -203,6 +209,7 @@ struct guanzhiApp: App {
                 OnboardingBannerView()
                     .environmentObject(onboardingCoordinator)
             }
+            .environmentObject(loginManager)  // ✅ 也注入到外层 ZStack
             .environmentObject(toastManager)
             .environmentObject(onboardingCoordinator)
             .ignoresSafeArea()
@@ -225,6 +232,9 @@ struct guanzhiApp: App {
             .onAppear {
                 // 【Onboarding】注入 appState 引用
                 onboardingCoordinator.appState = appState
+                // ✅ appState 注入后，检查是否需要恢复 UI 状态
+                // 处理 init() 时 appState 为 nil 导致 isShowingSearchView 未设置的情况
+                onboardingCoordinator.checkAndRestoreUIStateIfNeeded()
                 // SSOT: 启动时检查，如果未登录则清空缓存（防止残留数据）
                 userProfileManager.checkAndClearIfNotLoggedIn()
                 handlePendingDeepLink()

@@ -9,17 +9,20 @@ import SwiftUI
 
 //验证验证码，未注册需要注册
 struct MessageView: View {
-    
+
     @State private var next =  false
     @ObservedObject var userlogin : UserLoginModel
     @Namespace private var fallbackNamespace
-    
+
     @State private var timeRemaining = 10
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     @State private var showNotice = false
-    
+
     @Environment(\.presentationMode) var presentationMode
+
+    // ✅ 监听登录状态，登录成功后自动 dismiss
+    @ObservedObject var loginManager = OTOLoginStatusManager.shared
     
 //    @State var codeString = ["","","",""]
     @State private var enterSMSCode = ""
@@ -29,19 +32,12 @@ struct MessageView: View {
     //判断跳转路径
     func topage() -> some View{
         if userlogin.loginState == 1{
+            // 新用户，跳转到设置昵称页面
             return AnyView(nameView(userlogin: userlogin))
         }
-        if userlogin.loginState == 0{
-            //登陆成功
-            return AnyView(
-                SearchView(animationNamespace: fallbackNamespace, userlogin: UserLoginModel())
-                    .environment(\.appState, AppStateModel())
-                    .environmentObject(LocationManager())
-                    .environmentObject(SearchViewModel())
-            )
-        }else {
-            return AnyView(EmptyView())
-        }
+        // ✅ loginState == 0（老用户登录成功）或其他情况
+        // 不返回 SearchView，登录状态已更新，guanzhiApp 中的 SearchView 会自动响应
+        return AnyView(EmptyView())
     }
     
     //验证验证码
@@ -53,17 +49,21 @@ struct MessageView: View {
                 let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
 
                 if response.respCode == 0 {
+                    // ✅ 老用户登录成功
                     userlogin.loginState = 0
                     if let tokenString = response.datas {
                         userlogin.header = "Bearer " + tokenString
                         OTOLoginStatusManager.shared.login(token: userlogin.header)
                         userlogin.getUserInfo()
                     }
-                    next = true
+                    // ✅ 不设置 next = true
+                    // OTOLoginStatusManager.shared.login() 会触发 @Published isLoggedIn 变化
+                    // guanzhiApp 中的 SearchView 会自动从 LogInView 切换到主内容
                     isLoading = false
                 } else if response.respCode == -1 && response.respMsg == "1" {
+                    // 新用户，需要设置昵称
                     userlogin.loginState = 1
-                    next = true
+                    next = true  // ✅ 这个保留，跳转到 NameView
                     isLoading = false
                 } else {
                     isLoading = false
@@ -176,6 +176,14 @@ struct MessageView: View {
             
         }
         .background(Color("color-white"))
+        // ✅ 监听登录状态变化，登录成功后自动 dismiss 整个登录流程
+        .onChange(of: loginManager.isLoggedIn) { oldValue, newValue in
+            if newValue {
+                // 登录成功，dismiss 当前页面（返回到 LogInView）
+                // LogInView 会被 SearchView 的条件分支自动移除
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
     }
 }
 

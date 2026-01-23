@@ -59,6 +59,14 @@ class SearchViewModel: ObservableObject {
     @Published var isShareDetailOverlayShown: Bool = false
     private var currentLoadingShareId: Int64? = nil  // 正在加载的分享 ID，防止重复加载
     @Published var shareDeletedMessage: String? = nil // 分享已删除的提示消息
+
+    // MARK: - 聚合列表恢复状态（从 @State 移到这里，避免视图重建导致状态丢失）
+    /// 进入详情前保存的聚合列表标注
+    @Published var savedClusterAnnotations: [CustomAnnotation] = []
+    /// 进入详情前保存的聚合列表 detent
+    @Published var savedClusterListDetent: PresentationDetent = .medium
+    /// 进入详情时点击的 share ID（用于恢复滚动位置）
+    @Published var savedScrollToShareId: Int? = nil
     @Published var showNavigationSheet: Bool = false // 导航应用选择弹窗状态
 
     // MARK: - 网络重试机制

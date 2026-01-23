@@ -159,6 +159,7 @@ class OnboardingCoordinator: ObservableObject {
     private let persistence = OnboardingPersistence()
     private var autoCloseTimer: Timer?
     private var successAnimationTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
     /// AppState 引用（用于控制 sheet）
     weak var appState: AppStateModel?
@@ -167,14 +168,159 @@ class OnboardingCoordinator: ObservableObject {
 
     init() {
         loadState()
+        setupNotificationObservers()
+
+        // 初始化后检查：如果 userId 已有效但状态是 guest 的，重新加载
+        // 处理极端情况：userIdDidSet 通知在 init 前触发
+        let currentUserId = OTOLoginStatusManager.shared.getUserID()
+        if currentUserId > 0 {
+            // 延迟一帧确保 init 完成
+            DispatchQueue.main.async { [weak self] in
+                self?.reloadStateForCurrentUser()
+            }
+        }
+    }
+
+    // MARK: - Notification Observers
+
+    private func setupNotificationObservers() {
+        // 监听 userId 设置成功（登录流程完成）
+        NotificationCenter.default.publisher(for: .userIdDidSet)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+
+                if let userId = notification.userInfo?["userId"] as? Int, userId > 0 {
+                    #if DEBUG
+                    print("📚 [Onboarding] 收到 userIdDidSet 通知，userId=\(userId)，重新加载状态")
+                    #endif
+                    self.reloadStateForCurrentUser()
+                }
+            }
+            .store(in: &cancellables)
+
+        // 监听登出
+        NotificationCenter.default.publisher(for: .userDidLogout)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+
+                #if DEBUG
+                print("📚 [Onboarding] 收到 userDidLogout 通知，重置状态")
+                #endif
+                self.resetToGuestState()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// 为当前用户重新加载状态
+    private func reloadStateForCurrentUser() {
+        let userId = OTOLoginStatusManager.shared.getUserID()
+
+        #if DEBUG
+        print("📚 [Onboarding] reloadStateForCurrentUser 开始，userId=\(userId)")
+        #endif
+
+        // 【关键】先清理旧状态，避免残留
+        hideBanner()
+        currentStep = nil
+        hasPendingPublishReminder = false
+
+        // 【关键】调用 loadState() 而不是直接读 persistence
+        // 这样能复用版本迁移逻辑
+        loadState()
+
+        #if DEBUG
+        print("📚 [Onboarding] 重新加载完成:")
+        print("   - userId: \(userId)")
+        print("   - hasSkippedAll: \(hasSkippedAll)")
+        print("   - completedSteps: \(completedSteps.map { $0.rawValue })")
+        print("   - shouldBlockHomeSheet: \(shouldBlockHomeSheet)")
+        print("   - appState: \(appState != nil ? "已注入" : "nil")")
+        #endif
+
+        // 如果 appState 为 nil，延迟处理（等待 .onAppear 注入后由 checkAndRestoreUIStateIfNeeded 处理）
+        guard appState != nil else {
+            #if DEBUG
+            print("📚 [Onboarding] appState 为 nil，跳过 UI 恢复（等待 .onAppear）")
+            #endif
+            return
+        }
+
+        // 如果已完成或已跳过，确保 UI 正常显示
+        if hasSkippedAll || !shouldBlockHomeSheet {
+            appState?.isShowingSearchView = true
+            #if DEBUG
+            print("📚 [Onboarding] 恢复 isShowingSearchView = true")
+            #endif
+        } else {
+            // 如果 A/B 未完成且当前无 banner，触发显示
+            if bannerState == .hidden {
+                #if DEBUG
+                print("📚 [Onboarding] A/B 未完成，触发 showNextNeededStepOnHome")
+                #endif
+                showNextNeededStepOnHome()
+            }
+        }
+    }
+
+    /// 重置到 guest 状态（登出时）
+    private func resetToGuestState() {
+        // 清理当前显示状态
+        hideBanner()
+        currentStep = nil
+        hasPendingPublishReminder = false
+
+        // 调用 loadState() 复用版本迁移逻辑
+        // 此时 userId 已被清除，会读取 -1 (guest) 的数据
+        loadState()
+
+        #if DEBUG
+        print("📚 [Onboarding] 重置为 guest 状态完成")
+        #endif
+    }
+
+    /// 检查并恢复 UI 状态（appState 注入后调用）
+    /// 处理 init() 时 appState 为 nil 导致 isShowingSearchView 未正确设置的情况
+    func checkAndRestoreUIStateIfNeeded() {
+        #if DEBUG
+        print("📚 [Onboarding] checkAndRestoreUIStateIfNeeded:")
+        print("   - hasSkippedAll: \(hasSkippedAll)")
+        print("   - shouldBlockHomeSheet: \(shouldBlockHomeSheet)")
+        print("   - appState: \(appState != nil ? "已注入" : "nil")")
+        #endif
+
+        // 如果已完成或已跳过，确保 UI 正常显示
+        if hasSkippedAll || !shouldBlockHomeSheet {
+            appState?.isShowingSearchView = true
+            #if DEBUG
+            print("📚 [Onboarding] 恢复 isShowingSearchView = true")
+            #endif
+        }
     }
 
     private func loadState() {
+        let userId = OTOLoginStatusManager.shared.getUserID()
+
+        #if DEBUG
+        print("📚 [Onboarding] loadState 开始，userId=\(userId)")
+        #endif
+
         hasSkippedAll = persistence.hasSkippedAll
         completedSteps = persistence.completedSteps
 
+        #if DEBUG
+        print("📚 [Onboarding] loadState 读取到:")
+        print("   - hasSkippedAll: \(hasSkippedAll)")
+        print("   - completedSteps: \(completedSteps.map { $0.rawValue })")
+        print("   - savedVersion: \(persistence.savedVersion)")
+        #endif
+
         // 检查版本升级
         if persistence.savedVersion < OnboardingPersistence.currentVersion {
+            #if DEBUG
+            print("📚 [Onboarding] 版本升级：\(persistence.savedVersion) → \(OnboardingPersistence.currentVersion)，清空 completedSteps")
+            #endif
             // 版本升级策略：保留 hasSkippedAll，清空 completedSteps
             // 这样用户不会被强制重看，但新功能引导会出现
             completedSteps = []
@@ -272,9 +418,43 @@ class OnboardingCoordinator: ObservableObject {
     /// 【关键修复2】主页完全可见时处理
     /// - Parameter isClusterListShowing: 聚合列表是否正在显示（调用方应在延迟后传入最新值）
     func handleHomePageFullyVisible(isClusterListShowing: Bool) {
+        #if DEBUG
+        print("📚 [Onboarding] handleHomePageFullyVisible 被调用:")
+        print("   - hasSkippedAll: \(hasSkippedAll)")
+        print("   - completedSteps: \(completedSteps.map { $0.rawValue })")
+        print("   - shouldBlockHomeSheet: \(shouldBlockHomeSheet)")
+        print("   - bannerState: \(bannerState)")
+        print("   - isClusterListShowing: \(isClusterListShowing)")
+        #endif
+
+        // ✅ 修复：如果已跳过全部，直接恢复 UI 并返回
+        if hasSkippedAll {
+            #if DEBUG
+            print("📚 [Onboarding] hasSkippedAll=true，恢复 UI")
+            #endif
+            withAnimation(.easeInOut(duration: 0.3)) {
+                appState?.isShowingSearchView = true
+            }
+            return
+        }
+
         // A-B 都完成后
         let basicSteps: Set<OnboardingStep> = [.welcome, .tapAnnotation]
-        guard basicSteps.isSubset(of: completedSteps) else { return }
+        guard basicSteps.isSubset(of: completedSteps) else {
+            #if DEBUG
+            print("📚 [Onboarding] A-B 未完成，不恢复 UI")
+            #endif
+            // A-B 未完成，不恢复 UI（保持 gating 行为）
+            // 但如果当前没有 banner 显示，需要触发显示
+            if bannerState == .hidden {
+                showNextNeededStepOnHome()
+            }
+            return
+        }
+
+        #if DEBUG
+        print("📚 [Onboarding] A-B 已完成，恢复 UI")
+        #endif
 
         // 【关键】此时才恢复 sheet 和 MapOverlayView 显示
         // 使用 withAnimation 确保 MapOverlayView 的 transition 动画生效

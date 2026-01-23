@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v3.9
-**最后更新**: 2026-01-22（公测前安全修复部署完成）
+**文档版本**: v4.1
+**最后更新**: 2026-01-23（聚合列表状态恢复修复 + Onboarding 状态重载修复 + 登录流程状态管理）
 
 ---
 
@@ -551,9 +551,14 @@ guanzhi://share/{shareId}                      # 跳转到观之详情
 
 ```swift
 extension Notification.Name {
+    // Deep Link 和消息页面
     static let handleDeepLink = Notification.Name("handleDeepLink")
     static let openMessagesPage = Notification.Name("openMessagesPage")
     static let refreshUnreadBadge = Notification.Name("refreshUnreadBadge")
+
+    // 登录状态管理（2026-01-23 新增）
+    static let userDidLogout = Notification.Name("com.guanzhi.userDidLogout")
+    static let userIdDidSet = Notification.Name("com.guanzhi.userIdDidSet")
 }
 ```
 
@@ -681,7 +686,211 @@ ProfileHeaderView(
 
 **相关文档**：`projectBasicInfo/logs/2026-01-07-user-profile-ssot-implementation-cc.md`
 
-### 8. 管理后台
+### 8. 用户引导系统（Onboarding System）
+
+**状态**：已完成（2026-01-23 状态重载修复）
+
+新用户引导系统，通过顶部信息栏逐步引导用户了解核心功能。
+
+#### 引导流程
+
+| 步骤 | 触发条件 | 提示内容 | 完成条件 | 样式 |
+|------|---------|----------|---------|------|
+| A | 首次进入主页 | 欢迎分享和探索真实世界的地点! | 自动关闭（3秒） | 黄底 |
+| B | A 完成后 | 试着操作地图来点击查看地图上的观之 | 点击任意观之标注 | 黄底，可跳过 |
+| C1 | 首次进入详情页 | 点击贴纸图标，查看可用的贴纸 | 点击贴纸按钮 | 黄底，可跳过 |
+| C2 | C1 完成后 | 选一个符合这条观之的贴纸，拖动到屏幕中心使用它! | 使用贴纸 | 黄底，可跳过 |
+| D | A-B 完成后返回主页 | 当你到达你的宝藏地点时，别忘了去试试发布... | 自动关闭（60秒） | 黄底 |
+| E | 首次发布观之后 | 每条观之都有它的"褪色度"... | 自动关闭（60秒） | 黄底 |
+
+#### 核心架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    OnboardingCoordinator                         │
+│  - currentStep: OnboardingStep?                                  │
+│  - completedSteps: Set<OnboardingStep>                           │
+│  - hasSkippedAll: Bool                                           │
+│  - shouldBlockHomeSheet: Bool（A-B 未完成时阻止 Sheet）           │
+│                                                                  │
+│  事件驱动：handleEvent(_ event: OnboardingEvent)                  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              OnboardingBannerView（App 根视图统一挂载）           │
+│  - 黄底/绿底（完成）切换                                          │
+│  - 内嵌"跳过全部/继续"确认按钮                                    │
+│  - GeometryReader 动态读取 safeAreaInsets.top                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 核心文件
+
+```
+guanzhi/View/Features/Onboarding/
+├── OnboardingCoordinator.swift      # 状态机核心（事件处理、状态管理）
+├── OnboardingBannerView.swift       # Banner UI 组件
+├── OnboardingPersistence.swift      # 持久化管理（UserDefaults，userId 隔离）
+└── OnboardingHighlightModifier.swift # 高亮效果 ViewModifier
+```
+
+#### 状态重载机制（2026-01-23 修复）
+
+解决"重新登录后返回主页时 UI 异常"问题。
+
+**问题根因**：
+1. `OnboardingCoordinator.init()` 时 `userId` 可能为 0（guest），读取了错误用户的持久化数据
+2. `appState` 在 `.onAppear` 中才注入，通知处理时可能为 nil
+
+**解决方案**：
+
+```swift
+// UserLoginModel.swift - 登录成功后发送通知
+extension Notification.Name {
+    static let userIdDidSet = Notification.Name("com.guanzhi.userIdDidSet")
+}
+
+func setUserID(_ userId: Int) {
+    UserDefaults.standard.set(userId, forKey: "userId")
+    if userId > 0 {
+        NotificationCenter.default.post(name: .userIdDidSet, object: nil, userInfo: ["userId": userId])
+    }
+}
+
+// OnboardingCoordinator.swift - 监听通知重新加载
+private func setupNotificationObservers() {
+    NotificationCenter.default.publisher(for: .userIdDidSet)
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] notification in
+            if let userId = notification.userInfo?["userId"] as? Int, userId > 0 {
+                self?.reloadStateForCurrentUser()
+            }
+        }
+        .store(in: &cancellables)
+
+    NotificationCenter.default.publisher(for: .userDidLogout)
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            self?.resetToGuestState()
+        }
+        .store(in: &cancellables)
+}
+
+// guanzhiApp.swift - appState 注入后检查并恢复 UI
+.onAppear {
+    onboardingCoordinator.appState = appState
+    onboardingCoordinator.checkAndRestoreUIStateIfNeeded()
+}
+```
+
+**关键方法**：
+| 方法 | 说明 |
+|------|------|
+| `reloadStateForCurrentUser()` | userId 变化后重新加载正确用户的状态 |
+| `resetToGuestState()` | 登出时重置到 guest 状态 |
+| `checkAndRestoreUIStateIfNeeded()` | appState 注入后检查并恢复 UI |
+
+#### MapOverlayView 动画修复（2026-01-23）
+
+**问题**：聚合列表关闭后 MapOverlayView 不出现
+
+**根因**：`AnimatedOverlaySheet.dismissWithAnimation()` 在 `asyncAfter` 中调用 `onDismiss`，此时 SwiftUI 动画事务已结束，`withAnimation` 无法触发 transition
+
+**修复方案**：
+```swift
+// SearchView.swift
+
+// 1. 添加 .animation() 修饰符确保 transition 触发
+.overlay(alignment: .bottomTrailing) {
+    if appState.isShowingSearchView {
+        MapOverlayView(...)
+            .transition(.move(edge: .trailing))
+    }
+}
+.animation(.easeInOut(duration: 0.2), value: appState.isShowingSearchView)
+
+// 2. 在 onChange 中恢复状态（而非 onDismiss）
+.onChange(of: isShowingClusterList) { oldValue, isShowing in
+    if !isShowing && oldValue {
+        onboardingCoordinator.handleEvent(.clusterListDismissed)
+        if !shouldRestoreClusterList {
+            withAnimation(.easeOut(duration: 0.2)) {
+                appState.isShowingSearchView = true
+            }
+        }
+    }
+}
+```
+
+**相关文档**：
+- 系统设计：`projectBasicInfo/logs/2026-01-09-onboarding-system-plan-cc.md`
+- 状态重载修复：`projectBasicInfo/logs/2026-01-23-onboarding-state-reload-fix-plan.md`
+
+### 9. 登录状态管理（OTOLoginStatusManager）
+
+**状态**：已完成（2026-01-23 优化）
+
+统一的登录状态管理单例，使用 Keychain 安全存储 Token。
+
+#### 核心特性
+
+```swift
+class OTOLoginStatusManager: ObservableObject {
+    static let shared = OTOLoginStatusManager()
+
+    @Published private(set) var isLoggedIn: Bool = false
+
+    func login(token: String)      // 登录（存 Keychain）
+    func logout()                  // 登出（清 Keychain + 发送通知）
+    func getToken() -> String?     // 获取 Token
+    func getUserID() -> Int        // 获取用户 ID
+    func setUserID(_ userId: Int)  // 设置用户 ID（发送 userIdDidSet 通知）
+    func isTokenExpired() -> Bool  // JWT 过期检查
+}
+```
+
+#### 通知机制
+
+```swift
+extension Notification.Name {
+    /// 用户登出通知（重置地图、Onboarding 等）
+    static let userDidLogout = Notification.Name("com.guanzhi.userDidLogout")
+
+    /// 用户 ID 设置成功通知（Onboarding 重新加载正确用户数据）
+    static let userIdDidSet = Notification.Name("com.guanzhi.userIdDidSet")
+}
+```
+
+#### UserLoginModel 重置（2026-01-23 新增）
+
+登出时自动重置登录流程状态，避免残留旧手机号和倒计时。
+
+```swift
+class UserLoginModel: ObservableObject {
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        // 监听登出通知，重置登录流程状态
+        NotificationCenter.default.publisher(for: .userDidLogout)
+            .sink { [weak self] _ in
+                self?.reset()
+            }
+            .store(in: &cancellables)
+    }
+
+    func reset() {
+        phone = ""
+        code = ""
+        nickName = ""
+        loginState = 1
+        time = 0
+        // ... 其他状态重置
+    }
+}
+```
+
+### 10. 管理后台
 
 - 褪色曲线模拟器（核心功能）
 - 褪色规则配置
@@ -1017,6 +1226,40 @@ HostingTableView(
 **应用场景**：
 - 聚合列表（ClusterList）中的观之列表
 
+#### 聚合列表状态恢复机制（2026-01-23）
+
+**问题场景**：从聚合列表进入详情页，再进入用户主页（OthersView），最后返回时，底部 sheet 和 MapOverlayView 错误地与聚合列表同时显示。
+
+**根因**：
+1. `@State` 变量在导航过程中因视图重建而丢失
+2. 嵌套的 ShareDetailView（用户主页中点击其他观之）返回时也会触发恢复逻辑，过早清空保存的状态
+
+**三层保护机制**：
+
+| 层级 | 位置 | 保护措施 |
+|------|------|----------|
+| 1. 状态持久化 | `SearchViewModel` | 将 `savedClusterAnnotations` 等从 `@State` 移到 `@Published`，避免视图重建丢失 |
+| 2. 导航栈检查 | `SearchView.restoreClusterListIfNeeded()` | 只有 `path.isEmpty` 时才恢复，防止嵌套详情页过早触发 |
+| 3. 条件检查 | `ShareDetailView.onDisappear` | 检查 `shouldRestoreClusterList`，避免覆盖聚合列表恢复路径 |
+
+**关键代码**：
+```swift
+// SearchViewModel.swift - 状态持久化
+@Published var savedClusterAnnotations: [CustomAnnotation] = []
+@Published var savedClusterListDetent: PresentationDetent = .medium
+@Published var savedScrollToShareId: Int? = nil
+
+// SearchView.swift - 导航栈检查
+private func restoreClusterListIfNeeded() {
+    guard navigationCoordinator.path.isEmpty else { return }  // ✅ 关键检查
+    guard appState.shouldRestoreClusterList else { return }
+    guard !searchViewModel.savedClusterAnnotations.isEmpty else { return }
+    // 执行恢复...
+}
+```
+
+**相关文档**：`projectBasicInfo/logs/2026-01-23-cluster-list-state-restoration-fix-cc.md`
+
 ### 3. ImagePlaceholder（图片占位符组件）
 
 **位置**：`View/Shared/ImagePlaceholder.swift`
@@ -1137,7 +1380,10 @@ View/MapPages/
 | 后端时区修复完成 | `projectBasicInfo/logs/2026-01-11-backend-time-ssot-completion.md` | JDBC 时区配置 + 验证器 |
 | 褪色通知幂等修复 | `projectBasicInfo/logs/2026-01-13-fade-notification-idempotent-fix-cc.md` | 唯一索引幂等 + 重复推送修复 |
 | 地图标注点击修复 | `projectBasicInfo/logs/2026-01-22-map-annotation-tap-fix-cc.md` | touchesEnded 绕过 didSelect |
-| **公测前安全审计与修复** | `projectBasicInfo/logs/2026-01-22-pre-beta-security-audit-cc.md` | P0/P1/P2/P3 安全审计 + 修复详情 + 部署验证 |
+| 公测前安全审计与修复 | `projectBasicInfo/logs/2026-01-22-pre-beta-security-audit-cc.md` | P0/P1/P2/P3 安全审计 + 修复详情 + 部署验证 |
+| 地图锁定修复计划 | `projectBasicInfo/logs/2026-01-23-map-locking-fix-plan.md` | 重新登录后地图锁定问题修复 |
+| **Onboarding 状态重载修复** | `projectBasicInfo/logs/2026-01-23-onboarding-state-reload-fix-plan.md` | userId 变化后状态重载 + UI 恢复 + 登录流程重置 |
+| **聚合列表状态恢复修复** | `projectBasicInfo/logs/2026-01-23-cluster-list-state-restoration-fix-cc.md` | 三层保护机制：状态持久化 + path.isEmpty 检查 + 条件检查 |
 
 ---
 

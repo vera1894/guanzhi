@@ -59,6 +59,12 @@ class NotificationBadgeManager: ObservableObject {
     // MARK: - 刷新未读数
 
     func refresh() async {
+        // ✅ 检查登录状态，未登录时跳过请求
+        guard OTOLoginStatusManager.shared.isLoggedIn else {
+            print("📬 NotificationBadgeManager: 用户未登录，跳过刷新")
+            return
+        }
+
         do {
             let counts = try await NotificationService.shared.getUnreadCount()
             unreadCount = counts.total

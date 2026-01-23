@@ -825,10 +825,14 @@ struct ShareDetailView: View {
             appState.isInShareDetailView = false
 
             // 通知 SearchView 详情页已退出，用于恢复聚合列表
-            print("🔷 [ShareDetail] onDisappear - 发送 shareDetailDidDisappear 通知")
+            print("🔷 [ShareDetail] onDisappear - 发送 shareDetailDidDisappear 通知, shouldRestoreClusterList=\(appState.shouldRestoreClusterList)")
             NotificationCenter.default.post(name: .shareDetailDidDisappear, object: nil)
 
-            if navigationCoordinator.path.isEmpty {
+            // ✅ 修复：检查是否需要恢复聚合列表
+            // 如果 shouldRestoreClusterList 为 true，说明 restoreClusterListIfNeeded() 会处理 UI 恢复
+            // 此时不应设置 isShowingSearchView = true，否则会覆盖聚合列表的恢复逻辑
+            if navigationCoordinator.path.isEmpty && !appState.shouldRestoreClusterList {
+                print("🔷 [ShareDetail] 恢复搜索框 sheet（非聚合列表恢复路径）")
                 withAnimation(.easeInOut) {
                     // 恢复之前保存的 sheet 状态
                     if let savedResultCard = appState.savedShowingResultCardView, savedResultCard {
@@ -852,6 +856,8 @@ struct ShareDetailView: View {
                 searchViewModel.selectedAnnotation = nil
                 searchViewModel.selectedAnnotationID = nil
                 searchViewModel.selectedAnnotationImage = nil
+            } else if navigationCoordinator.path.isEmpty {
+                print("🔷 [ShareDetail] 跳过搜索框恢复（聚合列表恢复路径）")
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 searchViewModel.cleandownloadMedia()

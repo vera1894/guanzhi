@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import Combine
+import UIKit
 
 struct OthersView: View {
     @Environment(\.appState) var appState
@@ -130,10 +131,10 @@ struct OthersView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        //设置按钮-圆形 导航到 SettingView
-                        navigationCoordinator.path.append(Route.settingView)
+                        // 更多按钮 - 显示举报等操作
+                        showMoreActions()
                     } label: {
-                        Image("icon-setting")
+                        Image("icon-more")
                     }
                     .buttonStyle(ButtonStyle_m())
                 }
@@ -152,10 +153,10 @@ struct OthersView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        //设置按钮-圆形 导航到 SettingView
-                        navigationCoordinator.path.append(Route.settingView)
+                        // 更多按钮 - 显示举报等操作
+                        showMoreActions()
                     } label: {
-                        Image("icon-setting")
+                        Image("icon-more")
                     }
                     .buttonStyle(ButtonStyle_m())
                 }
@@ -176,11 +177,10 @@ struct OthersView: View {
             }
         }
         .onDisappear {
-//            if navigationCoordinator.path.count < navigationPathCount {
-//                // 导航路径长度减少，说明返回到了上一层
-//                appState.isShowingSearchView = true
-//            }
-            if navigationCoordinator.path.isEmpty {
+            // ✅ 修复：检查是否需要恢复聚合列表
+            // 如果 shouldRestoreClusterList 为 true，说明正在从详情页返回聚合列表
+            // 此时不应设置 isShowingSearchView = true，否则会覆盖聚合列表的恢复逻辑
+            if navigationCoordinator.path.isEmpty && !appState.shouldRestoreClusterList {
                 appState.isShowingSearchView = true
             }
         }
@@ -196,6 +196,55 @@ struct OthersView: View {
             isAutoClose: true
         ))
         toastManager.showIfNotPresent(newItem)
+    }
+
+    // MARK: - 更多操作
+
+    /// 显示更多操作 ActionSheet（举报用户）
+    private func showMoreActions() {
+        let alert = UIAlertController(title: "更多操作", message: nil, preferredStyle: .actionSheet)
+
+        // 举报用户按钮
+        alert.addAction(UIAlertAction(title: "举报用户", style: .default) { _ in
+            // 显示举报功能即将上线提示
+            Self.showComingSoonAlert(
+                title: "举报功能即将上线",
+                message: "感谢您的反馈，我们正在完善此功能。如遇紧急情况，请通过「我的 - 设置 - 意见反馈」联系我们。"
+            )
+        })
+
+        // 取消按钮
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+
+        // 展示弹窗
+        DispatchQueue.main.async {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController {
+                // 找到最顶层的 presented view controller
+                var topController = rootViewController
+                while let presented = topController.presentedViewController {
+                    topController = presented
+                }
+                topController.present(alert, animated: true)
+            }
+        }
+    }
+
+    /// 显示"即将上线"提示弹窗
+    private static func showComingSoonAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+
+        DispatchQueue.main.async {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController {
+                var topController = rootViewController
+                while let presented = topController.presentedViewController {
+                    topController = presented
+                }
+                topController.present(alert, animated: true)
+            }
+        }
     }
 }
 

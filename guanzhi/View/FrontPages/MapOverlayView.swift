@@ -116,12 +116,22 @@ struct MapOverlayView: View {
             
             // MARK: - 地图控件（根据地图类型切换）
             if useMKMapView {
-                // ===== MKMapView 模式：使用官方 UIKit 控件 =====
+                // ===== MKMapView 模式：使用自定义按钮 =====
+                // 🚨 不使用 MKUserTrackingButton，因为它会自动设置 userTrackingMode 导致地图锁定
 
-                // MKUserTrackingButton（官方定位按钮，圆形毛玻璃背景已内置）
-                MKUserTrackingButtonWrapper(mapView: mkMapView, size: kMapControlButtonSize)
-                    .frame(width: kMapControlButtonSize, height: kMapControlButtonSize)
-                    .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
+                // 定位按钮（自定义实现，只触发一次定位，不使用跟踪模式）
+                Button {
+                    print("🗺️ MKMapView 定位按钮被点击")
+                    shouldCenterOnUser = true
+                } label: {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                }
+                .frame(width: kMapControlButtonSize, height: kMapControlButtonSize)
+                .background(Color(.systemBackground), in: Circle())
+                .compositingGroup()
+                .shadow(color: Color("color-primary"), radius: 0, x: 2, y: 4)
 
                 // MKCompassButton（官方指南针，圆形纯色背景）
                 MKCompassButtonWrapper(mapView: mkMapView, size: kMapControlButtonSize)

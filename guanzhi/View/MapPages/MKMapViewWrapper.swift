@@ -78,6 +78,9 @@ struct MKMapViewWrapper: UIViewRepresentable {
         // 禁用默认指南针（我们在 SwiftUI overlay 中使用 MKCompassButton）
         mapView.showsCompass = false
 
+        // 明确禁用用户跟踪模式，防止地图被锁定
+        mapView.userTrackingMode = .none
+
         // ===== 单一初始化策略 =====
         // 1. 永远先设置一个有效的初始区域（优先用传入的，否则用默认）
         let initialRegion: MKCoordinateRegion

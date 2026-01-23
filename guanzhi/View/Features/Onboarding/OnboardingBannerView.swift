@@ -18,6 +18,9 @@ struct OnboardingBannerView: View {
     @EnvironmentObject var coordinator: OnboardingCoordinator
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
+    // ✅ 监听登录状态，未登录时不显示引导
+    @ObservedObject var loginManager = OTOLoginStatusManager.shared
+
     /// 普通 Banner 高度（与现有提示栏一致）
     private let normalBannerHeight: CGFloat = 110
     /// 带按钮的 Banner 高度
@@ -26,48 +29,51 @@ struct OnboardingBannerView: View {
     private let tallBannerHeight: CGFloat = 200
 
     var body: some View {
-        ZStack(alignment: .top) {
-            // 透明背景占满全屏，用于点击穿透
-            Color.clear
+        // ✅ 未登录时不显示引导 Banner
+        if loginManager.isLoggedIn {
+            ZStack(alignment: .top) {
+                // 透明背景占满全屏，用于点击穿透
+                Color.clear
 
-            // Banner 内容
-            Group {
-                switch coordinator.bannerState {
-                case .hidden:
-                    EmptyView()
-                        .id("hidden")
+                // Banner 内容
+                Group {
+                    switch coordinator.bannerState {
+                    case .hidden:
+                        EmptyView()
+                            .id("hidden")
 
-                case .showing(let step):
-                    if step.isPersistent {
-                        // 常驻类型：有关闭按钮，无倒计时
-                        persistentBannerContent(
-                            message: step.message,
-                            backgroundColor: Color("color-primary")
-                        )
-                        .id("persistent-\(step.rawValue)")
-                    } else {
-                        // 自动关闭类型：有倒计时圆环和关闭按钮
-                        autoCloseBannerContent(
-                            message: step.message,
-                            backgroundColor: Color("color-primary"),
-                            duration: step.autoCloseTiming ?? 3.0,
-                            allowUnlimitedLines: step.allowsUnlimitedLines
-                        )
-                        .id("autoclose-\(step.rawValue)")
+                    case .showing(let step):
+                        if step.isPersistent {
+                            // 常驻类型：有关闭按钮，无倒计时
+                            persistentBannerContent(
+                                message: step.message,
+                                backgroundColor: Color("color-primary")
+                            )
+                            .id("persistent-\(step.rawValue)")
+                        } else {
+                            // 自动关闭类型：有倒计时圆环和关闭按钮
+                            autoCloseBannerContent(
+                                message: step.message,
+                                backgroundColor: Color("color-primary"),
+                                duration: step.autoCloseTiming ?? 3.0,
+                                allowUnlimitedLines: step.allowsUnlimitedLines
+                            )
+                            .id("autoclose-\(step.rawValue)")
+                        }
+
+                    case .showingSuccess:
+                        successBannerContent()
+                            .id("success")
+
+                    case .showingSkipConfirm:
+                        skipConfirmContent()
+                            .id("skipConfirm")
                     }
-
-                case .showingSuccess:
-                    successBannerContent()
-                        .id("success")
-
-                case .showingSkipConfirm:
-                    skipConfirmContent()
-                        .id("skipConfirm")
                 }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: coordinator.bannerState)
             }
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: coordinator.bannerState)
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
     }
 
     // MARK: - 常驻 Banner（有关闭按钮，无倒计时）

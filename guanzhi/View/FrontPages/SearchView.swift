@@ -35,6 +35,7 @@ struct SearchView: View {
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
+    @EnvironmentObject var loginManager: OTOLoginStatusManager  // ✅ 登录状态管理
 //    @StateObject var navigationCoordinator = NavigationCoordinator()
     
     @State private var detents: Set<PresentationDetent> = [.height(Constants.sheetCollapsedHeight), .fraction(Constants.sheetExpandedFraction)]
@@ -62,10 +63,9 @@ struct SearchView: View {
     @State private var isShowingClusterList = false  // 是否显示聚合列表
     @State private var clusterListDetent: PresentationDetent = .medium  // 当前 sheet 高度
     @State private var clusterListSession = UUID()  // 每次打开 sheet 的会话 ID，用于重置内部 @State
-    @State private var savedClusterAnnotations: [CustomAnnotation] = []  // 进入详情前保存的聚合列表
-    @State private var savedClusterListDetent: PresentationDetent = .medium  // 进入详情前保存的 detent
-    @State private var savedScrollToShareId: Int? = nil  // 进入详情时点击的 share ID（用于恢复滚动位置）
-    @State private var shouldRestoreClusterList = false  // 退出详情时是否需要恢复聚合列表
+    // ✅ savedClusterAnnotations/savedClusterListDetent/savedScrollToShareId 已移到 SearchViewModel 中
+    // 避免视图重建导致状态丢失（导航到用户主页再返回时的问题）
+    // ✅ appState.shouldRestoreClusterList 已移到 AppStateModel 中，其他页面可访问
 
     // MARK: - 标注点击处理（Stage 1 提取，供 SwiftUI Map 和 MKMapView 共用）
     private func handleAnnotationTap(annotation: CustomAnnotation, thumbnailImage: UIImage?) {
@@ -143,11 +143,11 @@ struct SearchView: View {
                         print("🔷 [ClusterList] 点击了 share.id=\(share.id)")
                         // 【Onboarding】触发标注点击事件（用于步骤 B）
                         onboardingCoordinator.handleEvent(.annotationTapped)
-                        // 保存状态用于恢复
-                        savedClusterAnnotations = clusterAnnotations
-                        savedClusterListDetent = clusterListDetent
-                        savedScrollToShareId = share.id
-                        shouldRestoreClusterList = true
+                        // 保存状态用于恢复（使用 SearchViewModel 存储，避免视图重建导致状态丢失）
+                        searchViewModel.savedClusterAnnotations = clusterAnnotations
+                        searchViewModel.savedClusterListDetent = clusterListDetent
+                        searchViewModel.savedScrollToShareId = share.id
+                        appState.shouldRestoreClusterList = true
                         print("🔷 [ClusterList] 保存了 \(clusterAnnotations.count) 条标注，detent=\(clusterListDetent)，scrollTo=\(share.id)，标记需要恢复")
 
                         // 关闭列表
@@ -173,7 +173,7 @@ struct SearchView: View {
                 },
                 bouncesEnabled: true,
                 endFooterStyle: .text("- 到底啦 -"),
-                restoreToID: savedScrollToShareId,
+                restoreToID: searchViewModel.savedScrollToShareId,
                 estimatedRowHeight: 133
             )
         }
@@ -182,34 +182,62 @@ struct SearchView: View {
 
     /// 恢复聚合列表（如果之前因进入详情而隐藏）
     private func restoreClusterListIfNeeded() {
-        print("🔷 [ClusterList] restoreClusterListIfNeeded called, shouldRestore=\(shouldRestoreClusterList), savedCount=\(savedClusterAnnotations.count), savedDetent=\(savedClusterListDetent)")
-        guard shouldRestoreClusterList else {
-            print("🔷 [ClusterList] 不需要恢复，跳过")
+        let pathCount = navigationCoordinator.path.count
+        print("🔷 [ClusterList] restoreClusterListIfNeeded called, shouldRestore=\(appState.shouldRestoreClusterList), pathCount=\(pathCount), savedCount=\(searchViewModel.savedClusterAnnotations.count)")
+
+        // ✅ 关键修复：只有当导航栈完全清空时才恢复聚合列表
+        // 这样从嵌套的详情页（如 OthersView 的 ShareListView 进入的详情页）返回时不会触发恢复
+        guard navigationCoordinator.path.isEmpty else {
+            print("🔷 [ClusterList] 导航栈不为空（pathCount=\(pathCount)），跳过恢复")
+            return
+        }
+
+        guard appState.shouldRestoreClusterList else {
+            print("🔷 [ClusterList] shouldRestoreClusterList=false，跳过恢复")
+            return
+        }
+
+        guard !searchViewModel.savedClusterAnnotations.isEmpty else {
+            print("🔷 [ClusterList] savedClusterAnnotations 为空，跳过恢复")
             return
         }
 
         // 先关闭可能正在显示的搜索栏 sheet（避免 sheet 冲突）
         appState.isShowingSearchView = false
 
-        // 恢复聚合列表
-        clusterAnnotations = savedClusterAnnotations
-        clusterListDetent = savedClusterListDetent
+        // 恢复聚合列表（从 SearchViewModel 读取保存的状态）
+        clusterAnnotations = searchViewModel.savedClusterAnnotations
+        clusterListDetent = searchViewModel.savedClusterListDetent
 
         if useOverlayForClusterList {
             // Overlay 模式：无需延迟和动画，瞬间出现（skipAnimation 会处理）
             isShowingClusterList = true
-            shouldRestoreClusterList = false
-            savedClusterAnnotations = []
+            searchViewModel.savedClusterAnnotations = []
             print("🔷 [ClusterList] 已恢复聚合列表（overlay瞬间出现），共 \(clusterAnnotations.count) 条")
+
+            // ✅ 关键修复：延迟重置 shouldRestoreClusterList
+            // 让所有 onDisappear 回调（OthersView/MyView 等）先执行完毕
+            // 否则这些回调会检测到 shouldRestoreClusterList=false，错误地设置 isShowingSearchView=true
+            let appStateRef = appState
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                appStateRef.shouldRestoreClusterList = false
+                print("🔷 [ClusterList] 延迟重置 shouldRestoreClusterList = false")
+            }
         } else {
             // Sheet 模式：需要短暂延迟避免 sheet 冲突
+            let appStateRef = appState
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     isShowingClusterList = true
                 }
-                shouldRestoreClusterList = false
-                savedClusterAnnotations = []
-                print("🔷 [ClusterList] 已恢复聚合列表（sheet），共 \(clusterAnnotations.count) 条，detent=\(clusterListDetent)，scrollTo=\(String(describing: savedScrollToShareId))")
+                searchViewModel.savedClusterAnnotations = []
+                print("🔷 [ClusterList] 已恢复聚合列表（sheet），共 \(clusterAnnotations.count) 条，detent=\(clusterListDetent)，scrollTo=\(String(describing: searchViewModel.savedScrollToShareId))")
+
+                // ✅ 关键修复：延迟重置 shouldRestoreClusterList
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    appStateRef.shouldRestoreClusterList = false
+                    print("🔷 [ClusterList] 延迟重置 shouldRestoreClusterList = false")
+                }
             }
         }
     }
@@ -256,7 +284,7 @@ struct SearchView: View {
         @Bindable var appState = appState
 
         /*ToastRootView*/ ZStack {
-            if !OTOLoginStatusManager.shared.isLoggedIn {
+            if !loginManager.isLoggedIn {
                 // 显示登录页面
                 LogInView(userlogin: userlogin)
             } else {
@@ -310,11 +338,15 @@ struct SearchView: View {
                             }
                             .onReceive(locationManager.$currentLocation) { location in
                                 if let location = location, !appState.hasSetInitialRegion {
-                                    // 首次获取位置：触发精确定位（类似点击定位按钮）
-                                    shouldCenterOnUser = true
+                                    // 首次获取位置：触发精确定位
                                     appState.hasSetInitialRegion = true
+                                    shouldCenterOnUser = true
                                     searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
                                 }
+                            }
+                            // 监听登出通知，重置地图初始化状态
+                            .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
+                                appState.hasSetInitialRegion = false
                             }
                         } else {
                             // ===== 旧版：SwiftUI Map（回退开关） =====
@@ -371,8 +403,17 @@ struct SearchView: View {
                                 if let location = location, !appState.hasSetInitialRegion {
                                     position = .userLocation(followsHeading: false, fallback: .automatic)
                                     appState.hasSetInitialRegion = true
+                                    // 同时更新 region 到用户位置
+                                    searchViewModel.region = MKCoordinateRegion(
+                                        center: location,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                                    )
                                     searchViewModel.fetchAllShares(latitude: location.latitude, longitude: location.longitude)
                                 }
+                            }
+                            // 监听登出通知，重置地图初始化状态
+                            .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
+                                appState.hasSetInitialRegion = false
                             }
                         }
                         } // End Group
@@ -425,8 +466,9 @@ struct SearchView: View {
                                 .environmentObject(userProfileManager)
                                 .transition(.move(edge: .trailing))
                             }
-
                         }
+                        // ✅ 确保 isShowingSearchView 变化时 MapOverlayView 的 transition 能正确触发
+                        .animation(.easeInOut(duration: 0.2), value: appState.isShowingSearchView)
                         // MARK: - 网络错误提示
                         .overlay(alignment: .top) {
                             if searchViewModel.nearbySharesState.hasError {
@@ -507,9 +549,9 @@ struct SearchView: View {
                             isEnabled: !useOverlayForClusterList,
                             isPresented: $isShowingClusterList,
                             clusterAnnotations: clusterAnnotations,
-                            shouldRestoreClusterList: shouldRestoreClusterList,
+                            shouldRestoreClusterList: appState.shouldRestoreClusterList,
                             onDismiss: {
-                                if !shouldRestoreClusterList {
+                                if !appState.shouldRestoreClusterList {
                                     clusterAnnotations = []
                                     appState.isShowingSearchView = true
                                 }
@@ -528,16 +570,15 @@ struct SearchView: View {
                                 heightFraction: 0.75,
                                 edgeInset: 12,
                                 onDismiss: {
-                                    print("🔷 [ClusterList] overlay onDismiss, shouldRestoreClusterList=\(shouldRestoreClusterList)")
-                                    if !shouldRestoreClusterList {
+                                    print("🔷 [ClusterList] overlay onDismiss, appState.shouldRestoreClusterList=\(appState.shouldRestoreClusterList)")
+                                    if !appState.shouldRestoreClusterList {
                                         clusterAnnotations = []
-                                        withAnimation(.easeOut(duration: 0.15)) {
-                                            appState.isShowingSearchView = true
-                                        }
+                                        // ✅ isShowingSearchView 的恢复移到 onChange(of: isShowingClusterList) 中处理
+                                        // 避免 asyncAfter 导致动画不触发的问题
                                     }
                                 },
                                 content: { clusterListContent },
-                                skipAnimation: shouldRestoreClusterList  // 进入/返回详情时跳过动画
+                                skipAnimation: appState.shouldRestoreClusterList  // 进入/返回详情时跳过动画
                             )
                             .zIndex(100)
                         }
@@ -619,7 +660,7 @@ struct SearchView: View {
                     var myUserId = OTOLoginStatusManager.shared.getUserID()
 
                     // 如果已登录但 userId 为 0，先从后端获取用户信息并保存 userId
-                    if myUserId == 0 && OTOLoginStatusManager.shared.isLoggedIn {
+                    if myUserId == 0 && loginManager.isLoggedIn {
                         print("⚠️ SearchView: userId 为 0，尝试从后端获取...")
                         myUserId = try await fetchAndSaveCurrentUserId()
                     }
@@ -664,6 +705,15 @@ struct SearchView: View {
             // 聚合列表从显示变成隐藏
             if !isShowing && oldValue {
                 onboardingCoordinator.handleEvent(.clusterListDismissed)
+
+                // ✅ 修复：在 SwiftUI 的正常周期中恢复 UI
+                // 注意：只在非恢复模式下才恢复（appState.shouldRestoreClusterList 为 false）
+                // onDismiss 中的 asyncAfter 可能导致 animation 不触发
+                if !appState.shouldRestoreClusterList {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        appState.isShowingSearchView = true
+                    }
+                }
             }
         }
 //        .disabled(appState.isShareImageExpanded)
@@ -686,7 +736,7 @@ struct SearchView: View {
             locationManager.requestLocation()
 
             // 登录后请求通知权限并注册 APNs
-            if OTOLoginStatusManager.shared.isLoggedIn {
+            if loginManager.isLoggedIn {
                 await requestNotificationPermission()
             }
         }
@@ -778,18 +828,22 @@ struct SearchView: View {
 
 struct SearchView_Previews: PreviewProvider {
     @Namespace static var animationNamespace
-    
+
     static var previews: some View {
-        // 通过调用 login(token:) 方法来模拟登录状态
-        OTOLoginStatusManager.shared.login(token: "test_token")
-        
+        // ✅ 使用 setLoggedInForPreview，不写 Keychain
+        #if DEBUG
+        OTOLoginStatusManager.shared.setLoggedInForPreview(true)
+        #endif
+
         return SearchView(animationNamespace: animationNamespace, userlogin: UserLoginModel())
             .environment(\.appState, AppStateModel())
+            .environmentObject(OTOLoginStatusManager.shared)  // ✅ 必须添加
             .environmentObject(LocationManager())
             .environmentObject(SearchViewModel())
             .environmentObject(ToastManager())
             .environmentObject(UserProfileManager())
             .environmentObject(NavigationCoordinator())
+            .environmentObject(OnboardingCoordinator())
     }
 }
 
