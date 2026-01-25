@@ -29,6 +29,7 @@
 		C34BE5946E7B453DB58B9BDA /* ImagePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D78E09AE706E44768C4F49B7 /* ImagePlaceholder.swift */; };
 		CC01A0022F0388820001CC01 /* NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01A0012F0388820001CC01 /* NotificationModels.swift */; };
 		CC01B0022F0388820001CC01 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01B0012F0388820001CC01 /* NotificationService.swift */; };
+		CC01REPT2F0388820001CC01 /* ReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01REPT1F0388820001CC01 /* ReportService.swift */; };
 		CC01C0022F0388820001CC01 /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01C0012F0388820001CC01 /* MessagesView.swift */; };
 		CC01D0022F0388820001CC01 /* MessageTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01D0012F0388820001CC01 /* MessageTabBar.swift */; };
 		CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01E0012F0388820001CC01 /* MessageRowView.swift */; };
@@ -219,6 +220,7 @@
 		CBE6F53DADE64A9C807BDF5F /* ProfileHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileHeaderView.swift; sourceTree = "<group>"; };
 		CC01A0012F0388820001CC01 /* NotificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationModels.swift; sourceTree = "<group>"; };
 		CC01B0012F0388820001CC01 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		CC01REPT1F0388820001CC01 /* ReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportService.swift; sourceTree = "<group>"; };
 		CC01C0012F0388820001CC01 /* MessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesView.swift; sourceTree = "<group>"; };
 		CC01D0012F0388820001CC01 /* MessageTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageTabBar.swift; sourceTree = "<group>"; };
 		CC01E0012F0388820001CC01 /* MessageRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRowView.swift; sourceTree = "<group>"; };
@@ -699,6 +701,7 @@
 				6F5CBB93F5C1492B9E396D6C /* DataLoadingState.swift */,
 				CC01A0012F0388820001CC01 /* NotificationModels.swift */,
 				CC01B0012F0388820001CC01 /* NotificationService.swift */,
+				CC01REPT1F0388820001CC01 /* ReportService.swift */,
 				FF6C0DBE2F02887300CC0C8C /* DeviceService.swift */,
 				FF99ECD12EFA3C8E0080AE71 /* CommentModels.swift */,
 				FF99ECD22EFA3C8E0080AE71 /* CommentService.swift */,
@@ -1095,6 +1098,7 @@
 				FF6C0DBF2F02887300CC0C8C /* DeviceService.swift in Sources */,
 				CC01A0022F0388820001CC01 /* NotificationModels.swift in Sources */,
 				CC01B0022F0388820001CC01 /* NotificationService.swift in Sources */,
+				CC01REPT2F0388820001CC01 /* ReportService.swift in Sources */,
 				CC01C0022F0388820001CC01 /* MessagesView.swift in Sources */,
 				CC01D0022F0388820001CC01 /* MessageTabBar.swift in Sources */,
 				CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */,

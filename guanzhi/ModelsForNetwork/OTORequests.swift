@@ -142,6 +142,10 @@ enum OTORequest {
     /// 设备登出
     case logoutDevice(deviceToken: String)
 
+    // MARK: - 举报 API
+    /// 举报分享
+    case reportShare(shareId: Int64, reasonCode: String)
+
     // MARK: - 通知 API
     /// 获取通知列表
     case getNotifications(category: String?, status: String?, page: Int, size: Int)
@@ -484,6 +488,19 @@ extension OTORequest {
                     path: "/api/device/logout",
                     method: .delete,
                     param: ["deviceToken": deviceToken]
+                )
+
+            // MARK: - 举报 API
+
+            // 举报分享
+            case .reportShare(let shareId, let reasonCode):
+                return .init(
+                    path: "/api/guan/share/report",
+                    method: .post,
+                    param: [
+                        "shareId": shareId,
+                        "reasonCode": reasonCode
+                    ]
                 )
 
             // MARK: - 通知 API

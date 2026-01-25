@@ -1265,8 +1265,10 @@ struct ShareDetailView: View {
             })
         } else {
             alert.addAction(UIAlertAction(title: "举报", style: .default) { _ in
-                // 显示举报功能即将上线提示
-                Self.showComingSoonAlert(title: "举报功能即将上线", message: "感谢您的反馈，我们正在完善此功能。如遇紧急情况，请通过「我的 - 设置 - 意见反馈」联系我们。")
+                // 延迟显示举报原因选择，等待 actionSheet dismiss 完成
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    Self.showReportReasonSheet(viewModel: viewModel)
+                }
             })
         }
 
@@ -1430,6 +1432,78 @@ struct ShareDetailView: View {
                     // TODO: 可以在这里显示一个错误提示
                 }
             }
+        }
+    }
+
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   🚨 举报分享操作
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+
+    /// 显示举报原因选择表
+    private static func showReportReasonSheet(viewModel: SearchViewModel) {
+        guard let share = viewModel.selectedShare else { return }
+
+        let alert = UIAlertController(title: "选择举报原因", message: nil, preferredStyle: .actionSheet)
+
+        for reason in ReportReason.allCases {
+            alert.addAction(UIAlertAction(title: reason.displayText, style: .default) { _ in
+                // 延迟显示确认弹窗
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showReportConfirmation(shareId: share.id, reason: reason)
+                }
+            })
+        }
+
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
+        }
+    }
+
+    /// 显示举报确认弹窗
+    private static func showReportConfirmation(shareId: Int64, reason: ReportReason) {
+        let alert = UIAlertController(
+            title: "确认举报",
+            message: "举报原因：\(reason.displayText)\n\n确定要提交举报吗？",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "确认举报", style: .destructive) { _ in
+            Task {
+                await performReport(shareId: shareId, reason: reason)
+            }
+        })
+
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
+        }
+    }
+
+    /// 执行举报操作
+    private static func performReport(shareId: Int64, reason: ReportReason) async {
+        let result = await ReportService.shared.submitReport(shareId: shareId, reason: reason)
+
+        await MainActor.run {
+            switch result {
+            case .success:
+                showReportResultAlert(title: "举报已提交", message: "感谢您的反馈，我们将尽快处理。")
+            case .alreadyReported:
+                showReportResultAlert(title: "提示", message: "您已举报过该内容，请等待处理。")
+            case .failed(let errorMsg):
+                showReportResultAlert(title: "举报失败", message: errorMsg)
+            }
+        }
+    }
+
+    /// 显示举报结果提示
+    private static func showReportResultAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
         }
     }
 

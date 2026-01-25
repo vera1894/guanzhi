@@ -84,6 +84,11 @@ const routes = [
             component: () => import('../views/inspector/ShareDetail.vue')
           }
         ]
+      },
+      {
+        path: 'reports',
+        name: 'ReportManagement',
+        component: () => import('../views/ReportManagement.vue')
       }
     ]
   }

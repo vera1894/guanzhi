@@ -1,7 +1,8 @@
 # 部署操作 SSOT（Single Source of Truth）
 
-**文档版本**: v1.0
+**文档版本**: v1.2
 **创建日期**: 2026-01-14
+**最后更新**: 2026-01-24
 **适用对象**: Claude Code / AI Agent
 **前置文档**: `02_CONNECTIONS.private.md`（服务器连接信息）
 
@@ -17,8 +18,9 @@
 ├── releases/                    # 版本目录
 │   ├── v0-bootstrap/app.jar     # 初始版本
 │   ├── v3.6.1/app.jar
-│   └── v3.6.2/app.jar
-├── current -> releases/v3.6.2/  # 软链接，原子切换
+│   ├── v3.6.2/app.jar
+│   └── v3.7.0/app.jar           # 当前版本
+├── current -> releases/v3.7.0/  # 软链接，原子切换
 ├── application-prod.yml         # 外部配置文件
 └── start.sh                     # 备用启动脚本（仅应急使用）
 ```
@@ -39,7 +41,12 @@
 ### 标准发布步骤
 
 ```bash
-# 1. 本地构建
+# 0. 构建前清理 iCloud 重复文件（重要！）
+cd Server/onettoo/src
+find . -name "* 2.java" -exec rm -v {} \;
+
+# 1. 本地构建（必须使用 Java 17）
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 cd Server/onettoo
 mvn clean package -DskipTests
 
@@ -81,22 +88,33 @@ AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm get-command-invocation \
 ### 服务器部署命令
 
 ```bash
-# 1. 创建版本目录并下载（URL 用 base64 编码避免转义问题）
-URL_B64=$(echo -n '<presigned-url>' | base64)
-aws ssm send-command --parameters '{"command":[
-  "mkdir -p /home/ec2-user/releases/vX.Y.Z",
-  "URL=$(echo <URL_B64> | base64 -d)",
-  "curl -o /home/ec2-user/releases/vX.Y.Z/app.jar $URL",
-  "ls -la /home/ec2-user/releases/vX.Y.Z/"
-]}'
+# 1. 创建版本目录（单独执行，避免复杂参数）
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name AWS-RunShellScript \
+  --parameters commands='mkdir -p /home/ec2-user/releases/vX.Y.Z' \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
 
-# 2. 切换版本并重启
-aws ssm send-command --parameters '{"command":[
-  "ln -sfn /home/ec2-user/releases/vX.Y.Z /home/ec2-user/current",
-  "systemctl restart onettoo",
-  "sleep 15",
-  "systemctl status onettoo --no-pager"
-]}'
+# 2. 下载 JAR（URL 用单引号包裹）
+PRESIGNED_URL='<your-presigned-url>'
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name AWS-RunShellScript \
+  --parameters "{\"commands\":[\"curl -o /home/ec2-user/releases/vX.Y.Z/app.jar '$PRESIGNED_URL'\"]}" \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
+
+# 3. 切换版本并重启
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name AWS-RunShellScript \
+  --parameters commands='ln -sfn /home/ec2-user/releases/vX.Y.Z /home/ec2-user/current && systemctl restart onettoo' \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
 ```
 
 ---
@@ -153,7 +171,7 @@ journalctl -u onettoo -n 50 --no-pager
 
 ```bash
 # 1. 切换到旧版本
-ln -sfn /home/ec2-user/releases/v3.6.1 /home/ec2-user/current
+ln -sfn /home/ec2-user/releases/v3.6.2 /home/ec2-user/current
 
 # 2. 重启服务
 systemctl restart onettoo
@@ -162,6 +180,86 @@ systemctl restart onettoo
 systemctl status onettoo
 curl -s http://localhost:8085/version
 ```
+
+---
+
+## 管理后台部署（admin-web）
+
+### 部署目录
+
+```
+/var/www/guanzhi-admin/
+├── assets/          # 静态资源
+├── favicon.ico
+└── index.html
+```
+
+### 部署流程
+
+```bash
+# 1. 本地构建
+cd admin-web
+npm run build
+
+# 2. 打包 dist 目录
+tar -czf /tmp/admin-web-dist.tar.gz -C dist .
+
+# 3. 上传到 S3
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy
+AWS_PROFILE=onettoo-cn aws s3 cp /tmp/admin-web-dist.tar.gz \
+  s3://guanzhi-deploy-temp-20260108/admin-web-dist-YYYYMMDD.tar.gz \
+  --region cn-northwest-1
+
+# 4. 生成 presigned URL
+AWS_PROFILE=onettoo-cn aws s3 presign \
+  s3://guanzhi-deploy-temp-20260108/admin-web-dist-YYYYMMDD.tar.gz \
+  --expires-in 3600 --region cn-northwest-1
+
+# 5. 服务器下载并解压（SSM send-command）
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name AWS-RunShellScript \
+  --parameters '{"commands":["curl -o /tmp/admin-web.tar.gz '"'"'<PRESIGNED_URL>'"'"' && rm -rf /var/www/guanzhi-admin/* && tar -xzf /tmp/admin-web.tar.gz -C /var/www/guanzhi-admin/"]}' \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
+```
+
+### 验证部署
+
+```bash
+# 检查文件时间戳
+ls -la /var/www/guanzhi-admin/
+# 期望：时间戳为今天
+```
+
+### 访问地址
+
+- http://52.83.127.15/guanzhi-admin/
+
+---
+
+## 多端功能部署检查
+
+**重要**：当功能涉及多个端时，必须确保所有端都已部署。
+
+### 检查清单
+
+| 端 | 检查方法 | 命令 |
+|----|----------|------|
+| 后端 | 版本 buildTime | `curl -s http://52.83.127.15/api/version \| jq .datas.buildTime` |
+| 管理后台 | 文件时间戳 | SSM: `ls -la /var/www/guanzhi-admin/` |
+| iOS | App 内版本号 | 设备上查看"关于"页面 |
+
+### 常见遗漏场景
+
+1. **后端部署了，管理后台忘记部署**
+   - 症状：新 API 正常，但管理后台没有对应页面/功能
+   - 解决：检查 `/var/www/guanzhi-admin/` 时间戳，重新部署
+
+2. **新建数据库表忘记执行**
+   - 症状：API 返回 500 或数据库错误
+   - 解决：手动执行建表 SQL（项目不使用 Flyway 自动迁移）
 
 ---
 
@@ -237,6 +335,41 @@ public RestOut publicEndpoint() { ... }
 --parameters '{"command":["echo \"hello\""]}'
 ```
 
+### 问题 7：Lombok 注解处理器不工作（构建失败）
+
+**现象**：
+```
+找不到符号: 方法 getXxx()
+找不到符号: 方法 setXxx()
+```
+所有带 `@Data` 注解的类都无法生成 getter/setter。
+
+**根本原因**：
+项目目录在 iCloud 中，同步过程会产生重复文件（文件名含 " 2.java" 后缀），导致编译器混乱。
+
+**解决**：
+```bash
+# 构建前清理重复文件
+cd Server/onettoo/src
+find . -name "* 2.java" -exec rm -v {} \;
+```
+
+**预防**：
+- 每次构建前检查并清理 iCloud 重复文件
+- 考虑将后端代码移出 iCloud 目录
+
+### 问题 8：Java 版本不匹配
+
+**现象**：
+Lombok 或其他注解处理器行为异常，或编译警告/错误。
+
+**解决**：
+确保使用 Java 17 构建：
+```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+mvn clean package -DskipTests
+```
+
 ---
 
 ## 安全规则（硬约束）
@@ -255,6 +388,7 @@ public RestOut publicEndpoint() { ... }
 | `02_CONNECTIONS.private.md` | 服务器连接信息、实例 ID |
 | `99_SERVER_OPERATIONS_RULES.md` | 服务器操作通用规则 |
 | `logs/2026-01-13-deployment-ssot-plan-cc.md` | 本 SSOT 的实施记录 |
+| `logs/2026-01-24-report-feature-implementation-cc.md` | v3.7.0 部署记录 |
 
 ---
 
@@ -263,3 +397,5 @@ public RestOut publicEndpoint() { ... }
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | v1.0 | 2026-01-14 | 初版，整合阶段 0/1 实施经验 |
+| v1.1 | 2026-01-24 | 添加问题 7（iCloud 重复文件）、问题 8（Java 版本）；更新 SSM 命令示例为单步执行；更新当前版本为 v3.7.0 |
+| v1.2 | 2026-01-24 | 新增管理后台部署章节、多端功能部署检查清单 |

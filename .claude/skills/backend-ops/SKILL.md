@@ -21,7 +21,9 @@ description: 后端操作指南。在进行后端开发、部署或服务器操�
 |----------|--------|----------|
 | 后端开发 | Java、Controller、Service、接口开发 | `Server/onettoo/重要项目信息/项目结构说明.md` |
 | 后端部署 | 部署、发布、JAR、上线 | `projectBasicInfo/05_DEPLOYMENT_SSOT.md` |
+| 管理后台部署 | admin-web、管理后台、Vue | `projectBasicInfo/05_DEPLOYMENT_SSOT.md`（管理后台部署章节） |
 | 服务器操作 | Nginx、MySQL、日志、排查 | `projectBasicInfo/99_SERVER_OPERATIONS_RULES.md` |
+| **问题排查** | 不工作、没数据、报错、bug | `projectBasicInfo/99_SERVER_OPERATIONS_RULES.md`（排查问题章节） |
 
 ## 后端开发指引
 
@@ -84,6 +86,68 @@ AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm start-session --target i-0f6e22ef4fb
 1. 禁止在文档/代码中写密钥值
 2. 密钥只存在于服务器 `/home/ec2-user/.env`
 3. SSM 命令输出可能泄露密钥，避免执行 `cat .env`
+
+## 问题排查流程（重要）
+
+当用户报告"某功能不工作"、"数据没显示"等问题时，**按以下优先级排查**：
+
+### 优先级 1：验证数据层
+
+**先确认数据是否存在**，避免在代码层浪费时间。
+
+```bash
+# SSM 执行数据库查询
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name AWS-RunShellScript \
+  --parameters '{"commands":["export $(cat /home/ec2-user/.env | xargs) && mysql -u$DB_USER -p$DB_PWD $DB_NAME -e \"SELECT * FROM <table> ORDER BY created_at DESC LIMIT 5;\""]}' \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
+```
+
+- 如果数据存在 → 问题在前端显示层
+- 如果数据不存在 → 检查后端 API 或数据库表
+
+### 优先级 2：验证后端状态
+
+```bash
+# 检查版本
+curl -s http://52.83.127.15/api/version | jq .datas.buildTime
+
+# 检查服务状态（SSM）
+# 命令: systemctl status onettoo
+
+# 检查错误日志（SSM）
+# 命令: journalctl -u onettoo -n 100 --no-pager | grep -i error
+```
+
+### 优先级 3：验证前端部署
+
+```bash
+# 检查管理后台部署时间（SSM）
+# 命令: ls -la /var/www/guanzhi-admin/
+```
+
+如果时间早于功能开发日期 → 需要重新部署管理后台
+
+### 技术栈注意事项
+
+| 组件 | 说明 |
+|------|------|
+| 数据库迁移 | **不使用 Flyway**。`db/migration/*.sql` 仅作备份/文档用途 |
+| ORM | MyBatis-Plus，**不会自动创建表** |
+| 新表部署 | 需要手动执行建表 SQL |
+
+### 排查 Checklist
+
+- [ ] 数据库中数据是否存在？
+- [ ] 后端版本是否正确？（buildTime）
+- [ ] 后端日志是否有错误？
+- [ ] 管理后台是否部署了最新版本？
+- [ ] 新数据库表是否已创建？
+
+---
 
 ## 日志与记录
 - 重大操作（部署、配置调整、复杂 Bug 修复）完成后，在 `projectBasicInfo/logs/` 记录，命名 `YYYY-MM-DD-主题-角色.md`

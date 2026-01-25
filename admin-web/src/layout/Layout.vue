@@ -44,6 +44,11 @@
           <el-icon><Search /></el-icon>
           <span>综合查询</span>
         </el-menu-item>
+
+        <el-menu-item index="/reports">
+          <el-icon><Warning /></el-icon>
+          <span>举报管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
