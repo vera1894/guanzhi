@@ -1,7 +1,7 @@
 # 服务器操作规则
 
-**文档版本**: v2.1
-**最后更新**: 2026-01-24
+**文档版本**: v2.2
+**最后更新**: 2026-01-28
 **适用对象**: Claude Code / AI Agent
 
 ---
@@ -94,6 +94,23 @@ location /image/ {
 }
 ```
 
+### ⚠️ 测试静态文件时必须带 Host 头
+
+**重要**：Nginx server block 配置了 `server_name onettoo.com`，测试静态文件时必须带正确的 Host 头，否则返回 404。
+
+```bash
+# 错误：不带 Host 头（返回 404）
+curl http://localhost/image/xxx.jpg
+
+# 正确：带 Host 头
+curl -H "Host: onettoo.com" http://localhost/image/xxx.jpg
+
+# 或者使用域名（外部测试）
+curl https://onettoo.com/image/xxx.jpg
+```
+
+**原因**：Nginx 需要 Host 头来匹配正确的 server block，localhost 请求不会匹配 `server_name onettoo.com`。
+
 ---
 
 ## 操作日志记录
@@ -128,6 +145,7 @@ YYYY-MM-DD-<操作描述>-cc.md
 
 #### 步骤 1：确认数据层状态（最优先）
 
+**直接在服务器上执行：**
 ```bash
 # 检查数据库表是否存在
 export $(cat /home/ec2-user/.env | xargs) && mysql -u$DB_USER -p$DB_PWD $DB_NAME -e "SHOW TABLES LIKE 'xxx';"
@@ -135,6 +153,25 @@ export $(cat /home/ec2-user/.env | xargs) && mysql -u$DB_USER -p$DB_PWD $DB_NAME
 # 检查数据是否存在
 export $(cat /home/ec2-user/.env | xargs) && mysql -u$DB_USER -p$DB_PWD $DB_NAME -e "SELECT * FROM xxx ORDER BY created_at DESC LIMIT 5;"
 ```
+
+**通过 SSM send-command 执行（注意转义）：**
+```bash
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name "AWS-RunShellScript" \
+  --parameters '{"commands":["sudo bash -c \"export $(cat /home/ec2-user/.env | xargs) && mysql -u\\$DB_USER -p\\$DB_PWD \\$DB_NAME -e \\\"SELECT * FROM guanzhi LIMIT 5\\\"\""]}' \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
+```
+
+**常用表名：**
+| 表名 | 用途 |
+|------|------|
+| `guanzhi` | 观之（分享）主表 |
+| `user` | 用户表 |
+| `share_comment` | 评论表 |
+| `share_vote` | 投票表 |
 
 如果数据存在 → 问题在前端显示层，跳到步骤 3
 
@@ -204,10 +241,44 @@ cat /etc/nginx/conf.d/*.conf | grep -A5 "location.*api"
 
 ---
 
+## EBS 卷扩容
+
+当在 AWS Console 扩展 EBS 卷后，需要在服务器内执行以下步骤：
+
+### 步骤 1：扩展分区
+
+```bash
+# 查看当前分区状态
+lsblk
+
+# 扩展分区（nvme0n1 是磁盘，1 是分区号）
+sudo growpart /dev/nvme0n1 1
+```
+
+### 步骤 2：扩展文件系统
+
+```bash
+# 对于 XFS 文件系统（Amazon Linux 2023 默认）
+sudo xfs_growfs /
+
+# 对于 ext4 文件系统
+sudo resize2fs /dev/nvme0n1p1
+```
+
+### 步骤 3：验证
+
+```bash
+df -h
+# 确认根分区容量已扩展
+```
+
+---
+
 ## 历史变更记录
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-01-28 | v2.2 - 增加 Nginx Host 头问题说明、SSM MySQL 命令转义示例、常用表名、EBS 扩容步骤 |
 | 2026-01-24 | v2.1 - 增加排查问题优先级流程、多端部署验证、技术栈说明（不使用 Flyway） |
 | 2026-01-14 | v2.0 - 部署相关内容迁移至 `05_DEPLOYMENT_SSOT.md`，服务管理改用 systemd |
 | 2025-12-31 | 清理 `/root/onettoo/` 目录，确立 `/home/ec2-user/` 为唯一部署目录 |

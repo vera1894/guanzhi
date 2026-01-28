@@ -1372,6 +1372,17 @@ class SearchViewModel: ObservableObject {
                 // 更新状态为成功
                 if let share = self.selectedShare {
                     self.shareDetailState = .loaded(share)
+
+                    // 发送通知，让地图标注重试加载失败的缩略图
+                    let thumbnailURL = self.getThumbnailURL(for: share)
+                    NotificationCenter.default.post(
+                        name: .shareDetailDidLoadSuccess,
+                        object: nil,
+                        userInfo: [
+                            "shareId": shareId,
+                            "thumbnailURL": thumbnailURL as Any
+                        ]
+                    )
                 } else {
                     self.shareDetailState = .idle
                 }
@@ -2089,6 +2100,9 @@ enum ImageVariant: Hashable {
 extension Notification.Name {
     /// 图片加载成功通知（userInfo 包含 "url": URL）
     static let imageCacheDidLoadImage = Notification.Name("imageCacheDidLoadImage")
+    /// 分享详情加载成功通知（userInfo 包含 "shareId": Int64, "thumbnailURL": URL?）
+    /// 用于通知地图标注重试加载失败的缩略图
+    static let shareDetailDidLoadSuccess = Notification.Name("shareDetailDidLoadSuccess")
 }
 
 // MARK: - 图片缓存类

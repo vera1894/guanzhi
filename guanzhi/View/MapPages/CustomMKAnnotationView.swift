@@ -128,6 +128,10 @@ class CustomMKAnnotationView: MKAnnotationView {
 
     // 通知观察者
     private var imageCacheObserver: NSObjectProtocol?
+    private var shareDetailLoadObserver: NSObjectProtocol?
+
+    // 当前标注的 shareId（用于匹配通知）
+    private var currentShareId: Int64?
 
     // MARK: - Initialization
 
@@ -150,17 +154,30 @@ class CustomMKAnnotationView: MKAnnotationView {
         if let observer = imageCacheObserver {
             NotificationCenter.default.removeObserver(observer)
         }
+        if let observer = shareDetailLoadObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     // MARK: - Notification
 
     private func setupNotificationObserver() {
+        // 监听图片缓存加载成功通知
         imageCacheObserver = NotificationCenter.default.addObserver(
             forName: .imageCacheDidLoadImage,
             object: nil,
             queue: .main
         ) { [weak self] notification in
             self?.handleImageCacheNotification(notification)
+        }
+
+        // 监听分享详情加载成功通知（用于重试失败的缩略图）
+        shareDetailLoadObserver = NotificationCenter.default.addObserver(
+            forName: .shareDetailDidLoadSuccess,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleShareDetailLoadNotification(notification)
         }
     }
 
@@ -174,6 +191,29 @@ class CustomMKAnnotationView: MKAnnotationView {
 
         // 图片已缓存，重新加载
         loadThumbnail(from: currentUrl, fadeScore: currentFadeScore)
+    }
+
+    /// 处理分享详情加载成功通知
+    /// 当用户查看分享详情并成功加载后，返回地图时重试加载失败的缩略图
+    private func handleShareDetailLoadNotification(_ notification: Notification) {
+        // 只在显示失败占位符时才重试
+        guard isShowingPlaceholder else { return }
+
+        // 检查 shareId 是否匹配
+        guard let notificationShareId = notification.userInfo?["shareId"] as? Int64,
+              let myShareId = currentShareId,
+              notificationShareId == myShareId else {
+            return
+        }
+
+        // 尝试使用通知中的 thumbnailURL，或使用当前的 URL
+        if let thumbnailURL = notification.userInfo?["thumbnailURL"] as? URL {
+            print("🔄 [Annotation] 分享 \(myShareId) 详情加载成功，使用新 URL 重试缩略图")
+            loadThumbnail(from: thumbnailURL, fadeScore: currentFadeScore)
+        } else if let currentUrl = currentImageUrl {
+            print("🔄 [Annotation] 分享 \(myShareId) 详情加载成功，使用原 URL 重试缩略图")
+            loadThumbnail(from: currentUrl, fadeScore: currentFadeScore)
+        }
     }
 
     // MARK: - Setup
@@ -326,6 +366,9 @@ class CustomMKAnnotationView: MKAnnotationView {
         thumbnailImage = nil
         thumbnailImageView.image = nil
 
+        // 保存 shareId 用于匹配通知
+        currentShareId = annotation.annotationData?.id
+
         // 获取 fadeScore 用于白化效果
         let fadeScore = annotation.annotationData?.fadeScore ?? 0
 
@@ -427,6 +470,7 @@ class CustomMKAnnotationView: MKAnnotationView {
         thumbnailImage = nil
         thumbnailImageView.image = nil
         currentImageUrl = nil
+        currentShareId = nil
         currentFadeScore = 0
         isShowingPlaceholder = false
         activityIndicator.stopAnimating()
