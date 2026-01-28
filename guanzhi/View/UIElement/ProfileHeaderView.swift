@@ -86,9 +86,9 @@ struct ProfileHeaderView: View {
             } else if let photoPath = displayModel.avatarPath, !photoPath.isEmpty {
                 // 他人头像：使用 AsyncImage 或占位图
                 // 这里先用占位图，后续可优化为 AsyncImage
-                return Image("例子")
+                return Image("icon-defaultAvatar")
             } else {
-                return Image("例子")
+                return Image("icon-defaultAvatar")
             }
         }()
 

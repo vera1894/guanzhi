@@ -35,11 +35,11 @@ struct CommentCellView: View {
                         .resizable()
                         .scaledToFill()
                 case .failure, .empty:
-                    Image("例子")
+                    Image("icon-defaultAvatar")
                         .resizable()
                         .scaledToFill()
                 @unknown default:
-                    Image("例子")
+                    Image("icon-defaultAvatar")
                         .resizable()
                         .scaledToFill()
                 }
@@ -253,11 +253,11 @@ struct ReplyPreviewView: View {
                             .resizable()
                             .scaledToFill()
                     case .failure, .empty:
-                        Image("例子")
+                        Image("icon-defaultAvatar")
                             .resizable()
                             .scaledToFill()
                     @unknown default:
-                        Image("例子")
+                        Image("icon-defaultAvatar")
                             .resizable()
                             .scaledToFill()
                     }

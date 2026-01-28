@@ -552,7 +552,7 @@ struct ShareDetailsCardView: View {
                 if let uiImage = userProfileManager.avatarImage {
                     return Image(uiImage: uiImage)
                 } else {
-                    return Image("例子")
+                    return Image("icon-defaultAvatar")
                 }
             }()
 
@@ -591,13 +591,13 @@ struct ShareDetailsCardView: View {
                         case .failure, .empty:
                             AvatarView_m(
                                 isEnabled: true,
-                                profileImage: Image("例子"),
+                                profileImage: Image("icon-defaultAvatar"),
                                 borderThickness: 4
                             )
                         @unknown default:
                             AvatarView_m(
                                 isEnabled: true,
-                                profileImage: Image("例子"),
+                                profileImage: Image("icon-defaultAvatar"),
                                 borderThickness: 4
                             )
                         }
@@ -606,7 +606,7 @@ struct ShareDetailsCardView: View {
                     // 无头像 URL，使用默认头像
                     AvatarView_m(
                         isEnabled: true,
-                        profileImage: Image("例子"),
+                        profileImage: Image("icon-defaultAvatar"),
                         borderThickness: 4
                     )
                 }

@@ -1738,7 +1738,7 @@ struct UserInfoCapsule: View {
             if let uiImage = userProfileManager.avatarImage {
                 return Image(uiImage: uiImage)
             } else {
-                return Image("例子")
+                return Image("icon-defaultAvatar")
             }
         }()
 
@@ -1824,13 +1824,13 @@ struct UserInfoCapsule: View {
                     case .failure, .empty:
                         AvatarView_s(
                             isEnabled: true,
-                            profileImage: Image("例子"),
+                            profileImage: Image("icon-defaultAvatar"),
                             borderThickness: 2
                         )
                     @unknown default:
                         AvatarView_s(
                             isEnabled: true,
-                            profileImage: Image("例子"),
+                            profileImage: Image("icon-defaultAvatar"),
                             borderThickness: 2
                         )
                     }
@@ -1838,7 +1838,7 @@ struct UserInfoCapsule: View {
             } else {
                 AvatarView_s(
                     isEnabled: true,
-                    profileImage: Image("例子"),
+                    profileImage: Image("icon-defaultAvatar"),
                     borderThickness: 2
                 )
             }
@@ -1870,7 +1870,7 @@ struct UserInfoCapsule: View {
             } else {
                 AvatarView_s(
                     isEnabled: true,
-                    profileImage: Image("例子"),
+                    profileImage: Image("icon-defaultAvatar"),
                     borderThickness: 2
                 )
             }
@@ -2050,7 +2050,7 @@ struct ShareDetailViewPreview: View {
         newDeps.searchViewModel.selectedShare = testShare
 
         // 设置一个测试图片
-        newDeps.searchViewModel.selectedAnnotationImage = UIImage(named: "例子")
+        newDeps.searchViewModel.selectedAnnotationImage = UIImage(named: "icon-defaultAvatar")
 
         deps = newDeps
     }

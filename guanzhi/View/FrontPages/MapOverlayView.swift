@@ -38,7 +38,7 @@ struct MapOverlayView: View {
             if let uiImage = userProfileManager.avatarImage {
                 return Image(uiImage: uiImage)
             } else {
-                return Image("例子")
+                return Image("icon-defaultAvatar")
             }
         }()
         

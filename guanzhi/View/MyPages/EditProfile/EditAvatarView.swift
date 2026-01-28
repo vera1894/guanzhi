@@ -57,7 +57,7 @@ struct EditAvatarView: View {
             // 显示头像
             AvatarView_xl(
                 isEnabled: true,
-                profileImage: croppedImage ?? userProfileManager.avatarImage ?? UIImage(named: "例子")!, 
+                profileImage: croppedImage ?? userProfileManager.avatarImage ?? UIImage(named: "icon-defaultAvatar")!,
                 borderThickness: 10
             )
             

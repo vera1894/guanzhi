@@ -57,19 +57,19 @@ struct ButtonStyles: View {
             Button(action: {
                 // 头像-s
             }) { }
-            .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
+            .buttonStyle(AvatarStyle_s(isEnabled: true, profileImage: Image("icon-defaultAvatar"), borderThickness: 4))
             
             Button(action: {
                 // 头像-m
             }) { }
-            .buttonStyle(AvatarStyle_m(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
+            .buttonStyle(AvatarStyle_m(isEnabled: true, profileImage: Image("icon-defaultAvatar"), borderThickness: 4))
             
-            AvatarView_m(isEnabled: true, profileImage: Image("例子"), borderThickness: 4)
+            AvatarView_m(isEnabled: true, profileImage: Image("icon-defaultAvatar"), borderThickness: 4)
             
             Button(action: {
                 // 头像-l
             }) { }
-            .buttonStyle(AvatarStyle_l(isEnabled: true, profileImage: Image("例子"), borderThickness: 4))
+            .buttonStyle(AvatarStyle_l(isEnabled: true, profileImage: Image("icon-defaultAvatar"), borderThickness: 4))
         }
         
         HStack(alignment: .top) {
@@ -753,7 +753,7 @@ struct SeeePositionStyle: ButtonStyle {
 //                .frame(width: 24, height: 33)
 ////                .offset(CGSize(width: 0, height: 32.0))
 //                .offset(y: 32)
-//            Image("例子")
+//            Image("icon-defaultAvatar")
 //                .resizable()
 //                .scaledToFill()
 //                .clipShape(Circle())
