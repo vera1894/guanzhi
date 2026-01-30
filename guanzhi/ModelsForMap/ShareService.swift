@@ -171,10 +171,10 @@ final class ShareService {
 
     // MARK: - 贴纸系统 API
 
-    /// 获取贴纸可用性列表
+    /// 获取贴纸可用性列表（包含统计数据和当前用户使用的贴纸）
     /// - Parameter shareId: 分享 ID
-    /// - Returns: 贴纸可用性数组
-    func fetchStickerAvailability(shareId: Int64) async throws -> [StickerAvailability] {
+    /// - Returns: 完整的贴纸可用性结果
+    func fetchStickerAvailability(shareId: Int64) async throws -> StickerAvailabilityResult {
         let data = try await OTONetwork.request(
             .fetchStickerAvailability(shareId: shareId)
         )
@@ -183,11 +183,11 @@ final class ShareService {
         if let jsonString = String(data: data, encoding: .utf8) {
             print("🔍 [ShareService] fetchStickerAvailability 原始 JSON:")
             print(jsonString)
-            // 检查原始 JSON 中是否包含 ZHENXIU
-            if jsonString.contains("ZHENXIU") || jsonString.contains("zhenxiu") {
-                print("🔍 [ShareService] ✅ 原始 JSON 中包含 ZHENXIU/zhenxiu")
+            // 检查原始 JSON 中是否包含 stickerSummaries
+            if jsonString.contains("stickerSummaries") {
+                print("🔍 [ShareService] ✅ 原始 JSON 中包含 stickerSummaries")
             } else {
-                print("🔍 [ShareService] ⚠️ 原始 JSON 中 **不包含** ZHENXIU/zhenxiu！")
+                print("🔍 [ShareService] ⚠️ 原始 JSON 中 **不包含** stickerSummaries！")
             }
         }
         #endif
@@ -216,33 +216,42 @@ final class ShareService {
         for dto in responseData.stickers {
             print("   - stickerId='\(dto.stickerId)', unlocked=\(dto.unlocked), dailyLimit=\(dto.dailyLimit?.description ?? "nil"), remaining=\(dto.remainingToday?.description ?? "nil"), group=\(dto.group ?? "nil"), alreadyApplied=\(dto.alreadyApplied ?? false)")
         }
+
+        // 解析贴纸统计
+        if let summaries = responseData.stickerSummaries {
+            print("🔍 [ShareService] 贴纸统计，共 \(summaries.count) 条:")
+            for summary in summaries {
+                print("   - stickerId='\(summary.stickerId)', stickerName='\(summary.stickerName)', count=\(summary.count)")
+            }
+        } else {
+            print("🔍 [ShareService] ⚠️ 贴纸统计为空")
+        }
+
+        // 解析当前用户贴纸
+        if let current = responseData.currentUserSticker {
+            print("🔍 [ShareService] 当前用户已使用贴纸: stickerId='\(current.stickerId)', stickerName='\(current.stickerName)'")
+        } else {
+            print("🔍 [ShareService] 当前用户未使用贴纸")
+        }
         #endif
 
         let availabilities = responseData.toAvailabilities()
+        let summaries = responseData.toSummaryItems()
+        let currentUserSticker = responseData.toCurrentUserSticker()
 
         #if DEBUG
-        print("🔍 [ShareService] 转换后的 StickerAvailability，共 \(availabilities.count) 条:")
-        for avail in availabilities {
-            print("   - [\(avail.kind.rawValue)] \(avail.kind.displayName): unlocked=\(avail.unlocked), canUse=\(avail.canUse)")
-        }
-        // 检查转换过程中是否有丢失
-        let dtoCount = responseData.stickers.count
-        let availCount = availabilities.count
-        if dtoCount != availCount {
-            print("⚠️ [ShareService] 转换丢失了 \(dtoCount - availCount) 条记录！")
-            print("   可能原因：stickerId 无法匹配到 StickerKind 枚举")
-            // 找出哪些被丢弃了
-            let convertedIds = Set(availabilities.map { $0.kind.rawValue })
-            for dto in responseData.stickers {
-                let lowerId = dto.stickerId.lowercased()
-                if !convertedIds.contains(lowerId) && StickerKind(backendId: dto.stickerId) == nil {
-                    print("   ❌ 丢弃的 stickerId: '\(dto.stickerId)' - 无法匹配到 StickerKind")
-                }
-            }
+        print("🔍 [ShareService] 转换后的 StickerAvailability，共 \(availabilities.count) 条")
+        print("🔍 [ShareService] 转换后的 StickerSummary，共 \(summaries.count) 条:")
+        for summary in summaries {
+            print("   - [\(summary.kind.rawValue)] \(summary.displayName): count=\(summary.count)")
         }
         #endif
 
-        return availabilities
+        return StickerAvailabilityResult(
+            availabilities: availabilities,
+            summaries: summaries,
+            currentUserSticker: currentUserSticker
+        )
     }
 
     /// 使用贴纸

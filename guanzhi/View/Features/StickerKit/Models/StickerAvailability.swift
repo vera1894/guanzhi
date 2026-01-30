@@ -124,16 +124,90 @@ struct StickerAvailabilityDTO: Codable {
     }
 }
 
+// MARK: - StickerSummaryDTO
+
+/// 后端返回的贴纸统计 DTO
+/// 字段名与后端 StickerQuotaService.StickerSummary 对齐
+struct StickerSummaryDTO: Codable {
+    let stickerId: String      // 后端字段名是 stickerId，不是 tagCode
+    let stickerName: String    // 后端字段名是 stickerName，不是 tagName
+    let group: String?
+    let count: Int
+
+    /// 转换为 StickerSummaryItem
+    func toSummaryItem() -> StickerSummaryItem? {
+        guard let kind = StickerKind(backendId: stickerId) else {
+            #if DEBUG
+            print("⚠️ [StickerSummaryDTO] 未知的 stickerId: \(stickerId)")
+            #endif
+            return nil
+        }
+        return StickerSummaryItem(kind: kind, count: count)
+    }
+}
+
+// MARK: - CurrentUserStickerDTO
+
+/// 后端返回的当前用户已使用贴纸 DTO
+/// 字段名与后端 StickerQuotaService.CurrentUserSticker 对齐
+struct CurrentUserStickerDTO: Codable {
+    let stickerId: String      // 后端字段名是 stickerId，不是 tagCode
+    let stickerName: String    // 后端字段名是 stickerName，不是 tagName
+    let group: String?
+
+    /// 转换为 UsedStickerInfo
+    func toUsedStickerInfo() -> UsedStickerInfo? {
+        guard let kind = StickerKind(backendId: stickerId) else {
+            #if DEBUG
+            print("⚠️ [CurrentUserStickerDTO] 未知的 stickerId: \(stickerId)")
+            #endif
+            return nil
+        }
+        return UsedStickerInfo(kind: kind, name: stickerName)
+    }
+}
+
 // MARK: - StickerAvailabilityResponse
 
 /// 后端返回的贴纸可用性列表响应
 struct StickerAvailabilityResponse: Codable {
     let stickers: [StickerAvailabilityDTO]
 
+    /// 贴纸统计（每种贴纸的使用数量）
+    let stickerSummaries: [StickerSummaryDTO]?
+
+    /// 当前用户在此分享上已使用的贴纸（nil 表示未使用）
+    let currentUserSticker: CurrentUserStickerDTO?
+
     /// 转换为 StickerAvailability 数组
     func toAvailabilities() -> [StickerAvailability] {
         stickers.compactMap { $0.toAvailability() }
     }
+
+    /// 转换为 StickerSummaryItem 数组
+    func toSummaryItems() -> [StickerSummaryItem] {
+        (stickerSummaries ?? []).compactMap { $0.toSummaryItem() }.sorted()
+    }
+
+    /// 转换为 UsedStickerInfo（当前用户已使用的贴纸）
+    func toCurrentUserSticker() -> UsedStickerInfo? {
+        currentUserSticker?.toUsedStickerInfo()
+    }
+}
+
+// MARK: - StickerAvailabilityResult
+
+/// fetchStickerAvailability 的完整返回结果
+/// 包含贴纸可用性列表、统计数据、当前用户使用的贴纸
+struct StickerAvailabilityResult {
+    /// 贴纸可用性列表
+    let availabilities: [StickerAvailability]
+
+    /// 贴纸统计列表（按数量降序排序）
+    let summaries: [StickerSummaryItem]
+
+    /// 当前用户在此分享上已使用的贴纸（nil 表示未使用）
+    let currentUserSticker: UsedStickerInfo?
 }
 
 // MARK: - StickerUseResponse

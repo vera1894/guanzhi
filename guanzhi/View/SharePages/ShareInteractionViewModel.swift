@@ -345,20 +345,35 @@ class ShareInteractionViewModel: ObservableObject {
         #endif
 
         do {
-            let availabilities = try await ShareService.shared.fetchStickerAvailability(shareId: shareId)
+            let result = try await ShareService.shared.fetchStickerAvailability(shareId: shareId)
 
             await MainActor.run {
-                self.stickerAvailabilities = availabilities
-                self.applyStickerAvailability(availabilities)
+                // 应用贴纸可用性
+                self.stickerAvailabilities = result.availabilities
+                self.applyStickerAvailability(result.availabilities)
+
+                // 应用服务器返回的贴纸统计（优先于本地计算）
+                self.stickerSummaries = result.summaries
+
+                // 应用当前用户已使用的贴纸
+                if let current = result.currentUserSticker {
+                    self.currentUserSticker = current
+                }
+
                 self.stickerLoadingState = .loaded
             }
 
             #if DEBUG
-            print("✅ [ShareInteraction] 贴纸可用性加载成功，共 \(availabilities.count) 条:")
-            for avail in availabilities {
-                print("   - [\(avail.kind.rawValue)] \(avail.kind.displayName):")
-                print("       unlocked=\(avail.unlocked), canUse=\(avail.canUse)")
-                print("       alreadyApplied=\(avail.alreadyApplied)")
+            print("✅ [ShareInteraction] 贴纸可用性加载成功:")
+            print("   - availabilities: \(result.availabilities.count) 条")
+            print("   - summaries: \(result.summaries.count) 条")
+            for summary in result.summaries {
+                print("       [\(summary.kind.rawValue)] \(summary.displayName): \(summary.count)")
+            }
+            if let current = result.currentUserSticker {
+                print("   - currentUserSticker: \(current.kind.rawValue) (\(current.name))")
+            } else {
+                print("   - currentUserSticker: nil")
             }
             #endif
 
