@@ -239,6 +239,94 @@ struct ShareDetailView: View {
 
     var body: some View {
         @Bindable var appState = appState
+        mainMediaContent
+            .ignoresSafeArea()
+            .navigationBarBackButtonHidden(true)
+
+            .overlay(topNavigationBar, alignment: .top)
+
+            .overlay {
+                let screenHeight = UIScreen.main.bounds.height
+                let isVisible = interactionViewModel.isStickerPanelVisible && isShowShareDetailsCard
+
+                stickerPanelOverlay
+                    .zIndex(2)
+                    .offset(y: isVisible ? 0 : screenHeight)
+                    .allowsHitTesting(isVisible)
+                    .animation(.easeInOut(duration: 0.25), value: isVisible)
+            }
+
+            .overlay(bottomDetailCardOverlay)
+
+            .background(Color.black.ignoresSafeArea())
+
+            .onAppear { handleOnAppear() }
+            .onDisappear { handleOnDisappear() }
+
+        .overlay(
+            DialogOverlay(isPresented: anyModalOn)
+                .zIndex(9999)
+                .animation(.easeInOut(duration: 0.25), value: anyModalOn)
+        )
+
+        .alert("提示", isPresented: Binding(
+            get: { searchViewModel.shareDeletedMessage != nil },
+            set: { if !$0 { searchViewModel.shareDeletedMessage = nil } }
+        )) {
+            Button("确定") {
+                // 退出详情页面
+                if appState.useOverlayMode {
+                    searchViewModel.isShareDetailOverlayShown = false
+                } else {
+                    navigationCoordinator.path.removeLast()
+                }
+                searchViewModel.shareDeletedMessage = nil
+            }
+        } message: {
+            Text(searchViewModel.shareDeletedMessage ?? "")
+        }
+
+        .sheet(isPresented: $interactionViewModel.isShowingStickerSummaryOverlay) {
+            StickerSummaryOverlay(
+                items: interactionViewModel.stickerSummaries,
+                onClose: {
+                    interactionViewModel.isShowingStickerSummaryOverlay = false
+                }
+            )
+            .presentationDetents([.medium, .large])
+        }
+
+        .onChange(of: shareStateKey) { oldKey, newKey in
+            #if DEBUG
+            print("⚠️ [ShareDetailView] shareStateKey 变化: \(oldKey) -> \(newKey)")
+            print("   - 当前 loadingState: \(interactionViewModel.stickerLoadingState)")
+            print("   - 当前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+            #endif
+            reinitializeInteractionViewModel()
+        }
+
+        .onChange(of: interactionViewModel.currentUserSticker?.kind) { oldKind, newKind in
+            // 只在「从无到有」时触发收起（新使用贴纸）
+            if oldKind == nil && newKind != nil {
+                #if DEBUG
+                print("🎯 [ShareDetailView] 贴纸使用成功，0.8s 后自动收起面板")
+                #endif
+
+                // 延迟收起面板，让用户看到使用成功的反馈
+                // ✅ 修复黑色闪烁：不使用 withAnimation，依赖 .animation 修饰符
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    interactionViewModel.isStickerPanelVisible = false
+                }
+            }
+        }
+    }
+
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   Body sub-views
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+
+    @ViewBuilder
+    private var mainMediaContent: some View {
         ZStack {
             GeometryReader { fullScreenGeometry in
                 ZStack {
@@ -450,64 +538,57 @@ struct ShareDetailView: View {
             }
         }
         }
-        .ignoresSafeArea()
-        .navigationBarBackButtonHidden(true)
+    }
 
-        // MARK: - 顶部导航栏
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🔝 顶部导航栏 Overlay                                               │
-        // │  - 返回按钮 | 用户信息胶囊 | 更多按钮                                 │
-        // │  - 贴纸统计展示条 (StickerSummaryBar)                                │
-        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .overlay(
-            GeometryReader { geo in
-                VStack(spacing: 0) {
-                    HStack {
-                        Button {
-                            if appState.useOverlayMode {
-                                /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
-                            } else {
-                                navigationCoordinator.path.removeLast()
-                            }
-                        } label: {
-                            Image("icon-back")
+    @ViewBuilder
+    private var topNavigationBar: some View {
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                HStack {
+                    Button {
+                        if appState.useOverlayMode {
+                            /*appState.isShareImageExpanded*/searchViewModel.isShareDetailOverlayShown = false
+                        } else {
+                            navigationCoordinator.path.removeLast()
                         }
-                        .buttonStyle(ButtonStyle_m())
-
-                        Spacer()
-
-                        // MARK: - 用户信息胶囊💊
-                        // 用户信息胶囊
-                        if let share = searchViewModel.selectedShare {
-                            UserInfoCapsule(
-                                userId: share.userId,
-                                searchViewModel: searchViewModel
-                            )
-                            .environmentObject(navigationCoordinator)
-                        }
-
-                        Spacer()
-
-                        Button {
-                            showMoreActionsSheet()
-                        } label: {
-                            Image("icon-more")
-                        }
-                        .buttonStyle(ButtonStyle_m())
+                    } label: {
+                        Image("icon-back")
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .buttonStyle(ButtonStyle_m())
 
-                    // 分享次级信息 + 褪色度显示行
+                    Spacer()
+
+                    // MARK: - 用户信息胶囊💊
+                    // 用户信息胶囊
                     if let share = searchViewModel.selectedShare {
-                        HStack {
-                            // 左边：分享ID和日期
-                            Text("#\(share.id) · \(searchViewModel.formattedDate(from: share.createDate))")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.white.opacity(0.85))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
+                        UserInfoCapsule(
+                            userId: share.userId,
+                            searchViewModel: searchViewModel
+                        )
+                        .environmentObject(navigationCoordinator)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        showMoreActionsSheet()
+                    } label: {
+                        Image("icon-more")
+                    }
+                    .buttonStyle(ButtonStyle_m())
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+
+                // 分享次级信息 + 褪色度显示行
+                if let share = searchViewModel.selectedShare {
+                    HStack {
+                        // 左边：分享ID和日期
+                        Text("#\(share.id) · \(searchViewModel.formattedDate(from: share.createDate))")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white.opacity(0.85))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
 //                                .background(
 //                                    Capsule()
 //                                        .fill(Color.white.opacity(0.35))
@@ -515,435 +596,236 @@ struct ShareDetailView: View {
 
 //                            Spacer()
 
-                            // 右边：褪色度
-                            Text("褪色度：\(share.fadeScore)%")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.white.opacity(0.85))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
+                        // 右边：褪色度
+                        Text("褪色度：\(share.fadeScore)%")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white.opacity(0.85))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
 //                                .background(
 //                                    Capsule()
 //                                        .fill(Color.white.opacity(0.35))
 //                                )
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
 
-                    // 贴纸统计展示条
-                    StickerSummaryBar(
-                        items: interactionViewModel.stickerSummaries,
-                        maxVisibleItems: 4,
-                        loadingState: interactionViewModel.stickerLoadingState,
-                        onTap: {
-                            interactionViewModel.isShowingStickerSummaryOverlay = true
-                        },
-                        onRetry: {
-                            retryStickerLoad()
-                        }
-                    )
+                // 贴纸统计展示条
+                StickerSummaryBar(
+                    items: interactionViewModel.stickerSummaries,
+                    maxVisibleItems: 4,
+                    loadingState: interactionViewModel.stickerLoadingState,
+                    onTap: {
+                        interactionViewModel.isShowingStickerSummaryOverlay = true
+                    },
+                    onRetry: {
+                        retryStickerLoad()
+                    }
+                )
 //                    .padding(.top, 8)
 
-                    Spacer()
-                }
+                Spacer()
             }
-            .opacity(isShowShareDetailsCard ? 1 : 0)
-            .allowsHitTesting(isShowShareDetailsCard),
-            alignment: .top
-        )
+        }
+        .opacity(isShowShareDetailsCard ? 1 : 0)
+        .allowsHitTesting(isShowShareDetailsCard)
+    }
 
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🎨 贴纸面板覆层 Overlay                                              │
-        // │  - 默认隐藏，点击右侧按钮显示                                         │
-        // │  - 包含渐变背景（透明→黑色）和贴纸队列/已使用状态                      │
-        // │  - 点击上方透明区域可收起                                             │
-        // │  - 使用 opacity 保持 SpriteKit 常驻，避免重复创建                     │
-        // │  - zIndex(2) 确保覆盖在底部详情卡片之上                               │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .overlay {
-            // 获取屏幕高度用于滑动动画
+    @ViewBuilder
+    private var bottomDetailCardOverlay: some View {
+        GeometryReader { _ in
+            // ✅ 修复：直接从 UIApplication 获取安全区，避免 ignoresSafeArea 影响
+            let safeAreaInsets = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first?.windows.first?.safeAreaInsets ?? .zero
+            let topSafeArea = safeAreaInsets.top
+            let bottomSafeArea = safeAreaInsets.bottom
             let screenHeight = UIScreen.main.bounds.height
-            let isVisible = interactionViewModel.isStickerPanelVisible && isShowShareDetailsCard
+            let screenWidth = UIScreen.main.bounds.width
+            // 展开时的卡片高度：屏幕高度减去顶部安全区
+            let expandedHeight = screenHeight - topSafeArea
+            // 收起时的 offset：留出底部安全区空间
+            let collapsedOffset = screenHeight * 0.9 - bottomSafeArea
 
-            stickerPanelOverlay
-                .zIndex(2)  // ✅ zIndex 放在 overlay 内容上
-                // ✅ 使用 offset 动画代替 opacity，避免黑色背景淡出时闪烁
-                .offset(y: isVisible ? 0 : screenHeight)
-                .allowsHitTesting(isVisible)
-                .animation(.easeInOut(duration: 0.25), value: isVisible)
-        }
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  📝 底部详情卡片 Overlay (已废弃的 Sheet 代码保留作参考)              │
-        // └─────────────────────────────────────────────────────────────────────┘
-//        .sheet(isPresented: $isShowShareDetailsCard)
-//        {
-//                        ShareDetailsCardView(
-//                            isFullScreen: $isFullScreen,
-//                            isAtTop: $isAtTop,
-//                            dragOffset: $dragOffset,
-//                            cardDragIsActive: $cardDragIsActive
-//                        )
-//                        .environmentObject(searchViewModel)
-//            //            .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-//            //            .offset(y: isFullScreen ? 0 + dragOffset : UIScreen.main.bounds.height * 0.86 + dragOffset)
-//            //            .opacity(isShowShareDetailsCard ? 1 : 0)
-//            //            .allowsHitTesting(isShowShareDetailsCard)
-//            //            .gesture(
-//            //                DragGesture()
-//            //                    .onChanged { value in
-//            //                        let translation = value.translation.height
-//            //                        if !isFullScreen {
-//            //                            // 只处理「上拉」
-//            //                            if translation < 0 {
-//            //                                dragOffset = translation
-//            //                            }
-//            //                        }
-//            //                    }
-//            //                    .onEnded { value in
-//            //                        let translation = value.translation.height
-//            //                        withAnimation(.easeInOut) {
-//            //                            if !isFullScreen {
-//            //                                // 上拉阈值
-//            //                                if translation < -150 {
-//            //                                    isFullScreen = true
-//            //                                }
-//            //                            }
-//            //                            dragOffset = 0
-//            //                        }
-//            //                    },
-//            //                isEnabled: !isFullScreen && isShowShareDetailsCard
-//            //            )
-//            //            .simultaneousGesture (
-//            //                DragGesture()
-//            //                    .onChanged { value in
-//            //                        let translation = value.translation.height
-//            //                        if (isFullScreen && isAtTop) {
-//            //                            if translation > 0 {
-//            //                                cardDragIsActive = false
-//            //                                dragOffset = translation
-//            //                            }
-//            //                        }
-//            //                    }
-//            //                    .onEnded { value in
-//            //                        let translation = value.translation.height
-//            //                        withAnimation(.easeInOut) {
-//            //                            if (isFullScreen && isAtTop) {
-//            //                                if translation > 150 {
-//            //                                    isFullScreen = false
-//            //                                }
-//            //                            }
-//            //                            dragOffset = 0
-//            //                            cardDragIsActive = true
-//            //                        }
-//            //                    },
-//            //                isEnabled: (isFullScreen && isAtTop) && isShowShareDetailsCard
-//            //            )
-//                        // --- 新增 Sheet 样式配置 ---
-//                        .presentationDetents([.height(Constants.sheetCollapsedHeight), .fraction(Constants.sheetExpandedFraction)], selection: $currentDetent)
-//                        .presentationDragIndicator(.hidden)
-//                        .presentationCornerRadius(Constants.sheetCornerRadius)
-//                        .presentationBackground(.regularMaterial)
-//                        .presentationBackgroundInteraction(.enabled)
-//                        .interactiveDismissDisabled()
-//        }
-
-        // MARK: - 底部详情卡片 Overlay
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  📋 底部详情卡片 Overlay                                             │
-        // │  - 显示分享描述、评论等内容                                          │
-        // │  - 收起状态：距底部 10%，背景透明，点击展开（禁用拖拽）               │
-        // │  - 展开状态：顶部安全区下方，背景模糊，可拖拽收起                     │
-        // │  - 通过 isShowShareDetailsCard 控制显隐                              │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .overlay(
-            GeometryReader { _ in
-                // ✅ 修复：直接从 UIApplication 获取安全区，避免 ignoresSafeArea 影响
-                let safeAreaInsets = UIApplication.shared.connectedScenes
-                    .compactMap { $0 as? UIWindowScene }
-                    .first?.windows.first?.safeAreaInsets ?? .zero
-                let topSafeArea = safeAreaInsets.top
-                let bottomSafeArea = safeAreaInsets.bottom
-                let screenHeight = UIScreen.main.bounds.height
-                let screenWidth = UIScreen.main.bounds.width
-                // 展开时的卡片高度：屏幕高度减去顶部安全区
-                let expandedHeight = screenHeight - topSafeArea
-                // 收起时的 offset：留出底部安全区空间
-                let collapsedOffset = screenHeight * 0.9 - bottomSafeArea
-
-                ShareDetailsCardView(
-                    isFullScreen: $isFullScreen,
-                    isAtTop: $isAtTop,
-                    dragOffset: $dragOffset,
-                    cardDragIsActive: $cardDragIsActive,
-                    highlightCommentId: highlightCommentId,
-                    interactionViewModel: interactionViewModel,
-                    onStickerTap: handleStickerPanelTap
-                )
-                .environmentObject(searchViewModel)
-                .zIndex(1)
-                // 展开时高度限制在安全区下方；收起时使用全屏高度
-                .frame(width: screenWidth, height: isFullScreen ? expandedHeight : screenHeight)
-                // 展开时：顶部安全区下方；收起时：距底部 10% 并留出底部安全区
-                .offset(y: isFullScreen ? topSafeArea + dragOffset : collapsedOffset + dragOffset)
-                // ✅ 贴纸面板展开时隐藏评论卡片（避免层级冲突）
-                // 使用 offset 动画：贴纸面板展开时向下移出，收起时恢复
-                .offset(y: interactionViewModel.isStickerPanelVisible ? UIScreen.main.bounds.height * 0.15 : 0)
-                .opacity(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible ? 1 : 0)
-                .allowsHitTesting(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible)
-                .animation(.easeInOut(duration: 0.25), value: interactionViewModel.isStickerPanelVisible)
-                // 点击展开（仅收起状态）
-                .onTapGesture {
-                    if !isFullScreen {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            isFullScreen = true
-                        }
-                    }
-                }
-                // 下拉收起手势（仅展开状态 + 滚动在顶部时）
-                .simultaneousGesture(
-                    DragGesture()
-                        .onChanged { value in
-                            let translation = value.translation.height
-                            if isFullScreen && isAtTop {
-                                if translation > 0 {
-                                    cardDragIsActive = false
-                                    dragOffset = translation
-                                }
-                            }
-                        }
-                        .onEnded { value in
-                            let translation = value.translation.height
-                            withAnimation(.easeInOut) {
-                                if isFullScreen && isAtTop {
-                                    if translation > 150 {
-                                        isFullScreen = false
-                                    }
-                                }
-                                dragOffset = 0
-                                cardDragIsActive = true
-                            }
-                        },
-                    including: (isFullScreen && isAtTop && isShowShareDetailsCard) ? .all : .none
-                )
-            }
-            .ignoresSafeArea()
-        )
-
-        // MARK: - 👍 右侧互动按钮已移至评论卡片内
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  贴纸和评论按钮已整合到 ShareDetailsCardView 的折叠状态输入栏中        │
-        // │  InteractionOverlayView 不再使用                                     │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .background(Color.black.ignoresSafeArea())
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🔄 生命周期：onAppear                                               │
-        // │  - 加载分享详情                                                      │
-        // │  - 初始化 interactionViewModel                                       │
-        // │  - 加载贴纸可用性                                                    │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .onAppear {
-            // 【Onboarding】触发详情页出现事件（用于步骤 C1）
-            triggerOnboardingDetailAppeared()
-
-            // 标记进入分享详情页
-            appState.isInShareDetailView = true
-
-            // 保存当前 sheet 状态，并关闭 sheet（避免覆盖在详情页上）
-            appState.savedShowingSearchView = appState.isShowingSearchView
-            appState.savedShowingResultCardView = appState.isShowingResultCardView
-            appState.isShowingSearchView = false
-            appState.isShowingResultCardView = false
-
-            if PreviewHarness.enabled {
-                print("🔌 [PreviewHarness] Overriding login status for preview")
-                OTOLoginStatusManager.shared.__overrideForPreview(userId: 11)
-            }
-
-            #if DEBUG
-            print("🏠 ShareDetailView.onAppear - 开始加载分享详情")
-            #endif
-            selectedIndex = 0
-            if let shareId = Int64(annotationID) {
-                searchViewModel.loadShareDetail(for: shareId)
-            }
-
-            // ✅ 修复：每次 onAppear 都强制重新初始化 interactionViewModel
-            // 因为 loadFromLocal 是同步的，此时 selectedShare 应该已经有值
-            // 延迟执行确保 loadFromLocal 完成
-            DispatchQueue.main.async {
-                if let share = searchViewModel.selectedShare {
-                    #if DEBUG
-                    print("🔄 [ShareDetailView] onAppear 初始化 interactionViewModel")
-                    print("   - shareId: \(share.id)")
-                    print("   - share.currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
-                    print("   - 初始化前 loadingState: \(interactionViewModel.stickerLoadingState)")
-                    print("   - 初始化前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
-                    #endif
-                    interactionViewModel.initialize(share: share)
-
-                    #if DEBUG
-                    print("   - 初始化后 loadingState: \(interactionViewModel.stickerLoadingState)")
-                    print("   - 初始化后 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
-                    print("   - 初始化后 availableKinds: \(interactionViewModel.availableStickerKinds.map { $0.rawValue })")
-                    #endif
-
-                    // ✅ 从服务器加载贴纸可用性（异步，如果失败会自动降级）
-                    #if DEBUG
-                    print("📡 [ShareDetailView] 开始加载贴纸可用性...")
-                    #endif
-                    Task {
-                        await interactionViewModel.loadStickerAvailability(shareId: share.id)
-                        #if DEBUG
-                        await MainActor.run {
-                            print("📡 [ShareDetailView] 贴纸可用性加载完成")
-                            print("   - loadingState: \(interactionViewModel.stickerLoadingState)")
-                            print("   - visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
-                            print("   - availableKinds: \(interactionViewModel.availableStickerKinds.map { $0.rawValue })")
-                        }
-                        #endif
-                    }
-
-                    // ✅ 记录浏览行为（用于褪色度计算）
-                    recordShareViewIfNeeded(shareId: share.id)
-                } else {
-                    #if DEBUG
-                    print("⚠️ [ShareDetailView] onAppear - selectedShare 为空，无法初始化")
-                    #endif
-                }
-            }
-        }
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🔄 生命周期：onDisappear                                            │
-        // │  - 恢复地图视图状态                                                  │
-        // │  - 清理媒体下载数据                                                  │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .onDisappear {
-            // 标记离开分享详情页
-            appState.isInShareDetailView = false
-
-            // 通知 SearchView 详情页已退出，用于恢复聚合列表
-            print("🔷 [ShareDetail] onDisappear - 发送 shareDetailDidDisappear 通知, shouldRestoreClusterList=\(appState.shouldRestoreClusterList)")
-            NotificationCenter.default.post(name: .shareDetailDidDisappear, object: nil)
-
-            // ✅ 修复：检查是否需要恢复聚合列表
-            // 如果 shouldRestoreClusterList 为 true，说明 restoreClusterListIfNeeded() 会处理 UI 恢复
-            // 此时不应设置 isShowingSearchView = true，否则会覆盖聚合列表的恢复逻辑
-            if navigationCoordinator.path.isEmpty && !appState.shouldRestoreClusterList {
-                print("🔷 [ShareDetail] 恢复搜索框 sheet（非聚合列表恢复路径）")
-                withAnimation(.easeInOut) {
-                    // 恢复之前保存的 sheet 状态
-                    if let savedResultCard = appState.savedShowingResultCardView, savedResultCard {
-                        // 之前是地点名称 sheet，恢复它
-                        appState.isShowingResultCardView = true
-                        appState.isShowingSearchView = false
-                    } else if let savedSearch = appState.savedShowingSearchView, savedSearch {
-                        // 之前是搜索框 sheet，恢复它
-                        appState.isShowingSearchView = true
-                    } else {
-                        // 默认显示搜索框
-                        appState.isShowingSearchView = true
-                    }
-                    appState.isShowingShowMarker = true
-                }
-                // 清除保存的状态
-                appState.savedShowingSearchView = nil
-                appState.savedShowingResultCardView = nil
-
-                searchViewModel.isUpdatingAnnotations = false
-                searchViewModel.selectedAnnotation = nil
-                searchViewModel.selectedAnnotationID = nil
-                searchViewModel.selectedAnnotationImage = nil
-            } else if navigationCoordinator.path.isEmpty {
-                print("🔷 [ShareDetail] 跳过搜索框恢复（聚合列表恢复路径）")
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                searchViewModel.cleandownloadMedia()
-            }
-        }
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🌫️ 弹窗遮罩 Overlay                                                │
-        // │  - 半透明黑色背景                                                    │
-        // │  - zIndex: 9999 确保在最上层                                         │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .overlay(
-            DialogOverlay(isPresented: anyModalOn)
-                .zIndex(9999)
-                .animation(.easeInOut(duration: 0.25), value: anyModalOn)
-        )
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  ⚠️ 分享已删除提示弹窗                                               │
-        // │  - 当分享被其他用户删除时显示                                         │
-        // │  - 点击确定后退出详情页                                              │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .alert("提示", isPresented: Binding(
-            get: { searchViewModel.shareDeletedMessage != nil },
-            set: { if !$0 { searchViewModel.shareDeletedMessage = nil } }
-        )) {
-            Button("确定") {
-                // 退出详情页面
-                if appState.useOverlayMode {
-                    searchViewModel.isShareDetailOverlayShown = false
-                } else {
-                    navigationCoordinator.path.removeLast()
-                }
-                searchViewModel.shareDeletedMessage = nil
-            }
-        } message: {
-            Text(searchViewModel.shareDeletedMessage ?? "")
-        }
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  📊 贴纸统计详情 Sheet                                               │
-        // │  - 点击 StickerSummaryBar 时弹出                                     │
-        // │  - 显示所有贴纸的详细统计                                            │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .sheet(isPresented: $interactionViewModel.isShowingStickerSummaryOverlay) {
-            StickerSummaryOverlay(
-                items: interactionViewModel.stickerSummaries,
-                onClose: {
-                    interactionViewModel.isShowingStickerSummaryOverlay = false
-                }
+            ShareDetailsCardView(
+                isFullScreen: $isFullScreen,
+                isAtTop: $isAtTop,
+                dragOffset: $dragOffset,
+                cardDragIsActive: $cardDragIsActive,
+                highlightCommentId: highlightCommentId,
+                interactionViewModel: interactionViewModel,
+                onStickerTap: handleStickerPanelTap
             )
-            .presentationDetents([.medium, .large])
+            .environmentObject(searchViewModel)
+            .zIndex(1)
+            // 展开时高度限制在安全区下方；收起时使用全屏高度
+            .frame(width: screenWidth, height: isFullScreen ? expandedHeight : screenHeight)
+            // 展开时：顶部安全区下方；收起时：距底部 10% 并留出底部安全区
+            .offset(y: isFullScreen ? topSafeArea + dragOffset : collapsedOffset + dragOffset)
+            // ✅ 贴纸面板展开时隐藏评论卡片（避免层级冲突）
+            // 使用 offset 动画：贴纸面板展开时向下移出，收起时恢复
+            .offset(y: interactionViewModel.isStickerPanelVisible ? UIScreen.main.bounds.height * 0.15 : 0)
+            .opacity(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible ? 1 : 0)
+            .allowsHitTesting(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible)
+            .animation(.easeInOut(duration: 0.25), value: interactionViewModel.isStickerPanelVisible)
+            // 点击展开（仅收起状态）
+            .onTapGesture {
+                if !isFullScreen {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isFullScreen = true
+                    }
+                }
+            }
+            // 下拉收起手势（仅展开状态 + 滚动在顶部时）
+            .simultaneousGesture(
+                DragGesture()
+                    .onChanged { value in
+                        let translation = value.translation.height
+                        if isFullScreen && isAtTop {
+                            if translation > 0 {
+                                cardDragIsActive = false
+                                dragOffset = translation
+                            }
+                        }
+                    }
+                    .onEnded { value in
+                        let translation = value.translation.height
+                        withAnimation(.easeInOut) {
+                            if isFullScreen && isAtTop {
+                                if translation > 150 {
+                                    isFullScreen = false
+                                }
+                            }
+                            dragOffset = 0
+                            cardDragIsActive = true
+                        }
+                    },
+                including: (isFullScreen && isAtTop && isShowShareDetailsCard) ? .all : .none
+            )
+        }
+        .ignoresSafeArea()
+    }
+
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+    // MARK:   Lifecycle handlers
+    // MARK: - ═══════════════════════════════════════════════════════════════════
+
+    private func handleOnAppear() {
+        // 【Onboarding】触发详情页出现事件（用于步骤 C1）
+        triggerOnboardingDetailAppeared()
+
+        // 标记进入分享详情页
+        appState.isInShareDetailView = true
+
+        // 保存当前 sheet 状态，并关闭 sheet（避免覆盖在详情页上）
+        appState.savedShowingSearchView = appState.isShowingSearchView
+        appState.savedShowingResultCardView = appState.isShowingResultCardView
+        appState.isShowingSearchView = false
+        appState.isShowingResultCardView = false
+
+        #if DEBUG
+        if PreviewHarness.enabled {
+            print("🔌 [PreviewHarness] Overriding login status for preview")
+            OTOLoginStatusManager.shared.__overrideForPreview(userId: 11)
+        }
+        #endif
+
+        #if DEBUG
+        print("🏠 ShareDetailView.onAppear - 开始加载分享详情")
+        #endif
+        selectedIndex = 0
+        if let shareId = Int64(annotationID) {
+            searchViewModel.loadShareDetail(for: shareId)
         }
 
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🔄 状态监听：selectedShare 变化                                      │
-        // │  - 当 share 数据变化时重新初始化 interactionViewModel                │
-        // │  - 使用组合键监听多个属性变化                                         │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .onChange(of: shareStateKey) { oldKey, newKey in
-            #if DEBUG
-            print("⚠️ [ShareDetailView] shareStateKey 变化: \(oldKey) -> \(newKey)")
-            print("   - 当前 loadingState: \(interactionViewModel.stickerLoadingState)")
-            print("   - 当前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
-            #endif
-            reinitializeInteractionViewModel()
-        }
-
-        // ┌─────────────────────────────────────────────────────────────────────┐
-        // │  🎯 交互闭环：贴纸使用成功后自动收起面板                               │
-        // │  - 当 currentUserSticker 从 nil 变为有值时，延迟收起面板              │
-        // │  - 延迟 0.8s 让用户看到使用成功的反馈                                 │
-        // └─────────────────────────────────────────────────────────────────────┘
-        .onChange(of: interactionViewModel.currentUserSticker?.kind) { oldKind, newKind in
-            // 只在「从无到有」时触发收起（新使用贴纸）
-            if oldKind == nil && newKind != nil {
+        // ✅ 修复：每次 onAppear 都强制重新初始化 interactionViewModel
+        // 因为 loadFromLocal 是同步的，此时 selectedShare 应该已经有值
+        // 延迟执行确保 loadFromLocal 完成
+        DispatchQueue.main.async {
+            if let share = searchViewModel.selectedShare {
                 #if DEBUG
-                print("🎯 [ShareDetailView] 贴纸使用成功，0.8s 后自动收起面板")
+                print("🔄 [ShareDetailView] onAppear 初始化 interactionViewModel")
+                print("   - shareId: \(share.id)")
+                print("   - share.currentUserVoteType: \(share.currentUserVoteType?.description ?? "nil")")
+                print("   - 初始化前 loadingState: \(interactionViewModel.stickerLoadingState)")
+                print("   - 初始化前 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+                #endif
+                interactionViewModel.initialize(share: share)
+
+                #if DEBUG
+                print("   - 初始化后 loadingState: \(interactionViewModel.stickerLoadingState)")
+                print("   - 初始化后 visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+                print("   - 初始化后 availableKinds: \(interactionViewModel.availableStickerKinds.map { $0.rawValue })")
                 #endif
 
-                // 延迟收起面板，让用户看到使用成功的反馈
-                // ✅ 修复黑色闪烁：不使用 withAnimation，依赖 .animation 修饰符
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    interactionViewModel.isStickerPanelVisible = false
+                // ✅ 从服务器加载贴纸可用性（异步，如果失败会自动降级）
+                #if DEBUG
+                print("📡 [ShareDetailView] 开始加载贴纸可用性...")
+                #endif
+                Task {
+                    await interactionViewModel.loadStickerAvailability(shareId: share.id)
+                    #if DEBUG
+                    await MainActor.run {
+                        print("📡 [ShareDetailView] 贴纸可用性加载完成")
+                        print("   - loadingState: \(interactionViewModel.stickerLoadingState)")
+                        print("   - visibleStickers: \(interactionViewModel.visibleStickerDefinitions.count)")
+                        print("   - availableKinds: \(interactionViewModel.availableStickerKinds.map { $0.rawValue })")
+                    }
+                    #endif
                 }
+
+                // ✅ 记录浏览行为（用于褪色度计算）
+                recordShareViewIfNeeded(shareId: share.id)
+            } else {
+                #if DEBUG
+                print("⚠️ [ShareDetailView] onAppear - selectedShare 为空，无法初始化")
+                #endif
             }
+        }
+    }
+
+    private func handleOnDisappear() {
+        // 标记离开分享详情页
+        appState.isInShareDetailView = false
+
+        // 通知 SearchView 详情页已退出，用于恢复聚合列表
+        print("🔷 [ShareDetail] onDisappear - 发送 shareDetailDidDisappear 通知, shouldRestoreClusterList=\(appState.shouldRestoreClusterList)")
+        NotificationCenter.default.post(name: .shareDetailDidDisappear, object: nil)
+
+        // ✅ 修复：检查是否需要恢复聚合列表
+        // 如果 shouldRestoreClusterList 为 true，说明 restoreClusterListIfNeeded() 会处理 UI 恢复
+        // 此时不应设置 isShowingSearchView = true，否则会覆盖聚合列表的恢复逻辑
+        if navigationCoordinator.path.isEmpty && !appState.shouldRestoreClusterList {
+            print("🔷 [ShareDetail] 恢复搜索框 sheet（非聚合列表恢复路径）")
+            withAnimation(.easeInOut) {
+                // 恢复之前保存的 sheet 状态
+                if let savedResultCard = appState.savedShowingResultCardView, savedResultCard {
+                    // 之前是地点名称 sheet，恢复它
+                    appState.isShowingResultCardView = true
+                    appState.isShowingSearchView = false
+                } else if let savedSearch = appState.savedShowingSearchView, savedSearch {
+                    // 之前是搜索框 sheet，恢复它
+                    appState.isShowingSearchView = true
+                } else {
+                    // 默认显示搜索框
+                    appState.isShowingSearchView = true
+                }
+                appState.isShowingShowMarker = true
+            }
+            // 清除保存的状态
+            appState.savedShowingSearchView = nil
+            appState.savedShowingResultCardView = nil
+
+            searchViewModel.isUpdatingAnnotations = false
+            searchViewModel.selectedAnnotation = nil
+            searchViewModel.selectedAnnotationID = nil
+            searchViewModel.selectedAnnotationImage = nil
+        } else if navigationCoordinator.path.isEmpty {
+            print("🔷 [ShareDetail] 跳过搜索框恢复（聚合列表恢复路径）")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            searchViewModel.cleandownloadMedia()
         }
     }
 
