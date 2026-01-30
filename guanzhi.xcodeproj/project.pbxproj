@@ -29,12 +29,12 @@
 		C34BE5946E7B453DB58B9BDA /* ImagePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D78E09AE706E44768C4F49B7 /* ImagePlaceholder.swift */; };
 		CC01A0022F0388820001CC01 /* NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01A0012F0388820001CC01 /* NotificationModels.swift */; };
 		CC01B0022F0388820001CC01 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01B0012F0388820001CC01 /* NotificationService.swift */; };
-		CC01REPT2F0388820001CC01 /* ReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01REPT1F0388820001CC01 /* ReportService.swift */; };
 		CC01C0022F0388820001CC01 /* MessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01C0012F0388820001CC01 /* MessagesView.swift */; };
 		CC01D0022F0388820001CC01 /* MessageTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01D0012F0388820001CC01 /* MessageTabBar.swift */; };
 		CC01E0022F0388820001CC01 /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01E0012F0388820001CC01 /* MessageRowView.swift */; };
 		CC01F0022F0388820001CC01 /* NotificationBadgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */; };
 		CC01H0022F0388820001CC01 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */; };
+		CC01REPT2F0388820001CC01 /* ReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01REPT1F0388820001CC01 /* ReportService.swift */; };
 		CF01E7A8B2D3C4F5E6A7B8C9 /* ConfettiParticleFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* ConfettiParticleFactory.swift */; };
 		D1093C302B6A7D99008553A3 /* ShareListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C2F2B6A7D99008553A3 /* ShareListView.swift */; };
 		D1093C322B6A819A008553A3 /* ShareSingleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1093C312B6A819A008553A3 /* ShareSingleView.swift */; };
@@ -220,12 +220,12 @@
 		CBE6F53DADE64A9C807BDF5F /* ProfileHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileHeaderView.swift; sourceTree = "<group>"; };
 		CC01A0012F0388820001CC01 /* NotificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationModels.swift; sourceTree = "<group>"; };
 		CC01B0012F0388820001CC01 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
-		CC01REPT1F0388820001CC01 /* ReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportService.swift; sourceTree = "<group>"; };
 		CC01C0012F0388820001CC01 /* MessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesView.swift; sourceTree = "<group>"; };
 		CC01D0012F0388820001CC01 /* MessageTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageTabBar.swift; sourceTree = "<group>"; };
 		CC01E0012F0388820001CC01 /* MessageRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRowView.swift; sourceTree = "<group>"; };
 		CC01F0012F0388820001CC01 /* NotificationBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBadgeManager.swift; sourceTree = "<group>"; };
 		CC01H0012F0388820001CC01 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		CC01REPT1F0388820001CC01 /* ReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportService.swift; sourceTree = "<group>"; };
 		CC24F21D1512454D951EC14F /* StickerAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerAvailability.swift; sourceTree = "<group>"; };
 		CE6914D6333B4F3A9F2CAEBB /* UserProfileMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileMapper.swift; sourceTree = "<group>"; };
 		D1093C2E2B669795008553A3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -1342,7 +1342,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们的应用需要访问相册以保存拍摄的照片。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1378,7 +1378,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们的应用需要访问相册以保存拍摄的照片。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
