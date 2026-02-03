@@ -1,0 +1,102 @@
+{
+  "_comment": "Example 5: Test Execution (evidence with log type)",
+  "input": {
+    "task_id": "test-execution-integration-tests-20260203",
+    "run_id": "run-20260203-005",
+    "workspace": "backend",
+    "actor": "cc",
+    "task_type": "test-execution",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T18:00:00Z",
+    "input": {
+      "description": "Run integration tests for backend API endpoints. Verify all CRUD operations work correctly.",
+      "files": [
+        "Server/onettoo/src/test/java/modules/integration/ApiIntegrationTest.java"
+      ],
+      "context": {
+        "priority": "p1"
+      },
+      "constraints": {
+        "lock_mode": "automated",
+        "read_only": false,
+        "timeout": 600
+      }
+    }
+  },
+  "output": {
+    "task_id": "test-execution-integration-tests-20260203",
+    "run_id": "run-20260203-005",
+    "workspace": "backend",
+    "actor": "cc",
+    "task_type": "test-execution",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T18:08:00Z",
+    "output": {
+      "status": "partial",
+      "conclusion": "Integration tests completed with 45/50 tests passing. 5 tests failed due to database connection timeout. The failures are intermittent and may be related to test environment instability.",
+      "evidence": [
+        {
+          "kind": "log",
+          "path": "test-results/integration-test-20260203.log",
+          "snippet": "[INFO] Tests run: 50, Failures: 5, Errors: 0, Skipped: 0\n[ERROR] testCreateShare - Connection timeout after 30s",
+          "description": "Test execution summary showing 5 failures"
+        },
+        {
+          "kind": "log",
+          "path": "test-results/integration-test-20260203.log",
+          "snippet": "com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure\nThe last packet sent successfully to the server was 0 milliseconds ago.",
+          "description": "Database connection error details"
+        },
+        {
+          "kind": "file",
+          "path": "Server/onettoo/src/test/java/modules/integration/ApiIntegrationTest.java",
+          "range": {
+            "start_line": 89,
+            "end_line": 95
+          },
+          "snippet": "@Test\npublic void testCreateShare() throws Exception { ... }",
+          "description": "One of the failing test methods"
+        }
+      ],
+      "risk": [
+        {
+          "level": "medium",
+          "description": "Database connection instability may indicate production environment issues",
+          "impact": "Potential service disruptions in production",
+          "mitigation": "Investigate database connection pool settings and network stability"
+        }
+      ],
+      "next_steps": [
+        {
+          "action": "Investigate database connection timeout root cause",
+          "priority": "p0",
+          "owner": "backend-developer"
+        },
+        {
+          "action": "Increase connection timeout in test configuration temporarily",
+          "priority": "p1",
+          "owner": "backend-developer"
+        },
+        {
+          "action": "Re-run failed tests after timeout adjustment",
+          "priority": "p1",
+          "owner": "backend-developer"
+        }
+      ],
+      "result": {
+        "total_tests": 50,
+        "passed": 45,
+        "failed": 5,
+        "skipped": 0,
+        "duration_seconds": 480,
+        "failed_tests": [
+          "testCreateShare",
+          "testUpdateShare",
+          "testDeleteShare",
+          "testGetShareList",
+          "testShareSearch"
+        ]
+      }
+    }
+  }
+}

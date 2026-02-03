@@ -1,0 +1,82 @@
+{
+  "_comment": "Example 1: Bug Root Cause Analysis",
+  "input": {
+    "task_id": "bug-rootcause-map-lock-20260203",
+    "run_id": "run-20260203-001",
+    "workspace": "ios",
+    "actor": "cc",
+    "task_type": "bug-rootcause",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T14:30:00Z",
+    "input": {
+      "description": "Investigate why map view becomes unresponsive after returning from share detail view. User reports map cannot be panned or zoomed.",
+      "files": [
+        "guanzhi/View/MapPages/MapView.swift",
+        "guanzhi/ModelsForMap/SearchViewModel.swift"
+      ],
+      "context": {
+        "related_issue": "user-report-20260202",
+        "priority": "p0"
+      },
+      "constraints": {
+        "lock_mode": "automated",
+        "read_only": true
+      }
+    }
+  },
+  "output": {
+    "task_id": "bug-rootcause-map-lock-20260203",
+    "run_id": "run-20260203-001",
+    "workspace": "ios",
+    "actor": "cc",
+    "task_type": "bug-rootcause",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T14:45:00Z",
+    "output": {
+      "status": "completed",
+      "conclusion": "Root cause identified: MapView has isUserInteractionEnabled set to false in onAppear, but the corresponding re-enable logic in onDisappear is missing. This causes the map to remain disabled after navigating away and back.",
+      "evidence": [
+        {
+          "kind": "file",
+          "path": "guanzhi/View/MapPages/MapView.swift",
+          "range": {
+            "start_line": 89,
+            "end_line": 95
+          },
+          "snippet": ".onAppear { mapView.isUserInteractionEnabled = false }",
+          "description": "Map interaction is disabled in onAppear"
+        },
+        {
+          "kind": "file",
+          "path": "guanzhi/View/MapPages/MapView.swift",
+          "range": {
+            "start_line": 120,
+            "end_line": 125
+          },
+          "snippet": ".onDisappear { /* missing re-enable logic */ }",
+          "description": "onDisappear does not restore isUserInteractionEnabled"
+        }
+      ],
+      "risk": [
+        {
+          "level": "high",
+          "description": "Map becomes permanently unusable after first navigation, affecting all users",
+          "impact": "Core app functionality broken",
+          "mitigation": "Add isUserInteractionEnabled = true in onDisappear"
+        }
+      ],
+      "next_steps": [
+        {
+          "action": "Add mapView.isUserInteractionEnabled = true in MapView.onDisappear",
+          "priority": "p0",
+          "owner": "ios-developer"
+        },
+        {
+          "action": "Add regression test for map interaction after navigation",
+          "priority": "p1",
+          "owner": "ios-developer"
+        }
+      ]
+    }
+  }
+}

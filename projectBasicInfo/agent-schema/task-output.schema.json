@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://guanzhi.internal/schemas/task-output.schema.json",
+  "title": "Agent Task Output Schema",
+  "description": "Standard schema for Agent task output with evidence traceability",
+  "type": "object",
+  "required": [
+    "task_id",
+    "run_id",
+    "workspace",
+    "actor",
+    "task_type",
+    "schema_version",
+    "timestamp",
+    "output"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Unique task identifier (must match input)"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Execution run identifier (must match input)"
+    },
+    "workspace": {
+      "type": "string",
+      "enum": ["ios", "backend", "admin-web", "meta"]
+    },
+    "actor": {
+      "type": "string",
+      "description": "Agent identifier"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "bug-rootcause",
+        "patch-plan",
+        "refactor-plan",
+        "regression-check",
+        "release-checklist",
+        "deployment",
+        "code-review",
+        "test-execution",
+        "documentation-update",
+        "security-audit",
+        "feature-implementation",
+        "exploration",
+        "diagnosis"
+      ]
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task completion timestamp (ISO 8601 format)"
+    },
+    "output": {
+      "type": "object",
+      "required": ["status", "conclusion"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["completed", "failed", "partial"],
+          "description": "Task execution status"
+        },
+        "conclusion": {
+          "type": "string",
+          "description": "Brief conclusion (1-3 sentences)",
+          "minLength": 10
+        },
+        "evidence": {
+          "type": "array",
+          "description": "Evidence supporting the conclusion (must be traceable)",
+          "items": {
+            "$ref": "#/definitions/evidence_item"
+          },
+          "minItems": 1
+        },
+        "risk": {
+          "type": "array",
+          "description": "Identified risks and their severity",
+          "items": {
+            "type": "object",
+            "required": ["level", "description"],
+            "properties": {
+              "level": {
+                "type": "string",
+                "enum": ["low", "medium", "high"]
+              },
+              "description": {
+                "type": "string",
+                "minLength": 10
+              },
+              "impact": {
+                "type": "string",
+                "description": "Impact scope or affected components"
+              },
+              "mitigation": {
+                "type": "string",
+                "description": "Suggested mitigation strategy"
+              }
+            }
+          }
+        },
+        "next_steps": {
+          "type": "array",
+          "description": "Recommended next actions",
+          "items": {
+            "type": "object",
+            "required": ["action", "priority"],
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Action description",
+                "minLength": 10
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["p0", "p1", "p2"],
+                "description": "P0=blocking, P1=important, P2=optional"
+              },
+              "owner": {
+                "type": "string",
+                "description": "Suggested owner (agent or human)"
+              },
+              "estimated_effort": {
+                "type": "string",
+                "description": "Estimated effort (avoid time estimates)"
+              }
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "description": "Detailed result data (task-type specific)",
+          "additionalProperties": true
+        },
+        "error": {
+          "type": "object",
+          "description": "Error details (if status=failed)",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Error code"
+            },
+            "message": {
+              "type": "string",
+              "description": "Error message"
+            },
+            "stack_trace": {
+              "type": "string",
+              "description": "Stack trace or detailed error info"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "evidence_item": {
+      "type": "object",
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["file", "log", "command_output", "commit"],
+          "description": "Evidence type"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path relative to repository root (e.g., guanzhi/View/...)",
+          "pattern": "^[^/]"
+        },
+        "range": {
+          "type": "object",
+          "description": "Location range (conditional required based on kind)",
+          "properties": {
+            "start_line": {
+              "type": "integer",
+              "description": "Start line number (REQUIRED when kind=file)",
+              "minimum": 1
+            },
+            "end_line": {
+              "type": "integer",
+              "description": "End line number (REQUIRED when kind=file)",
+              "minimum": 1
+            },
+            "commit_hash": {
+              "type": "string",
+              "description": "Commit hash (REQUIRED when kind=commit)",
+              "pattern": "^[a-f0-9]{7,40}$"
+            }
+          }
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Brief snippet or excerpt (recommended, ≤500 chars)",
+          "maxLength": 500
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional context about this evidence"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "file"
+              }
+            }
+          },
+          "then": {
+            "required": ["range"],
+            "properties": {
+              "range": {
+                "required": ["start_line", "end_line"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "commit"
+              }
+            }
+          },
+          "then": {
+            "required": ["range"],
+            "properties": {
+              "range": {
+                "required": ["commit_hash"]
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

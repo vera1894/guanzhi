@@ -1,0 +1,115 @@
+{
+  "_comment": "Example 3: Code Review",
+  "input": {
+    "task_id": "code-review-auth-feature-20260203",
+    "run_id": "run-20260203-003",
+    "workspace": "backend",
+    "actor": "cc",
+    "task_type": "code-review",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T16:00:00Z",
+    "input": {
+      "description": "Review authentication feature implementation in PR #42. Check for security vulnerabilities, code quality, and test coverage.",
+      "files": [
+        "Server/onettoo/src/main/java/modules/auth/AuthController.java",
+        "Server/onettoo/src/main/java/modules/auth/JwtService.java",
+        "Server/onettoo/src/test/java/modules/auth/AuthControllerTest.java"
+      ],
+      "context": {
+        "related_issue": "PR-42",
+        "priority": "p1"
+      },
+      "constraints": {
+        "lock_mode": "automated",
+        "read_only": true
+      }
+    }
+  },
+  "output": {
+    "task_id": "code-review-auth-feature-20260203",
+    "run_id": "run-20260203-003",
+    "workspace": "backend",
+    "actor": "cc",
+    "task_type": "code-review",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T16:15:00Z",
+    "output": {
+      "status": "completed",
+      "conclusion": "Code review completed with 2 security issues and 1 quality improvement identified. JWT secret is hardcoded (high risk), password validation is weak (medium risk), and error messages expose too much information (low risk).",
+      "evidence": [
+        {
+          "kind": "file",
+          "path": "Server/onettoo/src/main/java/modules/auth/JwtService.java",
+          "range": {
+            "start_line": 23,
+            "end_line": 23
+          },
+          "snippet": "private static final String SECRET_KEY = \"myHardcodedSecret123\";",
+          "description": "JWT secret hardcoded in source code"
+        },
+        {
+          "kind": "file",
+          "path": "Server/onettoo/src/main/java/modules/auth/AuthController.java",
+          "range": {
+            "start_line": 45,
+            "end_line": 50
+          },
+          "snippet": "if (password.length() < 6) { throw new ValidationException(\"Password too short\"); }",
+          "description": "Weak password validation (only checks length)"
+        },
+        {
+          "kind": "file",
+          "path": "Server/onettoo/src/main/java/modules/auth/AuthController.java",
+          "range": {
+            "start_line": 78,
+            "end_line": 82
+          },
+          "snippet": "catch (Exception e) { return ResponseEntity.badRequest().body(e.getMessage()); }",
+          "description": "Exception messages returned to client may expose sensitive info"
+        }
+      ],
+      "risk": [
+        {
+          "level": "high",
+          "description": "Hardcoded JWT secret can be extracted from JAR file, allowing token forgery",
+          "impact": "Complete authentication bypass possible",
+          "mitigation": "Move secret to environment variable or secrets manager"
+        },
+        {
+          "level": "medium",
+          "description": "Weak password validation allows easily guessable passwords",
+          "impact": "Increased risk of brute-force attacks",
+          "mitigation": "Add complexity requirements (uppercase, lowercase, numbers, special chars)"
+        },
+        {
+          "level": "low",
+          "description": "Error messages may expose internal implementation details",
+          "impact": "Information disclosure aids attackers",
+          "mitigation": "Use generic error messages for client, log detailed errors server-side"
+        }
+      ],
+      "next_steps": [
+        {
+          "action": "Move JWT secret to environment variable (.env file)",
+          "priority": "p0",
+          "owner": "backend-developer"
+        },
+        {
+          "action": "Implement strong password validation with complexity requirements",
+          "priority": "p0",
+          "owner": "backend-developer"
+        },
+        {
+          "action": "Replace detailed error messages with generic responses",
+          "priority": "p1",
+          "owner": "backend-developer"
+        },
+        {
+          "action": "Add security tests for auth bypass attempts",
+          "priority": "p1",
+          "owner": "backend-developer"
+        }
+      ]
+    }
+  }
+}

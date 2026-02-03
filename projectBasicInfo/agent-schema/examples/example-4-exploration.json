@@ -1,0 +1,92 @@
+{
+  "_comment": "Example 4: Code Exploration (evidence with commit type)",
+  "input": {
+    "task_id": "exploration-notification-system-20260203",
+    "run_id": "run-20260203-004",
+    "workspace": "ios",
+    "actor": "cc",
+    "task_type": "exploration",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T17:00:00Z",
+    "input": {
+      "description": "Explore the notification system implementation in iOS client. Understand how notifications are fetched, displayed, and marked as read.",
+      "context": {
+        "priority": "p2"
+      },
+      "constraints": {
+        "lock_mode": "automated",
+        "read_only": true
+      }
+    }
+  },
+  "output": {
+    "task_id": "exploration-notification-system-20260203",
+    "run_id": "run-20260203-004",
+    "workspace": "ios",
+    "actor": "cc",
+    "task_type": "exploration",
+    "schema_version": "1.0.0",
+    "timestamp": "2026-02-03T17:20:00Z",
+    "output": {
+      "status": "completed",
+      "conclusion": "Notification system consists of 3 main components: NotificationService (API client), NotificationViewModel (state management), and NotificationListView (UI). The system was refactored in commit a1b2c3d to fix time zone issues.",
+      "evidence": [
+        {
+          "kind": "file",
+          "path": "guanzhi/ModelsForNetwork/NotificationService.swift",
+          "range": {
+            "start_line": 15,
+            "end_line": 45
+          },
+          "snippet": "func fetchNotifications() async throws -> [Notification] { ... }",
+          "description": "Main API client for fetching notifications"
+        },
+        {
+          "kind": "file",
+          "path": "guanzhi/ModelsForMap/NotificationViewModel.swift",
+          "range": {
+            "start_line": 30,
+            "end_line": 60
+          },
+          "snippet": "@Published var notifications: [Notification] = []\n@Published var unreadCount: Int = 0",
+          "description": "State management for notifications"
+        },
+        {
+          "kind": "file",
+          "path": "guanzhi/View/NotificationPages/NotificationListView.swift",
+          "range": {
+            "start_line": 50,
+            "end_line": 80
+          },
+          "snippet": "List(viewModel.notifications) { notification in ... }",
+          "description": "UI component displaying notification list"
+        },
+        {
+          "kind": "commit",
+          "path": "guanzhi/ModelsForNetwork/NotificationModels.swift",
+          "range": {
+            "commit_hash": "a1b2c3d"
+          },
+          "snippet": "fix: correct timezone handling in notification timestamps",
+          "description": "Recent refactor to fix time zone issues"
+        }
+      ],
+      "risk": [],
+      "next_steps": [
+        {
+          "action": "Document the notification flow in architecture docs",
+          "priority": "p2",
+          "owner": "ios-developer"
+        }
+      ],
+      "result": {
+        "architecture_summary": {
+          "data_layer": "NotificationService",
+          "business_logic": "NotificationViewModel",
+          "ui_layer": "NotificationListView",
+          "key_models": ["Notification", "NotificationDateHelper"]
+        }
+      }
+    }
+  }
+}

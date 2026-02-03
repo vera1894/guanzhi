@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://guanzhi.internal/schemas/task-input.schema.json",
+  "title": "Agent Task Input Schema",
+  "description": "Standard schema for Agent task input",
+  "type": "object",
+  "required": [
+    "task_id",
+    "run_id",
+    "workspace",
+    "actor",
+    "task_type",
+    "schema_version",
+    "timestamp",
+    "input"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Unique task identifier (e.g., bug-fix-auth-20260203)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Execution run identifier (for tracing multiple attempts)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "workspace": {
+      "type": "string",
+      "enum": ["ios", "backend", "admin-web", "meta"],
+      "description": "Target workspace for this task"
+    },
+    "actor": {
+      "type": "string",
+      "description": "Agent identifier executing this task",
+      "examples": ["cc", "codex", "human", "infrastructure", "gpt"]
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "bug-rootcause",
+        "patch-plan",
+        "refactor-plan",
+        "regression-check",
+        "release-checklist",
+        "deployment",
+        "code-review",
+        "test-execution",
+        "documentation-update",
+        "security-audit",
+        "feature-implementation",
+        "exploration",
+        "diagnosis"
+      ],
+      "description": "Type of task to perform"
+    },
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version for compatibility tracking",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task initiation timestamp (ISO 8601 format)"
+    },
+    "input": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Detailed task description",
+          "minLength": 10
+        },
+        "files": {
+          "type": "array",
+          "description": "Target files for this task (relative to repo root)",
+          "items": {
+            "type": "string",
+            "pattern": "^[^/]"
+          },
+          "examples": [
+            ["guanzhi/View/FrontPages/SearchView.swift"],
+            ["Server/onettoo/src/main/java/modules/rest/GuanZhiController.java"]
+          ]
+        },
+        "context": {
+          "type": "object",
+          "description": "Additional context information",
+          "properties": {
+            "related_issue": {
+              "type": "string",
+              "description": "Related issue or ticket ID"
+            },
+            "related_commit": {
+              "type": "string",
+              "description": "Related commit hash"
+            },
+            "priority": {
+              "type": "string",
+              "enum": ["p0", "p1", "p2"],
+              "description": "Task priority"
+            },
+            "deadline": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Task deadline"
+            }
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "description": "Constraints and requirements",
+          "properties": {
+            "lock_mode": {
+              "type": "string",
+              "enum": ["automated", "interactive"],
+              "description": "Workspace lock mode",
+              "default": "automated"
+            },
+            "read_only": {
+              "type": "boolean",
+              "description": "Whether this is a read-only task",
+              "default": false
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Task timeout in seconds",
+              "minimum": 60
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
