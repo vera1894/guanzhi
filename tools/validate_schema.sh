@@ -66,30 +66,33 @@ validate_required_fields() {
 
     # 检查是否有 output 对象（示例文件结构）
     local base_path=""
+    local field_prefix=""
     if jq -e ".output.task_id" "$file" > /dev/null 2>&1; then
         base_path=".output"
+        field_prefix=".output."
     else
         base_path="."
+        field_prefix="."
     fi
 
     # 检查根级别必需字段
     local required_fields=("task_id" "run_id" "workspace" "actor" "task_type" "schema_version" "timestamp" "output")
 
     for field in "${required_fields[@]}"; do
-        if ! jq -e "${base_path}.${field}" "$file" > /dev/null 2>&1; then
+        if ! jq -e "${field_prefix}${field}" "$file" > /dev/null 2>&1; then
             error "  Missing required field: $field"
             has_error=1
         fi
     done
 
     # 检查 output 必需字段
-    if jq -e "${base_path}.output" "$file" > /dev/null 2>&1; then
-        if ! jq -e "${base_path}.output.status" "$file" > /dev/null 2>&1; then
+    if jq -e "${field_prefix}output" "$file" > /dev/null 2>&1; then
+        if ! jq -e "${field_prefix}output.status" "$file" > /dev/null 2>&1; then
             error "  Missing required field: output.status"
             has_error=1
         fi
 
-        if ! jq -e "${base_path}.output.conclusion" "$file" > /dev/null 2>&1; then
+        if ! jq -e "${field_prefix}output.conclusion" "$file" > /dev/null 2>&1; then
             error "  Missing required field: output.conclusion"
             has_error=1
         fi
@@ -104,21 +107,21 @@ validate_evidence() {
     local has_error=0
 
     # 检查是否有 output 对象（示例文件结构）
-    local base_path=""
+    local field_prefix=""
     if jq -e ".output.task_id" "$file" > /dev/null 2>&1; then
-        base_path=".output"
+        field_prefix=".output."
     else
-        base_path="."
+        field_prefix="."
     fi
 
     # 检查是否有 evidence 数组
-    if ! jq -e "${base_path}.output.evidence" "$file" > /dev/null 2>&1; then
+    if ! jq -e "${field_prefix}output.evidence" "$file" > /dev/null 2>&1; then
         return 0  # evidence 是可选的
     fi
 
     # 获取 evidence 数组长度
     local evidence_count
-    evidence_count=$(jq "${base_path}.output.evidence | length" "$file")
+    evidence_count=$(jq "${field_prefix}output.evidence | length" "$file")
 
     if [[ "$evidence_count" -eq 0 ]]; then
         warn "  Evidence array is empty (at least 1 item recommended)"
@@ -129,10 +132,10 @@ validate_evidence() {
     # 检查每个 evidence 项
     for ((i=0; i<evidence_count; i++)); do
         local kind
-        kind=$(jq -r "${base_path}.output.evidence[$i].kind // \"missing\"" "$file")
+        kind=$(jq -r "${field_prefix}output.evidence[$i].kind // \"missing\"" "$file")
 
         local path
-        path=$(jq -r "${base_path}.output.evidence[$i].path // \"missing\"" "$file")
+        path=$(jq -r "${field_prefix}output.evidence[$i].path // \"missing\"" "$file")
 
         # 必填字段：kind 和 path
         if [[ "$kind" == "missing" ]]; then
@@ -149,12 +152,12 @@ validate_evidence() {
         case "$kind" in
             file)
                 # file 类型需要 range.start_line 和 range.end_line
-                if ! jq -e "${base_path}.output.evidence[$i].range.start_line" "$file" > /dev/null 2>&1; then
+                if ! jq -e "${field_prefix}output.evidence[$i].range.start_line" "$file" > /dev/null 2>&1; then
                     error "  Evidence[$i] (kind=file): Missing required field 'range.start_line'"
                     has_error=1
                 fi
 
-                if ! jq -e "${base_path}.output.evidence[$i].range.end_line" "$file" > /dev/null 2>&1; then
+                if ! jq -e "${field_prefix}output.evidence[$i].range.end_line" "$file" > /dev/null 2>&1; then
                     error "  Evidence[$i] (kind=file): Missing required field 'range.end_line'"
                     has_error=1
                 fi
@@ -162,7 +165,7 @@ validate_evidence() {
 
             commit)
                 # commit 类型需要 range.commit_hash
-                if ! jq -e "${base_path}.output.evidence[$i].range.commit_hash" "$file" > /dev/null 2>&1; then
+                if ! jq -e "${field_prefix}output.evidence[$i].range.commit_hash" "$file" > /dev/null 2>&1; then
                     error "  Evidence[$i] (kind=commit): Missing required field 'range.commit_hash'"
                     has_error=1
                 fi
@@ -170,7 +173,7 @@ validate_evidence() {
 
             log|command_output)
                 # log 和 command_output 类型 range 可选
-                if ! jq -e "${base_path}.output.evidence[$i].snippet" "$file" > /dev/null 2>&1; then
+                if ! jq -e "${field_prefix}output.evidence[$i].snippet" "$file" > /dev/null 2>&1; then
                     warn "  Evidence[$i] (kind=$kind): Missing recommended field 'snippet'"
                     ((WARNINGS++)) || true
                 fi
@@ -179,7 +182,7 @@ validate_evidence() {
 
         # 推荐字段：snippet
         if [[ "$kind" == "file" ]]; then
-            if ! jq -e "${base_path}.output.evidence[$i].snippet" "$file" > /dev/null 2>&1; then
+            if ! jq -e "${field_prefix}output.evidence[$i].snippet" "$file" > /dev/null 2>&1; then
                 warn "  Evidence[$i]: Missing recommended field 'snippet'"
                 ((WARNINGS++)) || true
             fi
@@ -195,21 +198,21 @@ validate_path_format() {
     local has_error=0
 
     # 检查是否有 output 对象（示例文件结构）
-    local base_path=""
+    local field_prefix=""
     if jq -e ".output.task_id" "$file" > /dev/null 2>&1; then
-        base_path=".output"
+        field_prefix=".output."
     else
-        base_path="."
+        field_prefix="."
     fi
 
     # 检查 evidence 路径
-    if jq -e "${base_path}.output.evidence" "$file" > /dev/null 2>&1; then
+    if jq -e "${field_prefix}output.evidence" "$file" > /dev/null 2>&1; then
         local evidence_count
-        evidence_count=$(jq "${base_path}.output.evidence | length" "$file")
+        evidence_count=$(jq "${field_prefix}output.evidence | length" "$file")
 
         for ((i=0; i<evidence_count; i++)); do
             local path
-            path=$(jq -r "${base_path}.output.evidence[$i].path // \"\"" "$file")
+            path=$(jq -r "${field_prefix}output.evidence[$i].path // \"\"" "$file")
 
             # 路径不应以 / 开头（相对路径）
             if [[ "$path" == /* ]]; then

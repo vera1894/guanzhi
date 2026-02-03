@@ -64,5 +64,7 @@ __pycache__/
 *.temp
 .cache/
 
-# Agent 协作运行时锁目录
+# Agent 协作运行时目录
 .locks/
+.task-contexts/
+.task-outputs/

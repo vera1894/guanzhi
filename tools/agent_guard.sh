@@ -355,12 +355,13 @@ EOF
 }
 
 # 释放锁
-# 参数: $1=workspace, $2=actor, $3=task_id
+# 参数: $1=workspace, $2=actor, $3=task_id, $4=force (可选，true 表示只检查 actor 和 task_id，不检查 PID)
 # 返回: 0=成功, 1=失败（锁不属于当前进程）
 release_lock() {
     local workspace="$1"
     local actor="$2"
     local task_id="$3"
+    local force="${4:-false}"
 
     local lock_file
     lock_file=$(get_lock_path "$workspace")
@@ -375,8 +376,9 @@ release_lock() {
     lock_content=$(read_lock "$workspace")
 
     # 验证锁持有者
-    local lock_actor lock_pid lock_host
+    local lock_actor lock_task_id lock_pid lock_host
     lock_actor=$(echo "$lock_content" | grep -o '"actor": *"[^"]*"' | sed 's/.*": *"\([^"]*\)".*/\1/')
+    lock_task_id=$(echo "$lock_content" | grep -o '"task_id": *"[^"]*"' | sed 's/.*": *"\([^"]*\)".*/\1/')
     lock_pid=$(echo "$lock_content" | grep -o '"holder_pid": *[0-9]*' | sed 's/.*: *\([0-9]*\).*/\1/')
     lock_host=$(echo "$lock_content" | grep -o '"host": *"[^"]*"' | sed 's/.*": *"\([^"]*\)".*/\1/')
 
@@ -384,13 +386,26 @@ release_lock() {
     current_host=$(hostname)
 
     # 检查是否有权释放锁
-    if [[ "$lock_actor" != "$actor" ]] || \
-       [[ "$lock_pid" != "$$" ]] || \
-       [[ "$lock_host" != "$current_host" ]]; then
-        error "无权释放锁: $workspace"
-        error "锁持有者: $lock_actor (PID $lock_pid @ $lock_host)"
-        error "当前进程: $actor (PID $$ @ $current_host)"
-        return 1
+    if [[ "$force" == "true" ]]; then
+        # 强制模式：只检查 actor, task_id 和 host
+        if [[ "$lock_actor" != "$actor" ]] || \
+           [[ "$lock_task_id" != "$task_id" ]] || \
+           [[ "$lock_host" != "$current_host" ]]; then
+            error "无权释放锁: $workspace"
+            error "锁持有者: $lock_actor (Task $lock_task_id @ $lock_host)"
+            error "当前进程: $actor (Task $task_id @ $current_host)"
+            return 1
+        fi
+    else
+        # 严格模式：检查 actor, PID 和 host
+        if [[ "$lock_actor" != "$actor" ]] || \
+           [[ "$lock_pid" != "$$" ]] || \
+           [[ "$lock_host" != "$current_host" ]]; then
+            error "无权释放锁: $workspace"
+            error "锁持有者: $lock_actor (PID $lock_pid @ $lock_host)"
+            error "当前进程: $actor (PID $$ @ $current_host)"
+            return 1
+        fi
     fi
 
     # 删除锁文件
@@ -525,6 +540,7 @@ main() {
     local actor=""
     local task_id=""
     local lock_mode="automated"
+    local force_release="false"
 
     # 解析命令行参数
     while [[ $# -gt 0 ]]; do
@@ -567,6 +583,10 @@ main() {
                 ;;
             --lock-mode=*)
                 lock_mode="${1#*=}"
+                shift
+                ;;
+            --force)
+                force_release="true"
                 shift
                 ;;
             --help|-h)
@@ -681,8 +701,11 @@ main() {
 
             # 尝试释放锁
             info "尝试释放 $workspace workspace 锁 (actor: $actor, task: $task_id)"
+            if [[ "$force_release" == "true" ]]; then
+                info "使用强制释放模式（不检查 PID）"
+            fi
 
-            if release_lock "$workspace" "$actor" "$task_id"; then
+            if release_lock "$workspace" "$actor" "$task_id" "$force_release"; then
                 info "✅ 锁释放成功: $workspace"
                 exit 0
             else
