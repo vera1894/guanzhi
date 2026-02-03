@@ -63,3 +63,6 @@ __pycache__/
 *.tmp
 *.temp
 .cache/
+
+# Agent 协作运行时锁目录
+.locks/
