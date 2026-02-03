@@ -1,0 +1,232 @@
+#!/bin/bash
+#
+# Pre-commit Hook - Agent 协作权限检查
+#
+# 功能：在 Git commit 前检查跨 workspace 写入
+# 集成方式：core.hooksPath 指向 .githooks/
+# 强制程度：准强制（可被 --no-verify 绕过）
+#
+# 版本：v0.1.0
+# 创建日期：2026-02-03
+
+set -euo pipefail
+
+# ==================== 配置 ====================
+
+# 仓库根目录
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+GUARD_SCRIPT="$REPO_ROOT/tools/agent_guard.sh"
+
+# Agent 标识（从环境变量或默认值）
+AGENT_ID="${AGENT_ID:-unknown}"
+
+# Workspace 定义（用于自动推断）
+declare -a WORKSPACES=("ios" "backend" "admin-web" "meta")
+
+# ==================== 工具函数 ====================
+
+info() {
+    echo "ℹ️  [pre-commit] $*" >&2
+}
+
+warn() {
+    echo "⚠️  [pre-commit] $*" >&2
+}
+
+error() {
+    echo "❌ [pre-commit] $*" >&2
+}
+
+# 根据文件路径推断 workspace
+infer_workspace() {
+    local file="$1"
+
+    # iOS workspace
+    if [[ "$file" =~ ^guanzhi/ ]] || \
+       [[ "$file" =~ ^Podfile ]] || \
+       [[ "$file" =~ \.xcodeproj ]] || \
+       [[ "$file" =~ \.xcworkspace ]] || \
+       [[ "$file" =~ ^Pods/ ]] || \
+       [[ "$file" =~ ^Assets\.xcassets ]]; then
+        echo "ios"
+        return 0
+    fi
+
+    # Backend workspace
+    if [[ "$file" =~ ^Server/onettoo/ ]]; then
+        echo "backend"
+        return 0
+    fi
+
+    # Admin-Web workspace
+    if [[ "$file" =~ ^admin-web/ ]]; then
+        echo "admin-web"
+        return 0
+    fi
+
+    # Meta workspace
+    if [[ "$file" =~ ^projectBasicInfo/ ]] || \
+       [[ "$file" =~ ^\.claude/ ]] || \
+       [[ "$file" =~ ^重要项目信息/ ]] || \
+       [[ "$file" =~ ^tools/ ]] || \
+       [[ "$file" =~ ^\.githooks/ ]]; then
+        echo "meta"
+        return 0
+    fi
+
+    # 例外目录
+    if [[ "$file" =~ ^projectBasicInfo/logs/ ]] || \
+       [[ "$file" =~ ^\.locks/ ]]; then
+        echo "exception"
+        return 0
+    fi
+
+    echo "unknown"
+}
+
+# ==================== 主逻辑 ====================
+
+main() {
+    info "检查 Git commit 的文件权限..."
+
+    # 检查 guard 脚本是否存在
+    if [[ ! -x "$GUARD_SCRIPT" ]]; then
+        warn "Agent guard 脚本不存在或不可执行: $GUARD_SCRIPT"
+        warn "跳过权限检查（允许提交）"
+        exit 0
+    fi
+
+    # 获取暂存区的文件列表
+    local staged_files
+    staged_files=$(git diff --cached --name-only --diff-filter=ACM)
+
+    if [[ -z "$staged_files" ]]; then
+        info "没有文件变更，跳过检查"
+        exit 0
+    fi
+
+    # 统计各 workspace 的文件数（使用普通变量代替关联数组，兼容 bash 3.x）
+    local count_ios=0
+    local count_backend=0
+    local count_admin_web=0
+    local count_meta=0
+    local count_exception=0
+    local count_unknown=0
+    local total_files=0
+
+    # 分析每个文件
+    while IFS= read -r file; do
+        ((total_files++)) || true
+
+        local ws
+        ws=$(infer_workspace "$file")
+
+        case "$ws" in
+            ios) ((count_ios++)) || true ;;
+            backend) ((count_backend++)) || true ;;
+            admin-web) ((count_admin_web++)) || true ;;
+            meta) ((count_meta++)) || true ;;
+            exception) ((count_exception++)) || true ;;
+            unknown) ((count_unknown++)) || true ;;
+        esac
+    done <<< "$staged_files"
+
+    # 输出统计信息
+    info "本次提交涉及 $total_files 个文件："
+    [[ "$count_ios" -gt 0 ]] && info "  - ios: $count_ios 个文件"
+    [[ "$count_backend" -gt 0 ]] && info "  - backend: $count_backend 个文件"
+    [[ "$count_admin_web" -gt 0 ]] && info "  - admin-web: $count_admin_web 个文件"
+    [[ "$count_meta" -gt 0 ]] && info "  - meta: $count_meta 个文件"
+    [[ "$count_exception" -gt 0 ]] && info "  - exception: $count_exception 个文件"
+    [[ "$count_unknown" -gt 0 ]] && info "  - unknown: $count_unknown 个文件"
+
+    # 判断是否跨 workspace
+    local workspace_count=0
+    local primary_workspace=""
+
+    if [[ "$count_ios" -gt 0 ]]; then
+        ((workspace_count++)) || true
+        [[ -z "$primary_workspace" ]] && primary_workspace="ios"
+    fi
+    if [[ "$count_backend" -gt 0 ]]; then
+        ((workspace_count++)) || true
+        [[ -z "$primary_workspace" ]] && primary_workspace="backend"
+    fi
+    if [[ "$count_admin_web" -gt 0 ]]; then
+        ((workspace_count++)) || true
+        [[ -z "$primary_workspace" ]] && primary_workspace="admin-web"
+    fi
+    if [[ "$count_meta" -gt 0 ]]; then
+        ((workspace_count++)) || true
+        [[ -z "$primary_workspace" ]] && primary_workspace="meta"
+    fi
+
+    # 单 workspace 提交 - 运行 guard 检查
+    if [[ "$workspace_count" -eq 1 ]]; then
+        info "✓ 单 workspace 提交 ($primary_workspace)"
+
+        # 提取该 workspace 的文件列表
+        local workspace_files=""
+        while IFS= read -r file; do
+            local ws
+            ws=$(infer_workspace "$file")
+            if [[ "$ws" == "$primary_workspace" ]] || [[ "$ws" == "exception" ]]; then
+                if [[ -z "$workspace_files" ]]; then
+                    workspace_files="$file"
+                else
+                    workspace_files="$workspace_files,$file"
+                fi
+            fi
+        done <<< "$staged_files"
+
+        # 调用 guard 脚本检查
+        if "$GUARD_SCRIPT" --check-write \
+            --workspace="$primary_workspace" \
+            --files="$workspace_files" \
+            --actor="$AGENT_ID"; then
+            info "✅ 权限检查通过"
+            exit 0
+        else
+            local exit_code=$?
+            error "权限检查失败（退出码: $exit_code）"
+            error "提交被阻止。使用 'git commit --no-verify' 可以绕过此检查。"
+            exit 1
+        fi
+    fi
+
+    # 跨 workspace 提交 - 警告但不阻断
+    if [[ "$workspace_count" -gt 1 ]]; then
+        warn "⚠️  跨 workspace 提交检测到！"
+        warn "涉及的 workspace: "
+        [[ "$count_ios" -gt 0 ]] && warn "  - ios ($count_ios 个文件)"
+        [[ "$count_backend" -gt 0 ]] && warn "  - backend ($count_backend 个文件)"
+        [[ "$count_admin_web" -gt 0 ]] && warn "  - admin-web ($count_admin_web 个文件)"
+        [[ "$count_meta" -gt 0 ]] && warn "  - meta ($count_meta 个文件)"
+        warn ""
+        warn "跨多端功能实施是常见场景，本次提交允许通过。"
+        warn "请确保你已获得相应 workspace 的操作权限。"
+        warn ""
+        info "✅ 允许跨 workspace 提交（警告模式）"
+        exit 0
+    fi
+
+    # 未知文件或只有例外目录
+    if [[ "$workspace_count" -eq 0 ]]; then
+        if [[ "$count_exception" -gt 0 ]]; then
+            info "✓ 只修改例外目录（logs/, .locks/），允许提交"
+            exit 0
+        elif [[ "$count_unknown" -gt 0 ]]; then
+            warn "⚠️  检测到未知 workspace 的文件"
+            warn "可能是新文件或未在 workspace 定义中的路径"
+            warn "允许提交，但请确认文件路径正确"
+            exit 0
+        fi
+    fi
+
+    # 默认允许
+    info "✅ 允许提交"
+    exit 0
+}
+
+# 执行主函数
+main "$@"
