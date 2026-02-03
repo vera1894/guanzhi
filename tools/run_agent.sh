@@ -13,6 +13,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 GUARD_SCRIPT="$SCRIPT_DIR/agent_guard.sh"
+LOG_GENERATOR="$SCRIPT_DIR/generate_log.sh"
 SCHEMA_DIR="$REPO_ROOT/projectBasicInfo/agent-schema"
 CONTEXT_DIR="$REPO_ROOT/.task-contexts"
 
@@ -307,6 +308,17 @@ cmd_complete() {
             success "成功释放 $workspace workspace 锁"
         else
             warn "释放锁失败（锁可能已被抢占或超时）"
+        fi
+        echo ""
+    fi
+
+    # 生成操作日志
+    if [[ -x "$LOG_GENERATOR" ]]; then
+        info "生成操作日志..."
+        if "$LOG_GENERATOR" --output="$output_file"; then
+            success "操作日志已生成"
+        else
+            warn "日志生成失败（不影响任务完成）"
         fi
         echo ""
     fi

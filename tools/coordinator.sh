@@ -14,6 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 RUN_AGENT_SCRIPT="$SCRIPT_DIR/run_agent.sh"
 COORDINATOR_DIR="$REPO_ROOT/.coordinator"
+LOG_DIR="$REPO_ROOT/projectBasicInfo/logs"
 
 # 确保协调器目录存在
 mkdir -p "$COORDINATOR_DIR"
@@ -557,8 +558,104 @@ cmd_summary() {
     fi
     echo "$updated_state" > "$state_file"
 
+    # 生成协调器汇总日志
+    info "生成协调器汇总日志..."
+    generate_coordinator_log "$coordinator_id" "$summary_file" "$state_file" "$completed_count" "$failed_count" "$task_count"
+    echo ""
+
     success "✅ 协调器执行完成"
     echo ""
+}
+
+# 生成协调器汇总日志
+generate_coordinator_log() {
+    local coordinator_id="$1"
+    local summary_file="$2"
+    local state_file="$3"
+    local completed_count="$4"
+    local failed_count="$5"
+    local task_count="$6"
+
+    local date run_id description start_timestamp end_timestamp
+    date=$(date -u +"%Y-%m-%d")
+    run_id=$(jq -r '.run_id' "$state_file")
+    description=$(jq -r '.description' "$state_file")
+    start_timestamp=$(jq -r '.start_timestamp' "$state_file")
+    end_timestamp=$(jq -r '.end_timestamp' "$summary_file")
+
+    local success_rate=$((completed_count * 100 / task_count))
+
+    # 生成任务列表
+    local task_list=""
+    for ((i=0; i<task_count; i++)); do
+        local task_id task_status
+        task_id=$(jq -r ".tasks[$i].task_id" "$state_file")
+
+        # 检查任务输出状态
+        local output_file="$REPO_ROOT/.task-outputs/${task_id}-output.json"
+        if [[ -f "$output_file" ]]; then
+            task_status=$(jq -r '.output.status' "$output_file")
+            local conclusion=$(jq -r '.output.conclusion' "$output_file")
+            task_list+="$((i+1)). **$task_id**: $task_status - $conclusion"$'\n'
+        else
+            task_status="failed"
+            task_list+="$((i+1)). **$task_id**: failed - 任务未完成"$'\n'
+        fi
+    done
+
+    # 生成日志文件
+    local log_filename="${date}-${coordinator_id}-coordinator.md"
+    local log_file="$LOG_DIR/$log_filename"
+
+    cat > "$log_file" <<EOF
+# Multi-Agent 协调器执行报告: $coordinator_id
+
+**日期**: $date
+**Coordinator ID**: $coordinator_id
+**Run ID**: $run_id
+**执行状态**: $([ "$failed_count" -eq 0 ] && echo "completed" || echo "partial")
+
+---
+
+## 任务概述
+
+$description
+
+---
+
+## 执行统计
+
+- **总任务数**: $task_count
+- **成功完成**: $completed_count
+- **失败**: $failed_count
+- **成功率**: $success_rate%
+
+---
+
+## 任务列表
+
+$task_list
+
+---
+
+## 执行时间
+
+- **开始时间**: $start_timestamp
+- **结束时间**: $end_timestamp
+
+---
+
+## 相关文件
+
+- **汇总报告**: \`$summary_file\`
+- **状态文件**: \`$state_file\`
+
+---
+
+*此日志由 Multi-Agent 协调器自动生成*
+EOF
+
+    success "协调器日志已生成: $log_file"
 }
 
 # ==================== 主函数 ====================
