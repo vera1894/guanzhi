@@ -1,0 +1,77 @@
+{
+  "_comment": "Multi-Agent Coordinator Config Example",
+  "coordinator_id": "fix-map-bug-and-deploy-20260203",
+  "run_id": "run-20260203-001",
+  "description": "Fix iOS map interaction bug and deploy backend v3.8.1",
+  "execution_mode": "sequential",
+  "tasks": [
+    {
+      "task_id": "bug-rootcause-map-interaction-20260203",
+      "workspace": "ios",
+      "actor": "cc",
+      "task_type": "bug-rootcause",
+      "input": {
+        "description": "Investigate why map view becomes unresponsive after returning from share detail view. User reports map cannot be panned or zoomed.",
+        "files": [
+          "guanzhi/View/MapPages/MapView.swift",
+          "guanzhi/ModelsForMap/SearchViewModel.swift"
+        ],
+        "context": {
+          "related_issue": "user-report-20260202",
+          "priority": "p0"
+        },
+        "constraints": {
+          "lock_mode": "automated",
+          "read_only": true,
+          "timeout": 1800
+        }
+      }
+    },
+    {
+      "task_id": "patch-plan-map-interaction-fix-20260203",
+      "workspace": "ios",
+      "actor": "cc",
+      "task_type": "patch-plan",
+      "depends_on": ["bug-rootcause-map-interaction-20260203"],
+      "input": {
+        "description": "Create a patch plan to fix the map interaction bug based on root cause analysis. Design the fix implementation strategy.",
+        "files": [
+          "guanzhi/View/MapPages/MapView.swift"
+        ],
+        "context": {
+          "related_issue": "bug-rootcause-map-interaction-20260203",
+          "priority": "p0"
+        },
+        "constraints": {
+          "lock_mode": "automated",
+          "read_only": false,
+          "timeout": 1800
+        }
+      }
+    },
+    {
+      "task_id": "deployment-backend-v3.8.1-20260203",
+      "workspace": "backend",
+      "actor": "infrastructure",
+      "task_type": "deployment",
+      "depends_on": ["patch-plan-map-interaction-fix-20260203"],
+      "input": {
+        "description": "Deploy backend v3.8.1 to production server (52.83.127.15). This version includes API improvements that support the iOS map fix.",
+        "files": [
+          "Server/onettoo/pom.xml",
+          "Server/onettoo/src/main/resources/application.properties"
+        ],
+        "context": {
+          "related_issue": "release-v3.8.1",
+          "priority": "p0",
+          "deadline": "2026-02-03T18:00:00Z"
+        },
+        "constraints": {
+          "lock_mode": "automated",
+          "read_only": false,
+          "timeout": 3600
+        }
+      }
+    }
+  ]
+}

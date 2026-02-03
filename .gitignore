@@ -68,3 +68,4 @@ __pycache__/
 .locks/
 .task-contexts/
 .task-outputs/
+.coordinator/
