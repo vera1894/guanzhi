@@ -1,0 +1,160 @@
+{
+  "config_version": "1.0.0",
+  "created_date": "2026-02-03",
+  "description": "Claude Code 操作行为配置 - 定义默认使用 Agent 系统追踪所有操作",
+
+  "default_mode": "agent_system",
+
+  "modes": {
+    "agent_system": {
+      "name": "Agent 系统模式（默认）",
+      "description": "所有操作默认通过 Agent 系统追踪，生成结构化日志",
+      "enabled_by_default": true,
+      "applies_to": {
+        "operations": [
+          "读操作（Read）",
+          "写操作（Write/Edit）",
+          "Bash 命令执行",
+          "Git 操作",
+          "文件创建/删除",
+          "配置修改",
+          "代码修改",
+          "部署操作",
+          "数据库操作",
+          "任何会改变系统状态的操作",
+          "任何需要记录的查询操作"
+        ],
+        "workspaces": [
+          "backend",
+          "ios",
+          "admin-web",
+          "meta",
+          "任何其他 workspace"
+        ]
+      },
+      "workflow": [
+        "1. 解析用户请求，确定操作类型和 workspace",
+        "2. 自动生成 task_id（格式：{task_type}-{brief_description}-{date}）",
+        "3. 通知用户将使用 Agent 系统执行",
+        "4. 创建 task-input JSON（.task-inputs/{task_id}-input.json）",
+        "5. 执行 run_agent.sh --prepare（获取 workspace 锁）",
+        "6. 执行实际操作（Read/Write/Edit/Bash 等）",
+        "7. 收集 evidence（修改的文件、执行的命令、输出等）",
+        "8. 执行 run_agent.sh --complete（释放锁，生成 output JSON）",
+        "9. 自动生成 Markdown 日志（generate_log.sh）",
+        "10. 告知用户操作完成和日志位置"
+      ],
+      "skip_conditions": [
+        "用户明确说"快速模式"且操作为只读/查询类型",
+        "（注意：即使用户说快速模式，涉及写入操作也必须走 Agent 系统）"
+      ],
+      "generates_log": true,
+      "requires_lock": true
+    },
+
+    "quick_mode": {
+      "name": "快速模式（仅只读）",
+      "description": "跳过 Agent 系统，直接执行只读/查询操作，不生成日志",
+      "enabled_by_default": false,
+      "trigger_keywords": [
+        "快速模式",
+        "快速",
+        "quick mode",
+        "quick"
+      ],
+      "allowed_operations": {
+        "read_only": [
+          "Read 工具（查看文件内容）",
+          "Glob 工具（查找文件）",
+          "Grep 工具（搜索内容）",
+          "Bash 只读命令（ls, cat, grep, find, git log, git status, git diff 等）",
+          "查询系统状态",
+          "查看日志",
+          "任何不修改文件系统的操作"
+        ],
+        "forbidden": [
+          "Write 工具",
+          "Edit 工具",
+          "Bash 写入命令（echo >, sed -i, rm, mv, cp 等）",
+          "Git 修改命令（git commit, git push, git rebase 等）",
+          "任何会修改文件系统的操作"
+        ]
+      },
+      "enforcement_rule": "如果用户说了'快速模式'但操作涉及写入，自动切换到 agent_system 模式并通知用户",
+      "generates_log": false,
+      "requires_lock": false,
+      "notification": "当使用快速模式时，可选择性地简短通知用户"
+    }
+  },
+
+  "task_id_generation": {
+    "auto_generate": true,
+    "format": "{task_type}-{brief_description}-{date}",
+    "date_format": "YYYYMMDD",
+    "brief_description_rules": [
+      "使用中文或英文，简短描述操作目标",
+      "使用连字符分隔单词",
+      "避免特殊字符",
+      "示例：config-nginx-port, fix-map-bug, deploy-backend-v381"
+    ]
+  },
+
+  "task_type_mapping": {
+    "description": "根据用户请求自动推断 task_type",
+    "rules": {
+      "bug-rootcause": "分析 bug 根因",
+      "bug-fix": "修复 bug",
+      "bug-patch": "打补丁修复",
+      "patch-plan": "计划补丁方案",
+      "deployment": "部署操作",
+      "configuration": "配置修改",
+      "refactoring": "代码重构",
+      "exploration": "代码探索/分析",
+      "feature": "新功能开发",
+      "testing": "测试相关",
+      "database": "数据库操作",
+      "documentation": "文档编写",
+      "review": "代码审查"
+    }
+  },
+
+  "workspace_detection": {
+    "description": "根据操作涉及的文件路径自动检测 workspace",
+    "rules": {
+      "backend": "后端相关文件路径",
+      "ios": "iOS 客户端相关文件路径",
+      "admin-web": "管理后台前端相关文件路径",
+      "meta": "项目元信息、文档、工具脚本等"
+    },
+    "fallback": "meta"
+  },
+
+  "evidence_collection": {
+    "description": "Agent 系统模式下自动收集 evidence",
+    "auto_collect": true,
+    "types": [
+      "file: 修改的文件路径和行号范围",
+      "commit: Git commit hash（如果有 git commit）",
+      "command_output: 执行的命令及其输出",
+      "log: 相关日志片段"
+    ]
+  },
+
+  "user_notification": {
+    "agent_system_mode": {
+      "notify_on_start": true,
+      "message_format": "我将使用 Agent 系统执行此操作。\n\nTask ID: {task_id}\nWorkspace: {workspace}\nTask Type: {task_type}"
+    },
+    "quick_mode": {
+      "notify_on_start": false,
+      "notify_on_forced_switch": true,
+      "forced_switch_message": "检测到写入操作，已自动切换到 Agent 系统模式（快速模式仅支持只读操作）"
+    }
+  },
+
+  "coordinator_integration": {
+    "description": "多任务场景自动建议使用 coordinator",
+    "suggest_when": "用户请求包含 2 个或以上明确分离的任务",
+    "auto_detect_dependencies": true
+  }
+}
