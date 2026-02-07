@@ -153,8 +153,22 @@
   },
 
   "coordinator_integration": {
-    "description": "多任务场景自动建议使用 coordinator",
-    "suggest_when": "用户请求包含 2 个或以上明确分离的任务",
-    "auto_detect_dependencies": true
+    "description": "多 workspace 任务自动使用 coordinator 拆解和管理",
+    "auto_use_coordinator": true,
+    "trigger_condition": "检测到任务涉及 2 个或以上不同的 workspace",
+    "auto_detect_dependencies": true,
+    "behavior": {
+      "auto_create_config": true,
+      "auto_generate_task_ids": true,
+      "execution_mode": "sequential",
+      "notify_user": true,
+      "notification_format": "检测到多 workspace 任务，自动使用 Coordinator 拆解执行。\n\n任务拆解：\n{task_list}\n\n执行模式：顺序执行"
+    },
+    "notes": [
+      "由于单一执行上下文限制，任务仍为顺序执行",
+      "不同 workspace 的锁相互独立，系统支持并行（但需多个执行者）",
+      "自动生成 coordinator-config.json 和各任务的 task-input JSON",
+      "完成后自动生成汇总报告和各任务日志"
+    ]
   }
 }

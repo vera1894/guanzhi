@@ -334,27 +334,148 @@ Claude Code：
 所有 workspace 锁都已释放。
 ```
 
-### 示例 6：多任务自动建议 Coordinator
+### 示例 6：多 Workspace 任务自动使用 Coordinator
 
 ```
 用户："修复 iOS bug 然后部署后端 v3.8.1"
 
 Claude Code：
-检测到多个任务，建议使用 Multi-Agent Coordinator 协调执行。
+🔄 检测到多 workspace 任务，自动使用 Coordinator 拆解执行。
 
-建议的任务拆分：
-1. bug-rootcause-ios-map-20260203 (ios workspace)
-   - 分析地图交互 bug 根因
+任务拆解：
+┌─────────────────────────────────────────────────────────────┐
+│ Coordinator ID: fix-and-deploy-20260203                     │
+├─────────────────────────────────────────────────────────────┤
+│ 1. bug-rootcause-ios-map-20260203 (ios workspace)           │
+│    └─ 分析地图交互 bug 根因                                  │
+│                                                              │
+│ 2. bug-fix-ios-map-20260203 (ios workspace)                 │
+│    └─ 修复 bug（依赖任务 1）                                 │
+│                                                              │
+│ 3. deployment-backend-v381-20260203 (backend workspace)     │
+│    └─ 部署后端 v3.8.1                                        │
+└─────────────────────────────────────────────────────────────┘
 
-2. bug-fix-ios-map-20260203 (ios workspace)
-   - 修复 bug（依赖任务 1）
+执行模式：顺序执行（单一执行上下文限制）
 
-3. deployment-backend-v381-20260203 (backend workspace)
-   - 部署后端 v3.8.1（可与任务 1-2 并行）
+[自动创建 coordinator-config.json]
+[自动创建各任务的 task-input JSON]
+[coordinator.sh --start]
 
-是否使用 coordinator 执行？
-（如果是，我将创建 coordinator-config.json 并使用 coordinator.sh 管理执行流程）
+开始执行任务 1/3: bug-rootcause-ios-map-20260203
+[run_agent.sh --prepare]
+[执行任务]
+[run_agent.sh --complete]
+✅ 任务 1 完成
+
+开始执行任务 2/3: bug-fix-ios-map-20260203
+...
+
+开始执行任务 3/3: deployment-backend-v381-20260203
+...
+
+[coordinator.sh --summary]
+✅ 所有任务完成！
+
+📊 汇总报告：.coordinator/fix-and-deploy-20260203/summary.json
+📄 各任务日志：projectBasicInfo/logs/
 ```
+
+**说明**：
+- 检测到涉及多个 workspace（ios + backend）时，**自动**使用 Coordinator
+- 不需要用户确认，直接开始拆解和执行
+- 由于单一执行上下文限制，任务**顺序执行**（不是并行）
+- 每个任务完成后自动生成日志
+- 最后生成汇总报告
+
+---
+
+## 多 Workspace 任务：自动使用 Coordinator
+
+### 触发条件
+
+当 Claude Code 检测到用户请求涉及 **2 个或以上不同的 workspace** 时，**自动**使用 Coordinator 拆解任务。
+
+**触发示例**：
+- "修复 iOS bug 然后部署后端" → ios + backend
+- "更新管理后台 API 调用和后端接口" → admin-web + backend
+- "在前端添加导出功能，后端添加导出接口" → admin-web + backend
+
+**不触发示例**：
+- "修复 iOS 登录 bug" → 仅 ios
+- "部署后端 v3.8.1" → 仅 backend
+- "修改两个配置文件" → 仅 meta（同一 workspace）
+
+### 自动行为
+
+1. **自动拆解任务**
+   - 分析用户请求，识别涉及的 workspace
+   - 为每个 workspace 创建独立的任务
+   - 自动生成 task_id（格式：{task_type}-{brief}-{date}）
+   - 自动检测任务间的依赖关系
+
+2. **自动创建配置文件**
+   - 创建 `.coordinator/{coordinator_id}/config.json`
+   - 创建各任务的 `task-input JSON`
+
+3. **顺序执行**
+   - 使用 `coordinator.sh --start` 初始化
+   - 按顺序执行每个任务（受单一执行上下文限制）
+   - 每个任务：prepare → 执行 → complete → 生成日志
+
+4. **自动生成报告**
+   - 使用 `coordinator.sh --summary` 生成汇总
+   - 生成 `.coordinator/{coordinator_id}/summary.json`
+   - 生成 Coordinator 汇总日志
+
+### 执行流程图
+
+```
+用户请求（涉及多个 workspace）
+         │
+         ▼
+    ┌────────────────┐
+    │ 检测 workspace │
+    │  ios + backend │
+    └────────────────┘
+         │
+         ▼
+    ┌────────────────┐
+    │ 自动拆解任务    │
+    │ 生成配置文件    │
+    └────────────────┘
+         │
+         ▼
+    ┌────────────────┐
+    │ coordinator    │
+    │ --start        │
+    └────────────────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+ Task 1    Task 2     ...
+ (ios)    (backend)
+    │         │
+    └────┬────┘
+         │
+         ▼
+    ┌────────────────┐
+    │ coordinator    │
+    │ --summary      │
+    └────────────────┘
+         │
+         ▼
+    ✅ 汇总报告 + 各任务日志
+```
+
+### 关于并行执行的说明
+
+**当前限制**：由于 Claude Code 只有单一执行上下文，任务只能**顺序执行**。
+
+**系统支持并行**：Lock 机制已支持不同 workspace 同时工作。如需真正并行：
+1. 用户在多个终端开启多个 Claude Code 会话
+2. 每个会话负责一个 workspace 的任务
+3. Lock 机制确保不会冲突
 
 ---
 
