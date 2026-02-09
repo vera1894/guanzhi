@@ -257,9 +257,29 @@ ls -la /var/www/guanzhi-admin/
    - 症状：新 API 正常，但管理后台没有对应页面/功能
    - 解决：检查 `/var/www/guanzhi-admin/` 时间戳，重新部署
 
-2. **新建数据库表忘记执行**
-   - 症状：API 返回 500 或数据库错误
-   - 解决：手动执行建表 SQL（项目不使用 Flyway 自动迁移）
+2. **新建数据库表/迁移 SQL 忘记执行**
+   - 症状：API 返回 500 或数据库错误，或功能未生效
+   - 原因：**项目未启用 Flyway 自动迁移**，`db/migration/` 下的 SQL 文件需要手动执行
+   - 解决：检查本次是否有新的迁移文件，手动执行（见下方模板）
+
+### 手动执行迁移 SQL
+
+```bash
+# 1. 检查本次部署是否有新的迁移文件
+ls -la Server/onettoo/src/main/resources/db/migration/
+
+# 2. 在服务器上执行 SQL（注意数据库名是 ONETTOO 大写）
+AWS_PROFILE=onettoo-cn NO_PROXY="*" aws ssm send-command \
+  --instance-ids i-0f6e22ef4fb2d13df \
+  --document-name AWS-RunShellScript \
+  --parameters '{"commands":["source /home/ec2-user/.env && mysql -u$DB_USER -p$DB_PWD ONETTOO -e \"<SQL语句>\""]}' \
+  --region cn-northwest-1 \
+  --query 'Command.CommandId' \
+  --output text
+
+# 3. 执行后重启服务刷新缓存（如果修改的是配置表）
+systemctl restart onettoo
+```
 
 ---
 
