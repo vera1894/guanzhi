@@ -1,6 +1,7 @@
-# CLAUDE.md
+# CLAUDE.md — 观之（guanzhi）
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> 通用规则见 `~/.claude/CLAUDE.md`（语言、代码原则、工作模式、记忆回流）
+> 本文件只含项目特有信息。
 
 ---
 
@@ -23,11 +24,6 @@ projectBasicInfo/
 这些文档包含完整的项目结构、技术栈、部署信息和操作规范。
 
 ---
-
-## Language Rule
-- All responses from Claude Code should be in Chinese (Simplified) as specified in .rules/agent_rules.md
-- Code comments may be in Chinese or English depending on context
-- Technical terms may be in English but should include Chinese explanations when possible
 
 ## Terminology / 术语规范
 
@@ -105,20 +101,4 @@ pod update
 
 > **重要**：后端部署必须遵循 `05_DEPLOYMENT_SSOT.md` 中的流程，使用 systemd 管理服务，禁止使用旧的 `start.sh` 或 `pkill` 方式。
 
----
-
-## 记忆回流（自动执行）
-
-**完成一个问题系列后（bug 修复、功能开发、部署），Agent 必须执行以下检查：**
-
-1. **本次是否产生了新经验？** 包括：踩过的坑、架构决策、发现的非直觉行为
-2. **如有**，更新 `memory/` 目录下对应的主题文件：
-   - iOS 相关 → `memory/ios-dev.md`
-   - 后端/部署 → `memory/backend-deploy.md`
-   - 通知系统 → `memory/notification.md`
-   - 架构决策 → `memory/architecture.md`
-3. **如果是影响全局的关键经验**，同时更新 `memory/MEMORY.md` 的「关键经验速查」
-4. **替换过时信息**，不要无限追加。保持每条经验一句话 + 必要上下文
-5. 操作日志仍按惯例写入 `projectBasicInfo/logs/`
-
-> 记忆文件位于 `~/.claude/projects/` 下的 `memory/` 目录，MEMORY.md 前 200 行每次会话自动加载。
+> 记忆回流规则已移至 `.claude/rules/memory-reflux.md`（自动加载）。
