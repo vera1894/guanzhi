@@ -1,0 +1,16 @@
+{
+  "task_id": "config-tailscale-serve-20260207",
+  "run_id": "run-20260207-002",
+  "workspace": "meta",
+  "actor": "cc",
+  "task_type": "configuration",
+  "schema_version": "1.0.0",
+  "timestamp": "2026-02-07T10:30:00Z",
+  "input": {
+    "description": "配置 Tailscale serve 将本地 18789 端口通过 Tailscale 网络暴露",
+    "command": "tailscale serve tcp 18789 127.0.0.1:18789",
+    "context": {
+      "purpose": "通过 Tailscale 网络代理 TCP 端口 18789"
+    }
+  }
+}

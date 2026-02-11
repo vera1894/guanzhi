@@ -13,6 +13,7 @@ struct ShareDetailsCardView: View {
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
+    @EnvironmentObject var toastManager: ToastManager
     @Binding var isFullScreen: Bool
     @Binding var isAtTop: Bool
     @Binding var dragOffset: CGFloat
@@ -482,6 +483,26 @@ struct ShareDetailsCardView: View {
                 .padding(.vertical, 8)
                 .background(Color.white.opacity(0.15))
                 .cornerRadius(16)
+            }
+
+            // 分享链接按钮
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                let shareLink = "\(Constants.BASE_HOST)/s/\(share.id)"
+                UIPasteboard.general.string = shareLink
+                toastManager.show(ToastItem(style: .notificationOnly(
+                    title: "分享链接已复制，去粘贴吧～",
+                    symbol: "arrowshape.turn.up.right",
+                    tint: Color("color-primary"),
+                    isUserInteractionEnabled: true,
+                    timing: .short,
+                    isAutoClose: true
+                )))
+            } label: {
+                Image(systemName: "arrowshape.turn.up.right")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.white)
             }
 
             // 贴纸按钮

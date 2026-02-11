@@ -5,48 +5,29 @@
 
 ---
 
-## 必读顺序
+## 文档查阅方式
 
-新 Agent 在开始工作前，**必须**按以下顺序阅读文档：
+**不要在每次会话开始时阅读全部文档。** 按任务需要查阅对应文档即可。
 
-1. **本文件** (`00_AGENT_RULES.md`) - 了解使用规则
-2. **`01_PROJECT_OVERVIEW.md`** - 了解项目整体结构和技术栈
-3. **`02_CONNECTIONS.private.md`** - 了解服务器连接信息（如需部署）
-4. **`03_CREDENTIALS.private.md`** - 了解凭证信息（如需认证）
-5. **`04_TERMINOLOGY.md`** - 术语规范字典（UI 文案使用「观之」）
-6. **`05_DEPLOYMENT_SSOT.md`** - **部署操作 SSOT**（部署前必读，含 SSM/S3 最佳实践）
-7. **`99_SERVER_OPERATIONS_RULES.md`** - 服务器操作通用规则
-8. **`logs/`** - 查看历史操作日志（如需了解之前做过什么）
-9. **`.claude/settings.local.json`** - Claude 本地规则/权限/工具限制（如存在）
-10. **`.claude/skills/*/SKILL.md`** - Claude Skills 规则（按任务匹配触发阅读）
+MEMORY.md（自动注入）和 `.claude/rules/`（自动加载）已包含关键经验和信息查找策略。
+根目录 `CLAUDE.md` 包含任务索引表和文档索引表。
 
-### Claude 规则与 Skills 读取准则
+### 本目录文档说明
 
-- **把 `.claude/` 下的规则与 Skills 视为本规则的一部分**
-- **不要把 Claude 规则/Skills 内容复制到本文件**，只需在需要时按路径读取并遵循
-- 当任务命中某个 Skill 描述时，先阅读对应 `SKILL.md`，按其流程执行
+| 文档 | 何时需要阅读 |
+|------|-------------|
+| `00_AGENT_RULES.md`（本文件） | 不确定操作规范时 |
+| `01_PROJECT_OVERVIEW.md` | 不了解项目结构时 |
+| `02_CONNECTIONS.private.md` | 需要服务器连接信息时 |
+| `03_CREDENTIALS.private.md` | 需要凭证信息时 |
+| `04_TERMINOLOGY.md` | 涉及 UI 文案时 |
+| `05_DEPLOYMENT_SSOT.md` | 后端部署时 |
+| `99_SERVER_OPERATIONS_RULES.md` | 服务器操作时 |
+| `logs/` | 需要了解历史操作时 |
 
-### 强制执行机制（Claude Code SessionStart Hook）
+### Claude Skills
 
-**问题背景**：Agent 在会话延续或上下文压缩后，可能跳过阅读项目规则直接开始工作，导致违反规范（如文件存放位置错误、术语使用错误等）。
-
-**解决方案**：使用 Claude Code 的 **SessionStart Hook**，在每次会话开始时自动提醒 Agent 阅读项目规则。
-
-**已配置文件**：
-
-1. `.claude/settings.json` - Hook 配置
-2. `.claude/hooks/load-project-rules.sh` - 规则加载脚本
-
-**Hook 工作原理**：
-- 每次 Claude Code 会话开始时，自动执行 `load-project-rules.sh`
-- 脚本输出项目规则提醒，确保 Agent 在开始工作前了解规范
-- 提醒内容包括：必读文档列表、日志存放规范、术语规范
-
-**如需修改提醒内容**：
-编辑 `.claude/hooks/load-project-rules.sh` 文件
-
-**备选方案**：如果 Hook 未生效，Agent 应在每次会话开始时主动声明：
-> "我将先阅读项目规则（projectBasicInfo/00_AGENT_RULES.md）再开始工作。"
+- `.claude/skills/*/SKILL.md` — 当任务命中某个 Skill 描述时，阅读对应 SKILL.md 并按其流程执行
 
 ---
 

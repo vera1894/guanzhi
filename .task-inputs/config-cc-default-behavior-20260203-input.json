@@ -1,0 +1,29 @@
+{
+  "task_id": "config-cc-default-behavior-20260203",
+  "run_id": "run-20260203-003",
+  "workspace": "meta",
+  "actor": "cc",
+  "task_type": "configuration",
+  "schema_version": "1.0.0",
+  "timestamp": "2026-02-03T12:45:00Z",
+  "input": {
+    "description": "配置 Claude Code 默认使用 Agent 系统模式，创建行为配置文件和操作指南",
+    "files": [
+      "projectBasicInfo/cc-behavior-config.json",
+      "projectBasicInfo/cc-operation-guide.md"
+    ],
+    "context": {
+      "requirement": "用户要求所有操作（读/写、任意workspace）默认走 Agent 系统，快速模式仅允许只读操作且不生成日志",
+      "changes": [
+        "创建 cc-behavior-config.json（机器可读配置）",
+        "创建 cc-operation-guide.md（人类可读指南）",
+        "定义默认模式：Agent 系统追踪",
+        "定义快速模式：仅只读，强制切换规则"
+      ]
+    },
+    "constraints": {
+      "quick_mode_enforcement": "即使用户说快速模式，涉及写入操作也必须切换到 Agent 系统模式",
+      "no_exceptions": "所有写入操作都必须走 Agent 系统"
+    }
+  }
+}

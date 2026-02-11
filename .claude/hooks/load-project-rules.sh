@@ -6,18 +6,11 @@
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 DOC_DIR="projectBasicInfo"
 
-echo "=== 项目规则提醒 ==="
+echo "=== 观之项目 ==="
 echo ""
-echo "请在开始工作前阅读 $PROJECT_DIR/$DOC_DIR/ 下的文档："
-echo ""
-echo "1. $DOC_DIR/00_AGENT_RULES.md - Agent 使用规则（必读）"
-echo "2. $DOC_DIR/01_PROJECT_OVERVIEW.md - 项目结构与端侧入口"
-echo "3. $DOC_DIR/04_TERMINOLOGY.md - 术语规范（必读）"
-echo "4. $DOC_DIR/logs/ - 近期操作日志（了解上下文）"
-echo ""
-echo "日志命名格式：YYYY-MM-DD-英文主题-角色.md"
-echo ""
-echo "=== 请确认已阅读项目规则后再开始工作 ==="
+echo "MEMORY.md 和 rules/ 已自动加载，包含关键经验和查找策略。"
+echo "根据任务类型，按需查阅 CLAUDE.md 中的任务索引表定位文档。"
+echo "禁止每次都阅读全部 $DOC_DIR/ 文档。"
 echo ""
 
 exit 0

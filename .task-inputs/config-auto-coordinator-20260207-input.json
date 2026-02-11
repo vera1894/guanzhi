@@ -1,0 +1,23 @@
+{
+  "task_id": "config-auto-coordinator-20260207",
+  "run_id": "run-20260207-001",
+  "workspace": "meta",
+  "actor": "cc",
+  "task_type": "configuration",
+  "schema_version": "1.0.0",
+  "timestamp": "2026-02-07T10:00:00Z",
+  "input": {
+    "description": "修改 CC 行为配置，启用自动使用 coordinator 拆解多 workspace 任务",
+    "files": [
+      "projectBasicInfo/cc-behavior-config.json",
+      "projectBasicInfo/cc-operation-guide.md"
+    ],
+    "context": {
+      "requirement": "当检测到任务涉及多个 workspace 时，自动使用 coordinator 拆解任务，不需要用户确认",
+      "changes": [
+        "修改 coordinator_integration.auto_use_coordinator 为 true",
+        "更新操作指南说明新行为"
+      ]
+    }
+  }
+}
