@@ -15,6 +15,9 @@ struct SettingView: View {
     @State private var isLoggingout = false
     @State private var showAgreement = false
     @State private var showResetOnboardingConfirm = false  // 重置操作提示确认
+    @State private var showClearCacheConfirm = false  // 清理缓存确认
+    @State private var cacheSize: String = ""  // 缓存大小显示
+    @EnvironmentObject var toastManager: ToastManager
 
     var items = [
         "账号与绑定",
@@ -118,6 +121,57 @@ struct SettingView: View {
         } message: {
             Text("重置后将重新显示新手引导提示")
         }
+        .alert("清理缓存", isPresented: $showClearCacheConfirm) {
+            Button("清理", role: .destructive) {
+                Self.clearCache()
+                toastManager.show(ToastItem(style: .notificationOnly(
+                    title: "缓存已清理",
+                    symbol: "checkmark.circle",
+                    tint: .green,
+                    isUserInteractionEnabled: true,
+                    timing: .short,
+                    isAutoClose: true
+                )))
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("当前缓存大小：\(cacheSize)，确定要清理吗？")
+        }
+    }
+
+    // MARK: - 缓存管理
+
+    /// 计算缓存大小（URLCache + tmp 目录）
+    static func calculateCacheSize() -> String {
+        var totalSize: Int64 = 0
+        // URLCache
+        totalSize += Int64(URLCache.shared.currentDiskUsage)
+        // tmp 目录
+        let tmpDir = NSTemporaryDirectory()
+        if let files = FileManager.default.enumerator(atPath: tmpDir) {
+            while let file = files.nextObject() as? String {
+                let path = (tmpDir as NSString).appendingPathComponent(file)
+                if let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+                   let size = attrs[.size] as? Int64 {
+                    totalSize += size
+                }
+            }
+        }
+        return ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+    }
+
+    /// 清除缓存
+    static func clearCache() {
+        // 清除 URLCache
+        URLCache.shared.removeAllCachedResponses()
+        // 清除 tmp 目录
+        let tmpDir = NSTemporaryDirectory()
+        if let files = try? FileManager.default.contentsOfDirectory(atPath: tmpDir) {
+            for file in files {
+                let path = (tmpDir as NSString).appendingPathComponent(file)
+                try? FileManager.default.removeItem(atPath: path)
+            }
+        }
     }
 
     // 根据不同的列表项执行操作
@@ -132,7 +186,8 @@ struct SettingView: View {
         case "操作提示":
             showResetOnboardingConfirm = true  // 显示重置确认对话框
         case "清理缓存":
-            print("清理缓存中...")
+            cacheSize = Self.calculateCacheSize()
+            showClearCacheConfirm = true
         case "退出登录":
             isLoggingout.toggle()
         case "系统版本":
