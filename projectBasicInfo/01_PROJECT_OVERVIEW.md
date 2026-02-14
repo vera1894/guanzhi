@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v4.1
-**最后更新**: 2026-01-23（聚合列表状态恢复修复 + Onboarding 状态重载修复 + 登录流程状态管理）
+**文档版本**: v4.2
+**最后更新**: 2026-02-13（查看体验优化 + CloudFront CDN 部署 + 媒体下载进度优化）
 
 ---
 
@@ -918,7 +918,10 @@ class UserLoginModel: ObservableObject {
 |------|------|
 | 服务器 | 52.83.127.15 (AWS 宁夏) |
 | 管理后台 | http://52.83.127.15/guanzhi-admin/ |
-| 后端 API | http://52.83.127.15:8085 |
+| 后端 API | https://onettoo.com/api/ |
+| CDN | CloudFront `E37ZE0ABRM5VX9`（`/image/*` 缓存 7 天） |
+| 域名 | onettoo.com → CloudFront → 源站 52.83.127.15 |
+| SSL 证书 | IAM `onettoo-com-2026`，有效期至 2027-02-23 |
 | 连接方式 | AWS SSM (非 SSH) |
 
 详细连接信息见 `02_CONNECTIONS.private.md`
@@ -1094,11 +1097,20 @@ class UserLoginModel: ObservableObject {
 ### Nginx 代理规则（生产环境）
 
 ```
+/image/           → 静态文件 (/home/ec2-user/images/image/)
+                    Cache-Control: public, max-age=604800, immutable
 /guanzhi-admin/   → 静态文件 (/var/www/guanzhi-admin/)
 /api/user/        → http://127.0.0.1:8085/user/
 /api/admin/       → http://127.0.0.1:8085/api/admin/
 /api/             → http://127.0.0.1:8085/ (去掉 /api 前缀)
 /admin/inspector/ → http://127.0.0.1:8085/admin/inspector/
+```
+
+**CDN 架构**（2026-02-13）：
+```
+客户端 → onettoo.com (DNS CNAME) → CloudFront CDN
+  ├── /image/* → CDN 缓存 7 天（命中直返，未命中回源 Nginx）
+  └── 其他路径 → 直接透传到源站（TTL=0，不缓存）
 ```
 
 ---
@@ -1384,6 +1396,8 @@ View/MapPages/
 | 地图锁定修复计划 | `projectBasicInfo/logs/2026-01-23-map-locking-fix-plan.md` | 重新登录后地图锁定问题修复 |
 | **Onboarding 状态重载修复** | `projectBasicInfo/logs/2026-01-23-onboarding-state-reload-fix-plan.md` | userId 变化后状态重载 + UI 恢复 + 登录流程重置 |
 | **聚合列表状态恢复修复** | `projectBasicInfo/logs/2026-01-23-cluster-list-state-restoration-fix-cc.md` | 三层保护机制：状态持久化 + path.isEmpty 检查 + 条件检查 |
+| 媒体上传下载优化 | `projectBasicInfo/logs/2026-02-13-media-upload-download-optimization-cc.md` | 并行上传+压缩、缩略图优先下载 |
+| **查看体验+CDN优化** | `projectBasicInfo/logs/2026-02-13-viewing-experience-cdn-optimization-cc.md` | AsyncImage重试、字节级进度、缩略图缓存、CloudFront CDN |
 
 ---
 

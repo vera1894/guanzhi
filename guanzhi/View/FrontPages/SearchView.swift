@@ -632,6 +632,14 @@ struct SearchView: View {
                     print("🔷 [ClusterList] 收到 shareDetailDidDisappear 通知")
                     restoreClusterListIfNeeded()
                 }
+                // MARK: - 删除观之后从聚合列表移除
+                .onReceive(NotificationCenter.default.publisher(for: .shareDidDelete)) { notification in
+                    guard let shareId = notification.userInfo?["shareId"] as? Int else { return }
+                    let idStr = "\(shareId)"
+                    clusterAnnotations.removeAll { $0.id == idStr }
+                    searchViewModel.savedClusterAnnotations.removeAll { $0.id == idStr }
+                    print("🔷 [ClusterList] 已从聚合列表移除已删除的观之 id=\(shareId)")
+                }
     //            .onChange(of: locationManager.locationErrorDescription) { _ , errorDescription in
     //                if let errorDescription = errorDescription {
     //                    print("位置错误：\(errorDescription)")

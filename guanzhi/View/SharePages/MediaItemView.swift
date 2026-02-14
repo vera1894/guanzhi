@@ -49,6 +49,7 @@ struct MediaItemView: View {
     @State private var isReadyLayer: Bool = false // 方案B：图层是否可显示（isReadyForDisplay）
     @State private var hasOneFrame: Bool = false // 方案B：是否已渲染至少一帧
     @State private var shouldShowPlayer: Bool = false // 方案B：是否应该显示播放器（防止 TabView 预创建时触发）
+    @State private var asyncImageRetryId = UUID() // AsyncImage 失败重试 ID
 
     // 判断当前项是否被选中
     private var isCurrentlySelected: Bool {
@@ -299,7 +300,7 @@ struct MediaItemView: View {
                                     Image(uiImage: coverImage)
                                         .resizable()
                                         .scaledToFit() // ✅ 使用 fit 模式
-                                        .opacity(mediaItemWrapper.coverShouldShow ? 1 : 0)
+                                        // 封面始终可见（作为视频 overlay 的底图，滑动时露出）
                                         .overlay(
                                             // ✅ 实况图标 + 页数指示器
                                             VStack {
@@ -434,46 +435,73 @@ struct MediaItemView: View {
                 }
                 
             } else {
-                // 显示 Loading 动画
-                ZStack {
-                    // 封面图（如果有）
-                    if USE_VIDEO_PLAYBACK,
-                       let coverData = mediaItemWrapper.coverImageData,
-                       let coverImage = UIImage(data: coverData) {
-                        Image(uiImage: coverImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .blur(radius: 10)
-                            .opacity(0.5)
+                // 媒体尚未下载完成，优先用本地缓存缩略图，否则远程 URL
+                let imageURL: URL? = {
+                    if let localURL = mediaItemWrapper.thumbnailFile?.localURL,
+                       FileManager.default.fileExists(atPath: localURL.path) {
+                        return localURL
                     }
-                    
-                    ProcessingView()
-                }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onAppear {
-                    // ✅ 方案B：在 loading 期间开始预加载视频
-                    if USE_VIDEO_PLAYBACK,
-                       isCurrentlySelected,
-                       let videoFile = mediaItemWrapper.videoFile,
-                       let videoURL = videoFile.localURL {
-                        
-                        #if DEBUG
-                        print("🚀 MediaItemView[\(currentIndex ?? -1)] - Loading 期间检查预加载")
-                        #endif
-                        
-                        // ✅ 如果 VideoEngine 已创建，开始预加载
-                        if let engine = mediaItemWrapper.videoEngine {
-                            engine.prepare(url: videoURL) {
-                                #if DEBUG
-                                print("✅ MediaItemView[\(currentIndex ?? -1)] - Loading 期间视频预加载完成")
-                                #endif
+                    return mediaItemWrapper.thumbnailFile?.url ?? mediaItemWrapper.photoFile?.url
+                }()
+
+                if let imageURL = imageURL {
+                    AsyncImage(url: imageURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .overlay(
+                                    VStack {
+                                        HStack {
+                                            // LivePhoto 标签（带下载进度）
+                                            if mediaItemWrapper.isLivePhoto {
+                                                LiveBadgeOnPhotoLoading(progress: mediaItemWrapper.downloadProgress)
+                                                    .padding(.horizontal)
+                                            }
+                                            Spacer()
+                                            // 页数指示器（右上角）
+                                            if totalMediaCount > 1, let current = currentIndex {
+                                                Text("\(current + 1)/\(totalMediaCount)")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(
+                                                        Capsule()
+                                                            .fill(Color.black.opacity(0.5))
+                                                    )
+                                                    .padding(.horizontal)
+                                            }
+                                        }
+                                        .padding(.top, 20)
+                                        Spacer()
+                                    }
+                                )
+                        case .failure(_):
+                            VStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.gray)
+                                Button("点击重试") {
+                                    asyncImageRetryId = UUID()
+                                }
+                                .font(.system(size: 14))
+                                .foregroundColor(.blue)
                             }
-                        } else {
-                            #if DEBUG
-                            print("⏳ MediaItemView[\(currentIndex ?? -1)] - Loading 期间 VideoEngine 尚未创建，等待 createMediaItem")
-                            #endif
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.black)
+                        case .empty:
+                            ProcessingView()
+                        @unknown default:
+                            ProcessingView()
                         }
                     }
+                    .id(asyncImageRetryId)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ProcessingView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }

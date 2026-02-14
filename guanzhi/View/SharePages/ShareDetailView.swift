@@ -383,12 +383,22 @@ struct ShareDetailView: View {
                                             .animation(nil, value: displayFrame)
                                             .transition(.identity)
                                             .allowsHitTesting(false)
+                                            // ✅ 拖拽时隐藏视频 overlay，露出底下的封面图跟随 TabView 自然滑动
+                                            .opacity(stablePlayerFrame != .zero && abs(playerFrame.origin.x) > 20 ? 0 : 1)
                                             .onChange(of: playerFrame) { oldValue, newValue in
-                                                if newValue != .zero && abs(newValue.origin.x) < 10 {
+                                                guard newValue != .zero else { return }
+                                                if abs(newValue.origin.x) < 10 {
                                                     #if DEBUG
                                                     print("📐 [Overlay] 更新 stablePlayerFrame: \(newValue)")
                                                     #endif
                                                     stablePlayerFrame = newValue
+                                                    // ✅ 页面回到原位，恢复播放（用户取消滑动时）
+                                                    if currentIsPlaying {
+                                                        player.play()
+                                                    }
+                                                } else if abs(newValue.origin.x) > 20 {
+                                                    // ✅ 正在拖拽，暂停视频减少渲染开销
+                                                    player.pause()
                                                 }
                                             }
                                             .onAppear {
@@ -404,8 +414,25 @@ struct ShareDetailView: View {
                                     print("📑 ShareDetailView - selectedIndex 变化: \(oldValue) -> \(newValue)")
                                     #endif
 
-                                    // ✅ 方案B：切换全局播放器（会自动启动监听如果需要）
-                                    switchToVideo(at: newValue)
+                                    // ✅ 立即停止旧视频，清理播放器状态（避免滑动时视频仍在渲染）
+                                    currentEngine?.stop()
+                                    currentEngine = nil
+                                    currentCoverVisible = true
+                                    isReadyLayer = false
+                                    hasFirstPixel = false
+                                    stablePlayerFrame = .zero
+
+                                    // 旧 wrapper 恢复封面
+                                    if oldValue >= 0, oldValue < searchViewModel.downloadMedia.count {
+                                        searchViewModel.downloadMedia[oldValue].coverShouldShow = true
+                                        searchViewModel.downloadMedia[oldValue].hasAutoPlayedForSelection = false
+                                    }
+
+                                    // ✅ 延迟 0.3s 切换新视频，等滑动动画完成后再初始化
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        guard selectedIndex == newValue else { return }
+                                        switchToVideo(at: newValue)
+                                    }
                                 }
                                 .onChange(of: searchViewModel.downloadMedia.count) { oldCount, newCount in
                                     #if DEBUG

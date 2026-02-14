@@ -44,6 +44,8 @@ struct Constants{
     }()
 
     static let BASE_HOST = "https://onettoo.com"
+    // CDN 域名（当前回退到源站直连；未来接入国内 CDN 时改为 CDN 域名即可）
+    static let MEDIA_CDN_HOST = "https://onettoo.com"
 
     static let MessageTime = 60  //短信验证码等待时间
     

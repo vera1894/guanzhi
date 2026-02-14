@@ -17,6 +17,34 @@ import Photos
 // ✅ 方案切换开关（true = 方案B短视频，false = 方案A LivePhoto）
 fileprivate let USE_VIDEO_PLAYBACK = true
 
+// 下载进度委托：通过 URLSessionDownloadDelegate 获取系统级进度回调，
+// 节流到每 2% 变化才通知，避免过多 UI 刷新
+private class DownloadProgressDelegate: NSObject, URLSessionDownloadDelegate {
+    let onProgress: (Double) -> Void
+    private var lastReportedProgress: Double = 0
+
+    init(onProgress: @escaping (Double) -> Void) {
+        self.onProgress = onProgress
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                    didFinishDownloadingTo location: URL) {
+        // 由 async API 处理返回值，此处无需操作
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                    didWriteData bytesWritten: Int64,
+                    totalBytesWritten: Int64,
+                    totalBytesExpectedToWrite: Int64) {
+        guard totalBytesExpectedToWrite > 0 else { return }
+        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+        if progress - lastReportedProgress >= 0.02 || progress >= 1.0 {
+            lastReportedProgress = progress
+            onProgress(min(progress, 1.0))
+        }
+    }
+}
+
 @MainActor
 class SearchViewModel: ObservableObject {
     
@@ -688,7 +716,7 @@ class SearchViewModel: ObservableObject {
     
     // 解析单个媒体文件的路径，生成 MediaFile 实例
     func parseMediaFile(from path: String, shareId: Int64) -> MediaFile? {
-        let baseURL = "https://onettoo.com/"
+        let baseURL = Constants.MEDIA_CDN_HOST + "/"
         let fullPath = baseURL + path
         guard let encodedUrlString = fullPath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: encodedUrlString) else {
@@ -1462,85 +1490,135 @@ class SearchViewModel: ObservableObject {
     
     func downloadMediaFiles(mediaItems: [MediaItemWrapper]) {
         Task {
-            for mediaItemWrapper in mediaItems {
-                var photoDownloadFailed = false
-                var videoDownloadFailed = false
+            // 所有 wrapper 并行下载（AsyncImage 已提供即时显示，无需串行缩略图阶段）
+            await withTaskGroup(of: Void.self) { group in
+                for mediaItemWrapper in mediaItems {
+                    // 已有 mediaItem（本地缓存命中）的跳过
+                    if mediaItemWrapper.mediaItem != nil { continue }
 
-                // 使用 TaskGroup 并发下载
-                await withTaskGroup(of: (Bool, Bool).self) { group in
-                    // 下载照片文件
-                    if let photoFile = mediaItemWrapper.photoFile, photoFile.localURL == nil {
-                        group.addTask {
-                            do {
-                                try await self.downloadMediaFile(mediaFile: photoFile)
-                                return (false, false) // photo success
-                            } catch {
-                                print("❌ 照片下载失败，已加入重试队列: \(error.localizedDescription)")
-                                await MainActor.run {
-                                    self.failedDownloads.append((mediaFile: photoFile, wrapper: mediaItemWrapper))
-                                }
-                                return (true, false) // photo failed
-                            }
-                        }
-                    }
-                    // 下载视频文件
-                    if let videoFile = mediaItemWrapper.videoFile, videoFile.localURL == nil {
-                        group.addTask {
-                            do {
-                                try await self.downloadMediaFile(mediaFile: videoFile)
-                                return (false, false) // video success
-                            } catch {
-                                print("❌ 视频下载失败，已加入重试队列: \(error.localizedDescription)")
-                                await MainActor.run {
-                                    self.failedDownloads.append((mediaFile: videoFile, wrapper: mediaItemWrapper))
-                                }
-                                return (false, true) // video failed
-                            }
-                        }
-                    }
-                    // 收集结果
-                    for await result in group {
-                        if result.0 { photoDownloadFailed = true }
-                        if result.1 { videoDownloadFailed = true }
-                    }
-                }
-
-                // 只有在没有失败时才创建媒体项
-                if !photoDownloadFailed && !videoDownloadFailed {
-                    // 在主线程上创建媒体项并更新 UI
-                    await MainActor.run {
-                        // 检查 mediaFile 是否还存在（可能已被删除）
-                        let isDeleted = (mediaItemWrapper.photoFile?.isDeleted ?? false) ||
-                                       (mediaItemWrapper.videoFile?.isDeleted ?? false)
-                        guard !isDeleted else {
-                            print("媒体文件已被删除，跳过创建媒体项")
-                            return
-                        }
-
-                        if let mediaItem = createMediaItem(from: mediaItemWrapper) {
-                            mediaItemWrapper.mediaItem = mediaItem
-                        }
+                    group.addTask {
+                        await self.downloadSingleWrapper(mediaItemWrapper)
                     }
                 }
             }
         }
     }
 
-    //异步加载媒体文件（使用自定义超时配置的 URLSession）
-    func downloadMediaFile(mediaFile: MediaFile) async throws {
+    // 下载单个 wrapper 的所有文件（缩略图缓存 + photo/video 并行字节级进度）
+    private func downloadSingleWrapper(_ wrapper: MediaItemWrapper) async {
+        var photoDownloadFailed = false
+        var videoDownloadFailed = false
+
+        // 阶段 0：缩略图缓存到本地（小文件极快，失败不阻塞）
+        if let thumbnailFile = wrapper.thumbnailFile,
+           thumbnailFile.localURL == nil,
+           thumbnailFile.url != nil {
+            do {
+                try await self.downloadMediaFile(mediaFile: thumbnailFile)
+                #if DEBUG
+                print("📌 缩略图已缓存到本地")
+                #endif
+            } catch {
+                #if DEBUG
+                print("⚠️ 缩略图缓存失败（不阻塞）: \(error.localizedDescription)")
+                #endif
+            }
+        }
+
+        // 阶段 1：photo + video 并行下载，各自传字节级进度回调
+        await withTaskGroup(of: (Bool, Bool).self) { group in
+            // 下载照片文件
+            if let photoFile = wrapper.photoFile, photoFile.localURL == nil {
+                group.addTask {
+                    do {
+                        try await self.downloadMediaFile(mediaFile: photoFile) { progress in
+                            Task { @MainActor in
+                                wrapper.photoDownloadProgress = progress
+                            }
+                        }
+                        return (false, false)
+                    } catch {
+                        print("❌ 照片下载失败: \(error.localizedDescription)")
+                        await MainActor.run {
+                            self.failedDownloads.append((mediaFile: photoFile, wrapper: wrapper))
+                        }
+                        return (true, false)
+                    }
+                }
+            }
+            // 下载视频文件
+            if let videoFile = wrapper.videoFile, videoFile.localURL == nil {
+                group.addTask {
+                    do {
+                        try await self.downloadMediaFile(mediaFile: videoFile) { progress in
+                            Task { @MainActor in
+                                wrapper.videoDownloadProgress = progress
+                            }
+                        }
+                        return (false, false)
+                    } catch {
+                        print("❌ 视频下载失败: \(error.localizedDescription)")
+                        await MainActor.run {
+                            self.failedDownloads.append((mediaFile: videoFile, wrapper: wrapper))
+                        }
+                        return (false, true)
+                    }
+                }
+            }
+            // 收集结果
+            for await result in group {
+                if result.0 { photoDownloadFailed = true }
+                if result.1 { videoDownloadFailed = true }
+            }
+        }
+
+        // 下载成功后创建完整 mediaItem（触发 SwiftUI 从 AsyncImage 切换到完整渲染）
+        if !photoDownloadFailed && !videoDownloadFailed {
+            await MainActor.run {
+                let isDeleted = (wrapper.photoFile?.isDeleted ?? false) ||
+                               (wrapper.videoFile?.isDeleted ?? false)
+                guard !isDeleted else {
+                    print("媒体文件已被删除，跳过创建媒体项")
+                    return
+                }
+
+                if let mediaItem = createMediaItem(from: wrapper) {
+                    wrapper.mediaItem = mediaItem
+                    #if DEBUG
+                    print("✅ 下载完成，已创建完整 mediaItem")
+                    #endif
+                }
+            }
+        }
+    }
+
+    //异步加载媒体文件（使用自定义超时配置的 URLSession），支持下载进度回调
+    func downloadMediaFile(mediaFile: MediaFile, onProgress: ((Double) -> Void)? = nil) async throws {
         guard let url = mediaFile.url else {
             print("媒体文件没有有效的 URL")
             return
         }
         do {
             print("开始下载媒体文件：\(url.absoluteString)")
-            // 使用自定义的 URLSession（带超时配置）
-            let (data, _) = try await mediaDownloadSession.data(from: url)
             // 保存到本地
             guard let localURL = getLocalURL(for: mediaFile) else {
                 print("无法获取本地存储路径")
                 return
             }
+
+            let data: Data
+            if let onProgress = onProgress {
+                // 使用 download(from:delegate:) 获取系统级进度回调，不影响下载速度
+                let delegate = DownloadProgressDelegate(onProgress: onProgress)
+                let (tempURL, _) = try await mediaDownloadSession.download(from: url, delegate: delegate)
+                data = try Data(contentsOf: tempURL)
+                try? FileManager.default.removeItem(at: tempURL)
+            } else {
+                // 无进度回调时使用原来的一次性下载
+                let (d, _) = try await mediaDownloadSession.data(from: url)
+                data = d
+            }
+
             try data.write(to: localURL)
 
             // 检查文件尺寸（仅对图像和视频文件）
@@ -1649,6 +1727,9 @@ class SearchViewModel: ObservableObject {
                 let prefix = firstFile.prefix
                 let cacheKey = "\(shareId)-\(prefix)"
 
+                // 获取该组的缩略图文件（如果有）
+                let thumbnailFile = group.first(where: { $0.type == .thumbnail })
+
                 if hasPhoto && (hasVideo || hasLivePhotoVideo) {
                     // 动态照片（Live Photo）
                     if let photoFile = group.first(where: { $0.type == .photo }),
@@ -1671,6 +1752,7 @@ class SearchViewModel: ObservableObject {
 
                         mediaItemWrapper.photoFile = photoFile
                         mediaItemWrapper.videoFile = videoFile
+                        mediaItemWrapper.thumbnailFile = thumbnailFile
                         mediaItems.append(mediaItemWrapper)
                     }
                 } else if hasPhoto {
@@ -1693,6 +1775,7 @@ class SearchViewModel: ObservableObject {
                         }
 
                         mediaItemWrapper.photoFile = photoFile
+                        mediaItemWrapper.thumbnailFile = thumbnailFile
                         mediaItems.append(mediaItemWrapper)
                     }
                 } else if hasVideo && !hasPhoto {
@@ -1715,6 +1798,7 @@ class SearchViewModel: ObservableObject {
                         }
 
                         mediaItemWrapper.videoFile = videoFile
+                        mediaItemWrapper.thumbnailFile = thumbnailFile
                         mediaItems.append(mediaItemWrapper)
                     }
                 }
@@ -2337,6 +2421,7 @@ class MediaItemWrapper: Identifiable, ObservableObject {
     @Published var mediaItem: MediaItemProtocol?
     var photoFile: MediaFile?
     var videoFile: MediaFile?
+    var thumbnailFile: MediaFile?  // 服务器缩略图文件，用于快速首屏显示
     
     // 方案A：LivePhoto 相关
     @Published var livePhoto: PHLivePhoto?
@@ -2351,6 +2436,20 @@ class MediaItemWrapper: Identifiable, ObservableObject {
     @Published var coverImageData: Data?  // 封面图数据
     @Published var videoEngine: VideoEngine?  // 视频播放引擎
     @Published var coverShouldShow: Bool = true  // 封面是否应该显示（由 ShareDetailView 控制）
+
+    // 下载进度（0.0 ~ 1.0），用于 AsyncImage 阶段显示 LivePhoto 加载进度
+    @Published var photoDownloadProgress: Double = 0
+    @Published var videoDownloadProgress: Double = 0
+
+    var downloadProgress: Double {
+        if videoFile != nil && photoFile != nil {
+            return photoDownloadProgress * 0.3 + videoDownloadProgress * 0.7
+        }
+        return photoDownloadProgress
+    }
+
+    /// 是否是 LivePhoto（有视频文件）
+    var isLivePhoto: Bool { videoFile != nil }
 
     init(_ mediaItem: MediaItemProtocol?) {
         self.mediaItem = mediaItem

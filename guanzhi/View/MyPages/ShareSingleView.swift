@@ -141,7 +141,7 @@ struct ShareSingleView: View {
     }
     
     private func ephemeralGetThumbnailOrPhotoURL(responsedShare: ResponsedShare) -> URL? {
-        let baseURL = "https://onettoo.com/"
+        let baseURL = Constants.MEDIA_CDN_HOST + "/"
 
         // 1. 拆分路径
         let pathList = responsedShare.imagePath.components(separatedBy: ",")

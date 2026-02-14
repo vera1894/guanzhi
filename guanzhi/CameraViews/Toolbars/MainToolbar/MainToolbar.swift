@@ -260,6 +260,36 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
         let respMsg:String
     }
     
+    /// 压缩图片用于上传：缩放到最大 2048px 边长 + JPEG 0.7 压缩
+    /// 将原始相机输出（3-8MB）压缩到 300-800KB
+    func compressImageForUpload(data: Data) -> Data {
+        guard let image = UIImage(data: data) else {
+            return data // 无法解码，返回原始数据
+        }
+        let maxDimension: CGFloat = 2048
+        let size = image.size
+        var targetSize = size
+
+        if max(size.width, size.height) > maxDimension {
+            let scale = maxDimension / max(size.width, size.height)
+            targetSize = CGSize(width: size.width * scale, height: size.height * scale)
+        }
+
+        // 缩放图片
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resizedImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+
+        let compressed = resizedImage.jpegData(compressionQuality: 0.7) ?? data
+        #if DEBUG
+        let originalKB = data.count / 1024
+        let compressedKB = compressed.count / 1024
+        print("📦 图片压缩: \(originalKB)KB → \(compressedKB)KB (缩放到 \(Int(targetSize.width))x\(Int(targetSize.height)))")
+        #endif
+        return compressed
+    }
+
     func generateUniqueFileName() -> String {
         let userId = OTOLoginStatusManager.shared.getUserID()
         print("用户ID", userId)
@@ -279,180 +309,23 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
             "Authorization": OTOLoginStatusManager.shared.getToken()!
         ]
 
-        var imagePaths: [String] = []
-        var uploadIndex = 0
-
-        // 如果不需要排序，直接使用photos数组
         let sortedPhotos = photos
 
-        // 用于存储首个媒体文件的唯一文件名前缀，以便后续生成缩略图
-        var firstMediaUniqueFileNamePrefix: String?
+        // ✅ 按照片索引预分配路径槽位，保证最终拼接顺序与拍摄顺序一致
+        var photoPathGroups: [[String]] = Array(repeating: [], count: sortedPhotos.count)
+        var thumbnailPath: String? = nil  // 缩略图路径单独存放
+        let pathsLock = NSLock()
 
-        func uploadNextPhoto() {
-            guard uploadIndex < sortedPhotos.count else {
-                // 所有图片上传完成，开始上传缩略图
-                if let firstMediaPrefix = firstMediaUniqueFileNamePrefix {
-                    // 生成并上传缩略图
-                    generateAndUploadThumbnail(prefix: firstMediaPrefix) {
-                        // 所有文件上传完成，拼接路径
-                        let combinedPaths = imagePaths.joined(separator: ",")
-                        completion(.success(combinedPaths))
-                        print("Combined image paths: \(combinedPaths)")
-                    }
-                } else {
-                    // 没有媒体文件，无需上传缩略图
-                    let combinedPaths = imagePaths.joined(separator: ",")
-                    completion(.success(combinedPaths))
-                    print("Combined image paths: \(combinedPaths)")
-                }
-                return
-            }
+        // 第一个媒体文件的唯一文件名前缀，用于生成缩略图
+        let firstMediaUniqueFileNamePrefix = generateUniqueFileName()
 
-            let photo = sortedPhotos[uploadIndex]
-            let uniqueFileName = generateUniqueFileName()
-            let suffixTimestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+        // ✅ 基准时间戳 + 每张照片递增 1000ms，确保 parseMediaFiles 排序稳定
+        let baseTimestamp = Int(Date().timeIntervalSince1970 * 1000)
 
-            // 如果这是第一个媒体文件，记录其前缀
-            if uploadIndex == 0 {
-                firstMediaUniqueFileNamePrefix = uniqueFileName
-            }
-
-            let dispatchGroup = DispatchGroup()
-            var uploadError: Error?
-            
-            // ✅ 方案A：在上传前为LivePhoto写入配对元数据
-            // 判断是否为LivePhoto
-            let isLivePhoto = photo.livePhotoMovieURL != nil
-            
-            if isLivePhoto, let originalVideoURL = photo.livePhotoMovieURL {
-                // 这是LivePhoto，需要先处理配对元数据
-                #if DEBUG
-                print("🎬 MainToolbar: 检测到LivePhoto，开始写入配对元数据")
-                #endif
-                
-                // ✅ 关键修复：在Task外部enter，确保异步完成后才notify
-                dispatchGroup.enter()
-                
-                Task {
-                    defer {
-                        // 确保无论成功或失败都leave
-                        dispatchGroup.leave()
-                    }
-                    
-                    do {
-                        // 创建临时输出路径
-                        let tempDir = FileManager.default.temporaryDirectory
-                        // ✅ 改为HEIC格式（对LivePhoto元数据支持更好）
-                        let pairedImageURL = tempDir.appendingPathComponent("\(UUID().uuidString)_paired.heic")
-                        let pairedVideoURL = tempDir.appendingPathComponent("\(UUID().uuidString)_paired.mov")
-                        
-                        // 调用打包工具写入配对元数据
-                        let assetId = try await LivePhotoPackager.packageLivePhoto(
-                            imageData: photo.data,
-                            videoURL: originalVideoURL,
-                            outputImageURL: pairedImageURL,
-                            outputVideoURL: pairedVideoURL
-                        )
-                        
-                        #if DEBUG
-                        print("✅ MainToolbar: LivePhoto配对元数据写入成功，AssetID: \(assetId)")
-                        #endif
-                        
-                        // 读取处理后的文件数据
-                        let pairedImageData = try Data(contentsOf: pairedImageURL)
-                        let pairedVideoData = try Data(contentsOf: pairedVideoURL)
-                        
-                        // ✅ 上传配对后的图片（HEIC格式）
-                        // 使用 SearchViewModel 可解析的格式: prefix_type-timestamp.ext
-                        dispatchGroup.enter()
-                        uploadFile(data: pairedImageData, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).heic", mimeType: "image/heic") { result in
-                            switch result {
-                            case .success(_):
-                                dispatchGroup.leave()
-                            case .failure(let error):
-                                uploadError = error
-                                dispatchGroup.leave()
-                            }
-                        }
-                        
-                        // 上传配对后的视频
-                        dispatchGroup.enter()
-                        uploadFile(data: pairedVideoData, fileName: "\(uniqueFileName)_livephoto-\(suffixTimestamp).mov", mimeType: "video/quicktime") { result in
-                            switch result {
-                            case .success(_):
-                                dispatchGroup.leave()
-                            case .failure(let error):
-                                uploadError = error
-                                dispatchGroup.leave()
-                            }
-                        }
-                        
-                        // 清理临时文件
-                        try? FileManager.default.removeItem(at: pairedImageURL)
-                        try? FileManager.default.removeItem(at: pairedVideoURL)
-                        
-                    } catch {
-                        print("❌ MainToolbar: LivePhoto配对处理失败: \(error)")
-                        // 失败时回退到原始上传
-                        await MainActor.run {
-                            dispatchGroup.enter()
-                            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg") { result in
-                                switch result {
-                                case .success(_):
-                                    dispatchGroup.leave()
-                                case .failure(let error):
-                                    uploadError = error
-                                    dispatchGroup.leave()
-                                }
-                            }
-                            
-                            do {
-                                let videoData = try Data(contentsOf: originalVideoURL)
-                                dispatchGroup.enter()
-                                uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto-\(suffixTimestamp).mov", mimeType: "video/quicktime") { result in
-                                    switch result {
-                                    case .success(_):
-                                        dispatchGroup.leave()
-                                    case .failure(let error):
-                                        uploadError = error
-                                        dispatchGroup.leave()
-                                    }
-                                }
-                            } catch {
-                                print("Failed to read live photo video data: \(error)")
-                                uploadError = error
-                            }
-                        }
-                    }
-                }
-            } else {
-                // 普通照片，直接上传
-                dispatchGroup.enter()
-                uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg") { result in
-                    switch result {
-                    case .success(_):
-                        dispatchGroup.leave()
-                    case .failure(let error):
-                        uploadError = error
-                        dispatchGroup.leave()
-                    }
-                }
-            }
-
-            dispatchGroup.notify(queue: .main) {
-                if let error = uploadError {
-                    // 上传失败，终止上传过程并通知用户
-                    print("Upload failed with error: \(error.localizedDescription)")
-                    appState.isLoading = false
-                    showErrorToUser(message: "上传失败：\(error.localizedDescription)")
-                    completion(.failure(error))
-                } else {
-                    // 当前 Photo 对象的所有文件上传完成，继续下一个
-                    uploadIndex += 1
-                    uploadNextPhoto()
-                }
-            }
-        }
+        // 所有照片的全局 DispatchGroup
+        let allPhotosGroup = DispatchGroup()
+        var globalUploadError: Error?
+        let errorLock = NSLock()
 
         func showErrorToUser(message: String) {
             DispatchQueue.main.async {
@@ -460,44 +333,53 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 appState.showErrorAlert = true
             }
         }
-        
+
         let maxRetryCount = 3
-        
-        // 修改后的 uploadFile 方法，添加 completion 参数
-        func uploadFile(data: Data, fileName: String, mimeType: String, retryCount: Int = 0, completion: @escaping (Result<String, Error>) -> Void) {
+
+        // 上传单个文件的方法（带自定义超时的 Alamofire Session）
+        let uploadSessionConfig = URLSessionConfiguration.default
+        uploadSessionConfig.timeoutIntervalForRequest = 120  // 上传超时 120 秒
+        uploadSessionConfig.timeoutIntervalForResource = 300
+        let uploadSession = Session(configuration: uploadSessionConfig)
+
+        func uploadFile(data: Data, fileName: String, mimeType: String, photoIndex: Int? = nil, retryCount: Int = 0, completion: @escaping (Result<String, Error>) -> Void) {
             let formData = MultipartFormData()
             formData.append(data, withName: "multipartFile", fileName: fileName, mimeType: mimeType)
-            
-            print("Starting upload for \(fileName)...")
 
-            AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers)
+            #if DEBUG
+            print("Starting upload for \(fileName) (\(data.count / 1024)KB)...")
+            #endif
+
+            uploadSession.upload(multipartFormData: formData, to: url, method: .post, headers: headers)
                 .uploadProgress { progress in
-                    // 可选：更新上传进度
                     DispatchQueue.main.async {
-                        // 更新全局的上传进度，如果需要的话
                         appState.uploadProgress = progress.fractionCompleted
                     }
                 }
                 .responseDecodable(of: UploadResponse.self) { response in
                     switch response.result {
                     case .success(let uploadResponse):
-                        print("Response JSON: \(uploadResponse)")
-
                         if let imagePath = uploadResponse.datas {
-                            imagePaths.append(imagePath)
+                            // ✅ 按照片索引写入对应槽位，保证顺序
+                            pathsLock.lock()
+                            if let idx = photoIndex {
+                                photoPathGroups[idx].append(imagePath)
+                            } else {
+                                // 缩略图路径
+                                thumbnailPath = imagePath
+                            }
+                            pathsLock.unlock()
                             print("Uploaded \(fileName): \(imagePath)")
                             completion(.success(imagePath))
                         } else {
-                            print("No image path returned in response")
                             let error = NSError(domain: "UploadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No image path returned in response"])
                             completion(.failure(error))
                         }
                     case .failure(let error):
                         if retryCount < maxRetryCount {
                             print("Retrying upload for \(fileName), attempt \(retryCount + 1)")
-                            // 等待一段时间后重试
                             DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
-                                uploadFile(data: data, fileName: fileName, mimeType: mimeType, retryCount: retryCount + 1, completion: completion)
+                                uploadFile(data: data, fileName: fileName, mimeType: mimeType, photoIndex: photoIndex, retryCount: retryCount + 1, completion: completion)
                             }
                         } else {
                             print("Failed to upload \(fileName) after \(maxRetryCount) attempts")
@@ -507,73 +389,161 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 }
         }
 
-        // 生成并上传缩略图的方法
-        func generateAndUploadThumbnail(prefix: String, completion: @escaping () -> Void) {
-            // 找到首个媒体文件对应的Photo对象
-            guard let firstPhoto = sortedPhotos.first else {
-                completion()
-                return
-            }
+        // ✅ 并行上传所有照片
+        for (index, photo) in sortedPhotos.enumerated() {
+            let uniqueFileName = (index == 0) ? firstMediaUniqueFileNamePrefix : generateUniqueFileName()
+            // ✅ 递增时间戳：每张照片间隔 1000ms，确保 parseMediaFiles 排序稳定
+            let suffixTimestamp = String(baseTimestamp + index * 1000)
+            let isLivePhoto = photo.livePhotoMovieURL != nil
 
-            // 生成缩略图
-            let thumbnailImage: UIImage?
-            if let livePhotoURL = firstPhoto.livePhotoMovieURL {
-                // 如果是Live Photo，从视频生成缩略图
-                thumbnailImage = generateThumbnail(from: livePhotoURL)
-            } else {
-                // 否则，使用静态图片生成缩略图
-                thumbnailImage = UIImage(data: firstPhoto.data)
-            }
+            allPhotosGroup.enter()  // 为每张照片 enter
 
-            guard let thumbnailData = thumbnailImage?.jpegData(compressionQuality: 0.5) else {
-                print("Failed to generate thumbnail data")
-                completion()
-                return
-            }
+            if isLivePhoto, let originalVideoURL = photo.livePhotoMovieURL {
+                #if DEBUG
+                print("🎬 MainToolbar: 并行上传 LivePhoto #\(index)")
+                #endif
 
-            // 上传缩略图
-            let suffixTimestamp = String(Int(Date().timeIntervalSince1970 * 1000))
-            let thumbnailFileName = "\(prefix)_thumbnail-\(suffixTimestamp).jpg"
-            let formData = MultipartFormData()
-            formData.append(thumbnailData, withName: "multipartFile", fileName: thumbnailFileName, mimeType: "image/jpeg")
+                let photoDispatchGroup = DispatchGroup()
+                var photoUploadError: Error?
 
-            print("Starting upload for \(thumbnailFileName)...")
+                photoDispatchGroup.enter()
+                Task {
+                    defer { photoDispatchGroup.leave() }
 
-            AF.upload(multipartFormData: formData, to: url, method: .post, headers: headers).responseDecodable(of: UploadResponse.self) { response in
-                switch response.result {
-                case .success(let uploadResponse):
-                    print("Response JSON: \(uploadResponse)")
+                    do {
+                        let tempDir = FileManager.default.temporaryDirectory
+                        let pairedImageURL = tempDir.appendingPathComponent("\(UUID().uuidString)_paired.heic")
+                        let pairedVideoURL = tempDir.appendingPathComponent("\(UUID().uuidString)_paired.mov")
 
-                    if let imagePath = uploadResponse.datas {
-                        imagePaths.append(imagePath)
-                        print("Uploaded \(thumbnailFileName): \(imagePath)")
-                    } else {
-                        print("No image path returned in response")
+                        let assetId = try await LivePhotoPackager.packageLivePhoto(
+                            imageData: photo.data,
+                            videoURL: originalVideoURL,
+                            outputImageURL: pairedImageURL,
+                            outputVideoURL: pairedVideoURL
+                        )
+
+                        #if DEBUG
+                        print("✅ MainToolbar: LivePhoto #\(index) 配对成功，AssetID: \(assetId)")
+                        #endif
+
+                        let pairedImageData = try Data(contentsOf: pairedImageURL)
+                        let pairedVideoData = try Data(contentsOf: pairedVideoURL)
+
+                        let compressedPairedImageData = compressImageForUpload(data: pairedImageData)
+                        photoDispatchGroup.enter()
+                        uploadFile(data: compressedPairedImageData, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg", photoIndex: index) { result in
+                            if case .failure(let error) = result { photoUploadError = error }
+                            photoDispatchGroup.leave()
+                        }
+
+                        photoDispatchGroup.enter()
+                        uploadFile(data: pairedVideoData, fileName: "\(uniqueFileName)_livephoto-\(suffixTimestamp).mov", mimeType: "video/quicktime", photoIndex: index) { result in
+                            if case .failure(let error) = result { photoUploadError = error }
+                            photoDispatchGroup.leave()
+                        }
+
+                        try? FileManager.default.removeItem(at: pairedImageURL)
+                        try? FileManager.default.removeItem(at: pairedVideoURL)
+
+                    } catch {
+                        print("❌ MainToolbar: LivePhoto #\(index) 配对失败: \(error)")
+                        await MainActor.run {
+                            photoDispatchGroup.enter()
+                            uploadFile(data: photo.data, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg", photoIndex: index) { result in
+                                if case .failure(let error) = result { photoUploadError = error }
+                                photoDispatchGroup.leave()
+                            }
+
+                            do {
+                                let videoData = try Data(contentsOf: originalVideoURL)
+                                photoDispatchGroup.enter()
+                                uploadFile(data: videoData, fileName: "\(uniqueFileName)_livephoto-\(suffixTimestamp).mov", mimeType: "video/quicktime", photoIndex: index) { result in
+                                    if case .failure(let error) = result { photoUploadError = error }
+                                    photoDispatchGroup.leave()
+                                }
+                            } catch {
+                                photoUploadError = error
+                            }
+                        }
                     }
-                    completion()
-                case .failure(let error):
-                    print("Failed to upload \(thumbnailFileName): \(error)")
-                    completion()
+                }
+
+                photoDispatchGroup.notify(queue: .main) {
+                    if let error = photoUploadError {
+                        errorLock.lock()
+                        globalUploadError = error
+                        errorLock.unlock()
+                    }
+                    allPhotosGroup.leave()
+                }
+            } else {
+                // 普通照片，压缩后上传
+                let compressedData = compressImageForUpload(data: photo.data)
+                uploadFile(data: compressedData, fileName: "\(uniqueFileName)_photo-\(suffixTimestamp).jpg", mimeType: "image/jpeg", photoIndex: index) { result in
+                    if case .failure(let error) = result {
+                        errorLock.lock()
+                        globalUploadError = error
+                        errorLock.unlock()
+                    }
+                    allPhotosGroup.leave()
                 }
             }
         }
 
-        // 生成缩略图的方法
-        func generateThumbnail(from videoURL: URL) -> UIImage? {
-            let asset = AVAsset(url: videoURL)
-            let imageGenerator = AVAssetImageGenerator(asset: asset)
-            imageGenerator.appliesPreferredTrackTransform = true
-            let time = CMTime(seconds: 1, preferredTimescale: 60)
-            do {
-                let imageRef = try imageGenerator.copyCGImage(at: time, actualTime: nil)
-                return UIImage(cgImage: imageRef)
-            } catch {
-                print("Failed to generate thumbnail: \(error)")
-                return nil
+        // 所有照片上传完成后 → 上传缩略图 → 回调
+        allPhotosGroup.notify(queue: .main) {
+            if let error = globalUploadError {
+                appState.isLoading = false
+                showErrorToUser(message: "上传失败：\(error.localizedDescription)")
+                completion(.failure(error))
+                return
+            }
+
+            #if DEBUG
+            print("✅ 所有照片并行上传完成，开始上传缩略图")
+            #endif
+
+            // 生成并上传缩略图
+            guard let firstPhoto = sortedPhotos.first else {
+                // ✅ 按照片索引顺序拼接路径
+                let orderedPaths = photoPathGroups.flatMap { $0 }
+                completion(.success(orderedPaths.joined(separator: ",")))
+                return
+            }
+
+            let thumbnailImage: UIImage?
+            if let livePhotoURL = firstPhoto.livePhotoMovieURL {
+                let asset = AVAsset(url: livePhotoURL)
+                let imageGenerator = AVAssetImageGenerator(asset: asset)
+                imageGenerator.appliesPreferredTrackTransform = true
+                let time = CMTime(seconds: 1, preferredTimescale: 60)
+                thumbnailImage = (try? imageGenerator.copyCGImage(at: time, actualTime: nil)).map { UIImage(cgImage: $0) }
+            } else {
+                thumbnailImage = UIImage(data: firstPhoto.data)
+            }
+
+            guard let thumbnailData = thumbnailImage?.jpegData(compressionQuality: 0.5) else {
+                let orderedPaths = photoPathGroups.flatMap { $0 }
+                completion(.success(orderedPaths.joined(separator: ",")))
+                return
+            }
+
+            let thumbTimestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+            let thumbnailFileName = "\(firstMediaUniqueFileNamePrefix)_thumbnail-\(thumbTimestamp).jpg"
+
+            uploadFile(data: thumbnailData, fileName: thumbnailFileName, mimeType: "image/jpeg") { _ in
+                // ✅ 按照片索引顺序拼接路径，缩略图路径追加在最后
+                var orderedPaths = photoPathGroups.flatMap { $0 }
+                if let thumb = thumbnailPath {
+                    orderedPaths.append(thumb)
+                }
+                let combinedPaths = orderedPaths.joined(separator: ",")
+                completion(.success(combinedPaths))
+                #if DEBUG
+                print("Combined image paths (ordered): \(combinedPaths)")
+                #endif
             }
         }
-
-        uploadNextPhoto()  // 开始上传第一个文件
     }
     
     
