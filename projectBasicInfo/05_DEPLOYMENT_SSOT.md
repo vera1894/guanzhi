@@ -1,8 +1,8 @@
 # 部署操作 SSOT（Single Source of Truth）
 
-**文档版本**: v1.2
+**文档版本**: v1.3
 **创建日期**: 2026-01-14
-**最后更新**: 2026-01-24
+**最后更新**: 2026-02-14
 **适用对象**: Claude Code / AI Agent
 **前置文档**: `02_CONNECTIONS.private.md`（服务器连接信息）
 
@@ -19,8 +19,9 @@
 │   ├── v0-bootstrap/app.jar     # 初始版本
 │   ├── v3.6.1/app.jar
 │   ├── v3.6.2/app.jar
-│   └── v3.7.0/app.jar           # 当前版本
-├── current -> releases/v3.7.0/  # 软链接，原子切换
+│   ├── v3.7.0/app.jar
+│   └── v3.7.1/app.jar           # 当前版本
+├── current -> releases/v3.7.1/  # 软链接，原子切换
 ├── application-prod.yml         # 外部配置文件
 └── start.sh                     # 备用启动脚本（仅应急使用）
 ```
@@ -419,3 +420,4 @@ mvn clean package -DskipTests
 | v1.0 | 2026-01-14 | 初版，整合阶段 0/1 实施经验 |
 | v1.1 | 2026-01-24 | 添加问题 7（iCloud 重复文件）、问题 8（Java 版本）；更新 SSM 命令示例为单步执行；更新当前版本为 v3.7.0 |
 | v1.2 | 2026-01-24 | 新增管理后台部署章节、多端功能部署检查清单 |
+| v1.3 | 2026-02-14 | 更新当前版本为 v3.7.1（shareList 查询修复 + deleted 过滤） |

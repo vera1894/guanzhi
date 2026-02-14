@@ -24,6 +24,7 @@ struct SettingView: View {
         "通知设置",
         "用户协议与隐私政策",
         "操作提示",
+        "网络诊断",
         "清理缓存",
         "退出登录",
         "系统版本"
@@ -185,6 +186,8 @@ struct SettingView: View {
             showAgreement = true  // 显示用户协议 sheet
         case "操作提示":
             showResetOnboardingConfirm = true  // 显示重置确认对话框
+        case "网络诊断":
+            navigationCoordinator.path.append(Route.networkDiagnosticView)
         case "清理缓存":
             cacheSize = Self.calculateCacheSize()
             showClearCacheConfirm = true

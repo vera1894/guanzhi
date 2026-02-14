@@ -80,6 +80,7 @@
 		FF4ED5BB2DAA6D0C0017131B /* UserAgreement.txt in Resources */ = {isa = PBXBuildFile; fileRef = FF4ED5BA2DAA6D0C0017131B /* UserAgreement.txt */; };
 		FF4ED5BD2DAA74900017131B /* AppVersionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF4ED5BC2DAA74900017131B /* AppVersionManager.swift */; };
 		FF58E72C2CFE913A00CC139B /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = FF58E72B2CFE913A00CC139B /* SwiftUIIntrospect */; };
+		FF5C0D272F400AC700DDDB64 /* NetworkDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5C0D262F400AC700DDDB64 /* NetworkDiagnosticView.swift */; };
 		FF5C360A2CD78B82001D7D32 /* SharesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5C36092CD78B1C001D7D32 /* SharesData.swift */; };
 		FF5D24112D23965700C1D463 /* GeneralFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D24102D23965200C1D463 /* GeneralFunctions.swift */; };
 		FF5D24132D23C16300C1D463 /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D24122D23C16300C1D463 /* ToastManager.swift */; };
@@ -280,6 +281,7 @@
 		FF47FFE02C47C4F000A4A8F8 /* HelpCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCardView.swift; sourceTree = "<group>"; };
 		FF4ED5BA2DAA6D0C0017131B /* UserAgreement.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = UserAgreement.txt; sourceTree = "<group>"; };
 		FF4ED5BC2DAA74900017131B /* AppVersionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionManager.swift; sourceTree = "<group>"; };
+		FF5C0D262F400AC700DDDB64 /* NetworkDiagnosticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkDiagnosticView.swift; sourceTree = "<group>"; };
 		FF5C36092CD78B1C001D7D32 /* SharesData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharesData.swift; sourceTree = "<group>"; };
 		FF5D24102D23965200C1D463 /* GeneralFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralFunctions.swift; sourceTree = "<group>"; };
 		FF5D24122D23C16300C1D463 /* ToastManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastManager.swift; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 		D13FFDCE2B9DEF58007E1970 /* MyPages */ = {
 			isa = PBXGroup;
 			children = (
+				FF5C0D262F400AC700DDDB64 /* NetworkDiagnosticView.swift */,
 				D19912012B5292A6002A711A /* MyView.swift */,
 				D1093C2F2B6A7D99008553A3 /* ShareListView.swift */,
 				FF84D7C42D45DA4F0060F060 /* OthersView.swift */,
@@ -1149,6 +1152,7 @@
 				FF4ED5BD2DAA74900017131B /* AppVersionManager.swift in Sources */,
 				FF5D24132D23C16300C1D463 /* ToastManager.swift in Sources */,
 				FF9EB98B2CA29EC4009A133E /* CustomAnnotation.swift in Sources */,
+				FF5C0D272F400AC700DDDB64 /* NetworkDiagnosticView.swift in Sources */,
 				FF5D241B2D2C10E200C1D463 /* LocalUserProfile.swift in Sources */,
 				5FAEEA504E1F4C54928C3932 /* UserProfile.swift in Sources */,
 				5DDEEFC51E5442F6BE00C6B6 /* UserProfileDisplayModel.swift in Sources */,

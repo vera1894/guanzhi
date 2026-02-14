@@ -1725,8 +1725,8 @@ struct UserInfoCapsule: View {
     private func capsuleContentForOther(otherUser: UserFullInfoModel) -> some View {
         HStack(spacing: 8) {
             // 从网络加载头像
-            if let photoPath = otherUser.photo,
-               let photoURL = URL(string: photoPath) {
+            if let photoPath = otherUser.photo, !photoPath.isEmpty,
+               let photoURL = URL(string: "\(Constants.BASE_HOST)/\(photoPath.hasPrefix("image/") ? photoPath : "image/\(photoPath)")") {
                 AsyncImage(url: photoURL) { phase in
                     switch phase {
                     case .success(let image):

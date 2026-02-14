@@ -237,7 +237,8 @@ struct AggregatedStickerRowView: View {
                 if avatarStr.hasPrefix("http") {
                     return URL(string: avatarStr)
                 } else {
-                    return URL(string: "\(Constants.BASE_HOST)\(avatarStr)")
+                    let full = avatarStr.hasPrefix("image/") ? avatarStr : "image/\(avatarStr)"
+                    return URL(string: "\(Constants.BASE_HOST)/\(full)")
                 }
             }()
             AsyncImage(url: avatarURL) { phase in
@@ -281,7 +282,8 @@ struct AggregatedStickerRowView: View {
                 if avatarStr.hasPrefix("http") {
                     return URL(string: avatarStr)
                 } else {
-                    return URL(string: "\(Constants.BASE_HOST)\(avatarStr)")
+                    let full = avatarStr.hasPrefix("image/") ? avatarStr : "image/\(avatarStr)"
+                    return URL(string: "\(Constants.BASE_HOST)/\(full)")
                 }
             }()
             AsyncImage(url: avatarURL) { phase in

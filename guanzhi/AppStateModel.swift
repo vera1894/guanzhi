@@ -113,6 +113,8 @@ enum Route: Hashable, Codable { //用于页面导航
     case messagesView
     /// 通知设置页面
     case notificationSettingsView
+    /// 网络诊断页面
+    case networkDiagnosticView
 
     // 定义用于编码和解码的键
     enum CodingKeys: String, CodingKey {
@@ -134,6 +136,7 @@ enum Route: Hashable, Codable { //用于页面导航
         case shareComment
         case messagesView
         case notificationSettingsView
+        case networkDiagnosticView
     }
     
     // 实现 Encodable 协议
@@ -162,6 +165,8 @@ enum Route: Hashable, Codable { //用于页面导航
             try container.encode(RouteType.messagesView, forKey: .type)
         case .notificationSettingsView:
             try container.encode(RouteType.notificationSettingsView, forKey: .type)
+        case .networkDiagnosticView:
+            try container.encode(RouteType.networkDiagnosticView, forKey: .type)
         }
     }
 
@@ -192,6 +197,8 @@ enum Route: Hashable, Codable { //用于页面导航
             self = .messagesView
         case .notificationSettingsView:
             self = .notificationSettingsView
+        case .networkDiagnosticView:
+            self = .networkDiagnosticView
         }
     }
 }

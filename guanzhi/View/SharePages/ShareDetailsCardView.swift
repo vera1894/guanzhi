@@ -598,8 +598,8 @@ struct ShareDetailsCardView: View {
         private func userProfileSectionForOthers(otherInfo: UserFullInfoModel) -> some View {
             HStack(alignment: .center, spacing: Constants.spacingSpacingXs) {
                 // 头像（从网络加载或使用默认）
-                if let photoPath = otherInfo.photo,
-                   let photoURL = URL(string: photoPath) {
+                if let photoPath = otherInfo.photo, !photoPath.isEmpty,
+                   let photoURL = URL(string: "\(Constants.BASE_HOST)/\(photoPath.hasPrefix("image/") ? photoPath : "image/\(photoPath)")") {
                     // 使用 AsyncImage 加载他人头像
                     AsyncImage(url: photoURL) { phase in
                         switch phase {

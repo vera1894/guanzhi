@@ -192,6 +192,9 @@ struct guanzhiApp: App {
                         case .notificationSettingsView:
                             NotificationSettingsView()
                                 .environmentObject(navigationCoordinator)
+                        case .networkDiagnosticView:
+                            NetworkDiagnosticView()
+                                .environmentObject(navigationCoordinator)
                         }
                     }
                 }

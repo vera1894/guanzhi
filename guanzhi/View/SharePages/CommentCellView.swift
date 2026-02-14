@@ -28,7 +28,11 @@ struct CommentCellView: View {
     private var normalContent: some View {
         HStack(alignment: .top, spacing: 12) {
             // 头像（可点击导航到用户主页）
-            AsyncImage(url: URL(string: comment.userAvatar ?? "")) { phase in
+            AsyncImage(url: {
+                guard let path = comment.userAvatar, !path.isEmpty else { return nil }
+                let full = path.hasPrefix("image/") ? path : "image/\(path)"
+                return URL(string: "\(Constants.BASE_HOST)/\(full)")
+            }()) { phase in
                 switch phase {
                 case .success(let image):
                     image
@@ -246,7 +250,11 @@ struct ReplyPreviewView: View {
         // 后端已过滤删除的回复，直接显示正常内容
         HStack(alignment: .top, spacing: 8) {
                 // 头像（可点击导航到用户主页）
-                AsyncImage(url: URL(string: reply.userAvatar ?? "")) { phase in
+                AsyncImage(url: {
+                    guard let path = reply.userAvatar, !path.isEmpty else { return nil }
+                    let full = path.hasPrefix("image/") ? path : "image/\(path)"
+                    return URL(string: "\(Constants.BASE_HOST)/\(full)")
+                }()) { phase in
                     switch phase {
                     case .success(let image):
                         image

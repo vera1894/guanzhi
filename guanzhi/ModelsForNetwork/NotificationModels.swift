@@ -297,7 +297,8 @@ struct NotificationMessage: Identifiable, Codable {
         if avatar.hasPrefix("http") {
             return URL(string: avatar)
         } else {
-            return URL(string: "\(Constants.BASE_HOST)\(avatar)")
+            let full = avatar.hasPrefix("image/") ? avatar : "image/\(avatar)"
+            return URL(string: "\(Constants.BASE_HOST)/\(full)")
         }
     }
 
@@ -606,7 +607,8 @@ struct AggregatedStickerNotification: Identifiable {
         if avatar.hasPrefix("http") {
             return URL(string: avatar)
         } else {
-            return URL(string: "\(Constants.BASE_HOST)\(avatar)")
+            let full = avatar.hasPrefix("image/") ? avatar : "image/\(avatar)"
+            return URL(string: "\(Constants.BASE_HOST)/\(full)")
         }
     }
 

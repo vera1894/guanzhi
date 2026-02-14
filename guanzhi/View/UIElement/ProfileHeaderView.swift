@@ -80,30 +80,67 @@ struct ProfileHeaderView: View {
     /// 头像按钮
     @ViewBuilder
     private var avatarButton: some View {
-        let avatarImage: Image = {
-            if let uiImage = cachedAvatarImage {
-                return Image(uiImage: uiImage)
-            } else if let photoPath = displayModel.avatarPath, !photoPath.isEmpty {
-                // 他人头像：使用 AsyncImage 或占位图
-                // 这里先用占位图，后续可优化为 AsyncImage
-                return Image("icon-defaultAvatar")
-            } else {
-                return Image("icon-defaultAvatar")
-            }
-        }()
+        if cachedAvatarImage != nil || displayModel.avatarPath == nil || displayModel.avatarPath?.isEmpty == true {
+            // 当前用户（有缓存头像）或无头像路径：使用同步 Image
+            let avatarImage: Image = {
+                if let uiImage = cachedAvatarImage {
+                    return Image(uiImage: uiImage)
+                } else {
+                    return Image("icon-defaultAvatar")
+                }
+            }()
 
-        Button(action: {
-            if mode == .me {
-                onAvatarTap?()
+            Button(action: {
+                if mode == .me {
+                    onAvatarTap?()
+                }
+            }) {
+                // 头像-l
             }
-        }) {
-            // 头像-l
+            .buttonStyle(AvatarStyle_l(
+                isEnabled: mode == .me,
+                profileImage: avatarImage,
+                borderThickness: 4
+            ))
+        } else {
+            // 他人用户且有头像路径：使用 AsyncImage 加载网络头像
+            let fullPath: String = {
+                let path = displayModel.avatarPath!
+                return path.hasPrefix("image/") ? path : "image/\(path)"
+            }()
+            let avatarURL = URL(string: "\(Constants.BASE_HOST)/\(fullPath)")
+
+            ZStack(alignment: .center) {
+                Image("icon-avatar")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 54 - 2, height: 54 - 2)
+                    .foregroundColor(.black)
+
+                AsyncImage(url: avatarURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        Image("icon-defaultAvatar")
+                            .resizable()
+                            .scaledToFit()
+                    default:
+                        Image("icon-defaultAvatar")
+                            .resizable()
+                            .scaledToFit()
+                    }
+                }
+                .frame(width: 54 - 4 - 2, height: 54 - 4 - 2)
+                .mask(
+                    Image("icon-avatar")
+                        .resizable()
+                        .scaledToFit()
+                )
+            }
         }
-        .buttonStyle(AvatarStyle_l(
-            isEnabled: mode == .me,
-            profileImage: avatarImage,
-            borderThickness: 4
-        ))
     }
 }
 
