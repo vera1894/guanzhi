@@ -161,6 +161,7 @@ struct ShareDetailView: View {
     @ObservedObject var searchViewModel: SearchViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
+    @EnvironmentObject var userProfileManager: UserProfileManager
     var animationNamespace: Namespace.ID
     var annotationID: String                        // 当前分享的 ID（从导航传入）
     var highlightCommentId: Int64? = nil            // 需要高亮的评论 ID（从推送通知跳转时传入）
@@ -590,7 +591,8 @@ struct ShareDetailView: View {
                     if let share = searchViewModel.selectedShare {
                         UserInfoCapsule(
                             userId: share.userId,
-                            searchViewModel: searchViewModel
+                            searchViewModel: searchViewModel,
+                            userProfileManager: userProfileManager
                         )
                         .environmentObject(navigationCoordinator)
                     }
@@ -1610,7 +1612,7 @@ struct ShareDetailView: View {
 struct UserInfoCapsule: View {
     let userId: Int64
     @ObservedObject var searchViewModel: SearchViewModel
-    @EnvironmentObject var userProfileManager: UserProfileManager
+    @ObservedObject var userProfileManager: UserProfileManager
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
 
     private var isMyself: Bool {
@@ -1633,8 +1635,8 @@ struct UserInfoCapsule: View {
                 renderOtherUserCapsule()
             }
         }
-        .onAppear {
-            loadUserIfNeeded()
+        .task {
+            await loadUserIfNeeded()
         }
     }
 
@@ -1693,12 +1695,15 @@ struct UserInfoCapsule: View {
         let state = userProfileManager.userLoadingStates[Int(userId)] ?? .idle
 
         switch state {
-        case .idle, .loading:
+        case .idle:
             capsuleContentSimple(nickname: "加载中...", iconName: nil, onTap: {})
 
-        case .loaded:
+        case .loading, .loaded:
+            // loading 时优先显示已有缓存数据（避免从他人主页返回时闪烁"加载中"）
             if let otherUser = userProfileManager.otherUserProfile, otherUser.id == userId {
                 capsuleContentForOther(otherUser: otherUser)
+            } else if case .loading = state {
+                capsuleContentSimple(nickname: "加载中...", iconName: nil, onTap: {})
             } else {
                 capsuleContentSimple(nickname: "陌生人", iconName: "person.fill.questionmark", onTap: {})
             }
@@ -1800,19 +1805,17 @@ struct UserInfoCapsule: View {
 
     // MARK: - 辅助方法
 
-    private func loadUserIfNeeded() {
+    private func loadUserIfNeeded() async {
         guard !isMyself else { return }
 
         let currentState = userProfileManager.userLoadingStates[Int(userId)] ?? .idle
         if case .loaded = currentState { return }
         if case .loading = currentState { return }
 
-        Task {
-            do {
-                try await userProfileManager.fetchUserFullInfo(userId: Int(userId))
-            } catch {
-                // 错误已经在 UserProfileManager 中处理和记录
-            }
+        do {
+            try await userProfileManager.fetchUserFullInfo(userId: Int(userId))
+        } catch {
+            // 错误已经在 UserProfileManager 中处理和记录
         }
     }
 
