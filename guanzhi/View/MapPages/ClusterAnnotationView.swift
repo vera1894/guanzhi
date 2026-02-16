@@ -297,9 +297,22 @@ class ClusterAnnotationView: MKAnnotationView {
             badgeLabel.text = "\(memberCount)"
         }
 
-        // 获取第一个成员的缩略图
-        if let firstMember = clusterAnnotation.memberAnnotations.first as? CustomAnnotation,
-           let imageUrl = firstMember.imageUrl {
+        // 缩略图选择：优先 48h 内最新的成员，否则选 createDate 最大的
+        let members = clusterAnnotation.memberAnnotations.compactMap { $0 as? CustomAnnotation }
+        let now = Date()
+        let threshold: TimeInterval = -48 * 3600  // 48h
+
+        // 48h 内最新的成员
+        let newest = members
+            .filter { ($0.annotationData?.createDate ?? .distantPast).timeIntervalSince(now) > threshold }
+            .max(by: { ($0.annotationData?.createDate ?? .distantPast) < ($1.annotationData?.createDate ?? .distantPast) })
+
+        // 没有最新的就选 createDate 最大的（近似最高分）
+        let best = newest ?? members.max(by: {
+            ($0.annotationData?.createDate ?? .distantPast) < ($1.annotationData?.createDate ?? .distantPast)
+        })
+
+        if let imageUrl = best?.imageUrl {
             loadThumbnail(from: imageUrl)
         } else {
             showPlaceholder()

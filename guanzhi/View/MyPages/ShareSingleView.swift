@@ -16,6 +16,8 @@ private enum ListImageLoadState {
 
 struct ShareSingleView: View {
     let share: ResponsedShare
+    /// 是否显示「最新」徽章（仅聚合列表中 48h 内发布的观之显示）
+    var showNewBadge: Bool = false
     /// 可选的点击回调，如果提供则使用它，否则使用内部的 showShareDetail()
     var onTap: (() -> Void)? = nil
 
@@ -30,23 +32,37 @@ struct ShareSingleView: View {
     var body: some View {
         HStack(alignment: .top, spacing: Constants.spacingSpacingXs) {
 
-            switch loadState {
-            case .loaded(let uiImage):
-                Image(uiImage: uiImage)
-                  .resizable()
-                  .aspectRatio(contentMode: .fill)
-                  .frame(width: 120, height: 120)
-                  .clipped()
+            ZStack(alignment: .topLeading) {
+                switch loadState {
+                case .loaded(let uiImage):
+                    Image(uiImage: uiImage)
+                      .resizable()
+                      .aspectRatio(contentMode: .fill)
+                      .frame(width: 120, height: 120)
+                      .clipped()
 
-            case .loading:
-                ImagePlaceholderView(state: .loading, size: 120)
-                    .onAppear {
-                        loadImage()
-                    }
+                case .loading:
+                    ImagePlaceholderView(state: .loading, size: 120)
+                        .onAppear {
+                            loadImage()
+                        }
 
-            case .failed:
-                ImagePlaceholderView(state: .failed, size: 120)
+                case .failed:
+                    ImagePlaceholderView(state: .failed, size: 120)
+                }
+
+                if showNewBadge {
+                    Text("最新")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(4)
+                        .padding(6)
+                }
             }
+            .frame(width: 120, height: 120)
 //            Rectangle()
 //              .foregroundColor(.clear)
 //              .frame(width: 120, height: 120)

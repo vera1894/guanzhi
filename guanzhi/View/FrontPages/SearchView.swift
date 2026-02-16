@@ -124,6 +124,10 @@ struct SearchView: View {
     /// 聚合列表内容（供 sheet 和 overlay 两种模式共用）
     @ViewBuilder
     private var clusterListContent: some View {
+        let ranked = ClusterShareRanker.rank(convertAnnotationsToShares(clusterAnnotations))
+        let allItems = ranked.pinnedShares + ranked.rankedShares
+        let pinnedIds = Set(ranked.pinnedShares.map { $0.id })
+
         VStack(spacing: 0) {
             // 顶部标题栏（居中显示）
             Text("这里有 \(clusterAnnotations.count) 条观之")
@@ -134,12 +138,12 @@ struct SearchView: View {
 
             Divider()
 
-            // UITableView 列表
+            // UITableView 列表（排名后）
             HostingTableView(
-                items: convertAnnotationsToShares(clusterAnnotations),
+                items: allItems,
                 id: \.id,
                 row: { share in
-                    ShareSingleView(share: share, onTap: {
+                    ShareSingleView(share: share, showNewBadge: pinnedIds.contains(share.id), onTap: {
                         print("🔷 [ClusterList] 点击了 share.id=\(share.id)")
                         // 【Onboarding】触发标注点击事件（用于步骤 B）
                         onboardingCoordinator.handleEvent(.annotationTapped)

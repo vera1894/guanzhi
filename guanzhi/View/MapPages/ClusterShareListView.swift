@@ -30,6 +30,8 @@ struct ClusterShareListView: View {
 
     /// 冻结的列表数据快照，避免 body 重算时数据源抖动导致布局修正
     @State private var stableShares: [ResponsedShare] = []
+    /// 置顶区的 share ID 集合（用于显示「最新」徽章）
+    @State private var pinnedIds: Set<Int> = []
     /// 是否已执行过滚动恢复（防止重复触发）
     @State private var didRestore = false
     /// 底部保留区高度（每个 session 只初始化一次，确保稳定）
@@ -70,7 +72,7 @@ struct ClusterShareListView: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(stableShares, id: \.id) { share in
-                            ShareSingleView(share: share)
+                            ShareSingleView(share: share, showNewBadge: pinnedIds.contains(share.id))
                                 .id(share.id)  // 用于 ScrollViewReader
                                 .environment(appState)
                                 .environmentObject(searchViewModel)
@@ -113,8 +115,11 @@ struct ClusterShareListView: View {
                 .task {
                     print("🔶 [ClusterList] .task 触发, stableShares.isEmpty=\(stableShares.isEmpty)")
                     if stableShares.isEmpty {
-                        stableShares = convertToResponsedShares()
-                        print("🔶 [ClusterList] 初始化 stableShares, count=\(stableShares.count)")
+                        let raw = convertToResponsedShares()
+                        let ranked = ClusterShareRanker.rank(raw)
+                        stableShares = ranked.pinnedShares + ranked.rankedShares
+                        pinnedIds = Set(ranked.pinnedShares.map { $0.id })
+                        print("🔶 [ClusterList] 初始化 stableShares, count=\(stableShares.count), pinned=\(ranked.pinnedShares.count)")
                     }
                 }
                 // 恢复滚动位置：只在 stableShares 准备好后执行一次

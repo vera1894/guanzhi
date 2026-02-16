@@ -140,6 +140,7 @@
 		FF84D7C52D45DA5C0060F060 /* OthersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C42D45DA4F0060F060 /* OthersView.swift */; };
 		FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */; };
 		FF87A8DC2ECC4B1D00C92D25 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */; };
+		FF87A8E12ECC4C0000C92D25 /* ClusterShareRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8E02ECC4C0000C92D25 /* ClusterShareRanker.swift */; };
 		FF99ECC52EF0E7B20080AE71 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FF99ECC32EF0E7B20080AE71 /* Assets.xcassets */; };
 		FF99ECC62EF0E7B20080AE71 /* StickerSpriteCelebrate.sks in Resources */ = {isa = PBXBuildFile; fileRef = FF99ECC42EF0E7B20080AE71 /* StickerSpriteCelebrate.sks */; };
 		FF99ECC82EF0EA0D0080AE71 /* StickerSpriteFirefly.sks in Resources */ = {isa = PBXBuildFile; fileRef = FF99ECC72EF0EA0D0080AE71 /* StickerSpriteFirefly.sks */; };
@@ -334,6 +335,7 @@
 		FF84D7C42D45DA4F0060F060 /* OthersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OthersView.swift; sourceTree = "<group>"; };
 		FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEngine.swift; sourceTree = "<group>"; };
 		FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
+		FF87A8E02ECC4C0000C92D25 /* ClusterShareRanker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterShareRanker.swift; sourceTree = "<group>"; };
 		FF99ECC32EF0E7B20080AE71 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FF99ECC42EF0E7B20080AE71 /* StickerSpriteCelebrate.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = StickerSpriteCelebrate.sks; sourceTree = "<group>"; };
 		FF99ECC72EF0EA0D0080AE71 /* StickerSpriteFirefly.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = StickerSpriteFirefly.sks; sourceTree = "<group>"; };
@@ -489,6 +491,7 @@
 		D13FFDD62BAB377A007E1970 /* ModelsForMap */ = {
 			isa = PBXGroup;
 			children = (
+				FF87A8E02ECC4C0000C92D25 /* ClusterShareRanker.swift */,
 				FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */,
 				FF84D7BE2D3E35C10060F060 /* ShareService.swift */,
 				FFF669262CA93EEA005FDB86 /* SearchViewModel.swift */,
@@ -1199,6 +1202,7 @@
 				FF6BC4DB2C7C187200423660 /* MediaLibrary.swift in Sources */,
 				FF6BC4F32C7C18CC00423660 /* ViewExtensions.swift in Sources */,
 				FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */,
+				FF87A8E12ECC4C0000C92D25 /* ClusterShareRanker.swift in Sources */,
 				FF2D288F2B6A79A100143D0A /* TextfieldStyles.swift in Sources */,
 				FF6C0DC32F12A73F00CC0C8C /* ServerTime.swift in Sources */,
 				FF6C0DC42F12A74000CC0C8C /* TimeDisplay.swift in Sources */,
