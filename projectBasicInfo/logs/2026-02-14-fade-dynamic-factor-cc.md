@@ -43,6 +43,24 @@ interactionFactor = max(0, 1.0 - posW*pos/WAU - ckW*ck/WAU - cmW*cm/WAU + negW*n
 4. 验证：凌晨 3 点后检查 `journalctl -u onettoo | grep "WAU="` 确认全局参数
 5. 回滚：设 `BASE_RATE=0` + 重启即可停止褪色
 
+## 部署结果
+
+- **版本**: v3.7.2
+- **buildTime**: 2026-02-14T12:19:34.078Z
+- **部署状态**: 成功，服务 active (running)
+- **迁移 SQL**: 全部执行完成
+  - tag_type 更新：8 POSITIVE + 2 NEGATIVE ✅
+  - 7 个新 fade_config 配置 ✅
+  - 10 个旧配置标记 [DEPRECATED] ✅
+  - 4 个性能索引 ✅
+- **服务重启**: 配置缓存已刷新 ✅
+
+## 遇到的问题
+
+1. **FadeScoreMapper 列名 bug**：`share_sticker_action` 表用 `actor_user_id` 不是 `user_id`，初始 SQL 写错，构建前发现并修正
+2. **NEUTRAL tag_type 意外为 POSITIVE**：数据库中 NEUTRAL 之前已被设为 POSITIVE（历史遗留），需单独执行 UPDATE 修正为 NEGATIVE
+3. **IP 直连 404**：部署后通过 IP 访问 /api/version 返回 404，实际是 Nginx server_name 只匹配域名，通过 `https://onettoo.com/api/version` 正常
+
 ## 关键设计决策
 
 - **互动计数全量统计**（不限时间窗口）：正向贴纸保护持久有效

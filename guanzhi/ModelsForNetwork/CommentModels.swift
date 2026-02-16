@@ -62,9 +62,9 @@ struct CommentViewData: Identifiable, Codable {
     // CodingKeys 排除本地状态字段
     enum CodingKeys: String, CodingKey {
         case id, shareId, userId, userNickname, userAvatar, parentId
-        case replyToUserId, replyToUserNickname // 新增
+        case replyToUserId, replyToUserNickname
         case content, status, statusText, likeCount, replyCount
-        case isAuthor, liked, createdAt, repliesPreview
+        case isAuthor, liked, createdAtMs, repliesPreview
     }
 
     init(from decoder: Decoder) throws {
@@ -75,8 +75,8 @@ struct CommentViewData: Identifiable, Codable {
         userNickname = try container.decodeIfPresent(String.self, forKey: .userNickname)
         userAvatar = try container.decodeIfPresent(String.self, forKey: .userAvatar)
         parentId = try container.decodeIfPresent(Int64.self, forKey: .parentId)
-        replyToUserId = try container.decodeIfPresent(Int64.self, forKey: .replyToUserId) // 新增
-        replyToUserNickname = try container.decodeIfPresent(String.self, forKey: .replyToUserNickname) // 新增
+        replyToUserId = try container.decodeIfPresent(Int64.self, forKey: .replyToUserId)
+        replyToUserNickname = try container.decodeIfPresent(String.self, forKey: .replyToUserNickname)
         content = try container.decodeIfPresent(String.self, forKey: .content)
         status = try container.decode(Int.self, forKey: .status)
         statusText = try container.decodeIfPresent(String.self, forKey: .statusText)
@@ -84,7 +84,9 @@ struct CommentViewData: Identifiable, Codable {
         replyCount = try container.decode(Int.self, forKey: .replyCount)
         isAuthor = try container.decodeIfPresent(Bool.self, forKey: .isAuthor)
         liked = try container.decode(Bool.self, forKey: .liked)
-        createdAt = try container.decode(String.self, forKey: .createdAt)
+        // 服务端返回 createdAtMs (epoch ms)，转为 ISO 8601 字符串保持下游兼容
+        let epochMs = try container.decode(Int64.self, forKey: .createdAtMs)
+        createdAt = ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: Double(epochMs) / 1000.0))
         repliesPreview = try container.decodeIfPresent([ReplyViewData].self, forKey: .repliesPreview)
 
         // 本地状态初始化
@@ -101,8 +103,8 @@ struct CommentViewData: Identifiable, Codable {
         try container.encodeIfPresent(userNickname, forKey: .userNickname)
         try container.encodeIfPresent(userAvatar, forKey: .userAvatar)
         try container.encodeIfPresent(parentId, forKey: .parentId)
-        try container.encodeIfPresent(replyToUserId, forKey: .replyToUserId) // 新增
-        try container.encodeIfPresent(replyToUserNickname, forKey: .replyToUserNickname) // 新增
+        try container.encodeIfPresent(replyToUserId, forKey: .replyToUserId)
+        try container.encodeIfPresent(replyToUserNickname, forKey: .replyToUserNickname)
         try container.encodeIfPresent(content, forKey: .content)
         try container.encode(status, forKey: .status)
         try container.encodeIfPresent(statusText, forKey: .statusText)
@@ -110,7 +112,10 @@ struct CommentViewData: Identifiable, Codable {
         try container.encode(replyCount, forKey: .replyCount)
         try container.encodeIfPresent(isAuthor, forKey: .isAuthor)
         try container.encode(liked, forKey: .liked)
-        try container.encode(createdAt, forKey: .createdAt)
+        // 编码时转回 epoch ms
+        if let date = ISO8601DateFormatter().date(from: createdAt) {
+            try container.encode(Int64(date.timeIntervalSince1970 * 1000), forKey: .createdAtMs)
+        }
         try container.encodeIfPresent(repliesPreview, forKey: .repliesPreview)
     }
 
@@ -165,6 +170,66 @@ struct ReplyViewData: Identifiable, Codable {
     var canDelete: Bool {
         guard displayStatus == .normal else { return false }
         return userId == Int64(OTOLoginStatusManager.shared.getUserID())
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, userId, userNickname, userAvatar
+        case replyToUserId, replyToUserNickname
+        case content, status, statusText, likeCount, liked, createdAtMs
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int64.self, forKey: .id)
+        userId = try container.decode(Int64.self, forKey: .userId)
+        userNickname = try container.decodeIfPresent(String.self, forKey: .userNickname)
+        userAvatar = try container.decodeIfPresent(String.self, forKey: .userAvatar)
+        replyToUserId = try container.decodeIfPresent(Int64.self, forKey: .replyToUserId)
+        replyToUserNickname = try container.decodeIfPresent(String.self, forKey: .replyToUserNickname)
+        content = try container.decodeIfPresent(String.self, forKey: .content)
+        status = try container.decode(Int.self, forKey: .status)
+        statusText = try container.decodeIfPresent(String.self, forKey: .statusText)
+        likeCount = try container.decode(Int.self, forKey: .likeCount)
+        liked = try container.decode(Bool.self, forKey: .liked)
+        let epochMs = try container.decode(Int64.self, forKey: .createdAtMs)
+        createdAt = ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: Double(epochMs) / 1000.0))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(userId, forKey: .userId)
+        try container.encodeIfPresent(userNickname, forKey: .userNickname)
+        try container.encodeIfPresent(userAvatar, forKey: .userAvatar)
+        try container.encodeIfPresent(replyToUserId, forKey: .replyToUserId)
+        try container.encodeIfPresent(replyToUserNickname, forKey: .replyToUserNickname)
+        try container.encodeIfPresent(content, forKey: .content)
+        try container.encode(status, forKey: .status)
+        try container.encodeIfPresent(statusText, forKey: .statusText)
+        try container.encode(likeCount, forKey: .likeCount)
+        try container.encode(liked, forKey: .liked)
+        if let date = ISO8601DateFormatter().date(from: createdAt) {
+            try container.encode(Int64(date.timeIntervalSince1970 * 1000), forKey: .createdAtMs)
+        }
+    }
+
+    // 用于本地创建（CommentViewModel.postComment 中）
+    init(id: Int64, userId: Int64, userNickname: String?, userAvatar: String?,
+         replyToUserId: Int64?, replyToUserNickname: String?,
+         content: String?, status: Int, statusText: String?,
+         likeCount: Int, liked: Bool, createdAt: String) {
+        self.id = id
+        self.userId = userId
+        self.userNickname = userNickname
+        self.userAvatar = userAvatar
+        self.replyToUserId = replyToUserId
+        self.replyToUserNickname = replyToUserNickname
+        self.content = content
+        self.status = status
+        self.statusText = statusText
+        self.likeCount = likeCount
+        self.liked = liked
+        self.createdAt = createdAt
     }
 }
 
