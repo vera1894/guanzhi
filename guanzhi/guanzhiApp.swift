@@ -231,6 +231,10 @@ struct guanzhiApp: App {
             .onReceive(NotificationCenter.default.publisher(for: .openMessagesPage)) { _ in
                 openMessagesPage()
             }
+            // Token 过期自动登出
+            .onReceive(NotificationCenter.default.publisher(for: .tokenExpired)) { _ in
+                handleTokenExpired()
+            }
             // 处理冷启动时缓存的 Deep Link
             .onAppear {
                 // 【Onboarding】注入 appState 引用
@@ -319,6 +323,27 @@ struct guanzhiApp: App {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             navigationCoordinator.path.append(Route.messagesView)
         }
+    }
+
+    /// Token 过期时强制登出
+    private func handleTokenExpired() {
+        // 防重复：已登出则跳过（多个并发 401 只处理第一个）
+        guard loginManager.isLoggedIn else { return }
+
+        print("🔒 Token 过期，强制登出")
+        // 清空导航栈，回到根视图
+        navigationCoordinator.path = NavigationPath()
+        // 执行登出（清 Keychain + 发 userDidLogout 通知）
+        loginManager.logout()
+        // 提示用户（防重复：相同 title 的 toast 不会重复显示）
+        toastManager.showIfNotPresent(ToastItem(style: .notificationOnly(
+            title: "登录已过期，请重新登录",
+            symbol: "exclamationmark.triangle",
+            tint: .orange,
+            isUserInteractionEnabled: true,
+            timing: .medium,
+            isAutoClose: true
+        )))
     }
 }
 

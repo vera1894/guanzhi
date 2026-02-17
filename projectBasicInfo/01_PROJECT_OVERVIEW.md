@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v4.2
-**最后更新**: 2026-02-13（查看体验优化 + CloudFront CDN 部署 + 媒体下载进度优化）
+**文档版本**: v4.3
+**最后更新**: 2026-02-17（聚合列表排名排序 + 「最新」徽章系统）
 
 ---
 
@@ -198,6 +198,7 @@ npm run build
 - 标题限制为 2 行，超出部分显示省略号
 - 在观之 ID 行上方显示 "褪色度：n%"
 - 当 `fadeScore >= 90` 时，标签显示为红色
+- `showNewBadge: Bool`：聚合列表中 48h 内发布的观之显示「最新」胶囊徽章（半透明黑底 + 白字，缩略图左上角）
 
 **聚合列表数据流**（重要）：
 ```
@@ -210,13 +211,16 @@ Share (fadeScore: Int)
 CustomAnnotation.annotationData
     ↓ 聚合列表读取时
 SearchView.convertAnnotationsToShares() 优先从缓存获取
+    ↓ 排名排序（2026-02-17 新增）
+ClusterShareRanker.rank() → 置顶区(48h内≤3条) + 排名区(finalScore降序)
 ```
 
 **关键文件**：
 - `SearchView.swift:convertAnnotationsToShares()` - 聚合列表数据转换
 - `SearchViewModel.swift:cachedResponsedShares` - 服务器数据缓存
-- `ShareSingleView.swift` - 观之条目视图（含褪色度标签）
+- `ShareSingleView.swift` - 观之条目视图（含褪色度标签、最新徽章）
 - `ShareListView.swift` - 个人主页观之列表（含 Tab 切换）
+- `ClusterShareRanker.swift` - 聚合列表排名工具类（评分公式 + 置顶逻辑）
 
 #### 褪色白化效果（Fade Veil）（2026-01-06 实现）
 
@@ -1194,6 +1198,33 @@ class UserLoginModel: ObservableObject {
 **应用场景**：
 - `SearchView` 中的聚合列表（通过 `useOverlayForClusterList` 开关控制）
 
+#### 聚合列表排名系统（2026-02-17）
+
+聚合列表内的观之按加权互动评分排序，48h 内的最新内容置顶并显示「最新」徽章。
+
+**排名公式**（借鉴 X/Twitter 加权互动评分思路）：
+```
+interactionScore = 1.0×agreeCount + 3.0×checkinCount + 5.0×commentCount - 2.0×neutralCount
+recencyMultiplier = pow(0.5, ageSeconds / 168h)    // 7 天半衰期
+healthMultiplier = 1.0 - 0.3 × (fadeScore / 100)   // 褪色度影响
+finalScore = (1 + max(0, interactionScore)) × recencyMultiplier × healthMultiplier
+```
+
+**列表排序规则**：
+| 区域 | 规则 | 最多条数 |
+|------|------|---------|
+| 置顶区 | 48h 内发布，按 createDate 降序 | 3 |
+| 排名区 | 其余观之，按 finalScore 降序 | 无限制 |
+
+- 置顶区观之不重复出现在排名区
+- 置顶区观之在 `ShareSingleView` 中显示「最新」徽章
+
+**聚合缩略图选择**（`ClusterAnnotationView.configure()`）：
+- 优先选 48h 内最新成员的缩略图
+- 没有则选 createDate 最大的（UIKit 层无法访问 cachedResponsedShares，使用简化策略）
+
+**核心文件**：`ModelsForMap/ClusterShareRanker.swift`
+
 ### 2. UIKitListKit（UIKit 列表桥接）
 
 **位置**：`View/Shared/UIKitListKit/`
@@ -1343,7 +1374,7 @@ View/MapPages/
 ├── MKMapViewWrapper.swift          # UIViewRepresentable 包装器
 ├── MKMapViewCoordinator.swift      # MKMapViewDelegate 实现
 ├── CustomMKAnnotationView.swift    # 单个标注视图
-└── ClusterAnnotationView.swift     # 聚合标注视图
+└── ClusterAnnotationView.swift     # 聚合标注视图（缩略图：48h内最新优先）
 ```
 
 **聚合抵抗机制**：
@@ -1398,6 +1429,7 @@ View/MapPages/
 | **聚合列表状态恢复修复** | `projectBasicInfo/logs/2026-01-23-cluster-list-state-restoration-fix-cc.md` | 三层保护机制：状态持久化 + path.isEmpty 检查 + 条件检查 |
 | 媒体上传下载优化 | `projectBasicInfo/logs/2026-02-13-media-upload-download-optimization-cc.md` | 并行上传+压缩、缩略图优先下载 |
 | **查看体验+CDN优化** | `projectBasicInfo/logs/2026-02-13-viewing-experience-cdn-optimization-cc.md` | AsyncImage重试、字节级进度、缩略图缓存、CloudFront CDN |
+| **聚合列表排名+最新徽章** | `projectBasicInfo/logs/2026-02-17-cluster-ranking-badge-cc.md` | 加权互动评分排序、48h置顶、最新徽章、缩略图优先选择 |
 
 ---
 
