@@ -25,6 +25,9 @@ struct ShareDetailsCardView: View {
     @State private var topPadding: Double = 0.01
     @State private var showDragIndicator: Bool = false  // 拖动指示条延迟显示
 
+    // MARK: - 地址本地化
+    @ObservedObject private var addressLocalizer = AddressLocalizer.shared
+
     // MARK: - 评论系统
     @StateObject private var commentViewModel = CommentViewModel()
     @FocusState private var isInputFocused: Bool
@@ -119,23 +122,25 @@ struct ShareDetailsCardView: View {
 //                                    Spacer()
 //                                }
 
-                                // 位置信息
+                                // 位置信息（动态本地化）
                                 if isFullScreen {
                                     HStack{
-                                        Text("📌 \(share.address)") //需要调整
+                                        Text("📌 \(addressLocalizer.localizedAddress(for: share.id) ?? share.address)")
                                             .font(Font.custom("PingFang SC", size: 14))
                                             .kerning(0.22)
                                             .foregroundColor(isFullScreen ? Color("color-black") : Color.white)
-                                            .lineLimit(1) // 限制显示一行
-                                            .truncationMode(.tail) // 设置省略模式为尾部省略
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
                                         Spacer()
                                         Button(action: {
-                                            // 查看路线-胶囊按钮s
                                             openNavigationApp(destination: CLLocationCoordinate2D(latitude: share.latitude, longitude: share.longitude))
                                         }) {
                                             Text("🧭 查看路线")
                                         }
                                         .buttonStyle(ButtonStyle_capsuleHugPrimary_s(isEnabled: true))
+                                    }
+                                    .task {
+                                        await addressLocalizer.resolveAddress(for: share)
                                     }
                                 }
 

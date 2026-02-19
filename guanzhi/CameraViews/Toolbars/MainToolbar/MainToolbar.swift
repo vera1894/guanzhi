@@ -20,78 +20,13 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     @State var camera: CameraModel
     @State var appState: AppStateModel
     @State private var textFieldPlaceholder: String = "发一条观之吧"
-    @State private var locatedPosition : CLLocationCoordinate2D?
-    @State private var locatedPositionName : String = ""
-    @State private var isLocationAvailable = false
+    @State private var locationService = LocationPickerService()
+    @State private var isShowingLocationPicker = false
     @State private var nextPage: Bool = false //
         
     var cameraMainHeight: CGFloat = 180
     
-    func getUserLocation() {
-        let locationManager = CLLocationManager()
-        locationManager.requestWhenInUseAuthorization()
-        
-        DispatchQueue.global().async {
-            if CLLocationManager.locationServicesEnabled() {
-                locationManager.desiredAccuracy = kCLLocationAccuracyBest
-                locationManager.startUpdatingLocation()
-                
-                if let location = locationManager.location?.coordinate {
-                    // 使用修改后的 getAddressFromLocation 方法
-                    getAddressFromLocation(for: location) { address in
-                        if let address = address {
-                            DispatchQueue.main.async {
-                                locatedPositionName = address
-                                isLocationAvailable = true
-                                print("cardname:", locatedPositionName)
-                            }
-                        }
-                    }
-                    
-                    // 更新位置信息
-                    DispatchQueue.main.async {
-                        withAnimation(Animation.spring()) {
-                            locatedPosition = location
-                        }
-                        print("经纬度", location.latitude, location.longitude)
-                    }
-                }
-            }
-        }
-    }
-    
-    // 根据坐标获取地址
-    func getAddressFromLocation(for location: CLLocationCoordinate2D?, completion: @escaping (String?) -> Void) {
-        guard let coordinate = location else {
-            completion(nil)
-            return
-        }
-        
-        let converter = CoordinateConverter.shared
-        var adjustedCoordinate = coordinate
-        
-        // 判断位置是否在中国大陆境内
-        if !converter.isOutOfChina(coordinate) {
-            // 在中国大陆境内，需要将 WGS-84 坐标转换为 GCJ-02 坐标
-            adjustedCoordinate = converter.wgs84ToGcj02(coordinate)
-        }
-        
-        let location = CLLocation(latitude: adjustedCoordinate.latitude, longitude: adjustedCoordinate.longitude)
-        
-        CLGeocoder().reverseGeocodeLocation(location) { placemarks, error in
-            if let error = error {
-                print("定位错误：\(error.localizedDescription)")
-                completion(nil)
-            } else if let placemark = placemarks?.first {
-                // 根据需要从 placemark 中获取地址信息
-                let address = "\(placemark.name ?? "") \(placemark.locality ?? "") \(placemark.administrativeArea ?? "") \(placemark.country ?? "")"
-                print("地址：", address)
-                completion(address)
-            } else {
-                completion(nil)
-            }
-        }
-    }
+    // 位置相关逻辑已集中到 LocationPickerService
     
     var body: some View {
         ZStack {
@@ -112,11 +47,20 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                 
                 if appState.isReadyToPost == true { //改改改改改改改改改改改改改
                     VStack(spacing: 16) {
-                        HStack {
-                            Text("📍" + (isLocationAvailable ? locatedPositionName : "地点获取中..."))
-                                .bold()
-                            Spacer()
+                        Button(action: { isShowingLocationPicker = true }) {
+                            HStack(spacing: 4) {
+                                Text("📍" + (locationService.isLocationReady ? locationService.displayName : "地点获取中..."))
+                                    .bold()
+                                    .lineLimit(1)
+                                if locationService.isLocationReady {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                            }
                         }
+                        .disabled(!locationService.isLocationReady)
                         
                         RoundedRectangleTextField(placeholder: $textFieldPlaceholder, inputText: $appState.postText)
                             .frame(maxHeight: .infinity)
@@ -136,10 +80,10 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                         // 下一步（禁用）-胶囊按钮fill
                                         // 发布完成关闭页面，发布失败留在页面，发布时显示loading
                                     // 获取所有图片
-                                    if isLocationAvailable == true {
+                                    if locationService.isLocationReady == true {
                                                     // 执行下一步操作
                                         appState.isLoading = true
-                                        
+
                                         let photos = camera.capturedMedia.compactMap { $0 as? Photo }
 
                                         // 上传所有 Photo 对象
@@ -148,14 +92,14 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                                             case .success(let imagePath):
                                                 // 所有文件上传成功，调用分享发布方法
                                                 shareInsert(
-                                                    address: locatedPositionName,
+                                                    address: locationService.displayName,
                                                     cityCode: nil,
                                                     data: appState.postText,
                                                     deleted: nil,
                                                     districtCode: nil,
                                                     imagePath: imagePath,
-                                                    latitude: locatedPosition?.latitude ?? 0.0,
-                                                    longitude: locatedPosition?.longitude ?? 0.0,
+                                                    latitude: locationService.currentCoordinate?.latitude ?? 0.0,
+                                                    longitude: locationService.currentCoordinate?.longitude ?? 0.0,
                                                     provinceCode: nil,
                                                     title: "标题"
                                                 )
@@ -237,8 +181,13 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     //        .background(Color.gray) //
         .foregroundColor(.white)
         .onAppear {
-                getUserLocation()
+                locationService.resolveCurrentLocation()
             }
+        .sheet(isPresented: $isShowingLocationPicker) {
+            LocationPickerSheet(service: locationService) {
+                isShowingLocationPicker = false
+            }
+        }
         
 //        .font(.system(size: 24))
 //        .padding([.leading, .trailing])

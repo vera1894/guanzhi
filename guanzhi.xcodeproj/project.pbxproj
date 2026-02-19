@@ -154,6 +154,9 @@
 		FF99ECDA2EFA3CAF0080AE71 /* CommentCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF99ECD72EFA3CAF0080AE71 /* CommentCellView.swift */; };
 		FF99ECDB2EFA3CAF0080AE71 /* CommentSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF99ECD92EFA3CAF0080AE71 /* CommentSectionView.swift */; };
 		FF99ECDC2EFA3CAF0080AE71 /* CommentInputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF99ECD82EFA3CAF0080AE71 /* CommentInputBar.swift */; };
+		FF9A73C62F46AA93002CCC95 /* AddressLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9A73C52F46AA93002CCC95 /* AddressLocalizer.swift */; };
+		FF9A73C82F46AAD7002CCC95 /* LocationPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9A73C72F46AAD7002CCC95 /* LocationPickerSheet.swift */; };
+		FF9A73CA2F46B37E002CCC95 /* LocationPickerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9A73C92F46B37E002CCC95 /* LocationPickerService.swift */; };
 		FF9DB7882EEA4FDA00374E02 /* AlertStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9DB7872EEA4FDA00374E02 /* AlertStyles.swift */; };
 		FF9DB7962EEA4FF600374E02 /* StickerPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9DB7932EEA4FF600374E02 /* StickerPage.swift */; };
 		FF9DB7972EEA4FF600374E02 /* StickerScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9DB78D2EEA4FF600374E02 /* StickerScene.swift */; };
@@ -349,6 +352,9 @@
 		FF99ECD72EFA3CAF0080AE71 /* CommentCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentCellView.swift; sourceTree = "<group>"; };
 		FF99ECD82EFA3CAF0080AE71 /* CommentInputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentInputBar.swift; sourceTree = "<group>"; };
 		FF99ECD92EFA3CAF0080AE71 /* CommentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentSectionView.swift; sourceTree = "<group>"; };
+		FF9A73C52F46AA93002CCC95 /* AddressLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressLocalizer.swift; sourceTree = "<group>"; };
+		FF9A73C72F46AAD7002CCC95 /* LocationPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPickerSheet.swift; sourceTree = "<group>"; };
+		FF9A73C92F46B37E002CCC95 /* LocationPickerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPickerService.swift; sourceTree = "<group>"; };
 		FF9DB7872EEA4FDA00374E02 /* AlertStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertStyles.swift; sourceTree = "<group>"; };
 		FF9DB7892EEA4FF600374E02 /* StickerDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerDefinition.swift; sourceTree = "<group>"; };
 		FF9DB78B2EEA4FF600374E02 /* StickerMotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerMotionManager.swift; sourceTree = "<group>"; };
@@ -491,6 +497,8 @@
 		D13FFDD62BAB377A007E1970 /* ModelsForMap */ = {
 			isa = PBXGroup;
 			children = (
+				FF9A73C92F46B37E002CCC95 /* LocationPickerService.swift */,
+				FF9A73C52F46AA93002CCC95 /* AddressLocalizer.swift */,
 				FF87A8E02ECC4C0000C92D25 /* ClusterShareRanker.swift */,
 				FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */,
 				FF84D7BE2D3E35C10060F060 /* ShareService.swift */,
@@ -687,6 +695,7 @@
 		FF3CD1492C787A3B00AF7086 /* MainToolbar */ = {
 			isa = PBXGroup;
 			children = (
+				FF9A73C72F46AAD7002CCC95 /* LocationPickerSheet.swift */,
 				FF3CD14B2C787A6500AF7086 /* CaptureButton.swift */,
 				FF3CD14A2C787A6500AF7086 /* DeleteButton.swift */,
 				FF3CD14D2C787A6500AF7086 /* MainToolbar.swift */,
@@ -1047,6 +1056,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FF9A73C82F46AAD7002CCC95 /* LocationPickerSheet.swift in Sources */,
 				ONBOARD0001000100010001 /* OnboardingPersistence.swift in Sources */,
 				ONBOARD0001000100010003 /* OnboardingCoordinator.swift in Sources */,
 				ONBOARD0001000100010005 /* OnboardingBannerView.swift in Sources */,
@@ -1162,6 +1172,7 @@
 				6F859B0944604026A267C9D3 /* UserProfileMapper.swift in Sources */,
 				01DFABF9003E4E0D8CE372F7 /* ProfileHeaderView.swift in Sources */,
 				FFC00A382ECC195F00413F1A /* LivePhotoPackager.swift in Sources */,
+				FF9A73CA2F46B37E002CCC95 /* LocationPickerService.swift in Sources */,
 				FF650F572ED7D962001437AB /* CameraViewWrapper.swift in Sources */,
 				FF650F582ED7D962001437AB /* MediaItemView.swift in Sources */,
 				FF650F592ED7D962001437AB /* ShareDetailsCardView.swift in Sources */,
@@ -1199,6 +1210,7 @@
 				D13FFDED2BAF1F26007E1970 /* RoundedRectangleTextField.swift in Sources */,
 				FF6BC4D72C7C186000423660 /* MovieCapture.swift in Sources */,
 				FF1A50232CA0F5DB00596DBD /* LocationService.swift in Sources */,
+				FF9A73C62F46AA93002CCC95 /* AddressLocalizer.swift in Sources */,
 				FF6BC4DB2C7C187200423660 /* MediaLibrary.swift in Sources */,
 				FF6BC4F32C7C18CC00423660 /* ViewExtensions.swift in Sources */,
 				FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */,

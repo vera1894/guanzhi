@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v4.3
-**最后更新**: 2026-02-17（聚合列表排名排序 + 「最新」徽章系统）
+**文档版本**: v4.4
+**最后更新**: 2026-02-18（Token 过期自动登出 + 分享落地页 404 修复）
 
 ---
 
@@ -563,6 +563,9 @@ extension Notification.Name {
     // 登录状态管理（2026-01-23 新增）
     static let userDidLogout = Notification.Name("com.guanzhi.userDidLogout")
     static let userIdDidSet = Notification.Name("com.guanzhi.userIdDidSet")
+
+    // Token 过期（2026-02-18 新增，由 NetworkService 401 响应触发）
+    static let tokenExpired = Notification.Name("tokenExpired")
 }
 ```
 
@@ -894,6 +897,18 @@ class UserLoginModel: ObservableObject {
 }
 ```
 
+#### Token 过期自动登出（2026-02-18 新增）
+
+后端 Token 由 Redis TTL 管理（365 天有效期 + 自动续期），JWT 本身不含 `exp` 声明。当 Redis 键丢失（如 Redis 重启）或 TTL 到期时，后端返回 401。
+
+**客户端处理流程**：
+1. `NetworkService` 收到 401 → 发送 `.tokenExpired` 通知
+2. `guanzhiApp` 监听 `.tokenExpired` → 调用 `handleTokenExpired()`
+3. `handleTokenExpired()`：清空导航栈 → 执行 `logout()` → 显示 Toast 提示
+4. `SearchView` 检测到 `!loginManager.isLoggedIn` → 自动显示登录页
+
+**防重复机制**：多个并发 401 可能同时触发 `.tokenExpired`，通过 `guard loginManager.isLoggedIn` 防重入 + `toastManager.showIfNotPresent()` 防重复 Toast。
+
 ### 10. 管理后台
 
 - 褪色曲线模拟器（核心功能）
@@ -1100,21 +1115,39 @@ class UserLoginModel: ObservableObject {
 
 ### Nginx 代理规则（生产环境）
 
+**端口 80（HTTP）—— CloudFront 回源入口**：
 ```
-/image/           → 静态文件 (/home/ec2-user/images/image/)
-                    Cache-Control: public, max-age=604800, immutable
+/image/                  → 静态文件 (/home/ec2-user/images/image/)
+                           Cache-Control: public, max-age=604800, immutable
+/api/                    → http://127.0.0.1:8085/ (去掉 /api 前缀)
+/s/                      → http://127.0.0.1:8085 (H5 分享落地页，2026-02-18 新增)
+/css/share-landing.css   → /var/www/onettoo-homepage/css/share-landing.css (exact match)
+```
+
+**端口 443（HTTPS）—— 完整路由**：
+```
+/image/           → 静态文件
 /guanzhi-admin/   → 静态文件 (/var/www/guanzhi-admin/)
+/s/               → http://127.0.0.1:8085 (H5 分享落地页)
 /api/user/        → http://127.0.0.1:8085/user/
 /api/admin/       → http://127.0.0.1:8085/api/admin/
 /api/             → http://127.0.0.1:8085/ (去掉 /api 前缀)
 /admin/inspector/ → http://127.0.0.1:8085/admin/inspector/
+/css/share-landing.css → /var/www/onettoo-homepage/css/ (exact match)
 ```
+
+> **注意**：CloudFront 回源走 HTTP 80，因此所有公开路由（`/s/`、`/api/`、`/image/`）都必须同时配置在端口 80 的 server block 中。2026-02-18 修复了 `/s/` 只在端口 443 配置导致分享链接 404 的问题。
+
+**H5 分享落地页**（2026-02-18 确认）：
+- 后端 Controller：`ShareLandingController.java` → `@GetMapping("/s/{shareId}")` + `@AnonymousAccess`
+- 模板：Thymeleaf `share-landing.html`，CSS 从 JAR 提取到 `/var/www/onettoo-homepage/css/`
+- `@EnableWebMvc` 会禁用 Spring Boot 默认静态资源服务，`/css/**` 未在 `addResourceHandlers` 注册，故 CSS 由 Nginx 直接提供
 
 **CDN 架构**（2026-02-13）：
 ```
 客户端 → onettoo.com (DNS CNAME) → CloudFront CDN
-  ├── /image/* → CDN 缓存 7 天（命中直返，未命中回源 Nginx）
-  └── 其他路径 → 直接透传到源站（TTL=0，不缓存）
+  ├── /image/* → CDN 缓存 7 天（命中直返，未命中回源 Nginx 端口 80）
+  └── 其他路径 → 直接透传到源站 Nginx 端口 80（TTL=0，不缓存）
 ```
 
 ---
@@ -1430,6 +1463,7 @@ View/MapPages/
 | 媒体上传下载优化 | `projectBasicInfo/logs/2026-02-13-media-upload-download-optimization-cc.md` | 并行上传+压缩、缩略图优先下载 |
 | **查看体验+CDN优化** | `projectBasicInfo/logs/2026-02-13-viewing-experience-cdn-optimization-cc.md` | AsyncImage重试、字节级进度、缩略图缓存、CloudFront CDN |
 | **聚合列表排名+最新徽章** | `projectBasicInfo/logs/2026-02-17-cluster-ranking-badge-cc.md` | 加权互动评分排序、48h置顶、最新徽章、缩略图优先选择 |
+| **Token过期+分享页404修复** | `projectBasicInfo/logs/2026-02-18-token-expiry-share-404-fix-cc.md` | Token过期自动登出、Nginx端口80 /s/路由、CSS静态文件提取 |
 
 ---
 

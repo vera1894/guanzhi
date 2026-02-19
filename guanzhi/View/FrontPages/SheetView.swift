@@ -109,14 +109,24 @@ struct SheetView: View {
                 List {
                     ForEach(locationService.completions) { completion in
                         Button(action: {didTapOnCompletion(completion) }) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(completion.title)
-                                    .font(.headline)
-                                    .fontDesign(.rounded)
-                                Text(completion.subTitle)
-                                if let url = completion.url {
-                                    Link(url.absoluteString, destination: url)
-                                        .lineLimit(1)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(completion.title)
+                                        .font(.headline)
+                                        .fontDesign(.rounded)
+                                    Text(completion.subTitle)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    if let url = completion.url {
+                                        Link(url.absoluteString, destination: url)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                Spacer()
+                                if let coord = completion.coordinate {
+                                    Text(distanceText(to: coord))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
                             }
                         }
@@ -131,7 +141,7 @@ struct SheetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: search) {
-            locationService.update(queryFragment: search)
+            locationService.update(queryFragment: search, region: searchViewModel.region)
             // iOS 26 修复：输入改变时重置显示结果标记，显示自动完成
             if !search.isEmpty {
                 shouldShowResults = false
@@ -152,6 +162,19 @@ struct SheetView: View {
         // iOS 26 修复：移除内部的 presentationDetents，应该在调用 sheet 的地方设置
     }
     
+    /// 计算从地图中心到目标坐标的距离文本
+    private func distanceText(to coordinate: CLLocationCoordinate2D) -> String {
+        let from = CLLocation(latitude: searchViewModel.region.center.latitude,
+                              longitude: searchViewModel.region.center.longitude)
+        let to = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        let meters = from.distance(from: to)
+        if meters < 1000 {
+            return "\(Int(meters))m"
+        } else {
+            return String(format: "%.1fkm", meters / 1000)
+        }
+    }
+
     private func didTapOnCompletion(_ completion: SearchCompletions) {
         Task {
             // 取消当前任务
@@ -182,6 +205,7 @@ struct SearchCompletions: Identifiable {
     let title: String
     let subTitle: String
     var url: URL?
+    var coordinate: CLLocationCoordinate2D?
 }
 
 @Observable
@@ -196,28 +220,36 @@ class LocationService: NSObject, MKLocalSearchCompleterDelegate {
         self.completer.delegate = self
     }
     
-    func update(queryFragment: String) {
-        completer.resultTypes = .pointOfInterest
+    func update(queryFragment: String, region: MKCoordinateRegion? = nil) {
+        completer.resultTypes = [.pointOfInterest, .address]
+        if let region {
+            completer.region = region
+            // iOS 18+: 强制区域优先，优先返回本地结果
+            if #available(iOS 18.0, *) {
+                completer.regionPriority = .required
+            }
+        }
         completer.queryFragment = queryFragment
     }
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         completions = completer.results.map { completion in
-            // Get the private _mapItem property
             let mapItem = completion.value(forKey: "_mapItem") as? MKMapItem
-            
+
             return .init(
                 title: completion.title,
                 subTitle: completion.subtitle,
-                url: mapItem?.url
-            )}
+                url: mapItem?.url,
+                coordinate: mapItem?.placemark.coordinate
+            )
+        }
     }
     
     func search(with query: String, coordinate: CLLocationCoordinate2D? = nil) async throws -> [SearchResult] {
         completions.removeAll()
         let mapKitRequest = MKLocalSearch.Request()
         mapKitRequest.naturalLanguageQuery = query
-        mapKitRequest.resultTypes = .pointOfInterest
+        mapKitRequest.resultTypes = [.pointOfInterest, .address]
         if let coordinate {
             mapKitRequest.region = .init(.init(origin: .init(coordinate), size: .init(width: 1, height: 1)))
         }
