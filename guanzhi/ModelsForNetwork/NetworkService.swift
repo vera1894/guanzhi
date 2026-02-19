@@ -37,6 +37,10 @@ enum OTONetworkError: Error, LocalizedError {
 }
 
 struct OTONetwork {
+    // 连续 401 计数：防止偶发性 401（如 Redis 连接抖动）导致意外登出
+    private static var consecutive401Count = 0
+    private static let logout401Threshold = 3
+
     static func request(_ req: OTORequest) async throws -> Data {
         do {
             #if DEBUG
@@ -100,11 +104,14 @@ struct OTONetwork {
                 // ✅ 根据状态码返回不同的错误类型
                 switch statusCode {
                 case 200...299:
-                    // 成功
+                    Self.consecutive401Count = 0
                     break
                 case 401:
-                    // Token 过期或无效，发送通知并抛出错误
-                    NotificationCenter.default.post(name: .tokenExpired, object: nil)
+                    Self.consecutive401Count += 1
+                    if Self.consecutive401Count >= Self.logout401Threshold {
+                        NotificationCenter.default.post(name: .tokenExpired, object: nil)
+                        Self.consecutive401Count = 0
+                    }
                     throw OTONetworkError.unauthorized
                 case 403:
                     throw OTONetworkError.forbidden
