@@ -4,7 +4,6 @@ See the LICENSE.txt file for this sample's licensing information.
 Abstract:
 A view that displays controls to capture, switch cameras, and view the last captured media item.
 */
-
 import SwiftUI
 import PhotosUI
 import Foundation
