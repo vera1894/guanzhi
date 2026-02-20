@@ -67,7 +67,7 @@ struct MKMapViewWrapper: UIViewRepresentable {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
         mapView.showsUserLocation = showsUserLocation
-        mapView.mapType = .standard
+        mapView.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic)
 
         // 启用交互
         mapView.isZoomEnabled = true

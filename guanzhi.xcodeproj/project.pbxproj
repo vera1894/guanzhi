@@ -1356,8 +1356,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = guanzhi/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "我们需要使用您的相机来捕捉照片和视频。";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "我们需要访问您的位置以提供定位服务。";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "需要获取您的位置以提供相关服务。";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "观之需要获取您的位置，以便在地图上展示您附近的内容，并在您发布时自动标记位置。例如：查看附近其他用户分享的观之内容。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "观之需要在您使用时获取位置，以便在地图上展示附近的内容，并在发布时标记位置。例如：在地图上浏览身边的观之分享。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "我们需要使用您的麦克风来录制视频中的音频。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们的应用需要访问相册以保存拍摄的照片。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1394,8 +1394,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = guanzhi/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "我们需要使用您的相机来捕捉照片和视频。";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "我们需要访问您的位置以提供定位服务。";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "需要获取您的位置以提供相关服务。";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "观之需要获取您的位置，以便在地图上展示您附近的内容，并在您发布时自动标记位置。例如：查看附近其他用户分享的观之内容。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "观之需要在您使用时获取位置，以便在地图上展示附近的内容，并在发布时标记位置。例如：在地图上浏览身边的观之分享。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "我们需要使用您的麦克风来录制视频中的音频。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们的应用需要访问相册以保存拍摄的照片。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

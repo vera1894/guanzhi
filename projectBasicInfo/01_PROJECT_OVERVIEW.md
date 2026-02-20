@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v4.4
-**最后更新**: 2026-02-18（Token 过期自动登出 + 分享落地页 404 修复）
+**文档版本**: v4.5
+**最后更新**: 2026-02-20（MKMapView 地球仪模式 + 旧 SwiftUI Map 清理）
 
 ---
 
@@ -1397,18 +1397,30 @@ NotificationCenter.default.addObserver(
 
 **位置**：`View/MapPages/`
 
-**状态**：已完成（2026-01-22 点击修复）
+**状态**：已完成（2026-02-20 地球仪模式）
 
-地图标注采用 MKMapView + 自定义 MKAnnotationView 实现，支持聚合和点击交互。
+MKMapView 是唯一的地图实现（旧 SwiftUI Map 回退代码已全部移除）。支持自定义标注、聚合、点击交互和动态地球仪模式。
 
 **核心文件**：
 ```
 View/MapPages/
-├── MKMapViewWrapper.swift          # UIViewRepresentable 包装器
-├── MKMapViewCoordinator.swift      # MKMapViewDelegate 实现
+├── MKMapViewWrapper.swift          # UIViewRepresentable 包装器（preferredConfiguration API）
+├── MKMapViewCoordinator.swift      # MKMapViewDelegate + 地球仪动态切换
 ├── CustomMKAnnotationView.swift    # 单个标注视图
 └── ClusterAnnotationView.swift     # 聚合标注视图（缩略图：48h内最新优先）
 ```
+
+**地球仪模式（Globe Mode）**（2026-02-20）：
+
+地图使用 `preferredConfiguration` API（非旧 `mapType`），在极度缩小时自动切换到地球仪效果：
+
+| camera distance | 地图配置 | 效果 |
+|----------------|---------|------|
+| < 3,500 km | `MKStandardMapConfiguration(elevationStyle: .realistic)` | 标准街道地图 + 3D 地形 |
+| ≥ 5,000 km | `MKHybridMapConfiguration(elevationStyle: .realistic)` | 卫星/Flyover 地球仪 |
+
+- 磁滞设计避免边界频繁切换（进入 5M，退出 3.5M）
+- `updateGlobeConfigurationIfNeeded()` 在所有 region 变化时执行（含程序化变化），确保定位等操作后能正确切回
 
 **聚合抵抗机制**：
 
@@ -1464,6 +1476,7 @@ View/MapPages/
 | **查看体验+CDN优化** | `projectBasicInfo/logs/2026-02-13-viewing-experience-cdn-optimization-cc.md` | AsyncImage重试、字节级进度、缩略图缓存、CloudFront CDN |
 | **聚合列表排名+最新徽章** | `projectBasicInfo/logs/2026-02-17-cluster-ranking-badge-cc.md` | 加权互动评分排序、48h置顶、最新徽章、缩略图优先选择 |
 | **Token过期+分享页404修复** | `projectBasicInfo/logs/2026-02-18-token-expiry-share-404-fix-cc.md` | Token过期自动登出、Nginx端口80 /s/路由、CSS静态文件提取 |
+| **地图地球仪模式** | `projectBasicInfo/logs/2026-02-20-map-globe-mode-cc.md` | MKMapView地球仪模式、磁滞切换、旧SwiftUI Map清理 |
 
 ---
 

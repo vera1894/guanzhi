@@ -23,6 +23,7 @@ struct MessageView: View {
 
     // ✅ 监听登录状态，登录成功后自动 dismiss
     @ObservedObject var loginManager = OTOLoginStatusManager.shared
+
     
 //    @State var codeString = ["","","",""]
     @State private var enterSMSCode = ""
@@ -49,21 +50,16 @@ struct MessageView: View {
                 let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
 
                 if response.respCode == 0 {
-                    // ✅ 老用户登录成功
                     userlogin.loginState = 0
                     if let tokenString = response.datas {
                         userlogin.header = "Bearer " + tokenString
                         OTOLoginStatusManager.shared.login(token: userlogin.header)
                         userlogin.getUserInfo()
                     }
-                    // ✅ 不设置 next = true
-                    // OTOLoginStatusManager.shared.login() 会触发 @Published isLoggedIn 变化
-                    // guanzhiApp 中的 SearchView 会自动从 LogInView 切换到主内容
                     isLoading = false
                 } else if response.respCode == -1 && response.respMsg == "1" {
-                    // 新用户，需要设置昵称
                     userlogin.loginState = 1
-                    next = true  // ✅ 这个保留，跳转到 NameView
+                    next = true
                     isLoading = false
                 } else {
                     isLoading = false

@@ -26,6 +26,9 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
     /// 位置更新后会自动执行定位并重置此标志
     private var isPendingCenterOnUser = false
 
+    /// 跟踪当前是否处于 Flyover 地球仪配置（globeMode 动态切换用）
+    var isInGlobeConfiguration = false
+
     init(parent: MKMapViewWrapper) {
         self.parent = parent
     }
@@ -90,7 +93,11 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
     /// region 变化完成时调用
     /// ⚠️ 关键：只有在非程序化变化时才更新 ViewModel
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        // 如果是程序主动触发的变化，不回调（防止回环）
+        // Globe 模式配置检查：无论程序化还是用户操作都要执行
+        // 这样程序化定位（如 centerOnUser）后也能正确切回 Standard
+        updateGlobeConfigurationIfNeeded(mapView: mapView)
+
+        // 如果是程序主动触发的变化，不回调 ViewModel（防止回环）
         guard !isProgrammaticChange else {
             print("🗺️ [Coordinator] regionDidChange ignored (programmatic)")
             return
@@ -99,6 +106,26 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
         print("🗺️ [Coordinator] regionDidChange (user interaction): \(mapView.region.center)")
         // 通过回调更新 ViewModel，而不是直接修改 @Binding
         parent.onRegionChange?(mapView.region)
+    }
+
+    // MARK: - Globe Mode
+
+    /// 根据 camera distance 动态切换 Standard ↔ HybridFlyover
+    /// 使用磁滞区间避免边界附近频繁切换：进入地球仪 5M，退出地球仪 3.5M
+    private func updateGlobeConfigurationIfNeeded(mapView: MKMapView) {
+        let distance = mapView.camera.centerCoordinateDistance
+        let enterThreshold: Double = 5_000_000   // 进入地球仪：5000 公里
+        let exitThreshold: Double = 3_500_000    // 退出地球仪：3500 公里（磁滞）
+
+        if distance >= enterThreshold && !isInGlobeConfiguration {
+            mapView.preferredConfiguration = MKHybridMapConfiguration(elevationStyle: .realistic)
+            isInGlobeConfiguration = true
+            print("🌍 [Globe] 切换到 HybridFlyover，distance=\(Int(distance))")
+        } else if distance < exitThreshold && isInGlobeConfiguration {
+            mapView.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic)
+            isInGlobeConfiguration = false
+            print("🗺️ [Globe] 切回 Standard，distance=\(Int(distance))")
+        }
     }
 
     /// 返回标注视图

@@ -22,8 +22,9 @@
 │   ├── v3.7.0/app.jar
 │   ├── v3.7.1/app.jar
 │   ├── v3.7.2/app.jar
-│   └── v3.7.3/app.jar           # 当前版本
-├── current -> releases/v3.7.3/  # 软链接，原子切换
+│   ├── v3.7.3/app.jar
+│   └── v3.7.4/app.jar           # 当前版本
+├── current -> releases/v3.7.4/  # 软链接，原子切换
 ├── application-prod.yml         # 外部配置文件
 └── start.sh                     # 备用启动脚本（仅应急使用）
 ```
@@ -424,3 +425,4 @@ mvn clean package -DskipTests
 | v1.2 | 2026-01-24 | 新增管理后台部署章节、多端功能部署检查清单 |
 | v1.3 | 2026-02-14 | 更新当前版本为 v3.7.1（shareList 查询修复 + deleted 过滤） |
 | v1.4 | 2026-02-19 | 更新当前版本为 v3.7.3（401 容错 + Jedis 连接池 + TokenFilter 异常处理） |
+| v1.5 | 2026-02-20 | 更新当前版本为 v3.7.4（管理员手机号 sendCode 存固定验证码到 Redis，支持 App Store 审核登录） |
