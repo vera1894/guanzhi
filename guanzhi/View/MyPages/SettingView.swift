@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SettingView: View {
     @Environment(\.appState) var appState
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var onboardingCoordinator: OnboardingCoordinator
+    @EnvironmentObject var searchViewModel: SearchViewModel
     @State private var isLoggingout = false
     @State private var showAgreement = false
     @State private var showResetOnboardingConfirm = false  // 重置操作提示确认
@@ -124,7 +127,11 @@ struct SettingView: View {
         }
         .alert("清理缓存", isPresented: $showClearCacheConfirm) {
             Button("清理", role: .destructive) {
-                Self.clearCache()
+                Self.clearCache(modelContext: modelContext)
+                // 清除 SearchViewModel 内存缓存并触发重新加载
+                searchViewModel.annotations = []
+                searchViewModel.cachedResponsedShares = [:]
+                searchViewModel.refreshNearbyShares(reason: .manual)
                 toastManager.show(ToastItem(style: .notificationOnly(
                     title: "缓存已清理",
                     symbol: "checkmark.circle",
@@ -136,36 +143,48 @@ struct SettingView: View {
             }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("当前缓存大小：\(cacheSize)，确定要清理吗？")
+            Text("当前缓存大小：\(cacheSize)，确定要清理吗？\n将清除本地缓存的观之数据和媒体文件，重新打开时会从服务器获取最新数据。")
         }
     }
 
     // MARK: - 缓存管理
 
-    /// 计算缓存大小（URLCache + tmp 目录）
+    /// 计算目录大小（递归）
+    private static func directorySize(at path: String) -> Int64 {
+        var size: Int64 = 0
+        if let files = FileManager.default.enumerator(atPath: path) {
+            while let file = files.nextObject() as? String {
+                let fullPath = (path as NSString).appendingPathComponent(file)
+                if let attrs = try? FileManager.default.attributesOfItem(atPath: fullPath),
+                   let fileSize = attrs[.size] as? Int64 {
+                    size += fileSize
+                }
+            }
+        }
+        return size
+    }
+
+    /// 计算缓存大小（URLCache + tmp + 媒体缓存目录）
     static func calculateCacheSize() -> String {
         var totalSize: Int64 = 0
         // URLCache
         totalSize += Int64(URLCache.shared.currentDiskUsage)
         // tmp 目录
-        let tmpDir = NSTemporaryDirectory()
-        if let files = FileManager.default.enumerator(atPath: tmpDir) {
-            while let file = files.nextObject() as? String {
-                let path = (tmpDir as NSString).appendingPathComponent(file)
-                if let attrs = try? FileManager.default.attributesOfItem(atPath: path),
-                   let size = attrs[.size] as? Int64 {
-                    totalSize += size
-                }
-            }
+        totalSize += directorySize(at: NSTemporaryDirectory())
+        // Caches/Thumbnails 和 Caches/MediaFiles
+        if let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            totalSize += directorySize(at: cachesDir.appendingPathComponent("Thumbnails").path)
+            totalSize += directorySize(at: cachesDir.appendingPathComponent("MediaFiles").path)
         }
         return ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
     }
 
-    /// 清除缓存
-    static func clearCache() {
-        // 清除 URLCache
+    /// 清除缓存（含 SwiftData 本地数据库、媒体文件缓存）
+    static func clearCache(modelContext: ModelContext? = nil) {
+        // 1. 清除 URLCache
         URLCache.shared.removeAllCachedResponses()
-        // 清除 tmp 目录
+
+        // 2. 清除 tmp 目录
         let tmpDir = NSTemporaryDirectory()
         if let files = try? FileManager.default.contentsOfDirectory(atPath: tmpDir) {
             for file in files {
@@ -173,6 +192,28 @@ struct SettingView: View {
                 try? FileManager.default.removeItem(atPath: path)
             }
         }
+
+        // 3. 清除 Caches/Thumbnails 和 Caches/MediaFiles
+        if let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            let thumbnailDir = cachesDir.appendingPathComponent("Thumbnails")
+            let mediaDir = cachesDir.appendingPathComponent("MediaFiles")
+            try? FileManager.default.removeItem(at: thumbnailDir)
+            try? FileManager.default.removeItem(at: mediaDir)
+        }
+
+        // 4. 清除 SwiftData 中的 Share 和 MediaFile 记录
+        if let context = modelContext {
+            do {
+                try context.delete(model: Share.self)
+                try context.delete(model: MediaFile.self)
+                try context.save()
+            } catch {
+                print("⚠️ 清理 SwiftData 缓存失败: \(error)")
+            }
+        }
+
+        // 5. 清除内存中的图片缓存
+        ImageCache.shared.clearAll()
     }
 
     // 根据不同的列表项执行操作
@@ -259,4 +300,5 @@ struct UserAgreementView: View {
         .environmentObject(NavigationCoordinator())
         .environmentObject(UserProfileManager())
         .environmentObject(OnboardingCoordinator())
+        .environmentObject(SearchViewModel())
 }

@@ -44,6 +44,7 @@ struct SearchView: View {
     @State private var shouldToggle3D = false  // 控制是否切换 3D 模式（点击 3D 按钮）
     @State private var is3DMode = false  // 当前是否为 3D 模式
     @State private var mkMapView: MKMapView?  // MKMapView 引用（用于 MKCompassButton）
+    @State private var isMapReady = false  // 入场动画就绪后为 true，控制启动遮罩淡出
 
     // MARK: - Stage 2: 聚合列表状态
     @State private var clusterAnnotations: [CustomAnnotation] = []  // 聚合内的标注
@@ -273,6 +274,11 @@ struct SearchView: View {
                             is3DMode: $is3DMode,
                             onMapViewCreated: { mapView in
                                 self.mkMapView = mapView
+                            },
+                            onEntryAnimationReady: {
+                                withAnimation(.easeOut(duration: EntryAnimationConfig.splashFadeDuration)) {
+                                    isMapReady = true
+                                }
                             }
                         )
                         .disabled(searchViewModel.isShareDetailOverlayShown || isShowingClusterList)
@@ -290,6 +296,7 @@ struct SearchView: View {
                         }
                         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
                             appState.hasSetInitialRegion = false
+                            isMapReady = false  // 重新登录时重新播放入场动画
                         }
                         .onChange(of: appState.responsedNearbyShareList) { _ , newValue in
                             print("Nearby share list updated")
@@ -426,6 +433,14 @@ struct SearchView: View {
                         ))
 
                     } //ZStack
+                    // MARK: - 入场动画遮罩（瓦片加载完成前覆盖地图）
+                    .overlay {
+                        if !isMapReady {
+                            Color(.systemBackground)
+                                .ignoresSafeArea()
+                                .transition(.opacity)
+                        }
+                    }
                     // MARK: - Overlay 模式的聚合列表（macOS 26 风格缩放动画）
                     // skipAnimation: 进入详情时无动画，从详情返回时瞬间出现
                     .overlay {

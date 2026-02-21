@@ -53,6 +53,9 @@ struct MKMapViewWrapper: UIViewRepresentable {
     /// MKMapView 引用回调（用于创建 MKCompassButton）
     var onMapViewCreated: ((MKMapView) -> Void)?
 
+    /// 入场动画就绪回调（瓦片加载完成 + 位置可用时触发，UI 应淡出遮罩）
+    var onEntryAnimationReady: (() -> Void)?
+
     // MARK: - 默认区域（中国中心，确保地图永远有内容）
     private static let defaultRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.0, longitude: 105.0),
@@ -65,9 +68,23 @@ struct MKMapViewWrapper: UIViewRepresentable {
         print("🗺️ [MKMapView] makeUIView called, region: \(region.center)")
 
         let mapView = MKMapView()
+
+        // ===== 入场动画预加载：在设置 delegate 之前预定位到地球仪高度 =====
+        // 这样瓦片开始加载但不会触发 delegate 回调
+        mapView.preferredConfiguration = MKHybridMapConfiguration(elevationStyle: .realistic)
+        let preloadCamera = MKMapCamera(
+            lookingAtCenter: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            fromDistance: EntryAnimationConfig.globeAltitude,
+            pitch: 0,
+            heading: 0
+        )
+        mapView.camera = preloadCamera
+        context.coordinator.isInGlobeConfiguration = true
+        print("🌍 [MKMapView] 预加载地球仪瓦片, alt=\(Int(EntryAnimationConfig.globeAltitude))")
+
+        // 现在设置 delegate（后续的 region 变化会触发回调）
         mapView.delegate = context.coordinator
         mapView.showsUserLocation = showsUserLocation
-        mapView.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic)
 
         // 启用交互
         mapView.isZoomEnabled = true
@@ -80,21 +97,6 @@ struct MKMapViewWrapper: UIViewRepresentable {
 
         // 明确禁用用户跟踪模式，防止地图被锁定
         mapView.userTrackingMode = .none
-
-        // ===== 单一初始化策略 =====
-        // 1. 永远先设置一个有效的初始区域（优先用传入的，否则用默认）
-        let initialRegion: MKCoordinateRegion
-        let isValidRegion = region.center.latitude != 0 || region.center.longitude != 0
-        if isValidRegion {
-            initialRegion = region
-            print("🗺️ [MKMapView] Using provided region: \(initialRegion.center)")
-        } else {
-            initialRegion = Self.defaultRegion
-            print("🗺️ [MKMapView] Using default region: \(initialRegion.center)")
-        }
-        mapView.setRegion(initialRegion, animated: false)
-
-        // 2. 不在这里设置 userTrackingMode，让 SearchView 的 onReceive 统一处理首次定位
 
         // 回调传出 mapView 引用（延迟到下一个 runloop，确保 mapView 已添加到视图层级）
         DispatchQueue.main.async {

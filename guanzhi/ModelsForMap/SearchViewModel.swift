@@ -66,6 +66,7 @@ class SearchViewModel: ObservableObject {
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     )
     var fetchWorkItem: DispatchWorkItem?
+    private var lastAnnotationUpdateTime: Date?  // 节流用：上次标注刷新时间
     
     @Published var annotations: [CustomAnnotation] = []
     @Published var searchResults = [SearchResult]() //用于存储搜索结果
@@ -160,13 +161,30 @@ class SearchViewModel: ObservableObject {
     }
     
     // 地图操作防抖，延迟更新地图上的标注，避免频繁刷新
+    /// 节流模式刷新标注（本地数据）：首次立即执行，之后限制频率
+    /// - 操作中（滑动/动画）：以本地数据即时刷新标注显示
+    /// - 操作结束：trailing edge 确保最终状态正确
     func scheduleAnnotationUpdate() {
-        fetchWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.getAnnotations()
+        let throttleInterval: TimeInterval = 0.3
+        let now = Date()
+
+        if let lastTime = lastAnnotationUpdateTime,
+           now.timeIntervalSince(lastTime) < throttleInterval {
+            // 在节流窗口内：安排延迟执行（trailing edge，确保最终位置也刷新）
+            fetchWorkItem?.cancel()
+            let remaining = throttleInterval - now.timeIntervalSince(lastTime)
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.lastAnnotationUpdateTime = Date()
+                self?.getAnnotations()
+            }
+            fetchWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: workItem)
+        } else {
+            // 超过节流窗口（或首次调用）：立即执行
+            fetchWorkItem?.cancel()
+            lastAnnotationUpdateTime = now
+            getAnnotations()
         }
-        fetchWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
     }
     
     // MARK: - 网络重试机制方法

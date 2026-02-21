@@ -161,6 +161,7 @@ struct guanzhiApp: App {
                                 .environment(appState)
                                 .environmentObject(navigationCoordinator)
                                 .environmentObject(userProfileManager)
+                                .environmentObject(searchViewModel)
                         case .editProfileView:
                             EditProfileView()
                                 .environment(appState)
