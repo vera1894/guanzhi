@@ -12,7 +12,7 @@ struct EditNameView: View {
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var toastManager: ToastManager
     @State private var userNickName: String = ""
-    @State private var placeholder: String = "请输入"
+    @State private var placeholder: String = String(localized: "请输入")
     @State private var canUpdate = false
     @State private var currentCount: Int = 0
     
@@ -86,13 +86,13 @@ struct EditNameView: View {
         // 定义非法字符集合（这里包括 @, <, >, /）
         let invalidSet = CharacterSet(charactersIn: "@<>/")
         if userNickName.rangeOfCharacter(from: invalidSet) != nil {
-            showNotification(message: "❌ 名字不能包含无效字符")
+            toastManager.show(ToastMessages.nameInvalidChars)
             dismiss()
             return
         }
         // 检查字符数量是否在 2 到 24 之间
         if userNickName.count < 2 || userNickName.count > 24 {
-            showNotification(message: "❌ 名字字数不符合要求")
+            toastManager.show(ToastMessages.nameLengthInvalid)
             dismiss()
             return
         }
@@ -108,29 +108,18 @@ struct EditNameView: View {
                 if let profile = updatedProfile {
                     print("更新成功，最新昵称: \(profile.nickname)")
                     dismiss()
-                    showNotification(message: "✅ 修改成功")
+                    toastManager.show(ToastMessages.editSuccess)
                 } else {
                     print("更新成功，但获取资料失败：nil")
                 }
             } catch {
                 print("更新昵称失败：\(error)")
-                showNotification(message: "❌ 修改失败")
+                toastManager.show(ToastMessages.editFailed)
             }
         }
         
     }
     
-    private func showNotification(message: String) {
-        let newItem = ToastItem(style: .notificationOnly(
-            title: message,
-            symbol: "",
-            tint: Color("color-primary"),
-            isUserInteractionEnabled: true,
-            timing: .short,
-            isAutoClose: true
-        ))
-        toastManager.show(newItem)
-    }
 }
 
 #Preview {

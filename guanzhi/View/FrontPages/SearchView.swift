@@ -164,7 +164,7 @@ struct SearchView: View {
                         .environmentObject(navigationCoordinator)
                 },
                 bouncesEnabled: true,
-                endFooterStyle: .text("- 到底啦 -"),
+                endFooterStyle: .text(String(localized: "- 到底啦 -")),
                 restoreToID: searchViewModel.savedScrollToShareId,
                 estimatedRowHeight: 133
             )
@@ -351,7 +351,7 @@ struct SearchView: View {
                         .overlay(alignment: .top) {
                             if searchViewModel.nearbySharesState.hasError {
                                 NetworkErrorBanner(
-                                    message: "加载失败",
+                                    message: String(localized: "加载失败"),
                                     onRetry: {
                                         searchViewModel.refreshNearbyShares(reason: .manual)
                                     }
@@ -609,15 +609,7 @@ struct SearchView: View {
         .onChange(of: onboardingCoordinator.isAllStepsCompleted) { _, isCompleted in
             if isCompleted && !appState.didShowWelcomeToast {
                 appState.didShowWelcomeToast = true
-                let newItem = ToastItem(style: .notificationOfWelcome(
-                    title: "🌍世界虽大 吾可观之👀",
-                    symbol: "",
-                    tint: Color("color-primary"),
-                    isUserInteractionEnabled: true,
-                    timing: .medium,
-                    isAutoClose: true
-                ))
-                toastManager.show(newItem)
+                toastManager.show(ToastMessages.welcome)
             }
         }
         .task{
@@ -643,7 +635,7 @@ struct SearchView: View {
 
         guard response.respCode == 0, let datas = response.datas, let userId = datas.id, userId > 0 else {
             throw NSError(domain: "SearchView", code: -1, userInfo: [
-                NSLocalizedDescriptionKey: response.respMsg ?? "获取用户信息失败"
+                NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "获取用户信息失败")
             ])
         }
 
@@ -675,15 +667,7 @@ struct SearchView: View {
 
     private func showNotification() {
         if appState.isPushedGuanzhi {
-            let newItem = ToastItem(style: .notificationOnly(
-                title: "🌍 发布成功",
-                symbol: "",
-                tint: Color("color-primary"),
-                isUserInteractionEnabled: true,
-                timing: .short,
-                isAutoClose: true
-            ))
-            toastManager.show(newItem)
+            toastManager.show(ToastMessages.publishSuccess)
         }
     }
     

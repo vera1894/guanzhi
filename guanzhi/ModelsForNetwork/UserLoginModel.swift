@@ -150,10 +150,10 @@ class UserLoginModel: ObservableObject {
         let tempNickName = replace(validateStr: self.nickName,regularExpress: regular, contentStr: "aa")
         
         if tempNickName.count > 32 {
-            self.noticeText = "名字最多可设置16个汉字/32个字符"
+            self.noticeText = String(localized: "名字最多可设置16个汉字/32个字符")
         }else{
             if !ValidateEnum.nickName(self.nickName).isRight{
-                self.noticeText = "仅支持数字、英文、汉字"
+                self.noticeText = String(localized: "仅支持数字、英文、汉字")
             }else{
                 DispatchQueue.main.async {
                         Task {
@@ -203,7 +203,7 @@ class UserLoginModel: ObservableObject {
 
                     if response.respCode == 0 {
                         if let datas = response.datas {
-                            self.userName = datas.nickname ?? "用户"
+                            self.userName = datas.nickname ?? String(localized: "用户")
                             self.userId = datas.id ?? -1
                             #if DEBUG
                             print("✅ 用户信息获取成功")

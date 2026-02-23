@@ -246,7 +246,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         case .denied, .restricted:
             print("定位权限被拒绝或受限")
             DispatchQueue.main.async {
-                self.locationErrorDescription = "定位权限被拒绝或受限，请在设置中启用定位权限。"
+                self.locationErrorDescription = String(localized: "定位权限被拒绝或受限，请在设置中启用定位权限。")
             }
         default:
             break

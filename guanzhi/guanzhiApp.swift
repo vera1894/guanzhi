@@ -337,14 +337,7 @@ struct guanzhiApp: App {
         // 执行登出（清 Keychain + 发 userDidLogout 通知）
         loginManager.logout()
         // 提示用户（防重复：相同 title 的 toast 不会重复显示）
-        toastManager.showIfNotPresent(ToastItem(style: .notificationOnly(
-            title: "登录已过期，请重新登录",
-            symbol: "exclamationmark.triangle",
-            tint: .orange,
-            isUserInteractionEnabled: true,
-            timing: .medium,
-            isAutoClose: true
-        )))
+        toastManager.showIfNotPresent(ToastMessages.tokenExpired)
     }
 }
 

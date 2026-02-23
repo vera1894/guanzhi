@@ -25,6 +25,7 @@ struct ShareSingleView: View {
     @Environment(\.appState) var appState
     @EnvironmentObject var searchViewModel: SearchViewModel
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    @ObservedObject private var addressLocalizer = AddressLocalizer.shared
 
     @State private var loadState: ListImageLoadState = .loading
     @State private var isPressed: Bool = false
@@ -100,12 +101,19 @@ struct ShareSingleView: View {
                       .font(Font.custom("PingFang SC", size: 14))
                       .kerning(0.22)
                       .foregroundColor(Color("text-gray"))
-                    Text("📌 \(share.address)")
+                    Text("📌 \(addressLocalizer.localizedAddress(for: Int64(share.id)) ?? share.address)")
                         .font(Font.custom("PingFang SC", size: 14))
                         .kerning(0.22)
                         .foregroundColor(Color("color-black"))
-                        .lineLimit(1) // 限制显示一行
-                        .truncationMode(.tail) // 设置省略模式为尾部省略
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .task {
+                            await addressLocalizer.resolveAddress(
+                                shareId: Int64(share.id),
+                                latitude: share.latitude,
+                                longitude: share.longitude
+                            )
+                        }
                 }
             }
             .padding(Constants.spacingSpacing0)

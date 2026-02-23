@@ -138,6 +138,10 @@
 		FF84D7BF2D3E35C10060F060 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7BE2D3E35C10060F060 /* ShareService.swift */; };
 		FF84D7C32D40DE190060F060 /* OtherUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */; };
 		FF84D7C52D45DA5C0060F060 /* OthersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF84D7C42D45DA4F0060F060 /* OthersView.swift */; };
+		FF8525132F4C4B3D00345451 /* UserAgreement_en.txt in Resources */ = {isa = PBXBuildFile; fileRef = FF8525112F4C4B3D00345451 /* UserAgreement_en.txt */; };
+		FF8525142F4C4B3D00345451 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF8525102F4C4B3D00345451 /* Localizable.xcstrings */; };
+		FF8525152F4C4B3D00345451 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF85250F2F4C4B3D00345451 /* InfoPlist.xcstrings */; };
+		FF8525172F4C86DB00345451 /* ToastMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8525162F4C86DB00345451 /* ToastMessages.swift */; };
 		FF87A8DA2ECC4B0300C92D25 /* VideoEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */; };
 		FF87A8DC2ECC4B1D00C92D25 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */; };
 		FF87A8E12ECC4C0000C92D25 /* ClusterShareRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF87A8E02ECC4C0000C92D25 /* ClusterShareRanker.swift */; };
@@ -336,6 +340,10 @@
 		FF84D7BE2D3E35C10060F060 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		FF84D7C22D40DE160060F060 /* OtherUserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfile.swift; sourceTree = "<group>"; };
 		FF84D7C42D45DA4F0060F060 /* OthersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OthersView.swift; sourceTree = "<group>"; };
+		FF85250F2F4C4B3D00345451 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		FF8525102F4C4B3D00345451 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		FF8525112F4C4B3D00345451 /* UserAgreement_en.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = UserAgreement_en.txt; sourceTree = "<group>"; };
+		FF8525162F4C86DB00345451 /* ToastMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastMessages.swift; sourceTree = "<group>"; };
 		FF87A8D92ECC4B0300C92D25 /* VideoEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEngine.swift; sourceTree = "<group>"; };
 		FF87A8DB2ECC4B1D00C92D25 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		FF87A8E02ECC4C0000C92D25 /* ClusterShareRanker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterShareRanker.swift; sourceTree = "<group>"; };
@@ -578,6 +586,7 @@
 		D1CE06172B526930001303F2 /* guanzhi */ = {
 			isa = PBXGroup;
 			children = (
+				FF8525122F4C4B3D00345451 /* Localization */,
 				FF6C0DC12F12A73F00CC0C8C /* ServerTime.swift */,
 				FF6C0DC22F12A73F00CC0C8C /* TimeDisplay.swift */,
 				FF8422632F02090800259D64 /* guanzhi.entitlements */,
@@ -808,6 +817,7 @@
 		FF7B72EE2B9A04DB0045E866 /* NotificationStyles */ = {
 			isa = PBXGroup;
 			children = (
+				FF8525162F4C86DB00345451 /* ToastMessages.swift */,
 				FF5D24162D23C68F00C1D463 /* NotificationView.swift */,
 				FF5D24122D23C16300C1D463 /* ToastManager.swift */,
 				FF5D24142D23C65000C1D463 /* GlobalToastContainerView.swift */,
@@ -815,6 +825,16 @@
 				D13FFDE32BAF1F1C007E1970 /* AutoNotificationBanner.swift */,
 			);
 			path = NotificationStyles;
+			sourceTree = "<group>";
+		};
+		FF8525122F4C4B3D00345451 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				FF85250F2F4C4B3D00345451 /* InfoPlist.xcstrings */,
+				FF8525102F4C4B3D00345451 /* Localizable.xcstrings */,
+				FF8525112F4C4B3D00345451 /* UserAgreement_en.txt */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		FF99ECC02EF0E6CE0080AE71 /* SpriteKitParts */ = {
@@ -992,6 +1012,9 @@
 			files = (
 				D1CE06202B526931001303F2 /* Preview Assets.xcassets in Resources */,
 				FF99ECC52EF0E7B20080AE71 /* Assets.xcassets in Resources */,
+				FF8525132F4C4B3D00345451 /* UserAgreement_en.txt in Resources */,
+				FF8525142F4C4B3D00345451 /* Localizable.xcstrings in Resources */,
+				FF8525152F4C4B3D00345451 /* InfoPlist.xcstrings in Resources */,
 				FF99ECC62EF0E7B20080AE71 /* StickerSpriteCelebrate.sks in Resources */,
 				FF99ECCC2EF0EA760080AE71 /* StickerSpriteSmoke.sks in Resources */,
 				FF4224642CE5C2E700734C39 /* GCJ02.json in Resources */,
@@ -1089,6 +1112,7 @@
 				FF5D24192D23DA2700C1D463 /* SingleToastView.swift in Sources */,
 				FF5D24112D23965700C1D463 /* GeneralFunctions.swift in Sources */,
 				FF9DB79E2EEAA9ED00374E02 /* StickerQueueView.swift in Sources */,
+				FF8525172F4C86DB00345451 /* ToastMessages.swift in Sources */,
 				D17042C02B542346005683D2 /* SearchView.swift in Sources */,
 				FFC7F9972F220A5F00953AE5 /* KeychainService.swift in Sources */,
 				D19912052B529346002A711A /* Constants.swift in Sources */,

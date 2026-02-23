@@ -53,7 +53,7 @@ struct MyView: View {
                             navigationCoordinator.path.append(Route.editProfileView)
                         },
                         onOneCodeTap: {
-                            showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
+                            toastManager.showIfNotPresent(ToastMessages.oneCodeHidden)
                         }
                     )
                     
@@ -81,7 +81,8 @@ struct MyView: View {
                 }
             }
         }
-        .navigationBarTitle("我的主页", displayMode: .inline)
+        .navigationTitle("我的主页")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -156,17 +157,6 @@ struct MyView: View {
 //        }
     }
     
-    private func showNotification(message: String) {
-        let newItem = ToastItem(style: .notificationOnly(
-            title: message,
-            symbol: "",
-            tint: Color("color-primary"),
-            isUserInteractionEnabled: true,
-            timing: .short,
-            isAutoClose: true
-        ))
-        toastManager.showIfNotPresent(newItem)
-    }
 }
 
 // MARK: - Preview

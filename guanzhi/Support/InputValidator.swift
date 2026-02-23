@@ -38,11 +38,11 @@ enum InputValidator {
         let trimmed = phone.trimmingCharacters(in: .whitespaces)
 
         guard !trimmed.isEmpty else {
-            return .invalid(message: "请输入手机号")
+            return .invalid(message: String(localized: "请输入手机号"))
         }
 
         guard trimmed.count == 11 else {
-            return .invalid(message: "手机号应为11位")
+            return .invalid(message: String(localized: "手机号应为11位"))
         }
 
         // 中国大陆手机号正则（覆盖主流运营商号段）
@@ -52,7 +52,7 @@ enum InputValidator {
         if predicate.evaluate(with: trimmed) {
             return .valid
         } else {
-            return .invalid(message: "手机号格式不正确")
+            return .invalid(message: String(localized: "手机号格式不正确"))
         }
     }
 
@@ -65,11 +65,11 @@ enum InputValidator {
         let trimmed = code.trimmingCharacters(in: .whitespaces)
 
         guard !trimmed.isEmpty else {
-            return .invalid(message: "请输入验证码")
+            return .invalid(message: String(localized: "请输入验证码"))
         }
 
         guard trimmed.count == 6 else {
-            return .invalid(message: "验证码应为6位")
+            return .invalid(message: String(localized: "验证码应为6位"))
         }
 
         // 只允许数字
@@ -79,7 +79,7 @@ enum InputValidator {
         if predicate.evaluate(with: trimmed) {
             return .valid
         } else {
-            return .invalid(message: "验证码只能包含数字")
+            return .invalid(message: String(localized: "验证码只能包含数字"))
         }
     }
 
@@ -92,14 +92,14 @@ enum InputValidator {
         let trimmed = nickname.trimmingCharacters(in: .whitespaces)
 
         guard !trimmed.isEmpty else {
-            return .invalid(message: "请输入昵称")
+            return .invalid(message: String(localized: "请输入昵称"))
         }
 
         // 计算字符长度（中文算2个字符）
         let charCount = countCharacters(trimmed)
 
         guard charCount >= 1 && charCount <= 32 else {
-            return .invalid(message: "昵称最多16个汉字/32个字符")
+            return .invalid(message: String(localized: "昵称最多16个汉字/32个字符"))
         }
 
         // 只允许中文、英文、数字
@@ -109,7 +109,7 @@ enum InputValidator {
         if predicate.evaluate(with: trimmed) {
             return .valid
         } else {
-            return .invalid(message: "仅支持中文、英文、数字")
+            return .invalid(message: String(localized: "仅支持中文、英文、数字"))
         }
     }
 
@@ -122,16 +122,16 @@ enum InputValidator {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmed.isEmpty else {
-            return .invalid(message: "评论内容不能为空")
+            return .invalid(message: String(localized: "评论内容不能为空"))
         }
 
         guard trimmed.count >= 1 && trimmed.count <= 230 else {
-            return .invalid(message: "评论内容应在1-230字符之间")
+            return .invalid(message: String(localized: "评论内容应在1-230字符之间"))
         }
 
         // 检查是否包含危险控制字符
         if containsControlCharacters(trimmed) {
-            return .invalid(message: "评论内容包含非法字符")
+            return .invalid(message: String(localized: "评论内容包含非法字符"))
         }
 
         return .valid
@@ -151,12 +151,12 @@ enum InputValidator {
         }
 
         guard trimmed.count <= 100 else {
-            return .invalid(message: "标题最多100个字符")
+            return .invalid(message: String(localized: "标题最多100个字符"))
         }
 
         // 检查是否包含危险控制字符
         if containsControlCharacters(trimmed) {
-            return .invalid(message: "标题包含非法字符")
+            return .invalid(message: String(localized: "标题包含非法字符"))
         }
 
         return .valid

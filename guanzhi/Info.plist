@@ -26,6 +26,8 @@
 		<string>iosamap</string>
 		<string>baidumap</string>
 	</array>
+	<key>CFBundleDisplayName</key>
+	<string>观之</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

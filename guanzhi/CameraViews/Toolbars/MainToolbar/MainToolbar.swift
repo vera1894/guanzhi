@@ -18,7 +18,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
     
     @State var camera: CameraModel
     @State var appState: AppStateModel
-    @State private var textFieldPlaceholder: String = "发一条观之吧"
+    @State private var textFieldPlaceholder: String = String(localized: "发一条观之吧")
     @State private var locationService = LocationPickerService()
     @State private var isShowingLocationPicker = false
     @State private var nextPage: Bool = false //
@@ -48,7 +48,7 @@ struct MainToolbar<CameraModel: Camera, AppStateModel: AppState>: PlatformView {
                     VStack(spacing: 16) {
                         Button(action: { isShowingLocationPicker = true }) {
                             HStack(spacing: 4) {
-                                Text("📍" + (locationService.isLocationReady ? locationService.displayName : "地点获取中..."))
+                                Text("📍" + (locationService.isLocationReady ? locationService.displayName : String(localized: "地点获取中...")))
                                     .bold()
                                     .lineLimit(1)
                                 if locationService.isLocationReady {

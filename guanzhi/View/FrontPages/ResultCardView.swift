@@ -15,7 +15,7 @@ struct ResultCardView: View {
     @State private var isInputMessage: Bool = false
     @State private var resultCardDetents: Set<PresentationDetent> = [.height(140), .fraction(Constants.sheetExpandedFraction)]
     @State private var resultCardCurrentDetent: PresentationDetent = .height(140)
-    @State private var textFieldPlaceholder: String = "填写求助信息"
+    @State private var textFieldPlaceholder: String = String(localized: "填写求助信息")
     @State private var textFieldInputText: String = ""
     var onClose: (() -> Void)?
     

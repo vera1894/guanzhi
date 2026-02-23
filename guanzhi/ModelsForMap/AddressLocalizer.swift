@@ -26,19 +26,28 @@ class AddressLocalizer: ObservableObject {
         return cache[shareId]
     }
 
+    /// 设备是否为中文环境（中文环境服务器地址已经是中文，无需反编码）
+    private let isChinese = Locale.current.language.languageCode?.identifier == "zh"
+
     /// 异步反编码并缓存，完成后通过 objectWillChange 通知 UI 刷新
     func resolveAddress(for share: Share) async {
-        let shareId = share.id
+        await resolveAddress(shareId: share.id, latitude: share.latitude, longitude: share.longitude)
+    }
+
+    /// 从坐标反编码地址（支持 ResponsedShare 等任意数据源）
+    func resolveAddress(shareId: Int64, latitude: Double, longitude: Double) async {
+        // 中文环境下服务器地址已是中文，不需要反编码
+        if isChinese { return }
         if cache[shareId] != nil { return }
         guard !inFlight.contains(shareId) else { return }
-        guard share.latitude != 0, share.longitude != 0 else { return }
+        guard latitude != 0, longitude != 0 else { return }
 
         inFlight.insert(shareId)
         defer { inFlight.remove(shareId) }
 
         // 中国境内：WGS-84 → GCJ-02 后反编码
         let converter = CoordinateConverter.shared
-        var coord = CLLocationCoordinate2D(latitude: share.latitude, longitude: share.longitude)
+        var coord = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         if !converter.isOutOfChina(coord) {
             coord = converter.wgs84ToGcj02(coord)
         }

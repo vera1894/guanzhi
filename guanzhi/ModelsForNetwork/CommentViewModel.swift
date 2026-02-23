@@ -142,14 +142,14 @@ class CommentViewModel: ObservableObject {
             return
         }
         guard inputText.count <= 230 else {
-            error = "评论内容不能超过230字"
+            error = String(localized: "评论内容不能超过230字")
             print("❌ [CommentViewModel] 内容超过230字")
             return
         }
 
         // 检查 shareId 是否有效
         guard shareId > 0 else {
-            error = "无效的观之ID"
+            error = String(localized: "无效的观之ID")
             print("❌ [CommentViewModel] shareId 无效: \(shareId)")
             return
         }

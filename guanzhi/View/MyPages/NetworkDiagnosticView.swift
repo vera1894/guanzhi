@@ -42,11 +42,11 @@ class NetworkDiagnosticViewModel: ObservableObject {
         isRunning = true
 
         items = [
-            DiagnosticItem(name: "设备信息"),
-            DiagnosticItem(name: "Token 状态"),
-            DiagnosticItem(name: "基础连通性"),
-            DiagnosticItem(name: "用户信息 API"),
-            DiagnosticItem(name: "分享列表 API"),
+            DiagnosticItem(name: String(localized: "设备信息")),
+            DiagnosticItem(name: String(localized: "Token 状态")),
+            DiagnosticItem(name: String(localized: "基础连通性")),
+            DiagnosticItem(name: String(localized: "用户信息 API")),
+            DiagnosticItem(name: String(localized: "分享列表 API")),
         ]
 
         Task {
@@ -318,7 +318,8 @@ struct NetworkDiagnosticView: View {
                 }
             }
         }
-        .navigationBarTitle("网络诊断", displayMode: .inline)
+        .navigationTitle("网络诊断")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .navigationBarLeading) {

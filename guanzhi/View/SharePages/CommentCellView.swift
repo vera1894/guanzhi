@@ -61,7 +61,7 @@ struct CommentCellView: View {
             VStack(alignment: .leading, spacing: 6) {
                 // 用户名 + 作者标识
                 HStack(spacing: 6) {
-                    Text(comment.userNickname ?? "匿名用户")
+                    Text(comment.userNickname ?? String(localized: "匿名用户"))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color("color-black"))
 
@@ -122,14 +122,7 @@ struct CommentCellView: View {
                                 Task {
                                     let success = await viewModel.deleteComment(id: comment.id)
                                     if success {
-                                        toastManager.show(ToastItem(style: .notificationOnly(
-                                            title: "评论已删除",
-                                            symbol: "checkmark.circle.fill",
-                                            tint: .green,
-                                            isUserInteractionEnabled: false,
-                                            timing: .short,
-                                            isAutoClose: true
-                                        )))
+                                        toastManager.show(ToastMessages.commentDeleted)
                                     }
                                 }
                             } label: {
@@ -283,7 +276,7 @@ struct ReplyPreviewView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     // 第一行：用户名 + 作者角标
                     HStack(spacing: 6) {
-                        Text(reply.userNickname ?? "匿名用户")
+                        Text(reply.userNickname ?? String(localized: "匿名用户"))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(Color("color-black"))
 
@@ -374,14 +367,7 @@ struct ReplyPreviewView: View {
                                 Task {
                                     let success = await viewModel.deleteComment(id: reply.id)
                                     if success {
-                                        toastManager.show(ToastItem(style: .notificationOnly(
-                                            title: "回复已删除",
-                                            symbol: "checkmark.circle.fill",
-                                            tint: .green,
-                                            isUserInteractionEnabled: false,
-                                            timing: .short,
-                                            isAutoClose: true
-                                        )))
+                                        toastManager.show(ToastMessages.replyDeleted)
                                     }
                                 }
                             } label: {

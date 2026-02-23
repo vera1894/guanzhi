@@ -1,0 +1,3663 @@
+{
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "" : {
+
+    },
+    " " : {
+
+    },
+    " ·查看更多" : {
+      "comment" : "ShareDetailsCardView - expand text",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · View more"
+          }
+        }
+      }
+    },
+    "- 到底啦 -" : {
+      "comment" : "SearchView - list end footer",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "- End -"
+          }
+        }
+      }
+    },
+    "..." : {
+
+    },
+    "\"%@\"今日使用次数已达上限" : {
+      "comment" : "StickerUseError quota exhausted",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" has reached today's usage limit"
+          }
+        }
+      }
+    },
+    "\"%@\"贴纸需要更高等级才能使用" : {
+      "comment" : "StickerUseError level locked",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" sticker requires a higher level"
+          }
+        }
+      }
+    },
+    "@%@ " : {
+
+    },
+    "#%lld · %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "#%1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "%@" : {
+
+    },
+    "%@ commented on your post" : {
+      "comment" : "NotificationMessage.localizedContent - newComment",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 评论了你的帖子"
+          }
+        }
+      }
+    },
+    "%@ gave you a sticker" : {
+      "comment" : "NotificationMessage.localizedContent - stickerReceived",
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 给了你一个贴纸"
+          }
+        }
+      }
+    },
+    "%@ liked your comment" : {
+      "comment" : "NotificationMessage.localizedContent - commentLike",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 赞了你的评论"
+          }
+        }
+      }
+    },
+    "%@ replied to your comment" : {
+      "comment" : "NotificationMessage.localizedContent - commentReply",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 回复了你的评论"
+          }
+        }
+      }
+    },
+    "%@ 回复了你" : {
+      "comment" : "NotificationModels - reply notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ replied to you"
+          }
+        }
+      }
+    },
+    "%@ 等%lld人给你贴了贴纸" : {
+      "comment" : "AggregatedStickerNotification - multiple users title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ and %2$lld others gave you stickers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 等%2$lld人给你贴了贴纸"
+          }
+        }
+      }
+    },
+    "%@ 给你贴了「%@」" : {
+      "comment" : "NotificationModels - sticker notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ gave you a [%@] sticker"
+          }
+        }
+      }
+    },
+    "%@ 给你贴了贴纸" : {
+      "comment" : "AggregatedStickerNotification - single user title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ gave you stickers"
+          }
+        }
+      }
+    },
+    "%@ 评论了你的观之" : {
+      "comment" : "NotificationModels - comment notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ commented on your post"
+          }
+        }
+      }
+    },
+    "%@ 赞了你的评论" : {
+      "comment" : "NotificationModels - like notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ liked your comment"
+          }
+        }
+      }
+    },
+    "%@、%@ 给你贴了贴纸" : {
+      "comment" : "AggregatedStickerNotification - two users title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ and %2$@ gave you stickers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@、%2$@ 给你贴了贴纸"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld 条" : {
+      "comment" : "Comment count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld 次" : {
+      "comment" : "StickerSummaryOverlay - sticker count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld times"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld秒后可重新发送" : {
+      "comment" : "SMS countdown timer",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend in %lld seconds"
+          }
+        }
+      }
+    },
+    "✅ 修改头像成功" : {
+      "comment" : "EditAvatarView - success toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Avatar updated successfully"
+          }
+        }
+      }
+    },
+    "✅ 修改成功" : {
+      "comment" : "EditNameView/EditOneCodeView/EditAvatarView - success toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Updated successfully"
+          }
+        }
+      }
+    },
+    "✅ 发布" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Publish"
+          }
+        }
+      }
+    },
+    "✅ 完成" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Done"
+          }
+        }
+      }
+    },
+    "✅ 确认" : {
+      "comment" : "EditNameView/EditOneCodeView - confirm button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Confirm"
+          }
+        }
+      }
+    },
+    "✏️ 编辑OneCode" : {
+      "comment" : "EditOneCodeView - title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✏️ Edit OneCode"
+          }
+        }
+      }
+    },
+    "✏️ 编辑名字" : {
+      "comment" : "EditNameView - title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✏️ Edit Name"
+          }
+        }
+      }
+    },
+    "❌ OneCode长度须为6-16个字符" : {
+      "comment" : "EditOneCodeView - validation toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ OneCode must be 6-16 characters"
+          }
+        }
+      }
+    },
+    "❌ 仅可使用英文、数字、下划线" : {
+      "comment" : "EditOneCodeView - validation toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Only letters, numbers, and underscores allowed"
+          }
+        }
+      }
+    },
+    "❌ 修改失败" : {
+      "comment" : "EditNameView/EditOneCodeView - failure toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Update failed"
+          }
+        }
+      }
+    },
+    "❌ 修改头像失败" : {
+      "comment" : "EditAvatarView - failure toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Failed to update avatar"
+          }
+        }
+      }
+    },
+    "❌ 名字不能包含无效字符" : {
+      "comment" : "EditNameView - validation toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Name cannot contain invalid characters"
+          }
+        }
+      }
+    },
+    "❌ 名字字数不符合要求" : {
+      "comment" : "EditNameView - validation toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Name length does not meet requirements"
+          }
+        }
+      }
+    },
+    "🌍 发布成功" : {
+      "comment" : "SearchView - publish success toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🌍 Published successfully"
+          }
+        }
+      }
+    },
+    "🌍世界虽大 吾可观之👀" : {
+      "comment" : "AutoNotificationBanner - welcome message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🌍 The world is vast, let's explore it 👀"
+          }
+        }
+      }
+    },
+    "🎨 修改头像" : {
+      "comment" : "EditAvatarView - title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🎨 Change Avatar"
+          }
+        }
+      }
+    },
+    "👽 选择新头像" : {
+      "comment" : "EditAvatarView - button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "👽 Choose New Avatar"
+          }
+        }
+      }
+    },
+    "💯✅" : {
+
+    },
+    "📌 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📌 %@"
+          }
+        }
+      }
+    },
+    "📷 发布观之" : {
+      "comment" : "SheetView publish button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📷 Post"
+          }
+        }
+      }
+    },
+    "📷 帮助ta了解这里的情况" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📷 Help them learn about this place"
+          }
+        }
+      }
+    },
+    "🔍想瞧瞧哪里？" : {
+      "comment" : "SheetView search placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔍 Where to explore?"
+          }
+        }
+      }
+    },
+    "🔏 与手机号相同的OneCode会被隐藏" : {
+      "comment" : "MyView OneCode toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔏 OneCode matching your phone number will be hidden"
+          }
+        }
+      }
+    },
+    "🔙️ 返回" : {
+      "comment" : "Login flow back button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔙️ Back"
+          }
+        }
+      }
+    },
+    "🔜 下一步" : {
+      "comment" : "Login flow next button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔜 Next"
+          }
+        }
+      }
+    },
+    "🥺 去查看" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🥺 Go check"
+          }
+        }
+      }
+    },
+    "🥺 查看求助信息" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🥺 View help request"
+          }
+        }
+      }
+    },
+    "🥺 求一下这里最新的照片或视频" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🥺 Request latest photos or videos here"
+          }
+        }
+      }
+    },
+    "🧭 查看路线" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🧭 Get Directions"
+          }
+        }
+      }
+    },
+    "🫂 贴贴" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🫂 Sticker"
+          }
+        }
+      }
+    },
+    "😂 修改手机号功能还没做" : {
+      "comment" : "AccountManagementView toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "😂 Phone change is not yet available"
+          }
+        }
+      }
+    },
+    "🚩 打卡这条观之" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🚩 Check in on this post"
+          }
+        }
+      }
+    },
+    "2023.02.23 12:23" : {
+
+    },
+    "Apple 地图" : {
+      "comment" : "ShareDetailsCardView - navigation option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Maps"
+          }
+        }
+      }
+    },
+    "Capture Mode" : {
+
+    },
+    "Congratulations on leveling up! Your daily sticker quota has increased." : {
+      "comment" : "NotificationMessage.localizedContent - levelUp",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恭喜升级！你的每日贴纸配额已提升。"
+          }
+        }
+      }
+    },
+    "Gravity X: %@" : {
+
+    },
+    "HDR %@" : {
+
+    },
+    "Hello, World!" : {
+
+    },
+    "LastSize: %lld×%lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "LastSize: %1$lld×%2$lld"
+          }
+        }
+      }
+    },
+    "LIVE" : {
+
+    },
+    "Loading: %@" : {
+
+    },
+    "No media available" : {
+
+    },
+    "OneCode: %@" : {
+
+    },
+    "Quality Prioritization" : {
+
+    },
+    "Scene: %lld×%lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scene: %1$lld×%2$lld"
+          }
+        }
+      }
+    },
+    "Stickers: %lld" : {
+
+    },
+    "Token 状态" : {
+      "comment" : "NetworkDiagnosticView - item name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token Status"
+          }
+        }
+      }
+    },
+    "Unsupported media type" : {
+
+    },
+    "Your account has been frozen." : {
+      "comment" : "NotificationMessage.localizedContent - userFrozen",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的账号已被冻结。"
+          }
+        }
+      }
+    },
+    "Your account has received a warning." : {
+      "comment" : "NotificationMessage.localizedContent - userWarned",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的账号收到了一个警告。"
+          }
+        }
+      }
+    },
+    "Your post has been removed." : {
+      "comment" : "NotificationMessage.localizedContent - shareRemoved",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的内容已被移除。"
+          }
+        }
+      }
+    },
+    "Your post has faded." : {
+      "comment" : "NotificationMessage.localizedContent - fadeComplete",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的观之已褪色。"
+          }
+        }
+      }
+    },
+    "Your post is about to fade." : {
+      "comment" : "NotificationMessage.localizedContent - fadeWarning",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的观之即将褪色。"
+          }
+        }
+      }
+    },
+    "Your report has been processed." : {
+      "comment" : "NotificationMessage.localizedContent - reportResult",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的举报已处理。"
+          }
+        }
+      }
+    },
+    "Zone: (%lld, %lld)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Zone: (%1$lld, %2$lld)"
+          }
+        }
+      }
+    },
+    "三只鸡腿儿" : {
+
+    },
+    "上传失败" : {
+      "comment" : "UserProfileManager - upload error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload failed"
+          }
+        }
+      }
+    },
+    "不当内容：色情或露骨" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inappropriate: Sexual or explicit"
+          }
+        }
+      }
+    },
+    "为自己起个酷酷的名字" : {
+      "comment" : "NameView subtitle",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a cool name for yourself"
+          }
+        }
+      }
+    },
+    "举报" : {
+      "comment" : "Report button/title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report"
+          }
+        }
+      }
+    },
+    "举报功能即将上线" : {
+      "comment" : "OthersView - report alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report Feature Coming Soon"
+          }
+        }
+      }
+    },
+    "举报原因" : {
+      "comment" : "Report reason title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report Reason"
+          }
+        }
+      }
+    },
+    "举报原因：%@\n\n确定要提交举报吗？" : {
+      "comment" : "ShareDetailView - report confirm message",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report reason: %@\n\nAre you sure you want to submit?"
+          }
+        }
+      }
+    },
+    "举报处理结果" : {
+      "comment" : "NotificationModels - report result type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report Result"
+          }
+        }
+      }
+    },
+    "举报失败" : {
+      "comment" : "ShareDetailView - report result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report Failed"
+          }
+        }
+      }
+    },
+    "举报已提交" : {
+      "comment" : "ShareDetailView - report result",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report Submitted"
+          }
+        }
+      }
+    },
+    "举报用户" : {
+      "comment" : "OthersView - report action",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report User"
+          }
+        }
+      }
+    },
+    "举报结果通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report Result"
+          }
+        }
+      }
+    },
+    "互动" : {
+      "comment" : "NotificationModels - category name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity"
+          }
+        }
+      }
+    },
+    "互动消息" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity"
+          }
+        }
+      }
+    },
+    "仅支持中文、英文、数字" : {
+      "comment" : "InputValidator nickname validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only Chinese, English, and numbers are supported"
+          }
+        }
+      }
+    },
+    "仅支持数字、英文、汉字" : {
+      "comment" : "UserLoginModel name validation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only numbers, letters, and Chinese characters are supported"
+          }
+        }
+      }
+    },
+    "今日已用完" : {
+      "comment" : "StickerAvailability remaining text",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All used up today"
+          }
+        }
+      }
+    },
+    "作者" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Author"
+          }
+        }
+      }
+    },
+    "你所帮助的人将会收到通知！我们将会记录你的善举！" : {
+
+    },
+    "使用贴纸失败" : {
+      "comment" : "ShareInteractionViewModel - error fallback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to use sticker"
+          }
+        }
+      }
+    },
+    "侵权：盗用我的图片/文字" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copyright: Using my images/text"
+          }
+        }
+      }
+    },
+    "保存失败" : {
+      "comment" : "Save failed toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save Failed"
+          }
+        }
+      }
+    },
+    "修改资料" : {
+      "comment" : "ProfileHeaderView - edit profile button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Profile"
+          }
+        }
+      }
+    },
+    "全部标为已读" : {
+      "comment" : "MessagesView mark all read button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark All as Read"
+          }
+        }
+      }
+    },
+    "全部观之" : {
+      "comment" : "ShareListView - tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Posts"
+          }
+        }
+      }
+    },
+    "共收到 %lld 个贴纸" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received %lld stickers in total"
+          }
+        }
+      }
+    },
+    "关闭" : {
+      "comment" : "StickerSummaryOverlay - close button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "关闭推送后，您仍可在消息页查看站内通知" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can still view in-app notifications on the Messages page after disabling push"
+          }
+        }
+      }
+    },
+    "其他" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
+    "内容移除通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content Removed"
+          }
+        }
+      }
+    },
+    "内容被移除" : {
+      "comment" : "NotificationModels - content removed type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content Removed"
+          }
+        }
+      }
+    },
+    "最多点赞" : {
+      "comment" : "CommentSortOption - most liked",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most Liked"
+          }
+        }
+      }
+    },
+    "最新" : {
+      "comment" : "ShareSingleView/CommentSortOption - label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest"
+          }
+        }
+      }
+    },
+    "冲浪" : {
+      "comment" : "Level name - CHONGLANG",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surfer"
+          }
+        }
+      }
+    },
+    "分享列表 API" : {
+      "comment" : "NetworkDiagnosticView - item name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share List API"
+          }
+        }
+      }
+    },
+    "分享链接已复制，去粘贴吧～" : {
+      "comment" : "ShareDetailsCardView - share link copied toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link copied, go paste it~"
+          }
+        }
+      }
+    },
+    "删除" : {
+      "comment" : "MessagesView swipe delete button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "剩余 %lld 次" : {
+      "comment" : "StickerAvailability remaining count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld remaining"
+          }
+        }
+      }
+    },
+    "加载中..." : {
+      "comment" : "Common loading text",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading..."
+          }
+        }
+      }
+    },
+    "加载失败" : {
+      "comment" : "RetryView - error message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Load"
+          }
+        }
+      }
+    },
+    "加载更多回复" : {
+      "comment" : "CommentCellView - load more",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load more replies"
+          }
+        }
+      }
+    },
+    "加载评论中..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading comments..."
+          }
+        }
+      }
+    },
+    "加载贴纸..." : {
+      "comment" : "StickerFieldView - loading",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading stickers..."
+          }
+        }
+      }
+    },
+    "加载贴纸中..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading stickers..."
+          }
+        }
+      }
+    },
+    "匿名用户" : {
+      "comment" : "CommentCellView - fallback username",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous"
+          }
+        }
+      }
+    },
+    "危险行为 / 违法内容" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dangerous / Illegal content"
+          }
+        }
+      }
+    },
+    "发一条观之吧" : {
+      "comment" : "MainToolbar placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share something..."
+          }
+        }
+      }
+    },
+    "发表一个贴贴" : {
+      "comment" : "ShareDetailsCardView comment placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave a comment"
+          }
+        }
+      }
+    },
+    "取消" : {
+      "comment" : "Common cancel button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "可以在系统设置中再次查看" : {
+      "comment" : "OnboardingBannerView - skip hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can view them again in Settings"
+          }
+        }
+      }
+    },
+    "名字" : {
+      "comment" : "EditProfileView label",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "名字最多可设置16个汉字/32个字符" : {
+      "comment" : "UserLoginModel name validation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name can be up to 16 Chinese characters / 32 characters"
+          }
+        }
+      }
+    },
+    "响应格式错误" : {
+      "comment" : "NetworkService error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Response format error"
+          }
+        }
+      }
+    },
+    "回复" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply"
+          }
+        }
+      }
+    },
+    "回复 " : {
+      "comment" : "CommentCellView - reply prefix in thread",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply "
+          }
+        }
+      }
+    },
+    "回复 @%@" : {
+      "comment" : "CommentInputBar - reply indicator",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply to @%@"
+          }
+        }
+      }
+    },
+    "回复..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply..."
+          }
+        }
+      }
+    },
+    "回复已删除" : {
+      "comment" : "CommentCellView - deleted reply toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply deleted"
+          }
+        }
+      }
+    },
+    "地点不实 / 恶意标注" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inaccurate location / Malicious tagging"
+          }
+        }
+      }
+    },
+    "地点获取中..." : {
+      "comment" : "MainToolbar location loading",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locating..."
+          }
+        }
+      }
+    },
+    "垃圾广告 / 引流" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spam / Advertising"
+          }
+        }
+      }
+    },
+    "基础连通性" : {
+      "comment" : "NetworkDiagnosticView - item name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Connectivity"
+          }
+        }
+      }
+    },
+    "填写求助信息" : {
+      "comment" : "ResultCardView - help request placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what you need"
+          }
+        }
+      }
+    },
+    "复制诊断结果" : {
+      "comment" : "NetworkDiagnosticView button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Diagnostics"
+          }
+        }
+      }
+    },
+    "完成" : {
+      "comment" : "SystemMessageDetailView dismiss button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "定位权限被拒绝或受限，请在设置中启用定位权限。" : {
+      "comment" : "LocationService permission denied",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location access denied. Please enable location services in Settings."
+          }
+        }
+      }
+    },
+    "实况" : {
+      "comment" : "LiveBadge - Live Photo label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        }
+      }
+    },
+    "实况 " : {
+      "comment" : "LiveBadgeOnPhoto - with trailing space",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live "
+          }
+        }
+      }
+    },
+    "展开 %lld 条回复" : {
+      "comment" : "CommentCellView - expand replies",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show %lld replies"
+          }
+        }
+      }
+    },
+    "展开说说..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Say something..."
+          }
+        }
+      }
+    },
+    "已使用「%@」" : {
+      "comment" : "StickerPage - sticker used status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used [%@]"
+          }
+        }
+      }
+    },
+    "已使用了「%@」贴纸" : {
+      "comment" : "UsedStickerStatusBar - status text",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used [%@] sticker"
+          }
+        }
+      }
+    },
+    "已复制" : {
+      "comment" : "NetworkDiagnosticView copied feedback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
+    "已褪色" : {
+      "comment" : "ShareListView - tab button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faded"
+          }
+        }
+      }
+    },
+    "带按钮的通知-自动关闭" : {
+
+    },
+    "当到达你的宝藏地点时，别忘了点击屏幕底部的按钮，发布你的第一条观之。" : {
+      "comment" : "Onboarding - publish reminder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you reach your favorite spot, don't forget to tap the button at the bottom to publish your first post."
+          }
+        }
+      }
+    },
+    "当前位置" : {
+      "comment" : "LocationPickerSheet section header + button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current Location"
+          }
+        }
+      }
+    },
+    "当前绑定的手机号码为\n%@" : {
+      "comment" : "AccountManagementView alert message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currently bound phone number:\n%@"
+          }
+        }
+      }
+    },
+    "当前缓存大小：%@，确定要清理吗？\n将清除本地缓存的观之数据和媒体文件，重新打开时会从服务器获取最新数据。" : {
+      "comment" : "SettingView clear cache alert message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current cache size: %@. Clear it?\nLocal cached data and media files will be removed. Fresh data will be loaded from the server."
+          }
+        }
+      }
+    },
+    "快来为这条观之贴上第一张贴纸吧" : {
+      "comment" : "StickerSummaryOverlay - empty state description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Be the first to add a sticker to this post!"
+          }
+        }
+      }
+    },
+    "快来发表第一条评论吧" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Be the first to comment!"
+          }
+        }
+      }
+    },
+    "恭喜升级" : {
+      "comment" : "NotificationModels - level up type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level Up!"
+          }
+        }
+      }
+    },
+    "您已举报过该内容，请等待处理。" : {
+      "comment" : "ShareDetailView - duplicate report message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have already reported this content. Please wait for processing."
+          }
+        }
+      }
+    },
+    "感谢您的反馈，我们将尽快处理。" : {
+      "comment" : "ShareDetailView - report success message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thank you for your feedback. We will handle it as soon as possible."
+          }
+        }
+      }
+    },
+    "感谢您的反馈，我们正在完善此功能。如遇紧急情况，请通过「我的 - 设置 - 意见反馈」联系我们。" : {
+      "comment" : "OthersView - report alert message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thank you for your feedback. We are working on this feature. For urgent matters, please contact us through Settings."
+          }
+        }
+      }
+    },
+    "懒洞" : {
+      "comment" : "Level name - LANDONG",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lazy Den"
+          }
+        }
+      }
+    },
+    "我" : {
+      "comment" : "ShareDetailView - self reference",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me"
+          }
+        }
+      }
+    },
+    "我们将发送验证码到你的手机上" : {
+      "comment" : "LogInView subtitle",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll send a verification code to your phone"
+          }
+        }
+      }
+    },
+    "我的主页" : {
+      "comment" : "MyView nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Profile"
+          }
+        }
+      }
+    },
+    "手机号" : {
+      "comment" : "AccountManagementView label",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone Number"
+          }
+        }
+      }
+    },
+    "手机号应为11位" : {
+      "comment" : "InputValidator phone validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone number should be 11 digits"
+          }
+        }
+      }
+    },
+    "手机号格式不正确" : {
+      "comment" : "InputValidator phone validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid phone number format"
+          }
+        }
+      }
+    },
+    "找到了！滑雪场现在人多吗？谁来给我发个照片啊啊啊啊！感谢感谢🙏" : {
+
+    },
+    "拖动下方贴纸来为这条观之添加互动" : {
+      "comment" : "StickerSummaryOverlay - hint",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag stickers below to interact with this post"
+          }
+        }
+      }
+    },
+    "拖动贴纸到此处使用" : {
+      "comment" : "StickerFieldView - drop zone hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag a sticker here to use"
+          }
+        }
+      }
+    },
+    "接收推送通知" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive Push Notifications"
+          }
+        }
+      }
+    },
+    "提示" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notice"
+          }
+        }
+      }
+    },
+    "提醒" : {
+      "comment" : "SettingView logout alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder"
+          }
+        }
+      }
+    },
+    "搜索地点" : {
+      "comment" : "LocationPickerSheet - search bar prompt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search places"
+          }
+        }
+      }
+    },
+    "搜索结果" : {
+      "comment" : "LocationPickerSheet - search results section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Results"
+          }
+        }
+      }
+    },
+    "操作失败，请稍后重试" : {
+      "comment" : "StickerUseError unknown",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Operation failed. Please try again later."
+          }
+        }
+      }
+    },
+    "操作提示" : {
+      "comment" : "SettingView item",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tips"
+          }
+        }
+      }
+    },
+    "收到贴纸通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stickers Received"
+          }
+        }
+      }
+    },
+    "数据为空" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data available"
+          }
+        }
+      }
+    },
+    "新手机号" : {
+      "comment" : "ChangePhoneNumberView label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Phone Number"
+          }
+        }
+      }
+    },
+    "新评论通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Comments"
+          }
+        }
+      }
+    },
+    "无感" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meh"
+          }
+        }
+      }
+    },
+    "无效的响应" : {
+      "comment" : "NetworkService error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid response"
+          }
+        }
+      }
+    },
+    "无效的观之ID" : {
+      "comment" : "CommentViewModel validation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid post ID"
+          }
+        }
+      }
+    },
+    "无效的请求地址" : {
+      "comment" : "NetworkService error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid request URL"
+          }
+        }
+      }
+    },
+    "无数据" : {
+      "comment" : "OthersView - empty state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Data"
+          }
+        }
+      }
+    },
+    "无法加载图片" : {
+      "comment" : "MediaItemView - image load failure",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to load image"
+          }
+        }
+      }
+    },
+    "无法加载用户协议内容" : {
+      "comment" : "UserAgreementView fallback text",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load user agreement."
+          }
+        }
+      }
+    },
+    "日出" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunrise"
+          }
+        }
+      }
+    },
+    "昵称最多16个汉字/32个字符" : {
+      "comment" : "InputValidator nickname validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nickname: up to 16 Chinese / 32 characters"
+          }
+        }
+      }
+    },
+    "暂无%@消息" : {
+      "comment" : "MessagesView empty state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No %@ messages"
+          }
+        }
+      }
+    },
+    "暂无已褪色的观之" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No faded posts"
+          }
+        }
+      }
+    },
+    "暂无观之" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No posts yet"
+          }
+        }
+      }
+    },
+    "暂无评论" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No comments yet"
+          }
+        }
+      }
+    },
+    "暴力 / 血腥 / 自残相关" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Violence / Gore / Self-harm"
+          }
+        }
+      }
+    },
+    "更多操作" : {
+      "comment" : "MessagesView action sheet title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Actions"
+          }
+        }
+      }
+    },
+    "更换" : {
+      "comment" : "AccountManagementView alert button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change"
+          }
+        }
+      }
+    },
+    "更换绑定的手机号？" : {
+      "comment" : "AccountManagementView alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change bound phone number?"
+          }
+        }
+      }
+    },
+    "更新OneCode失败" : {
+      "comment" : "UserProfileManager error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to update OneCode"
+          }
+        }
+      }
+    },
+    "更新头像失败" : {
+      "comment" : "UserProfileManager error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to update avatar"
+          }
+        }
+      }
+    },
+    "更新平台失败" : {
+      "comment" : "UserProfileManager error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to update platform"
+          }
+        }
+      }
+    },
+    "更新昵称失败" : {
+      "comment" : "UserProfileManager error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to update nickname"
+          }
+        }
+      }
+    },
+    "服务器繁忙，请稍后再试" : {
+      "comment" : "NetworkService 5xx error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server busy. Please try again later."
+          }
+        }
+      }
+    },
+    "朝圣" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilgrimage"
+          }
+        }
+      }
+    },
+    "未找到结果" : {
+      "comment" : "LocationPickerSheet search empty state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results found"
+          }
+        }
+      }
+    },
+    "未找到附近地点" : {
+      "comment" : "LocationPickerSheet empty state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No nearby places found"
+          }
+        }
+      }
+    },
+    "未知" : {
+      "comment" : "Level name - unknown fallback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        }
+      }
+    },
+    "未知构建" : {
+      "comment" : "AppVersionManager fallback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        }
+      }
+    },
+    "未知版本" : {
+      "comment" : "AppVersionManager fallback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        }
+      }
+    },
+    "未知用户" : {
+      "comment" : "OthersView - fallback username",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown User"
+          }
+        }
+      }
+    },
+    "未知错误" : {
+      "comment" : "Error fallback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown error"
+          }
+        }
+      }
+    },
+    "标题最多100个字符" : {
+      "comment" : "InputValidator title validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title can be up to 100 characters"
+          }
+        }
+      }
+    },
+    "标题包含非法字符" : {
+      "comment" : "InputValidator title validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title contains invalid characters"
+          }
+        }
+      }
+    },
+    "欢迎分享和探索真实世界的地点!" : {
+      "comment" : "Onboarding - welcome",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome! Share and explore real-world places!"
+          }
+        }
+      }
+    },
+    "正在加载贴纸..." : {
+      "comment" : "StickerFieldView - loading progress",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading stickers..."
+          }
+        }
+      }
+    },
+    "此 OneCode 已被他人使用" : {
+      "comment" : "UserProfileManager error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This OneCode is already taken"
+          }
+        }
+      }
+    },
+    "每条观之都有它的\"褪色度\"，当褪色度到达100后，这条观之将在地图上消失。别人为观之贴上的有价值贴纸越多，它的褪色越缓慢。发布最有价值的观之来获得更多贴纸吧!" : {
+      "comment" : "Onboarding - fade explanation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every post has a \"fade level.\" When it reaches 100, the post disappears from the map. The more valuable stickers others add, the slower it fades. Share the most valuable posts to earn more stickers!"
+          }
+        }
+      }
+    },
+    "水母" : {
+      "comment" : "Level name - SHUIMU",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfish"
+          }
+        }
+      }
+    },
+    "没有权限访问" : {
+      "comment" : "NetworkService 403 error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access denied"
+          }
+        }
+      }
+    },
+    "消息" : {
+      "comment" : "MessagesView nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages"
+          }
+        }
+      }
+    },
+    "清理" : {
+      "comment" : "SettingView clear cache button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "清理缓存" : {
+      "comment" : "SettingView item + alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Cache"
+          }
+        }
+      }
+    },
+    "游民" : {
+      "comment" : "Level name - YOMIN",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nomad"
+          }
+        }
+      }
+    },
+    "潜水" : {
+      "comment" : "Level name - QIANSHUI",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diver"
+          }
+        }
+      }
+    },
+    "灯塔" : {
+      "comment" : "Level name - DENGTA",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lighthouse"
+          }
+        }
+      }
+    },
+    "点击下方的贴纸图标，查看可用贴纸。" : {
+      "comment" : "Onboarding - open sticker panel",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the sticker icon below to see available stickers."
+          }
+        }
+      }
+    },
+    "点击重试" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to retry"
+          }
+        }
+      }
+    },
+    "猫猫" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cat Spotted"
+          }
+        }
+      }
+    },
+    "玩趣" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fun Spot"
+          }
+        }
+      }
+    },
+    "珍馐" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delicacy"
+          }
+        }
+      }
+    },
+    "用户" : {
+      "comment" : "UserLoginModel fallback nickname",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User"
+          }
+        }
+      }
+    },
+    "用户信息 API" : {
+      "comment" : "NetworkDiagnosticView - item name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Info API"
+          }
+        }
+      }
+    },
+    "用户协议与隐私政策" : {
+      "comment" : "SettingView item + UserAgreementView nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Service & Privacy Policy"
+          }
+        }
+      }
+    },
+    "登录已过期，请重新登录" : {
+      "comment" : "NetworkService 401 error + guanzhiApp toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session expired. Please log in again."
+          }
+        }
+      }
+    },
+    "百度地图" : {
+      "comment" : "ShareDetailsCardView - navigation option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baidu Maps"
+          }
+        }
+      }
+    },
+    "知道了" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "确定" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "确定要删除这条观之吗？删除后将无法恢复。" : {
+      "comment" : "ShareDetailView - delete confirmation message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete this post? This action cannot be undone."
+          }
+        }
+      }
+    },
+    "确定要提交举报吗？" : {
+      "comment" : "Report confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submit this report?"
+          }
+        }
+      }
+    },
+    "确认举报" : {
+      "comment" : "ShareDetailView - report confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm Report"
+          }
+        }
+      }
+    },
+    "确认删除" : {
+      "comment" : "MessagesView - delete confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm Delete"
+          }
+        }
+      }
+    },
+    "确认更换" : {
+      "comment" : "ChangePhoneNumberView button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm Change"
+          }
+        }
+      }
+    },
+    "秘境" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden Gem"
+          }
+        }
+      }
+    },
+    "等级：「%@」" : {
+      "comment" : "ProfileHeaderView - level display",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level: [%@]"
+          }
+        }
+      }
+    },
+    "等级提升通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Level Up"
+          }
+        }
+      }
+    },
+    "系统" : {
+      "comment" : "NotificationModels - category name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "系统消息" : {
+      "comment" : "MessagesView - system messages nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Messages"
+          }
+        }
+      }
+    },
+    "系统版本" : {
+      "comment" : "SettingView item",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Version"
+          }
+        }
+      }
+    },
+    "系统通知" : {
+      "comment" : "NotificationModels - system type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Notification"
+          }
+        }
+      }
+    },
+    "系统通知-自动关闭" : {
+
+    },
+    "绑定新手机号" : {
+      "comment" : "ChangePhoneNumberView title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bind New Phone Number"
+          }
+        }
+      }
+    },
+    "继续" : {
+      "comment" : "CustomImagePicker - continue button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "继续提示" : {
+      "comment" : "OnboardingBannerView - continue button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep Tips"
+          }
+        }
+      }
+    },
+    "缓存已清理" : {
+      "comment" : "SettingView clear cache toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache Cleared"
+          }
+        }
+      }
+    },
+    "编辑资料" : {
+      "comment" : "EditProfileView nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Profile"
+          }
+        }
+      }
+    },
+    "网络诊断" : {
+      "comment" : "SettingView item + NetworkDiagnosticView nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network Diagnostics"
+          }
+        }
+      }
+    },
+    "网络连接失败，请稍后重试" : {
+      "comment" : "StickerUseError network error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network error. Please try again later."
+          }
+        }
+      }
+    },
+    "网络连接超时" : {
+      "comment" : "NetworkErrorBanner - timeout detail",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network connection timed out"
+          }
+        }
+      }
+    },
+    "网络错误，请稍后重试" : {
+      "comment" : "ShareInteractionViewModel - network error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network error, please try again later"
+          }
+        }
+      }
+    },
+    "获取用户信息失败" : {
+      "comment" : "SearchView - error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to get user info"
+          }
+        }
+      }
+    },
+    "获取评论失败" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load comments"
+          }
+        }
+      }
+    },
+    "获取贴纸失败" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load stickers"
+          }
+        }
+      }
+    },
+    "获取验证码" : {
+      "comment" : "ChangePhoneNumberView button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Code"
+          }
+        }
+      }
+    },
+    "虚假信息 / 误导" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misinformation / Misleading"
+          }
+        }
+      }
+    },
+    "裁切头像" : {
+      "comment" : "CustomImagePicker - navigation title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crop Avatar"
+          }
+        }
+      }
+    },
+    "褪色完成通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fade Complete"
+          }
+        }
+      }
+    },
+    "褪色度：%@%%" : {
+      "comment" : "ShareSingleView - fade percentage",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fade: %@%%"
+          }
+        }
+      }
+    },
+    "褪色度：%lld%%" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fade: %lld%%"
+          }
+        }
+      }
+    },
+    "褪色预警通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fade Warning"
+          }
+        }
+      }
+    },
+    "要跳过操作提示吗？" : {
+      "comment" : "OnboardingBannerView - skip confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip the tips?"
+          }
+        }
+      }
+    },
+    "要退出登录吗？" : {
+      "comment" : "SettingView logout alert message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to log out?"
+          }
+        }
+      }
+    },
+    "观之即将褪色" : {
+      "comment" : "NotificationModels - fade warning type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post is about to fade"
+          }
+        }
+      }
+    },
+    "观之已褪色" : {
+      "comment" : "NotificationModels - fade notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post has faded"
+          }
+        }
+      }
+    },
+    "设备信息" : {
+      "comment" : "NetworkDiagnosticView - item name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device Info"
+          }
+        }
+      }
+    },
+    "设置" : {
+      "comment" : "SettingView - nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "评论" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comments"
+          }
+        }
+      }
+    },
+    "评论内容不能为空" : {
+      "comment" : "InputValidator comment validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment cannot be empty"
+          }
+        }
+      }
+    },
+    "评论内容不能超过230字" : {
+      "comment" : "CommentViewModel validation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment cannot exceed 230 characters"
+          }
+        }
+      }
+    },
+    "评论内容包含非法字符" : {
+      "comment" : "InputValidator comment validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment contains invalid characters"
+          }
+        }
+      }
+    },
+    "评论内容应在1-230字符之间" : {
+      "comment" : "InputValidator comment validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment should be 1-230 characters"
+          }
+        }
+      }
+    },
+    "评论回复通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment Replies"
+          }
+        }
+      }
+    },
+    "评论已删除" : {
+      "comment" : "CommentCellView - deleted comment toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment deleted"
+          }
+        }
+      }
+    },
+    "评论点赞通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment Likes"
+          }
+        }
+      }
+    },
+    "试着操作地图来点击查看地图上的观之。" : {
+      "comment" : "Onboarding - tap annotation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try navigating the map to tap and view posts."
+          }
+        }
+      }
+    },
+    "请检查网络连接" : {
+      "comment" : "RetryView - error detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please check your network connection"
+          }
+        }
+      }
+    },
+    "请求失败" : {
+      "comment" : "NetworkService error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request failed"
+          }
+        }
+      }
+    },
+    "请求的资源不存在" : {
+      "comment" : "NetworkService 404 error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resource not found"
+          }
+        }
+      }
+    },
+    "请设置 2-24个字符，不包括 @<>/等无效字符。" : {
+      "comment" : "EditNameView - hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please set 2-24 characters, excluding @<>/ and other invalid characters."
+          }
+        }
+      }
+    },
+    "请设置6-16个字符，仅可使用英文(必须)、数字、下划线。OneCode是账号的唯一凭证，不能和其他人重复。" : {
+      "comment" : "EditOneCodeView - hint",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set 6-16 characters using letters (required), numbers, and underscores. OneCode is your unique account identifier and must not duplicate others."
+          }
+        }
+      }
+    },
+    "请输入" : {
+      "comment" : "EditNameView/EditOneCodeView - placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter here"
+          }
+        }
+      }
+    },
+    "请输入你的手机号" : {
+      "comment" : "LogInView title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Your Phone Number"
+          }
+        }
+      }
+    },
+    "请输入名字" : {
+      "comment" : "NameView placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your name"
+          }
+        }
+      }
+    },
+    "请输入手机号" : {
+      "comment" : "InputValidator + LogInView placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter phone number"
+          }
+        }
+      }
+    },
+    "请输入新手机号" : {
+      "comment" : "ChangePhoneNumberView placeholder",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter new phone number"
+          }
+        }
+      }
+    },
+    "请输入昵称" : {
+      "comment" : "InputValidator nickname validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a nickname"
+          }
+        }
+      }
+    },
+    "请输入正确的手机号" : {
+      "comment" : "LogInView validation notice",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid phone number"
+          }
+        }
+      }
+    },
+    "请输入短信验证码" : {
+      "comment" : "MessageView title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter SMS Code"
+          }
+        }
+      }
+    },
+    "请输入验证码" : {
+      "comment" : "InputValidator SMS validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter verification code"
+          }
+        }
+      }
+    },
+    "账号与绑定" : {
+      "comment" : "SettingView item + AccountManagementView nav title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account & Binding"
+          }
+        }
+      }
+    },
+    "账号冻结" : {
+      "comment" : "NotificationModels - frozen type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account Frozen"
+          }
+        }
+      }
+    },
+    "账号冻结通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account Frozen"
+          }
+        }
+      }
+    },
+    "账号警告" : {
+      "comment" : "NotificationModels - warning type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account Warning"
+          }
+        }
+      }
+    },
+    "账号警告通知" : {
+      "comment" : "NotificationEventPreference - event name mapping",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account Warning"
+          }
+        }
+      }
+    },
+    "贴纸" : {
+      "comment" : "StickerPage - navigation title / NotificationModels - sticker fallback name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stickers"
+          }
+        }
+      }
+    },
+    "贴纸加载失败" : {
+      "comment" : "StickerFieldView - error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load stickers"
+          }
+        }
+      }
+    },
+    "贴纸统计" : {
+      "comment" : "StickerSummaryOverlay - navigation title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sticker Stats"
+          }
+        }
+      }
+    },
+    "赞同" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like"
+          }
+        }
+      }
+    },
+    "起个名字" : {
+      "comment" : "NameView title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a Name"
+          }
+        }
+      }
+    },
+    "跳过全部提示" : {
+      "comment" : "OnboardingBannerView - skip all button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip All Tips"
+          }
+        }
+      }
+    },
+    "踩坑" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heads Up"
+          }
+        }
+      }
+    },
+    "输入%@收到的短信验证码" : {
+      "comment" : "MessageView subtitle with phone",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the code sent to %@"
+          }
+        }
+      }
+    },
+    "还没人使用贴纸，快来贴一张" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stickers yet, be the first!"
+          }
+        }
+      }
+    },
+    "还没有收到贴纸" : {
+      "comment" : "StickerSummaryOverlay - empty state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stickers received yet"
+          }
+        }
+      }
+    },
+    "这条观之已使用过「%@」贴纸" : {
+      "comment" : "StickerUseError already used with name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already used \"%@\" sticker on this post"
+          }
+        }
+      }
+    },
+    "这条观之已使用过贴纸" : {
+      "comment" : "StickerUseError already used generic",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already used a sticker on this post"
+          }
+        }
+      }
+    },
+    "这里有 %lld 条观之" : {
+      "comment" : "SearchView - cluster count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld posts here"
+          }
+        }
+      }
+    },
+    "进入主页的通知-自动关闭" : {
+
+    },
+    "退出登录" : {
+      "comment" : "SettingView item + alert button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log Out"
+          }
+        }
+      }
+    },
+    "选一个符合这条观之的贴纸，拖动到屏幕中心使用它!" : {
+      "comment" : "Onboarding - use sticker",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a sticker that fits this post and drag it to the center to use it!"
+          }
+        }
+      }
+    },
+    "选择举报原因" : {
+      "comment" : "ShareDetailView - report picker",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Report Reason"
+          }
+        }
+      }
+    },
+    "选择位置" : {
+      "comment" : "LocationPickerSheet - navigation title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Location"
+          }
+        }
+      }
+    },
+    "选择导航应用" : {
+      "comment" : "ShareDetailsCardView - navigation picker",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Navigation App"
+          }
+        }
+      }
+    },
+    "选择排序方式" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort By"
+          }
+        }
+      }
+    },
+    "通知" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notification"
+          }
+        }
+      }
+    },
+    "通知设置" : {
+      "comment" : "SettingView item",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "重新发送验证码" : {
+      "comment" : "SMS resend button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend Code"
+          }
+        }
+      }
+    },
+    "重新检测" : {
+      "comment" : "NetworkDiagnosticView button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-test"
+          }
+        }
+      }
+    },
+    "重置" : {
+      "comment" : "SettingView reset button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "重置后将重新显示新手引导提示" : {
+      "comment" : "SettingView reset alert message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onboarding tips will be shown again after reset."
+          }
+        }
+      }
+    },
+    "重置操作提示" : {
+      "comment" : "SettingView reset onboarding alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Tips"
+          }
+        }
+      }
+    },
+    "重试" : {
+      "comment" : "NetworkErrorBanner - retry button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        }
+      }
+    },
+    "错误：%@" : {
+      "comment" : "OthersView - error display",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error: %@"
+          }
+        }
+      }
+    },
+    "附近地点" : {
+      "comment" : "LocationPickerSheet section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nearby Places"
+          }
+        }
+      }
+    },
+    "附近的观之" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nearby Posts"
+          }
+        }
+      }
+    },
+    "陌生人" : {
+      "comment" : "ShareDetailView - unknown user fallback",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stranger"
+          }
+        }
+      }
+    },
+    "隐私泄露：暴露个人信息" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy violation: Exposing personal info"
+          }
+        }
+      }
+    },
+    "集市" : {
+      "comment" : "StickerKind - sticker name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Market"
+          }
+        }
+      }
+    },
+    "验证码" : {
+      "comment" : "ChangePhoneNumberView label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verification Code"
+          }
+        }
+      }
+    },
+    "验证码只能包含数字" : {
+      "comment" : "InputValidator SMS validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verification code must contain only digits"
+          }
+        }
+      }
+    },
+    "验证码应为6位" : {
+      "comment" : "InputValidator SMS validation",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verification code should be 6 digits"
+          }
+        }
+      }
+    },
+    "骚扰 / 霸凌 / 仇恨言论" : {
+      "comment" : "ReportReason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harassment / Bullying / Hate speech"
+          }
+        }
+      }
+    },
+    "高德地图" : {
+      "comment" : "ShareDetailsCardView - navigation option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amap"
+          }
+        }
+      }
+    },
+    "默认排序" : {
+      "comment" : "CommentSortOption - default",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

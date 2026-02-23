@@ -22,7 +22,7 @@ struct MessageRowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     // 标题行：用户名 + 时间
                     HStack {
-                        Text(message.type.titleFormat(userName: message.fromUserName))
+                        Text(message.localizedTitle)
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(Color("color-black"))
                             .lineLimit(1)
@@ -40,7 +40,7 @@ struct MessageRowView: View {
                     }
 
                     // 消息内容
-                    Text(message.content)
+                    Text(message.localizedContent)
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
                         .lineLimit(2)

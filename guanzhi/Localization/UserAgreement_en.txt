@@ -1,0 +1,40 @@
+siiimo User Agreement and Privacy Policy
+
+Last updated: February 2026
+
+Welcome to siiimo! By using this application, you agree to the following terms and conditions.
+
+1. Service Description
+siiimo is a location-based social sharing platform where users can publish and explore content tied to real-world locations.
+
+2. User Accounts
+- You must provide a valid phone number to register.
+- You are responsible for maintaining the security of your account.
+- You must not share your account with others.
+
+3. Content Guidelines
+- You are responsible for all content you post.
+- Content must not violate applicable laws or regulations.
+- Content must not contain offensive, harmful, or misleading information.
+- We reserve the right to remove content that violates these guidelines.
+
+4. Privacy
+- We collect your location data to provide location-based services.
+- We collect your phone number for account verification.
+- We do not sell your personal information to third parties.
+- Your data is stored securely on our servers.
+
+5. Intellectual Property
+- You retain ownership of the content you post.
+- By posting content, you grant us a license to display it within the application.
+
+6. Limitation of Liability
+- The service is provided "as is" without warranties of any kind.
+- We are not liable for any damages arising from your use of the service.
+
+7. Changes to Terms
+- We may update these terms from time to time.
+- Continued use of the service constitutes acceptance of updated terms.
+
+8. Contact
+If you have questions about this agreement, please contact us through the application.

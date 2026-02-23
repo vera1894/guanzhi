@@ -489,12 +489,12 @@ class ShareInteractionViewModel: ObservableObject {
         // 检查可用性
         if let availability = getAvailability(for: kind) {
             if !availability.unlocked {
-                errorMessage = "\"\(kind.dynamicDisplayName)\"贴纸需要更高等级才能使用"
+                errorMessage = String(localized: "\"\(kind.dynamicDisplayName)\"贴纸需要更高等级才能使用")
                 clearErrorAfterDelay()
                 return
             }
             if availability.isQuotaExhausted {
-                errorMessage = "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限"
+                errorMessage = String(localized: "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限")
                 clearErrorAfterDelay()
                 return
             }
@@ -539,7 +539,7 @@ class ShareInteractionViewModel: ObservableObject {
                         self.updateLocalAvailability(for: kind, remainingToday: newRemaining)
                     }
                 } else {
-                    let errorMsg = response.errorMessage ?? "使用贴纸失败"
+                    let errorMsg = response.errorMessage ?? String(localized: "使用贴纸失败")
                     self.errorMessage = errorMsg
                     self.clearErrorAfterDelay()
 
@@ -568,7 +568,7 @@ class ShareInteractionViewModel: ObservableObject {
                 }
 
             } catch {
-                self.errorMessage = "网络错误，请稍后重试"
+                self.errorMessage = String(localized: "网络错误，请稍后重试")
                 self.clearErrorAfterDelay()
 
                 #if DEBUG

@@ -186,7 +186,7 @@ class UserProfileManager: ObservableObject {
                                     
                                                 guard response.respCode == 0 else {
                                                     let error = NSError(domain: "UserProfileManager", code: response.respCode, userInfo: [
-                                                        NSLocalizedDescriptionKey: response.respMsg ?? "未知错误"
+                                                        NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "未知错误")
                                                     ])
                                                     userLoadingStates[userId] = .error(error)
                                                     print("❌ Profile error \(userId): \(response.respMsg ?? "未知错误")")
@@ -195,7 +195,7 @@ class UserProfileManager: ObservableObject {
                                     
                                                 guard let userData = response.datas else {
                                                     let error = NSError(domain: "UserProfileManager", code: 2, userInfo: [
-                                                        NSLocalizedDescriptionKey: "datas 为空"
+                                                        NSLocalizedDescriptionKey: String(localized: "数据为空")
                                                     ])
                                                     userLoadingStates[userId] = .error(error)
                                                     print("❌ Profile error \(userId): datas 为空")
@@ -432,11 +432,11 @@ extension UserProfileManager {
         guard response.respCode == 0 else {
             if response.respCode == -1 {
                 throw NSError(domain: "UserProfileManager", code: -1, userInfo: [
-                    NSLocalizedDescriptionKey: response.respMsg ?? "此 OneCode 已被他人使用"
+                    NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "此 OneCode 已被他人使用")
                 ])
             } else {
                 throw NSError(domain: "UserProfileManager", code: response.respCode, userInfo: [
-                    NSLocalizedDescriptionKey: response.respMsg ?? "更新OneCode失败"
+                    NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "更新OneCode失败")
                 ])
             }
         }
@@ -468,7 +468,7 @@ extension UserProfileManager {
         // 3）检查 respCode
         guard response.respCode == 0 else {
             throw NSError(domain: "UserProfileManager", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: response.respMsg ?? "更新昵称失败"
+                NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "更新昵称失败")
             ])
         }
         
@@ -496,7 +496,7 @@ extension UserProfileManager {
         
         guard response.respCode == 0 else {
             throw NSError(domain: "UserProfileManager", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: response.respMsg ?? "更新平台失败"
+                NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "更新平台失败")
             ])
         }
         if let userInfo = response.datas {
@@ -547,7 +547,7 @@ extension UserProfileManager {
         
         guard response.respCode == 0 else {
             throw NSError(domain: "UserProfileManager", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: response.respMsg ?? "更新头像失败"
+                NSLocalizedDescriptionKey: response.respMsg ?? String(localized: "更新头像失败")
             ])
         }
         
@@ -621,7 +621,7 @@ extension UserProfileManager {
                     case .success(let uploadResponse):
                         print("Upload response: \(uploadResponse)")  // 添加日志
                         guard uploadResponse.respCode == 0 else {
-                            let errMsg = uploadResponse.respMsg.isEmpty ? "上传失败" : uploadResponse.respMsg
+                            let errMsg = uploadResponse.respMsg.isEmpty ? String(localized: "上传失败") : uploadResponse.respMsg
                             continuation.resume(throwing: NSError(domain: "UploadAvatarFile", code: uploadResponse.respCode, userInfo: [NSLocalizedDescriptionKey: errMsg]))
                             return
                         }

@@ -56,7 +56,7 @@ struct OthersView: View {
                     mode: .other,
                     cachedAvatarImage: nil,
                     onOneCodeTap: {
-                        showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
+                        toastManager.showIfNotPresent(ToastMessages.oneCodeHidden)
                     }
                 )
 
@@ -80,7 +80,7 @@ struct OthersView: View {
                 let masked = (other.name == other.phone) || (other.name == nil) || (other.name?.isEmpty == true)
                 let displayModel = UserProfileDisplayModel(
                     id: other.id,
-                    displayNickname: other.nickname ?? "未知用户",
+                    displayNickname: other.nickname ?? String(localized: "未知用户"),
                     displayOneCode: masked ? "⬛️⬛️⬛️⬛️" : (other.name ?? "⬛️⬛️⬛️⬛️"),
                     isOneCodeMasked: masked,
                     avatarPath: other.photo,
@@ -93,7 +93,7 @@ struct OthersView: View {
                     mode: .other,
                     cachedAvatarImage: nil,
                     onOneCodeTap: {
-                        showNotification(message: "🔏 与手机号相同的OneCode会被隐藏")
+                        toastManager.showIfNotPresent(ToastMessages.oneCodeHidden)
                     }
                 )
 
@@ -114,7 +114,8 @@ struct OthersView: View {
             }
             
         }
-        .navigationBarTitle(targetUserProfile?.nickname ?? "未知用户", displayMode: .inline)
+        .navigationTitle(targetUserProfile?.nickname ?? String(localized: "未知用户"))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -186,35 +187,23 @@ struct OthersView: View {
         }
     }
 
-    private func showNotification(message: String) {
-        let newItem = ToastItem(style: .notificationOnly(
-            title: message,
-            symbol: "",
-            tint: Color("color-primary"),
-            isUserInteractionEnabled: true,
-            timing: .short,
-            isAutoClose: true
-        ))
-        toastManager.showIfNotPresent(newItem)
-    }
-
     // MARK: - 更多操作
 
     /// 显示更多操作 ActionSheet（举报用户）
     private func showMoreActions() {
-        let alert = UIAlertController(title: "更多操作", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: String(localized: "更多操作"), message: nil, preferredStyle: .actionSheet)
 
         // 举报用户按钮
-        alert.addAction(UIAlertAction(title: "举报用户", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: String(localized: "举报用户"), style: .default) { _ in
             // 显示举报功能即将上线提示
             Self.showComingSoonAlert(
-                title: "举报功能即将上线",
-                message: "感谢您的反馈，我们正在完善此功能。如遇紧急情况，请通过「我的 - 设置 - 意见反馈」联系我们。"
+                title: String(localized: "举报功能即将上线"),
+                message: String(localized: "感谢您的反馈，我们正在完善此功能。如遇紧急情况，请通过「我的 - 设置 - 意见反馈」联系我们。")
             )
         })
 
         // 取消按钮
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel))
 
         // 展示弹窗
         DispatchQueue.main.async {
@@ -233,7 +222,7 @@ struct OthersView: View {
     /// 显示"即将上线"提示弹窗
     private static func showComingSoonAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        alert.addAction(UIAlertAction(title: String(localized: "知道了"), style: .default))
 
         DispatchQueue.main.async {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

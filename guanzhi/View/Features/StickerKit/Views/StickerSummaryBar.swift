@@ -79,7 +79,7 @@ struct StickerSummaryBar: View {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.6)))
                 .scaleEffect(0.8)
-            Text("加载贴纸中...")
+            Text("加载中...")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.6))
         }
@@ -93,10 +93,10 @@ struct StickerSummaryBar: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.caption)
                 .foregroundColor(.orange.opacity(0.8))
-            Text("获取贴纸失败")
+            Text("加载失败")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.6))
-            Text("点击重试")
+            Text("重试")
                 .font(.caption)
                 .foregroundColor(Color("color-primary"))
         }

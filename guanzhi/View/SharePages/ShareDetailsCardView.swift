@@ -377,11 +377,11 @@ struct ShareDetailsCardView: View {
             gcj02Coordinate = wgs84Coordinate
         }
 
-        let alert = UIAlertController(title: "选择导航应用", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: String(localized: "选择导航应用"), message: nil, preferredStyle: .actionSheet)
 
         // 高德地图选项 - 使用GCJ-02坐标系
         if UIApplication.shared.canOpenURL(URL(string: "iosamap://")!) {
-            alert.addAction(UIAlertAction(title: "高德地图", style: .default) { [weak searchViewModel] _ in
+            alert.addAction(UIAlertAction(title: String(localized: "高德地图"), style: .default) { [weak searchViewModel] _ in
                 let urlString = "iosamap://path?sourceApplication=观之&dlat=\(gcj02Coordinate.latitude)&dlon=\(gcj02Coordinate.longitude)&dev=0&t=0"
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
@@ -395,7 +395,7 @@ struct ShareDetailsCardView: View {
         // 百度地图选项 - 由于没有直接转换为BD-09的方法，我们使用GCJ-02坐标
         // 百度地图会自动处理GCJ-02到BD-09的转换
         if UIApplication.shared.canOpenURL(URL(string: "baidumap://")!) {
-            alert.addAction(UIAlertAction(title: "百度地图", style: .default) { [weak searchViewModel] _ in
+            alert.addAction(UIAlertAction(title: String(localized: "百度地图"), style: .default) { [weak searchViewModel] _ in
                 let urlString = "baidumap://map/direction?destination=latlng:\(gcj02Coordinate.latitude),\(gcj02Coordinate.longitude)|name:观之位置&mode=driving&src=观之"
                 if let url = URL(string: urlString) {
                     UIApplication.shared.open(url)
@@ -420,7 +420,7 @@ struct ShareDetailsCardView: View {
         }
 
         // Apple Maps 选项 - 使用WGS-84坐标系
-        alert.addAction(UIAlertAction(title: "Apple 地图", style: .default) { [weak searchViewModel] _ in
+        alert.addAction(UIAlertAction(title: String(localized: "Apple 地图"), style: .default) { [weak searchViewModel] _ in
             let urlString = "http://maps.apple.com/?daddr=\(wgs84Coordinate.latitude),\(wgs84Coordinate.longitude)"
             if let url = URL(string: urlString) {
                 UIApplication.shared.open(url)
@@ -431,7 +431,7 @@ struct ShareDetailsCardView: View {
         })
 
         // 取消按钮
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak searchViewModel] _ in
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel) { [weak searchViewModel] _ in
             withAnimation {
                 searchViewModel?.showNavigationSheet = false
             }
@@ -461,7 +461,7 @@ struct ShareDetailsCardView: View {
             maxLines: 2,
             font: UIFont(name: "PingFangSC-Regular", size: 16) ?? .systemFont(ofSize: 16),
             textColor: .white,
-            viewMoreText: " ·查看更多",
+            viewMoreText: String(localized: " ·查看更多"),
             viewMoreColor: UIColor(named: "color-primary") ?? .systemBlue
         )
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -496,14 +496,7 @@ struct ShareDetailsCardView: View {
                 generator.impactOccurred()
                 let shareLink = "\(Constants.BASE_HOST)/s/\(share.id)"
                 UIPasteboard.general.string = shareLink
-                toastManager.show(ToastItem(style: .notificationOnly(
-                    title: "分享链接已复制，去粘贴吧～",
-                    symbol: "arrowshape.turn.up.right",
-                    tint: Color("color-primary"),
-                    isUserInteractionEnabled: true,
-                    timing: .short,
-                    isAutoClose: true
-                )))
+                toastManager.show(ToastMessages.shareLinkCopied)
             } label: {
                 Image(systemName: "arrowshape.turn.up.right")
                     .font(.system(size: 18))
@@ -682,7 +675,7 @@ struct BlurView: UIViewRepresentable {
 
 struct CommentContentView: View {
     @State private var commentContent: String = ""
-    @State private var placeholder: String = "发表一个贴贴"
+    @State private var placeholder: String = String(localized: "发表一个贴贴")
     @Binding var isTieTieEnabled: Bool
 
     var body: some View {

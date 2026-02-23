@@ -255,9 +255,9 @@ enum CommentSortOrder: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .default: return "默认排序"
-        case .latest: return "最新"
-        case .likes: return "最多点赞"
+        case .default: return String(localized: "默认排序")
+        case .latest: return String(localized: "最新")
+        case .likes: return String(localized: "最多点赞")
         }
     }
 }

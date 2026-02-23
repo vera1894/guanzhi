@@ -75,23 +75,27 @@ enum StickerKind: String, CaseIterable, Codable, Hashable {
     /// 用于 UI 展示和文字回退，优先使用服务器返回的名称
     var displayName: String {
         switch self {
-        case .like:      return "赞同"
-        case .neutral:   return "无感"
-        case .mijing:    return "秘境"
-        case .zhenxiu:   return "珍馐"
-        case .wanqu:     return "玩趣"
-        case .caikeng:   return "踩坑"
-        case .maomao:    return "猫猫"
-        case .chaosheng: return "朝圣"
-        case .richu:     return "日出"
-        case .jishi:     return "集市"
+        case .like:      return String(localized: "赞同")
+        case .neutral:   return String(localized: "无感")
+        case .mijing:    return String(localized: "秘境")
+        case .zhenxiu:   return String(localized: "珍馐")
+        case .wanqu:     return String(localized: "玩趣")
+        case .caikeng:   return String(localized: "踩坑")
+        case .maomao:    return String(localized: "猫猫")
+        case .chaosheng: return String(localized: "朝圣")
+        case .richu:     return String(localized: "日出")
+        case .jishi:     return String(localized: "集市")
         }
     }
 
     /// 动态显示名称
-    /// 优先使用服务器返回的名称，回退到硬编码默认值
+    /// 中文环境优先使用服务器返回的名称，非中文环境使用本地化名称
     var dynamicDisplayName: String {
-        StickerNameService.shared.getName(for: tagCode, default: displayName)
+        let isChinese = Locale.current.language.languageCode?.identifier == "zh"
+        if isChinese {
+            return StickerNameService.shared.getName(for: tagCode, default: displayName)
+        }
+        return displayName
     }
 
     /// 默认优先级（数值越大越靠前）

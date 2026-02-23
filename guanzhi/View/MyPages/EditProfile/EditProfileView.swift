@@ -30,9 +30,9 @@ struct EditProfileView: View {
             ForEach(items, id: \.label) { item in
                 HStack {
                     // 左侧固定文字
-                    Text(item.label)
+                    Text(LocalizedStringKey(item.label))
                     Spacer()
-                    
+
                     // 中间：本机用户资料
                     Text(item.value)
                     
@@ -48,7 +48,8 @@ struct EditProfileView: View {
             }
         }
 //        .listStyle(.plain)
-        .navigationBarTitle("编辑资料", displayMode: .inline)
+        .navigationTitle("编辑资料")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .navigationBarLeading) {

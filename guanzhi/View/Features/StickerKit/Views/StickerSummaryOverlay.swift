@@ -55,7 +55,7 @@ struct StickerSummaryOverlay: View {
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("拖动下方贴纸来为这条观之添加互动")
+            Text("快来为这条观之贴上第一张贴纸吧")
                 .font(.subheadline)
                 .foregroundColor(.secondary.opacity(0.8))
                 .multilineTextAlignment(.center)
@@ -92,7 +92,7 @@ struct StickerSummaryOverlay: View {
                 .foregroundColor(.primary)
 
             // 数量
-            Text("\(item.count) 次")
+            Text(String(localized: "\(item.count) 次"))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

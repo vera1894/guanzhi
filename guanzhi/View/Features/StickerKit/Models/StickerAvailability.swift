@@ -81,9 +81,9 @@ struct StickerAvailability: Identifiable, Equatable {
     var remainingText: String? {
         guard let remaining = remainingToday, let limit = dailyLimit else { return nil }
         if remaining <= 0 {
-            return "今日已用完"
+            return String(localized: "今日已用完")
         } else if limit > 0 {
-            return "剩余 \(remaining) 次"
+            return String(localized: "剩余 \(remaining) 次")
         }
         return nil
     }
@@ -255,20 +255,20 @@ enum StickerUseError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .levelLocked(let kind):
-            return "\"\(kind.dynamicDisplayName)\"贴纸需要更高等级才能使用"
+            return String(localized: "\"\(kind.dynamicDisplayName)\"贴纸需要更高等级才能使用")
         case .quotaExhausted(let kind):
-            return "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限"
+            return String(localized: "\"\(kind.dynamicDisplayName)\"今日使用次数已达上限")
         case .alreadyUsed(_, let usedName):
             if let name = usedName {
-                return "这条观之已使用过「\(name)」贴纸"
+                return String(localized: "这条观之已使用过「\(name)」贴纸")
             }
-            return "这条观之已使用过贴纸"
+            return String(localized: "这条观之已使用过贴纸")
         case .networkError:
-            return "网络连接失败，请稍后重试"
+            return String(localized: "网络连接失败，请稍后重试")
         case .serverError(_, let message):
             return message
         case .unknown:
-            return "操作失败，请稍后重试"
+            return String(localized: "操作失败，请稍后重试")
         }
     }
 }

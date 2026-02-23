@@ -62,17 +62,17 @@ enum OnboardingStep: String, CaseIterable, Codable {
     var message: String {
         switch self {
         case .welcome:
-            return "欢迎分享和探索真实世界的地点!"
+            return String(localized: "欢迎分享和探索真实世界的地点!")
         case .tapAnnotation:
-            return "试着操作地图来点击查看地图上的观之。"
+            return String(localized: "试着操作地图来点击查看地图上的观之。")
         case .openStickerPanel:
-            return "点击下方的贴纸图标，查看可用贴纸。"
+            return String(localized: "点击下方的贴纸图标，查看可用贴纸。")
         case .useSticker:
-            return "选一个符合这条观之的贴纸，拖动到屏幕中心使用它!"
+            return String(localized: "选一个符合这条观之的贴纸，拖动到屏幕中心使用它!")
         case .publishReminder:
-            return "当到达你的宝藏地点时，别忘了点击屏幕底部的按钮，发布你的第一条观之。"
+            return String(localized: "当到达你的宝藏地点时，别忘了点击屏幕底部的按钮，发布你的第一条观之。")
         case .fadeExplanation:
-            return "每条观之都有它的\"褪色度\"，当褪色度到达100后，这条观之将在地图上消失。别人为观之贴上的有价值贴纸越多，它的褪色越缓慢。发布最有价值的观之来获得更多贴纸吧!"
+            return String(localized: "每条观之都有它的\"褪色度\"，当褪色度到达100后，这条观之将在地图上消失。别人为观之贴上的有价值贴纸越多，它的褪色越缓慢。发布最有价值的观之来获得更多贴纸吧!")
         }
     }
 }

@@ -69,9 +69,13 @@ struct StickerDefinition: Identifiable, Hashable {
     // MARK: - Dynamic Name
 
     /// 动态显示名称
-    /// 优先使用服务器返回的名称，回退到硬编码默认值
+    /// 中文环境优先使用服务器返回的名称；非中文环境使用本地化名称
     var dynamicDisplayName: String {
-        StickerNameService.shared.getName(for: kind.tagCode, default: displayName)
+        let isChinese = Locale.current.language.languageCode?.identifier == "zh"
+        if isChinese {
+            return StickerNameService.shared.getName(for: kind.tagCode, default: displayName)
+        }
+        return kind.displayName
     }
 
     // MARK: - Hashable

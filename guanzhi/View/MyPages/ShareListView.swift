@@ -45,14 +45,14 @@ struct ShareListView: View {
         VStack(alignment: .center, spacing: 0) {
             // Tab 按钮
             HStack(alignment: .top, spacing: Constants.iconSizeS) {
-                TabButton(title: "全部观之", isSelected: selectedTab == .all) {
+                TabButton(title: String(localized: "全部观之"), isSelected: selectedTab == .all) {
                     if selectedTab != .all {
                         selectedTab = .all
                         // 切换 tab 时重置 didRestore，允许恢复
                         navigationCoordinator.resetShareListDidRestore(userId: userId, tab: .all)
                     }
                 }
-                TabButton(title: "已褪色", isSelected: selectedTab == .faded) {
+                TabButton(title: String(localized: "已褪色"), isSelected: selectedTab == .faded) {
                     if selectedTab != .faded {
                         selectedTab = .faded
                         // 切换 tab 时重置 didRestore，允许恢复
@@ -76,8 +76,8 @@ struct ShareListView: View {
 
             case .error:
                 RetryView(
-                    message: "加载失败",
-                    detail: "请检查网络连接",
+                    message: String(localized: "加载失败"),
+                    detail: String(localized: "请检查网络连接"),
                     onRetry: {
                         timelineVM.retry()
                     }
@@ -131,7 +131,7 @@ struct ShareListView: View {
                     )
                     .bouncesEnabled(true)  // 启用弹性滚动
                     .showsSeparators(false)
-                    .endFooterStyle(.text("- 到底啦 -"))  // 底部提示
+                    .endFooterStyle(.text(String(localized: "- 到底啦 -")))  // 底部提示
                     .restoreToID(restoreTargetId)  // 滚动恢复目标
                     .onSelect { shareItem in
                         // HostingTableView 的点击回调（备用，ShareSingleView 内部也有导航）

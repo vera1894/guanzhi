@@ -42,7 +42,7 @@ struct SettingView: View {
         List {
             ForEach(items, id: \.self) { item in
                 HStack {
-                    Text(item)
+                    Text(LocalizedStringKey(item))
                     Spacer()
                     
                     // 为系统版本项显示版本信息
@@ -62,7 +62,8 @@ struct SettingView: View {
             }
         }
 //        .listStyle(PlainListStyle())
-        .navigationBarTitle("设置", displayMode: .inline)
+        .navigationTitle("设置")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -132,14 +133,7 @@ struct SettingView: View {
                 searchViewModel.annotations = []
                 searchViewModel.cachedResponsedShares = [:]
                 searchViewModel.refreshNearbyShares(reason: .manual)
-                toastManager.show(ToastItem(style: .notificationOnly(
-                    title: "缓存已清理",
-                    symbol: "checkmark.circle",
-                    tint: .green,
-                    isUserInteractionEnabled: true,
-                    timing: .short,
-                    isAutoClose: true
-                )))
+                toastManager.show(ToastMessages.cacheCleared)
             }
             Button("取消", role: .cancel) {}
         } message: {
@@ -256,7 +250,8 @@ struct UserAgreementView: View {
                         .padding()
                 }
             }
-            .navigationBarTitle("用户协议与隐私政策", displayMode: .inline)
+            .navigationTitle("用户协议与隐私政策")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -282,12 +277,15 @@ struct UserAgreementView: View {
                 }
             }
             .onAppear {
-                // 加载协议文本
-                if let path = Bundle.main.path(forResource: "UserAgreement", ofType: "txt"),
+                // 根据设备语言选择协议文件
+                let fileName = Locale.current.language.languageCode?.identifier == "zh"
+                    ? "UserAgreement"
+                    : "UserAgreement_en"
+                if let path = Bundle.main.path(forResource: fileName, ofType: "txt"),
                    let content = try? String(contentsOfFile: path, encoding: .utf8) {
                     agreementText = content
                 } else {
-                    agreementText = "无法加载用户协议内容"
+                    agreementText = String(localized: "无法加载用户协议内容")
                 }
             }
         }

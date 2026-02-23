@@ -98,7 +98,8 @@ struct MessagesView: View {
                 }
             }
         }
-        .navigationBarTitle("消息", displayMode: .inline)
+        .navigationTitle("消息")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 26.0, *) {
                 // 左侧返回按钮
@@ -686,7 +687,7 @@ struct SystemMessageDetailView: View {
                             )
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(message.type.titleFormat(userName: nil))
+                            Text(message.localizedTitle)
                                 .font(.system(size: 17, weight: .semibold))
                                 .foregroundColor(Color("color-black"))
 
@@ -702,7 +703,7 @@ struct SystemMessageDetailView: View {
                     Divider()
 
                     // 消息内容
-                    Text(message.content)
+                    Text(message.localizedContent)
                         .font(.system(size: 16))
                         .foregroundColor(Color("color-black"))
                         .lineSpacing(6)

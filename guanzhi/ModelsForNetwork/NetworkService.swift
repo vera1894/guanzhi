@@ -23,14 +23,14 @@ enum OTONetworkError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .badURL: return "无效的请求地址"
-        case .badRequest: return "请求失败"
-        case .invalidResponse: return "无效的响应"
-        case .responseNotJson: return "响应格式错误"
-        case .unauthorized: return "登录已过期，请重新登录"
-        case .forbidden: return "没有权限访问"
-        case .notFound: return "请求的资源不存在"
-        case .serverError: return "服务器繁忙，请稍后再试"
+        case .badURL: return String(localized: "无效的请求地址")
+        case .badRequest: return String(localized: "请求失败")
+        case .invalidResponse: return String(localized: "无效的响应")
+        case .responseNotJson: return String(localized: "响应格式错误")
+        case .unauthorized: return String(localized: "登录已过期，请重新登录")
+        case .forbidden: return String(localized: "没有权限访问")
+        case .notFound: return String(localized: "请求的资源不存在")
+        case .serverError: return String(localized: "服务器繁忙，请稍后再试")
         case .customError(let msg): return msg
         }
     }

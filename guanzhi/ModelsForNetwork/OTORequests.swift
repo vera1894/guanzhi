@@ -67,18 +67,20 @@ struct UserFullInfoModel: Codable {
 
 // MARK: - 等级代码到名称的映射
 enum UserLevelMapping {
-    static let levelNames: [String: String] = [
-        "YOMIN": "游民",
-        "CHONGLANG": "冲浪",
-        "QIANSHUI": "潜水",
-        "LANDONG": "懒洞",
-        "SHUIMU": "水母",
-        "DENGTA": "灯塔"
-    ]
+    static var levelNames: [String: String] {
+        [
+            "YOMIN": String(localized: "游民"),
+            "CHONGLANG": String(localized: "冲浪"),
+            "QIANSHUI": String(localized: "潜水"),
+            "LANDONG": String(localized: "懒洞"),
+            "SHUIMU": String(localized: "水母"),
+            "DENGTA": String(localized: "灯塔")
+        ]
+    }
 
     /// 根据等级代码获取等级名称
     static func getName(for code: String?) -> String {
-        guard let code = code else { return "未知" }
+        guard let code = code else { return String(localized: "未知") }
         return levelNames[code] ?? code
     }
 }

@@ -43,7 +43,7 @@ class NotificationSettingsViewModel: ObservableObject {
             }
         } catch {
             print("❌ NotificationSettingsViewModel: 加载偏好失败 - \(error)")
-            errorMessage = "加载失败：\(error.localizedDescription)"
+            errorMessage = "\(String(localized: "加载失败"))：\(error.localizedDescription)"
             showErrorAlert = true
         }
     }
@@ -60,7 +60,7 @@ class NotificationSettingsViewModel: ObservableObject {
             print("✅ NotificationSettingsViewModel: 全局开关更新成功")
         } catch {
             globalPushEnabled = oldValue  // 回滚
-            errorMessage = "保存失败：\(error.localizedDescription)"
+            errorMessage = "\(String(localized: "保存失败"))：\(error.localizedDescription)"
             showErrorAlert = true
             print("❌ NotificationSettingsViewModel: 更新全局开关失败 - \(error)")
         }
@@ -83,7 +83,7 @@ class NotificationSettingsViewModel: ObservableObject {
             print("✅ NotificationSettingsViewModel: 事件开关更新成功")
         } catch {
             preferences[index].pushEnabled = oldValue  // 回滚
-            errorMessage = "保存失败：\(error.localizedDescription)"
+            errorMessage = "\(String(localized: "保存失败"))：\(error.localizedDescription)"
             showErrorAlert = true
             print("❌ NotificationSettingsViewModel: 更新事件偏好失败 - \(error)")
         }
@@ -177,7 +177,7 @@ struct NotificationSettingsView: View {
 
     @ViewBuilder
     private func eventToggleRow(_ pref: NotificationEventPreference) -> some View {
-        Toggle(pref.eventName, isOn: Binding(
+        Toggle(pref.localizedEventName, isOn: Binding(
             get: { pref.pushEnabled },
             set: { newValue in
                 Task { await viewModel.toggleEventPush(eventCode: pref.eventCode, enabled: newValue) }

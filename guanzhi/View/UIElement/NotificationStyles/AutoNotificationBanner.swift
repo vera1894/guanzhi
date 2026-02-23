@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AutoNotificationBanner: View {
     @EnvironmentObject var toastManager: ToastManager
-    @State private var infoText: String = "🌍世界虽大 吾可观之👀"
+    @State private var infoText: String = String(localized: "🌍世界虽大 吾可观之👀")
     
     private let timer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     private let startTime: Date = Date()

@@ -24,25 +24,25 @@ enum ReportReason: String, CaseIterable {
     var displayText: String {
         switch self {
         case .fakeLocation:
-            return "地点不实 / 恶意标注"
+            return String(localized: "地点不实 / 恶意标注")
         case .privacyLeak:
-            return "隐私泄露：暴露个人信息"
+            return String(localized: "隐私泄露：暴露个人信息")
         case .harassment:
-            return "骚扰 / 霸凌 / 仇恨言论"
+            return String(localized: "骚扰 / 霸凌 / 仇恨言论")
         case .spamAd:
-            return "垃圾广告 / 引流"
+            return String(localized: "垃圾广告 / 引流")
         case .misinformation:
-            return "虚假信息 / 误导"
+            return String(localized: "虚假信息 / 误导")
         case .copyright:
-            return "侵权：盗用我的图片/文字"
+            return String(localized: "侵权：盗用我的图片/文字")
         case .nsfw:
-            return "不当内容：色情或露骨"
+            return String(localized: "不当内容：色情或露骨")
         case .violence:
-            return "暴力 / 血腥 / 自残相关"
+            return String(localized: "暴力 / 血腥 / 自残相关")
         case .illegal:
-            return "危险行为 / 违法内容"
+            return String(localized: "危险行为 / 违法内容")
         case .other:
-            return "其他"
+            return String(localized: "其他")
         }
     }
 }

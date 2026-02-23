@@ -16,7 +16,7 @@ struct SheetView: View {
     @State private var locationService = LocationService(completer: .init())
 //    @Binding var searchResults: [SearchResult]
     @State private var image: UIImage?
-    let placeholder = "🔍想瞧瞧哪里？"
+    let placeholder = String(localized: "🔍想瞧瞧哪里？")
     @Binding var currentDetent: PresentationDetent // 绑定sheetview高度
 //    @Binding var selectedLocation: SearchResult?
 //    @Binding var position: CustomMapCameraPosition

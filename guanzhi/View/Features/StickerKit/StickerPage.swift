@@ -89,7 +89,7 @@ struct StickerPage: View {
                 }
             }
 
-            Text("已使用「\(sticker.dynamicDisplayName)」")
+            Text(String(localized: "已使用「\(sticker.dynamicDisplayName)」"))
                 .font(.headline)
                 .foregroundColor(.primary)
         }

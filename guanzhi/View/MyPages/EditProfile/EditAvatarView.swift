@@ -127,28 +127,17 @@ struct EditAvatarView: View {
                 let photo = Photo(data: image.jpegData(compressionQuality: 0.8) ?? Data(), isProxy: false, livePhotoMovieURL: nil)
                 // 使用 UserProfileManager 上传头像
                 _ = try await userProfileManager.setAvatar(photos: [photo])
-                showNotification(message: "✅ 修改头像成功")
+                toastManager.show(ToastMessages.avatarEditSuccess)
                 dismiss()  // 关闭编辑页面
                 dismiss()
             } catch {
-                showNotification(message: "❌ 修改头像失败")
+                toastManager.show(ToastMessages.avatarEditFailed)
                 dismiss()
             }
             isUploading = false
         }
     }
     
-    private func showNotification(message: String) {
-        let newItem = ToastItem(style: .notificationOnly(
-            title: message,
-            symbol: "",
-            tint: Color("color-primary"),
-            isUserInteractionEnabled: true,
-            timing: .short,
-            isAutoClose: true
-        ))
-        toastManager.show(newItem)
-    }
     
 }
 

@@ -25,9 +25,9 @@ struct AccountManagementView: View {
                 ForEach(items, id: \.label) { item in
                     HStack {
                         // 左侧固定文字
-                        Text(item.label)
+                        Text(LocalizedStringKey(item.label))
                         Spacer()
-                        
+
                         // 中间：本机用户资料
                     Text(formatPhoneNumberForDisplay(item.value))
                         
@@ -42,7 +42,8 @@ struct AccountManagementView: View {
                     }
                 }
             }
-            .navigationBarTitle("账号与绑定", displayMode: .inline)
+            .navigationTitle("账号与绑定")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .navigationBarLeading) {
@@ -70,7 +71,7 @@ struct AccountManagementView: View {
             Button("取消", role: .cancel) { }
             
             Button("更换") {
-                showNotification(message: "😂 修改手机号功能还没做")
+                toastManager.show(ToastMessages.phoneChangeNotReady)
             }
         } message: {
             Text("当前绑定的手机号码为\n\(formatPhoneNumberForDisplay(localUser?.phone ?? ""))")
@@ -101,17 +102,6 @@ struct AccountManagementView: View {
         return "+86 \(phone)" // 如果格式不符合预期，返回带默认国家代码的原始号码
     }
     
-    private func showNotification(message: String) {
-        let newItem = ToastItem(style: .notificationOnly(
-            title: message,
-            symbol: "",
-            tint: Color("color-primary"),
-            isUserInteractionEnabled: true,
-            timing: .short,
-            isAutoClose: true
-        ))
-        toastManager.show(newItem)
-    }
 }
 
 // 新增的手机号更换视图

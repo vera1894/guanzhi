@@ -48,7 +48,7 @@ struct nameView: View {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(Color("DarkBlue"), lineWidth: 1)
                         .frame(height: 48)
-                    NicknameTextField(nickname: $userlogin.nickName, placeholder: "请输入名字")
+                    NicknameTextField(nickname: $userlogin.nickName, placeholder: String(localized: "请输入名字"))
                         .frame(height: 54)
                         .padding(.horizontal,Constants.spacingSpacingM)
                 }

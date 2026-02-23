@@ -1160,11 +1160,11 @@ struct ShareDetailView: View {
         let appState = appState
         let navigationCoordinator = navigationCoordinator
 
-        let alert = UIAlertController(title: "更多操作", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: String(localized: "更多操作"), message: nil, preferredStyle: .actionSheet)
 
         // 删除或举报按钮
         if isMyShare {
-            alert.addAction(UIAlertAction(title: "删除", style: .destructive) { _ in
+            alert.addAction(UIAlertAction(title: String(localized: "删除"), style: .destructive) { _ in
                 // 延迟显示确认弹窗，等待 actionSheet dismiss 完成
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     Self.showDeleteConfirmation(
@@ -1175,7 +1175,7 @@ struct ShareDetailView: View {
                 }
             })
         } else {
-            alert.addAction(UIAlertAction(title: "举报", style: .default) { _ in
+            alert.addAction(UIAlertAction(title: String(localized: "举报"), style: .default) { _ in
                 // 延迟显示举报原因选择，等待 actionSheet dismiss 完成
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     Self.showReportReasonSheet(viewModel: viewModel)
@@ -1184,7 +1184,7 @@ struct ShareDetailView: View {
         }
 
         // 取消按钮
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in })
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel) { _ in })
 
         // 展示弹窗
         DispatchQueue.main.async {
@@ -1195,7 +1195,7 @@ struct ShareDetailView: View {
     /// 显示功能即将上线提示
     private static func showComingSoonAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        alert.addAction(UIAlertAction(title: String(localized: "知道了"), style: .default))
         DispatchQueue.main.async {
             UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
         }
@@ -1212,14 +1212,14 @@ struct ShareDetailView: View {
         navigationCoordinator: NavigationCoordinator
     ) {
         let alert = UIAlertController(
-            title: "确认删除",
-            message: "确定要删除这条观之吗？删除后将无法恢复。",
+            title: String(localized: "确认删除"),
+            message: String(localized: "确定要删除这条观之吗？删除后将无法恢复。"),
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in })
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel) { _ in })
 
-        alert.addAction(UIAlertAction(title: "删除", style: .destructive) { _ in
+        alert.addAction(UIAlertAction(title: String(localized: "删除"), style: .destructive) { _ in
             Task {
                 await Self.performDelete(
                     viewModel: viewModel,
@@ -1354,7 +1354,7 @@ struct ShareDetailView: View {
     private static func showReportReasonSheet(viewModel: SearchViewModel) {
         guard let share = viewModel.selectedShare else { return }
 
-        let alert = UIAlertController(title: "选择举报原因", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: String(localized: "选择举报原因"), message: nil, preferredStyle: .actionSheet)
 
         for reason in ReportReason.allCases {
             alert.addAction(UIAlertAction(title: reason.displayText, style: .default) { _ in
@@ -1365,7 +1365,7 @@ struct ShareDetailView: View {
             })
         }
 
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel))
 
         DispatchQueue.main.async {
             UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
@@ -1375,14 +1375,14 @@ struct ShareDetailView: View {
     /// 显示举报确认弹窗
     private static func showReportConfirmation(shareId: Int64, reason: ReportReason) {
         let alert = UIAlertController(
-            title: "确认举报",
-            message: "举报原因：\(reason.displayText)\n\n确定要提交举报吗？",
+            title: String(localized: "确认举报"),
+            message: "\(String(localized: "举报原因"))：\(reason.displayText)\n\n\(String(localized: "确定要提交举报吗？"))",
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel))
 
-        alert.addAction(UIAlertAction(title: "确认举报", style: .destructive) { _ in
+        alert.addAction(UIAlertAction(title: String(localized: "确认举报"), style: .destructive) { _ in
             Task {
                 await performReport(shareId: shareId, reason: reason)
             }
@@ -1400,11 +1400,11 @@ struct ShareDetailView: View {
         await MainActor.run {
             switch result {
             case .success:
-                showReportResultAlert(title: "举报已提交", message: "感谢您的反馈，我们将尽快处理。")
+                showReportResultAlert(title: String(localized: "举报已提交"), message: String(localized: "感谢您的反馈，我们将尽快处理。"))
             case .alreadyReported:
-                showReportResultAlert(title: "提示", message: "您已举报过该内容，请等待处理。")
+                showReportResultAlert(title: String(localized: "提示"), message: String(localized: "您已举报过该内容，请等待处理。"))
             case .failed(let errorMsg):
-                showReportResultAlert(title: "举报失败", message: errorMsg)
+                showReportResultAlert(title: String(localized: "举报失败"), message: errorMsg)
             }
         }
     }
@@ -1412,7 +1412,7 @@ struct ShareDetailView: View {
     /// 显示举报结果提示
     private static func showReportResultAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        alert.addAction(UIAlertAction(title: String(localized: "知道了"), style: .default))
         DispatchQueue.main.async {
             UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
         }
@@ -1627,7 +1627,7 @@ struct UserInfoCapsule: View {
                     capsuleContentForMyself(localUser: localUser)
                 } else {
                     // 降级：使用缓存的昵称，最后才用"我"
-                    let cachedName = userProfileManager.getCachedNickname() ?? "我"
+                    let cachedName = userProfileManager.getCachedNickname() ?? String(localized: "我")
                     capsuleContentSimple(nickname: cachedName, iconName: nil, onTap: {})
                 }
             } else {
@@ -1696,21 +1696,21 @@ struct UserInfoCapsule: View {
 
         switch state {
         case .idle:
-            capsuleContentSimple(nickname: "加载中...", iconName: nil, onTap: {})
+            capsuleContentSimple(nickname: String(localized: "加载中..."), iconName: nil, onTap: {})
 
         case .loading, .loaded:
             // loading 时优先显示已有缓存数据（避免从他人主页返回时闪烁"加载中"）
             if let otherUser = userProfileManager.otherUserProfile, otherUser.id == userId {
                 capsuleContentForOther(otherUser: otherUser)
             } else if case .loading = state {
-                capsuleContentSimple(nickname: "加载中...", iconName: nil, onTap: {})
+                capsuleContentSimple(nickname: String(localized: "加载中..."), iconName: nil, onTap: {})
             } else {
-                capsuleContentSimple(nickname: "陌生人", iconName: "person.fill.questionmark", onTap: {})
+                capsuleContentSimple(nickname: String(localized: "陌生人"), iconName: "person.fill.questionmark", onTap: {})
             }
 
         case .error:
             capsuleContentSimple(
-                nickname: "加载失败",
+                nickname: String(localized: "加载失败"),
                 iconName: "exclamationmark.triangle.fill",
                 onTap: {
                     retryLoadUser()
@@ -1758,7 +1758,7 @@ struct UserInfoCapsule: View {
             }
 
             // 只显示用户名
-            Text(otherUser.nickname ?? "陌生人")
+            Text(otherUser.nickname ?? String(localized: "陌生人"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.primary)
                 .lineLimit(1)

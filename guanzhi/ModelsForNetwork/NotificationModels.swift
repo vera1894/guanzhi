@@ -16,8 +16,8 @@ enum MessageCategory: String, CaseIterable, Codable {
 
     var title: String {
         switch self {
-        case .interaction: return "互动"
-        case .system: return "系统"
+        case .interaction: return String(localized: "互动")
+        case .system: return String(localized: "系统")
         }
     }
 
@@ -66,39 +66,39 @@ enum NotificationType: String, Codable {
 
     /// 消息标题格式
     func titleFormat(userName: String?, stickerName: String? = nil) -> String {
-        let name = userName ?? "用户"
+        let name = userName ?? String(localized: "用户")
         switch self {
         // V1.0 类型
         case .commentReply:
-            return "\(name) 回复了你"
+            return String(localized: "\(name) 回复了你")
         case .commentLike:
-            return "\(name) 赞了你的评论"
+            return String(localized: "\(name) 赞了你的评论")
         case .newComment:
-            return "\(name) 评论了你的观之"
+            return String(localized: "\(name) 评论了你的观之")
         case .stickerReceived:
-            let sticker = stickerName ?? "贴纸"
-            return "\(name) 给你贴了「\(sticker)」"
+            let sticker = stickerName ?? String(localized: "贴纸")
+            return String(localized: "\(name) 给你贴了「\(sticker)」")
         case .system:
-            return "系统通知"
+            return String(localized: "系统通知")
 
         // V2.0 类型
         case .levelUp:
-            return "恭喜升级"
+            return String(localized: "恭喜升级")
         case .userWarned:
-            return "账号警告"
+            return String(localized: "账号警告")
         case .userFrozen:
-            return "账号冻结"
+            return String(localized: "账号冻结")
         case .shareRemoved:
-            return "内容被移除"
+            return String(localized: "内容被移除")
         case .reportResult:
-            return "举报处理结果"
+            return String(localized: "举报处理结果")
         case .fadeWarning:
-            return "观之即将褪色"
+            return String(localized: "观之即将褪色")
         case .fadeComplete:
-            return "观之已褪色"
+            return String(localized: "观之已褪色")
 
         case .unknown:
-            return "通知"
+            return String(localized: "通知")
         }
     }
 
@@ -275,6 +275,80 @@ struct NotificationMessage: Identifiable, Codable {
         self.deepLink = deepLink
     }
 
+    /// 本地化的标题（非中文环境时提取并翻译贴纸名称）
+    var localizedTitle: String {
+        if type == .stickerReceived {
+            let stickerEN = Self.extractLocalizedStickerName(from: content)
+            return type.titleFormat(userName: fromUserName, stickerName: stickerEN)
+        }
+        return type.titleFormat(userName: fromUserName)
+    }
+
+    /// 本地化的消息内容（非中文环境根据类型生成英文）
+    var localizedContent: String {
+        let isChinese = Locale.current.language.languageCode?.identifier == "zh"
+        if isChinese { return content }
+        // 非中文环境：根据通知类型生成英文内容
+        let name = fromUserName ?? String(localized: "用户")
+        switch type {
+        case .commentReply:
+            return String(localized: "\(name) replied to your comment")
+        case .commentLike:
+            return String(localized: "\(name) liked your comment")
+        case .newComment:
+            return String(localized: "\(name) commented on your post")
+        case .stickerReceived:
+            let stickerEN = Self.extractLocalizedStickerName(from: content)
+            if let stickerEN {
+                return "\(name) gave you a [\(stickerEN)] sticker"
+            }
+            return "\(name) gave you a sticker"
+        case .levelUp:
+            return String(localized: "Congratulations on leveling up! Your daily sticker quota has increased.")
+        case .userWarned:
+            return String(localized: "Your account has received a warning.")
+        case .userFrozen:
+            return String(localized: "Your account has been frozen.")
+        case .shareRemoved:
+            return String(localized: "Your post has been removed.")
+        case .reportResult:
+            return String(localized: "Your report has been processed.")
+        case .fadeWarning:
+            return String(localized: "Your post is about to fade.")
+        case .fadeComplete:
+            return String(localized: "Your post has faded.")
+        case .system, .unknown:
+            return content
+        }
+    }
+
+    /// 从中文通知内容中提取贴纸名称并返回本地化名称
+    /// 后端 content 格式：「xxx 给你的观之贴了「珍馐」」
+    private static func extractLocalizedStickerName(from content: String) -> String? {
+        // 提取「」中的贴纸名称
+        guard let start = content.range(of: "「"),
+              let end = content.range(of: "」", range: start.upperBound..<content.endIndex) else {
+            return nil
+        }
+        let chineseName = String(content[start.upperBound..<end.lowerBound])
+        // 中文名 → StickerKind → 本地化名称
+        // 注意：content 中的名称始终是中文，需要用中文源名映射
+        if let kind = StickerKind.allCases.first(where: { kind in
+            stickerChineseNames[kind] == chineseName ||
+            StickerNameService.shared.getName(for: kind.tagCode) == chineseName
+        }) {
+            return kind.displayName  // String(localized:) 在 StickerKind 中处理
+        }
+        return nil
+    }
+
+    /// 贴纸种类对应的中文源名称（用于从中文通知内容中匹配）
+    private static let stickerChineseNames: [StickerKind: String] = [
+        .like: "赞同", .neutral: "无感", .mijing: "秘境",
+        .zhenxiu: "珍馐", .wanqu: "玩趣", .caikeng: "踩坑",
+        .maomao: "猫猫", .chaosheng: "朝圣", .richu: "日出", .jishi: "集市"
+    ]
+
     /// 转换为 Date（UI 展示用）
     var date: Date {
         createdAtDate
@@ -439,6 +513,28 @@ struct NotificationEventPreference: Codable, Identifiable {
     var inAppEnabled: Bool
 
     var id: String { eventCode }
+
+    /// 本地化的事件名称（非中文环境使用客户端映射）
+    var localizedEventName: String {
+        let isChinese = Locale.current.language.languageCode?.identifier == "zh"
+        if isChinese { return eventName }
+        return Self.eventNameMapping[eventCode] ?? eventName
+    }
+
+    private static let eventNameMapping: [String: String] = [
+        "COMMENT_REPLY": String(localized: "评论回复通知"),
+        "COMMENT_LIKE": String(localized: "评论点赞通知"),
+        "NEW_COMMENT": String(localized: "新评论通知"),
+        "STICKER_RECEIVED": String(localized: "收到贴纸通知"),
+        "SYSTEM": String(localized: "系统通知"),
+        "LEVEL_UP": String(localized: "等级提升通知"),
+        "USER_WARNED": String(localized: "账号警告通知"),
+        "USER_FROZEN": String(localized: "账号冻结通知"),
+        "SHARE_REMOVED": String(localized: "内容移除通知"),
+        "REPORT_RESULT": String(localized: "举报结果通知"),
+        "FADE_WARNING": String(localized: "褪色预警通知"),
+        "FADE_COMPLETE": String(localized: "褪色完成通知"),
+    ]
 }
 
 /// 偏好设置数据
@@ -565,24 +661,24 @@ struct AggregatedStickerNotification: Identifiable {
     var title: String {
         let userList = users
         if userList.count == 1 {
-            let name = userList[0].name ?? "用户"
-            return "\(name) 给你贴了贴纸"
+            let name = userList[0].name ?? String(localized: "用户")
+            return String(localized: "\(name) 给你贴了贴纸")
         } else if userList.count == 2 {
-            let name1 = userList[0].name ?? "用户"
-            let name2 = userList[1].name ?? "用户"
-            return "\(name1)、\(name2) 给你贴了贴纸"
+            let name1 = userList[0].name ?? String(localized: "用户")
+            let name2 = userList[1].name ?? String(localized: "用户")
+            return String(localized: "\(name1)、\(name2) 给你贴了贴纸")
         } else {
-            let firstName = userList[0].name ?? "用户"
-            return "\(firstName) 等\(userList.count)人给你贴了贴纸"
+            let firstName = userList[0].name ?? String(localized: "用户")
+            return String(localized: "\(firstName) 等\(userList.count)人给你贴了贴纸")
         }
     }
 
     /// 内容摘要（贴纸数量）
     var contentSummary: String {
         if stickerCount == 1 {
-            return notifications.first?.content ?? ""
+            return notifications.first?.localizedContent ?? ""
         }
-        return "共收到 \(stickerCount) 个贴纸"
+        return String(localized: "共收到 \(stickerCount) 个贴纸")
     }
 
     /// 是否有未读
