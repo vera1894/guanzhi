@@ -1,0 +1,190 @@
+.detail-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #fff;
+  position: relative;
+}
+
+.detail-scroll {
+  height: 100vh;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid #e0e0e0;
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 作者区域 */
+.author-section {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.author-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.author-info {
+  flex: 1;
+  margin-left: 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.author-time {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.author-arrow {
+  font-size: 28rpx;
+  color: #ccc;
+  margin-left: 16rpx;
+}
+
+/* 文字内容 */
+.content-section {
+  padding: 28rpx 32rpx;
+}
+
+.content-text {
+  font-size: 30rpx;
+  color: #1a1a1a;
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+/* 贴纸 */
+.sticker-section {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 8rpx 32rpx 20rpx;
+  gap: 16rpx;
+}
+
+.sticker-item {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 8rpx 20rpx;
+  border-radius: 32rpx;
+}
+
+.sticker-emoji {
+  font-size: 32rpx;
+  margin-right: 8rpx;
+}
+
+.sticker-count {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 位置区域 */
+.location-section {
+  margin: 20rpx 32rpx;
+  background: #f8f8f8;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.location-header {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+}
+
+.location-icon {
+  font-size: 28rpx;
+  margin-right: 8rpx;
+}
+
+.location-address {
+  font-size: 26rpx;
+  color: #666;
+  flex: 1;
+}
+
+.location-map {
+  width: 100%;
+  height: 300rpx;
+}
+
+.location-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx;
+  border-top: 1rpx solid #eee;
+}
+
+.location-action-text {
+  font-size: 28rpx;
+  color: #576b95;
+  font-weight: 500;
+}
+
+/* 更多提示 */
+.more-hint {
+  display: flex;
+  justify-content: center;
+  padding: 48rpx 32rpx 24rpx;
+}
+
+.more-hint-text {
+  font-size: 26rpx;
+  color: #bbb;
+}
+
+/* 底部操作栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 16rpx 32rpx;
+  box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.06);
+  z-index: 100;
+}
+
+.open-app-btn {
+  width: 100%;
+  height: 88rpx;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  line-height: 88rpx;
+}
+
+.open-app-btn::after {
+  border: none;
+}

@@ -95,6 +95,16 @@ enum ToastMessages {
         notification(String(localized: "🌍 发布成功"))
     }
 
+    // MARK: - 账号注销
+
+    static var accountDeleted: ToastItem {
+        notification(String(localized: "账号已注销"))
+    }
+
+    static var accountDeleteFailed: ToastItem {
+        notification(String(localized: "❌ 注销失败，请稍后重试"))
+    }
+
     // MARK: - 系统
 
     static var welcome: ToastItem {

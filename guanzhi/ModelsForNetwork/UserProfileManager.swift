@@ -62,6 +62,7 @@ class UserProfileManager: ObservableObject {
             existing.levelCode = userInfo.levelCode
             existing.pointsTotal = userInfo.pointsTotal
             existing.platform = userInfo.platform
+            existing.status = userInfo.status
             existing.lastUpdated = Date()
         } else {
             // 新建记录
@@ -77,7 +78,8 @@ class UserProfileManager: ObservableObject {
                 titleDOSData: titleDOSData,
                 levelCode: userInfo.levelCode,
                 pointsTotal: userInfo.pointsTotal,
-                platform: userInfo.platform
+                platform: userInfo.platform,
+                status: userInfo.status
             )
             context.insert(newProfile)
             print("📝 [SSOT] 新建 UserProfile 记录: \(userInfo.id)")

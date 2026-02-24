@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "分享详情",
+  "usingComponents": {
+    "media-viewer": "/components/media-viewer/media-viewer",
+    "app-guide": "/components/app-guide/app-guide"
+  }
+}

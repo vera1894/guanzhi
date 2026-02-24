@@ -9,15 +9,19 @@ import os
 import SwiftUI
 import SwiftData
 import UserNotifications
+import WechatOpenSDK
 
-// MARK: - AppDelegate (推送通知处理)
+// MARK: - AppDelegate (推送通知处理 + 微信 SDK)
 
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, WXApiDelegate {
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // 设置通知中心代理
         UNUserNotificationCenter.current().delegate = self
+
+        // 注册微信 SDK
+        WXApi.registerApp("wxace689d37989c871", universalLink: "https://onettoo.com/app/")
 
         // 检查是否从推送通知冷启动
         if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any],
@@ -27,6 +31,40 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
 
         return true
+    }
+
+    // MARK: - 微信回调处理
+
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        if WXApi.handleOpen(url, delegate: self) {
+            return true
+        }
+        return false
+    }
+
+    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+        return WXApi.handleOpenUniversalLink(userActivity, delegate: self)
+    }
+
+    // MARK: - WXApiDelegate
+
+    func onReq(_ req: BaseReq) {
+        // 微信请求回调（暂不处理）
+    }
+
+    func onResp(_ resp: BaseResp) {
+        // 微信响应回调
+        if let sendResp = resp as? SendMessageToWXResp {
+            let success = sendResp.errCode == 0
+            NotificationCenter.default.post(
+                name: .wechatShareResult,
+                object: nil,
+                userInfo: ["success": success]
+            )
+            #if DEBUG
+            print("📱 微信分享回调: errCode=\(sendResp.errCode), errStr=\(sendResp.errStr ?? "")")
+            #endif
+        }
     }
 
     // MARK: - 推送通知注册
@@ -102,6 +140,7 @@ extension Notification.Name {
     static let handleDeepLink = Notification.Name("handleDeepLink")
     static let openMessagesPage = Notification.Name("openMessagesPage")
     static let refreshUnreadBadge = Notification.Name("refreshUnreadBadge")
+    static let wechatShareResult = Notification.Name("wechatShareResult")
 }
 
 // MARK: - Main App

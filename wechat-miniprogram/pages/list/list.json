@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "发现",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "share-card": "/components/share-card/share-card",
+    "app-guide": "/components/app-guide/app-guide"
+  }
+}

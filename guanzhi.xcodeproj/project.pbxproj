@@ -188,6 +188,7 @@
 		ONBOARD0001000100010003 /* OnboardingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOARD0001000100010004 /* OnboardingCoordinator.swift */; };
 		ONBOARD0001000100010005 /* OnboardingBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOARD0001000100010006 /* OnboardingBannerView.swift */; };
 		ONBOARD0001000100010007 /* OnboardingHighlightModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOARD0001000100010008 /* OnboardingHighlightModifier.swift */; };
+		WC5HAR3E01234567890ABCD1 /* WeChatShareHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = WC5HAR3E01234567890ABCD0 /* WeChatShareHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -387,6 +388,7 @@
 		ONBOARD0001000100010004 /* OnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCoordinator.swift; sourceTree = "<group>"; };
 		ONBOARD0001000100010006 /* OnboardingBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBannerView.swift; sourceTree = "<group>"; };
 		ONBOARD0001000100010008 /* OnboardingHighlightModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingHighlightModifier.swift; sourceTree = "<group>"; };
+		WC5HAR3E01234567890ABCD0 /* WeChatShareHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatShareHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -592,6 +594,7 @@
 				FF8422632F02090800259D64 /* guanzhi.entitlements */,
 				D1093C2E2B669795008553A3 /* Info.plist */,
 				D1CE06182B526930001303F2 /* guanzhiApp.swift */,
+				WC5HAR3E01234567890ABCD0 /* WeChatShareHelper.swift */,
 				FF6BC4FB2C7C6A3000423660 /* AppStateModel.swift */,
 				FF3CD1292C78787800AF7086 /* CameraModel.swift */,
 				FF3CD1282C78787800AF7086 /* CameraView.swift */,
@@ -1222,6 +1225,7 @@
 				FF6BC4E32C7C188300423660 /* CameraUI.swift in Sources */,
 				FF769B4F2D66DF1400321540 /* EditNameView.swift in Sources */,
 				D1CE06192B526930001303F2 /* guanzhiApp.swift in Sources */,
+				WC5HAR3E01234567890ABCD1 /* WeChatShareHelper.swift in Sources */,
 				D13FFDEC2BAF1F26007E1970 /* PhoneNumberTextField.swift in Sources */,
 				FF6C38AD2D549956006966A7 /* MainMapContent.swift in Sources */,
 				D19912072B52972B002A711A /* TagView.swift in Sources */,
@@ -1379,11 +1383,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = guanzhi/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "我们需要使用您的相机来捕捉照片和视频。";
+				INFOPLIST_KEY_NSCameraUsageDescription = "观之需要使用相机来拍摄照片和视频，以便您发布观之内容。例如，拍摄您正在游览的地点、品尝的美食或有趣的街景。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "观之需要获取您的位置，以便在地图上展示您附近的内容，并在您发布时自动标记位置。例如：查看附近其他用户分享的观之内容。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "观之需要在您使用时获取位置，以便在地图上展示附近的内容，并在发布时标记位置。例如：在地图上浏览身边的观之分享。";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "我们需要使用您的麦克风来录制视频中的音频。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们的应用需要访问相册以保存拍摄的照片。";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "观之需要使用麦克风来录制视频时的声音，以便您发布带有现场声音的观之内容。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "观之需要访问您的相册，以便您从已有照片中选取内容发布观之，或保存拍摄的照片和视频到相册。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -1417,11 +1421,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = guanzhi/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "我们需要使用您的相机来捕捉照片和视频。";
+				INFOPLIST_KEY_NSCameraUsageDescription = "观之需要使用相机来拍摄照片和视频，以便您发布观之内容。例如，拍摄您正在游览的地点、品尝的美食或有趣的街景。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "观之需要获取您的位置，以便在地图上展示您附近的内容，并在您发布时自动标记位置。例如：查看附近其他用户分享的观之内容。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "观之需要在您使用时获取位置，以便在地图上展示附近的内容，并在发布时标记位置。例如：在地图上浏览身边的观之分享。";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "我们需要使用您的麦克风来录制视频中的音频。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们的应用需要访问相册以保存拍摄的照片。";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "观之需要使用麦克风来录制视频时的声音，以便您发布带有现场声音的观之内容。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "观之需要访问您的相册，以便您从已有照片中选取内容发布观之，或保存拍摄的照片和视频到相册。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;

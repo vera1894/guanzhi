@@ -148,6 +148,10 @@ enum OTORequest {
     /// 举报分享
     case reportShare(shareId: Int64, reasonCode: String)
 
+    // MARK: - 账号注销 API
+    /// 注销账号（软删除）
+    case deleteAccount
+
     // MARK: - 通知 API
     /// 获取通知列表
     case getNotifications(category: String?, status: String?, page: Int, size: Int)
@@ -503,6 +507,16 @@ extension OTORequest {
                         "shareId": shareId,
                         "reasonCode": reasonCode
                     ]
+                )
+
+            // MARK: - 账号注销 API
+
+            // 注销账号
+            case .deleteAccount:
+                return .init(
+                    path: "/api/guan/user/del",
+                    method: .post,
+                    param: [:]
                 )
 
             // MARK: - 通知 API

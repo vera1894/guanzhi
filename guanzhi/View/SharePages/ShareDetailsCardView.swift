@@ -490,13 +490,11 @@ struct ShareDetailsCardView: View {
                 .cornerRadius(16)
             }
 
-            // 分享链接按钮
+            // 分享按钮
             Button {
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
-                let shareLink = "\(Constants.BASE_HOST)/s/\(share.id)"
-                UIPasteboard.general.string = shareLink
-                toastManager.show(ToastMessages.shareLinkCopied)
+                ShareDetailView.showShareOptions(viewModel: searchViewModel)
             } label: {
                 Image(systemName: "arrowshape.turn.up.right")
                     .font(.system(size: 18))

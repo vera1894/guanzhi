@@ -1,0 +1,62 @@
+<view class="profile-page">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 加载失败 -->
+  <view class="empty-container" wx:elif="{{error}}">
+    <text class="empty-text">加载失败，请稍后重试</text>
+  </view>
+
+  <!-- 用户信息 -->
+  <scroll-view scroll-y class="profile-scroll" wx:elif="{{user}}">
+    <!-- 头部区域 -->
+    <view class="profile-header">
+      <image class="profile-avatar" src="{{user.avatar}}" mode="aspectFill" />
+      <text class="profile-name">{{user.nickname}}</text>
+      <view class="profile-stats" wx:if="{{user.levelCode}}">
+        <text class="profile-level">{{user.levelCode}}</text>
+      </view>
+      <text class="profile-share-count" wx:if="{{user.shareCount}}">{{user.shareCount}} 条观之</text>
+    </view>
+
+    <!-- 分享列表 -->
+    <view class="profile-section">
+      <view class="section-header">
+        <text class="section-title">Ta 的分享</text>
+        <text class="section-count">{{shares.length}}</text>
+      </view>
+
+      <view class="empty-container" wx:if="{{shares.length === 0}}">
+        <text class="empty-text">暂无分享</text>
+      </view>
+
+      <view
+        wx:for="{{shares}}"
+        wx:key="shareId"
+        class="card-wrapper"
+        bindtap="goToDetail"
+        data-id="{{item.shareId}}"
+      >
+        <share-card share="{{item}}" distance="{{item.distance}}" />
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view style="height: 160rpx;"></view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar safe-area-bottom" wx:if="{{user}}">
+    <button
+      class="open-app-btn"
+      open-type="launchApp"
+      app-parameter="user/{{userId}}"
+      binderror="onLaunchAppError"
+    >
+      在 App 中查看
+    </button>
+  </view>
+</view>

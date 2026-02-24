@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "用户主页",
+  "usingComponents": {
+    "share-card": "/components/share-card/share-card",
+    "app-guide": "/components/app-guide/app-guide"
+  }
+}

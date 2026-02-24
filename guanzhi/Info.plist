@@ -19,12 +19,22 @@
 				<string>guanzhi</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>WeChat</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wxace689d37989c871</string>
+			</array>
+		</dict>
 	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>comgooglemaps</string>
 		<string>iosamap</string>
 		<string>baidumap</string>
+		<string>weixin</string>
+		<string>weixinULAPI</string>
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>观之</string>

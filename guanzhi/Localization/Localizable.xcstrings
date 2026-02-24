@@ -391,6 +391,17 @@
         }
       }
     },
+    "❌ 注销失败，请稍后重试" : {
+      "comment" : "Toast - account deletion failed",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❌ Deletion failed, please try again later"
+          }
+        }
+      }
+    },
     "🌍 发布成功" : {
       "comment" : "SearchView - publish success toast",
       "localizations" : {
@@ -1127,6 +1138,9 @@
         }
       }
     },
+    "分享到" : {
+
+    },
     "分享链接已复制，去粘贴吧～" : {
       "comment" : "ShareDetailsCardView - share link copied toast",
       "localizations" : {
@@ -1444,6 +1458,9 @@
         }
       }
     },
+    "复制链接" : {
+
+    },
     "完成" : {
       "comment" : "SystemMessageDetailView dismiss button",
       "localizations" : {
@@ -1599,6 +1616,9 @@
           }
         }
       }
+    },
+    "微信好友" : {
+
     },
     "快来为这条观之贴上第一张贴纸吧" : {
       "comment" : "StickerSummaryOverlay - empty state description",
@@ -2042,6 +2062,9 @@
         }
       }
     },
+    "更多" : {
+
+    },
     "更多操作" : {
       "comment" : "MessagesView action sheet title",
       "localizations" : {
@@ -2308,6 +2331,39 @@
         }
       }
     },
+    "注销" : {
+      "comment" : "AccountManagementView - confirm delete button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "注销后账号将无法恢复，您发布的观之仍会保留。" : {
+      "comment" : "AccountManagementView - delete account alert message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action cannot be undone. Your posts will remain visible."
+          }
+        }
+      }
+    },
+    "注销账号" : {
+      "comment" : "AccountManagementView - delete account button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Account"
+          }
+        }
+      }
+    },
     "消息" : {
       "comment" : "MessagesView nav title",
       "localizations" : {
@@ -2525,6 +2581,17 @@
         }
       }
     },
+    "确定要注销账号吗？" : {
+      "comment" : "AccountManagementView - delete account alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete your account?"
+          }
+        }
+      }
+    },
     "确认举报" : {
       "comment" : "ShareDetailView - report confirmation",
       "localizations" : {
@@ -2668,6 +2735,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep Tips"
+          }
+        }
+      }
+    },
+    "继续注销" : {
+      "comment" : "AccountManagementView - continue deletion button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue Deletion"
           }
         }
       }
@@ -2869,6 +2947,9 @@
           }
         }
       }
+    },
+    "观之" : {
+
     },
     "观之即将褪色" : {
       "comment" : "NotificationModels - fade warning type",
@@ -3081,6 +3162,17 @@
         }
       }
     },
+    "请输入「注销」以确认" : {
+      "comment" : "AccountManagementView - delete account confirm alert title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type \"Delete\" to confirm"
+          }
+        }
+      }
+    },
     "请输入你的手机号" : {
       "comment" : "LogInView title",
       "localizations" : {
@@ -3202,6 +3294,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Account Frozen"
+          }
+        }
+      }
+    },
+    "账号已注销" : {
+      "comment" : "Deleted user display name and toast message",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account Deleted"
           }
         }
       }
@@ -3524,6 +3627,9 @@
           }
         }
       }
+    },
+    "链接已复制" : {
+
     },
     "错误：%@" : {
       "comment" : "OthersView - error display",

@@ -1,0 +1,103 @@
+.guide-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  z-index: 150;
+}
+
+/* 底部固定模式（地图页） */
+.guide-bar.bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.08);
+  padding: 16rpx 20rpx;
+}
+
+/* 浮动模式（列表页） */
+.guide-bar.float {
+  position: fixed;
+  bottom: 24rpx;
+  left: 24rpx;
+  right: 24rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0,0,0,0.12);
+  padding: 16rpx 20rpx;
+}
+
+.guide-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.guide-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.guide-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.guide-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.guide-desc {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 2rpx;
+}
+
+.guide-btn {
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 500;
+  padding: 12rpx 32rpx;
+  border-radius: 32rpx;
+  border: none;
+  line-height: 1.4;
+  white-space: nowrap;
+  margin-left: 16rpx;
+}
+
+.guide-btn::after {
+  border: none;
+}
+
+.guide-close {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8rpx;
+}
+
+.close-icon {
+  font-size: 36rpx;
+  color: #ccc;
+  line-height: 1;
+}

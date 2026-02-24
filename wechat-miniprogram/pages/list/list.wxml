@@ -1,0 +1,54 @@
+<view class="list-page">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 列表 -->
+  <scroll-view
+    wx:else
+    class="share-list"
+    scroll-y
+    enable-back-to-top
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onLoadMore"
+    lower-threshold="200"
+  >
+    <!-- 空状态 -->
+    <view class="empty-container" wx:if="{{shares.length === 0 && !loading}}">
+      <text class="empty-text">附近暂无分享</text>
+      <text class="empty-sub">换个地方试试？</text>
+    </view>
+
+    <!-- 分享列表 -->
+    <view
+      wx:for="{{shares}}"
+      wx:key="shareId"
+      class="card-wrapper"
+      bindtap="goToDetail"
+      data-id="{{item.shareId}}"
+    >
+      <share-card share="{{item}}" distance="{{item.distance}}" />
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more" wx:if="{{loadingMore}}">
+      <view class="loading-spinner-small"></view>
+      <text class="loading-text">加载更多...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{noMore && shares.length > 0}}">
+      <text class="no-more-text">- 没有更多了 -</text>
+    </view>
+
+    <!-- 底部占位 -->
+    <view style="height: 140rpx;"></view>
+  </scroll-view>
+
+  <!-- 底部引导 -->
+  <app-guide position="float" />
+</view>

@@ -1153,14 +1153,13 @@ struct ShareDetailView: View {
     // MARK: - ═══════════════════════════════════════════════════════════════════
 
     /// 显示更多操作 ActionSheet（删除/举报）
-    /// 注：分享功能计划在后续版本实现
     func showMoreActionsSheet() {
         // 捕获需要的上下文
         let viewModel = searchViewModel
         let appState = appState
         let navigationCoordinator = navigationCoordinator
 
-        let alert = UIAlertController(title: String(localized: "更多操作"), message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
         // 删除或举报按钮
         if isMyShare {
@@ -1189,6 +1188,67 @@ struct ShareDetailView: View {
         // 展示弹窗
         DispatchQueue.main.async {
             UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+        }
+    }
+
+    /// 显示分享选项 ActionSheet（微信好友/复制链接/更多）
+    static func showShareOptions(viewModel: SearchViewModel) {
+        guard let share = viewModel.selectedShare else { return }
+
+        let alert = UIAlertController(title: String(localized: "分享到"), message: nil, preferredStyle: .actionSheet)
+
+        // 微信好友（仅在微信已安装时显示）
+        if WeChatShareHelper.isWeChatInstalled() {
+            alert.addAction(UIAlertAction(title: String(localized: "微信好友"), style: .default) { _ in
+                // 获取封面图：优先使用已下载的第一张媒体缩略图
+                let coverImage = viewModel.selectedAnnotationImage
+
+                WeChatShareHelper.shareToWechatAsMiniProgram(
+                    shareId: share.id,
+                    title: share.title.isEmpty ? String(localized: "观之") : share.title,
+                    description: share.data,
+                    coverImage: coverImage
+                )
+            })
+        }
+
+        // 复制链接
+        alert.addAction(UIAlertAction(title: String(localized: "复制链接"), style: .default) { _ in
+            let shareURL = "https://onettoo.com/s/\(share.id)"
+            UIPasteboard.general.string = shareURL
+            // 显示复制成功提示
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                let tip = UIAlertController(
+                    title: nil,
+                    message: String(localized: "链接已复制"),
+                    preferredStyle: .alert
+                )
+                UIApplication.shared.windows.first?.rootViewController?.present(tip, animated: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    tip.dismiss(animated: true)
+                }
+            }
+        })
+
+        // 更多（系统分享）
+        alert.addAction(UIAlertAction(title: String(localized: "更多"), style: .default) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                let shareURL = "https://onettoo.com/s/\(share.id)"
+                var items: [Any] = [shareURL]
+                if !share.title.isEmpty {
+                    items.insert(share.title, at: 0)
+                }
+
+                let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+                UIApplication.shared.windows.first?.rootViewController?.present(activityVC, animated: true)
+            }
+        })
+
+        // 取消
+        alert.addAction(UIAlertAction(title: String(localized: "取消"), style: .cancel))
+
+        DispatchQueue.main.async {
+            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
         }
     }
 

@@ -1,0 +1,157 @@
+.map-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-map {
+  width: 100%;
+}
+
+/* 顶部标题栏 */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding-top: env(safe-area-inset-top, 44px);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0));
+}
+
+.top-bar-inner {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 32rpx;
+}
+
+.top-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* 定位按钮 */
+.locate-btn {
+  position: fixed;
+  right: 32rpx;
+  bottom: 260rpx;
+  width: 88rpx;
+  height: 88rpx;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.12);
+  z-index: 90;
+}
+
+.locate-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+/* 预览卡片遮罩 */
+.card-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.card-overlay.visible {
+  pointer-events: auto;
+  opacity: 1;
+  background: rgba(0,0,0,0.15);
+}
+
+/* 预览卡片 */
+.preview-card {
+  width: 92%;
+  max-width: 680rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin-bottom: calc(180rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 8rpx 40rpx rgba(0,0,0,0.15);
+}
+
+.card-cover {
+  width: 100%;
+  height: 320rpx;
+}
+
+.card-placeholder {
+  width: 100%;
+  height: 200rpx;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-placeholder-text {
+  color: #ccc;
+  font-size: 28rpx;
+}
+
+.card-info {
+  padding: 24rpx 28rpx;
+}
+
+.card-author {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.card-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  background: #f0f0f0;
+}
+
+.card-nickname {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+.card-content {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  line-height: 1.5;
+  margin-bottom: 16rpx;
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-address {
+  font-size: 24rpx;
+  color: #999;
+  flex: 1;
+  margin-right: 16rpx;
+}
+
+.card-action {
+  font-size: 24rpx;
+  color: #576b95;
+  white-space: nowrap;
+}

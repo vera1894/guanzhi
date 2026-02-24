@@ -36,24 +36,29 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "siiimo needs camera access to take photos and videos for your posts."
+            "value" : "siiimo needs camera access to take photos and videos for your posts. For example, capturing a place you're visiting, food you're tasting, or interesting street scenes."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "观之需要使用相机来拍摄照片和视频，用于发布观之内容。"
+            "value" : "观之需要使用相机来拍摄照片和视频，以便您发布观之内容。例如，拍摄您正在游览的地点、品尝的美食或有趣的街景。"
           }
         }
       }
     },
     "NSLocationAlwaysAndWhenInUseUsageDescription" : {
       "comment" : "Privacy - Location Always and When In Use Usage Description",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "siiimo needs your location to show nearby content on the map and tag your posts with a place. For example, viewing posts shared by other users near you."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "观之需要获取您的位置，以便在地图上展示您附近的内容，并在您发布时自动标记位置。例如：查看附近其他用户分享的观之内容。"
           }
         }
@@ -65,13 +70,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "siiimo needs your location to show nearby content and tag your posts with a place."
+            "value" : "siiimo needs your location while in use to show nearby content on the map and tag your posts with a place. For example, browsing posts shared near you on the map."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "观之需要您的位置信息来显示附近的观之内容，以及在您发布时自动标记地点。"
+            "value" : "观之需要在您使用时获取位置，以便在地图上展示附近的内容，并在发布时标记位置。例如：在地图上浏览身边的观之分享。"
           }
         }
       }
@@ -82,13 +87,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "siiimo needs microphone access to record audio in videos."
+            "value" : "siiimo needs microphone access to record audio when capturing videos, so your posts can include live sound."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "观之需要使用麦克风来录制视频中的音频。"
+            "value" : "观之需要使用麦克风来录制视频时的声音，以便您发布带有现场声音的观之内容。"
           }
         }
       }
@@ -99,13 +104,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "siiimo needs access to your photo library to select photos and videos for your posts."
+            "value" : "siiimo needs access to your photo library so you can select existing photos for your posts, or save captured photos and videos to your library."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "观之需要访问您的相册来选择照片和视频，用于发布观之内容。"
+            "value" : "观之需要访问您的相册，以便您从已有照片中选取内容发布观之，或保存拍摄的照片和视频到相册。"
           }
         }
       }

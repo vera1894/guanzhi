@@ -1,0 +1,34 @@
+.media-viewer {
+  position: relative;
+  width: 100%;
+  background: #000;
+}
+
+.media-swiper {
+  width: 100%;
+}
+
+.media-image {
+  width: 100%;
+  height: 100%;
+}
+
+.media-video {
+  width: 100%;
+  height: 100%;
+}
+
+/* 计数器 */
+.media-counter {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  background: rgba(0,0,0,0.5);
+  padding: 6rpx 18rpx;
+  border-radius: 20rpx;
+}
+
+.counter-text {
+  font-size: 24rpx;
+  color: #fff;
+}

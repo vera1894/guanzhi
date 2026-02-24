@@ -1,0 +1,38 @@
+<view class="share-card">
+  <!-- 封面图 -->
+  <view class="card-media" wx:if="{{hasMedia}}">
+    <image
+      class="card-cover"
+      src="{{coverUrl}}"
+      mode="aspectFill"
+      lazy-load
+    />
+    <!-- 多图标记 -->
+    <view class="media-count" wx:if="{{share.mediaCount && share.mediaCount > 1}}">
+      <text class="media-count-text">{{share.mediaCount}}</text>
+    </view>
+  </view>
+
+  <!-- 信息区域 -->
+  <view class="card-body">
+    <!-- 作者 -->
+    <view class="card-author">
+      <image class="card-avatar" src="{{share.authorAvatar}}" mode="aspectFill" />
+      <text class="card-nickname">{{share.authorNickname}}</text>
+    </view>
+
+    <!-- 内容 -->
+    <text class="card-content text-ellipsis-2" wx:if="{{share.data}}">{{share.data}}</text>
+
+    <!-- 底部信息 -->
+    <view class="card-footer">
+      <view class="card-location" wx:if="{{share.address}}">
+        <text class="location-dot">·</text>
+        <text class="card-address text-ellipsis">{{share.address}}</text>
+      </view>
+      <text class="card-distance" wx:if="{{distance}}">{{distance}}</text>
+    </view>
+
+    <!-- 贴纸预览（暂不支持，后续可扩展） -->
+  </view>
+</view>

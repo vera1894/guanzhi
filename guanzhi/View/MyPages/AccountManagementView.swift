@@ -12,15 +12,20 @@ struct AccountManagementView: View {
     @EnvironmentObject var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject var userProfileManager: UserProfileManager
     @EnvironmentObject var toastManager: ToastManager
+    @Environment(\.appState) var appState
     @State private var showPhoneAlert = false
     @State private var showChangePhoneSheet = false
-    
+    @State private var showDeleteAccountAlert = false
+    @State private var showDeleteConfirmAlert = false
+    @State private var deleteConfirmText = ""
+    @State private var isDeletingAccount = false
+
     var body: some View {
         let localUser = userProfileManager.localUserProfile
         let items: [(label: String, value: String)] = [
             ("手机号", localUser?.phone ?? "")
         ]
-            
+
             List {
                 ForEach(items, id: \.label) { item in
                     HStack {
@@ -30,7 +35,7 @@ struct AccountManagementView: View {
 
                         // 中间：本机用户资料
                     Text(formatPhoneNumberForDisplay(item.value))
-                        
+
                         // 右侧 chevron 按钮
                         Button {
                             handleAction(label: item.label)
@@ -40,6 +45,22 @@ struct AccountManagementView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                }
+
+                // 注销账号
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteAccountAlert = true
+                    } label: {
+                        HStack {
+                            Text("注销账号")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .imageScale(.small)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .disabled(isDeletingAccount)
                 }
             }
             .navigationTitle("账号与绑定")
@@ -69,12 +90,67 @@ struct AccountManagementView: View {
             .navigationBarBackButtonHidden(true)
         .alert("更换绑定的手机号？", isPresented: $showPhoneAlert) {
             Button("取消", role: .cancel) { }
-            
+
             Button("更换") {
                 toastManager.show(ToastMessages.phoneChangeNotReady)
             }
         } message: {
             Text("当前绑定的手机号码为\n\(formatPhoneNumberForDisplay(localUser?.phone ?? ""))")
+        }
+        // 第一步：注销警告
+        .alert("确定要注销账号吗？", isPresented: $showDeleteAccountAlert) {
+            Button("取消", role: .cancel) { }
+            Button("继续注销", role: .destructive) {
+                deleteConfirmText = ""
+                showDeleteConfirmAlert = true
+            }
+        } message: {
+            Text("注销后账号将无法恢复，您发布的观之仍会保留。")
+        }
+        // 第二步：输入确认
+        .alert("请输入「注销」以确认", isPresented: $showDeleteConfirmAlert) {
+            TextField("", text: $deleteConfirmText)
+            Button("取消", role: .cancel) { }
+            Button("注销", role: .destructive) {
+                performDeleteAccount()
+            }
+            .disabled(!isDeleteConfirmValid)
+        }
+    }
+
+    private var isDeleteConfirmValid: Bool {
+        let lang = Locale.current.language.languageCode?.identifier ?? "zh"
+        if lang == "en" {
+            return deleteConfirmText.lowercased() == "delete"
+        }
+        return deleteConfirmText == "注销"
+    }
+
+    private func performDeleteAccount() {
+        isDeletingAccount = true
+        Task {
+            do {
+                let data = try await OTONetwork.request(.deleteAccount)
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(OTOResponseModel<String>.self, from: data)
+
+                guard response.respCode == 0 else {
+                    toastManager.show(ToastMessages.accountDeleteFailed)
+                    isDeletingAccount = false
+                    return
+                }
+
+                // 注销成功：清理本地数据 + 退出登录
+                await DeviceService.shared.logoutDevice()
+                try? userProfileManager.clearAllUserProfiles()
+                appState.isShowingSearchView = true
+                OTOLoginStatusManager.shared.logout()
+                navigationCoordinator.path = NavigationPath()
+                toastManager.show(ToastMessages.accountDeleted)
+            } catch {
+                toastManager.show(ToastMessages.accountDeleteFailed)
+                isDeletingAccount = false
+            }
         }
     }
     

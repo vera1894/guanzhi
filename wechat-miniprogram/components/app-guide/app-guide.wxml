@@ -1,0 +1,23 @@
+<view class="guide-bar {{position}} safe-area-bottom" wx:if="{{visible}}">
+  <view class="guide-content">
+    <view class="guide-info">
+      <view class="guide-icon-wrap">
+        <image class="guide-icon" src="/assets/app-icon.png" mode="aspectFill" />
+      </view>
+      <view class="guide-text">
+        <text class="guide-title">观之</text>
+        <text class="guide-desc">在 App 中获得完整体验</text>
+      </view>
+    </view>
+    <button
+      class="guide-btn"
+      open-type="launchApp"
+      binderror="onLaunchAppError"
+    >
+      打开 App
+    </button>
+  </view>
+  <view class="guide-close" bindtap="close">
+    <text class="close-icon">×</text>
+  </view>
+</view>

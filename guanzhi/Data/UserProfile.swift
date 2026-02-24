@@ -50,6 +50,9 @@ class UserProfile {
     /// 平台
     var platform: String?
 
+    /// 用户状态：0=正常, 1=警告, 2=冻结, 3=已注销
+    var status: Int?
+
     /// 缓存更新时间
     var lastUpdated: Date?
 
@@ -64,7 +67,8 @@ class UserProfile {
          titleDOSData: Data? = nil,
          levelCode: String? = nil,
          pointsTotal: Int? = nil,
-         platform: String? = nil) {
+         platform: String? = nil,
+         status: Int? = nil) {
         self.id = id
         self.name = name
         self.nickname = nickname
@@ -77,6 +81,7 @@ class UserProfile {
         self.levelCode = levelCode
         self.pointsTotal = pointsTotal
         self.platform = platform
+        self.status = status
         self.lastUpdated = Date()
     }
 

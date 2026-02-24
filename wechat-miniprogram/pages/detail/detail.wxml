@@ -1,0 +1,77 @@
+<view class="detail-page">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 加载失败 -->
+  <view class="empty-container" wx:elif="{{error}}">
+    <text class="empty-text">加载失败，请稍后重试</text>
+  </view>
+
+  <!-- 内容 -->
+  <scroll-view scroll-y class="detail-scroll" wx:elif="{{share}}">
+    <!-- 媒体区域 -->
+    <view class="media-section" wx:if="{{mediaItems.length > 0}}">
+      <media-viewer media-items="{{mediaItems}}" />
+    </view>
+
+    <!-- 作者信息 -->
+    <view class="author-section" bindtap="goToProfile">
+      <image class="author-avatar" src="{{share.authorAvatar}}" mode="aspectFill" />
+      <view class="author-info">
+        <text class="author-name">{{share.authorNickname}}</text>
+        <text class="author-time">{{formattedTime}}</text>
+      </view>
+      <text class="author-arrow">></text>
+    </view>
+
+    <!-- 文字内容 -->
+    <view class="content-section" wx:if="{{share.data}}">
+      <text class="content-text" user-select>{{share.data}}</text>
+    </view>
+
+    <!-- 位置区域 -->
+    <view class="location-section" wx:if="{{share.latitude && share.longitude}}">
+      <view class="location-header">
+        <text class="location-icon">📍</text>
+        <text class="location-address text-ellipsis">{{share.address || '查看位置'}}</text>
+      </view>
+      <map
+        class="location-map"
+        latitude="{{mapLatitude}}"
+        longitude="{{mapLongitude}}"
+        scale="15"
+        markers="{{mapMarkers}}"
+        show-location="{{false}}"
+        enable-zoom="{{false}}"
+        enable-scroll="{{false}}"
+        bindtap="openLocation"
+      />
+      <view class="location-action" bindtap="openLocation">
+        <text class="location-action-text">导航到这里</text>
+      </view>
+    </view>
+
+    <!-- 提示在 App 中查看更多 -->
+    <view class="more-hint">
+      <text class="more-hint-text">在观之 App 中查看评论和更多内容</text>
+    </view>
+
+    <!-- 底部安全区占位 -->
+    <view style="height: 160rpx;"></view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar safe-area-bottom" wx:if="{{share}}">
+    <button
+      class="open-app-btn"
+      open-type="launchApp"
+      app-parameter="share/{{shareId}}"
+      binderror="onLaunchAppError"
+    >
+      在 App 中打开
+    </button>
+  </view>
+</view>

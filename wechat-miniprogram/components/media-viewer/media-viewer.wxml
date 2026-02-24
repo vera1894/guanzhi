@@ -1,0 +1,43 @@
+<view class="media-viewer">
+  <swiper
+    class="media-swiper"
+    style="height: {{swiperHeight}}rpx;"
+    indicator-dots="{{mediaItems.length > 1}}"
+    indicator-color="rgba(255,255,255,0.4)"
+    indicator-active-color="#ffffff"
+    bindchange="onSwiperChange"
+    circular
+  >
+    <swiper-item wx:for="{{mediaItems}}" wx:key="index">
+      <!-- 图片 -->
+      <block wx:if="{{item.type === 'image'}}">
+        <image
+          class="media-image"
+          src="{{item.url}}"
+          mode="aspectFill"
+          lazy-load
+          bindtap="onImageTap"
+          data-index="{{index}}"
+          bindload="onImageLoad"
+        />
+      </block>
+      <!-- 视频 -->
+      <block wx:elif="{{item.type === 'video'}}">
+        <video
+          class="media-video"
+          src="{{item.url}}"
+          poster="{{item.thumbnailUrl}}"
+          controls
+          show-center-play-btn
+          enable-progress-gesture
+          object-fit="contain"
+        />
+      </block>
+    </swiper-item>
+  </swiper>
+
+  <!-- 计数器（多于1个时显示） -->
+  <view class="media-counter" wx:if="{{mediaItems.length > 1}}">
+    <text class="counter-text">{{currentIndex + 1}} / {{mediaItems.length}}</text>
+  </view>
+</view>

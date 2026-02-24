@@ -11,8 +11,23 @@ import Foundation
 
 extension UserProfile {
     /// 转换为展示模型
-    /// 封装 OneCode 遮挡规则 + 等级名称映射
+    /// 封装 OneCode 遮挡规则 + 等级名称映射 + 已注销用户处理
     func toDisplayModel() -> UserProfileDisplayModel {
+        let isDeleted = status == 3
+
+        // 已注销用户：覆盖显示名
+        if isDeleted {
+            return UserProfileDisplayModel(
+                id: id,
+                displayNickname: String(localized: "账号已注销"),
+                displayOneCode: "⬛️⬛️⬛️⬛️",
+                isOneCodeMasked: true,
+                avatarPath: nil,
+                levelName: "",
+                titleDOS: nil
+            )
+        }
+
         // OneCode 遮挡规则：name == phone 或 name 为空时遮挡
         let masked = (name == phone) || (name == nil) || (name?.isEmpty == true)
 
