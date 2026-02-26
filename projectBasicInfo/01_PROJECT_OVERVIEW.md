@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
-**文档版本**: v4.5
-**最后更新**: 2026-02-20（MKMapView 地球仪模式 + 旧 SwiftUI Map 清理）
+**文档版本**: v4.7
+**最后更新**: 2026-02-26（贴纸资产服务端化 + 贴纸队列去白框）
 
 ---
 
@@ -381,13 +381,48 @@ func rebuildStickerSummaries()
 - 回退机制：网络失败时使用硬编码默认值
 - 使用方式：`StickerKind.dynamicDisplayName` 或 `StickerDefinition.dynamicDisplayName`
 
+**贴纸图像资产**（2026-02-26 完成 → 服务端化）：
+
+所有贴纸均已完成视觉资产制作，图片**存储在服务端**，iOS 端启动时检查版本并下载到本地缓存。
+
+- **风格**：linocut / screen-print 丝网印刷风，圆形徽章，实心剪影，3 色方案（背景色 + 主体色 + 奶白点缀）
+- **生成方式**：Vertex AI Imagen 3（`imagen-3.0-capability-001`），项目 `tajimoji-dev`，风格参考图 `ref-precise-like.png`
+- **服务端文件位置**：`/home/ec2-user/images/image/stickers/{code}.png`（通过 `https://onettoo.com/image/stickers/{code}.png` 访问）
+- **xcassets 备份**：`guanzhi/Assets.xcassets/Stickers/stickers-{name}.imageset/stickers-{name}.svg`（作为回退）
+- **源文件**：`icons/stickers/generated/可用/svg/`，透明 PNG 在 `icons/stickers/generated/stickers_upload/`
+- **生成脚本 & 技能**：`~/.claude/skills/sticker-gen/`（`/sticker-gen [贴纸名]` 可复现）
+
+| 贴纸名 | 背景色 | 主体色 | 主题图形 |
+|--------|--------|--------|---------|
+| like | `#007090` 青蓝 | `#002030` 深海军蓝 | 大拇指 + 星形点缀 |
+| neutral | `#3D6B8E` 石蓝 | `#E8C98A` 沙黄 | 圆脸，平线嘴 + 半睁眼 |
+| maomao | `#C03000` 橙红 | `#002030` 深海军蓝 | 猫脸 + 鱼形点缀 |
+| richu | `#2B3A6B` 深靛蓝 | `#D4695A` 珊瑚橙 | 半圆日出 + 放射线 |
+| zhenxiu | `#8B2635` 酒红 | `#E8B84B` 金黄 | 圆碗 + 蒸汽线（无餐具） |
+| wanqu | `#5B3A8E` 深紫 | `#F2A94B` 琥珀黄 | 五角星 + 内嵌笑脸 |
+| caikeng | `#B8862A` 琥珀赭 | `#1A2E50` 深蓝 | 感叹号 + 放射破线 |
+| mijing | `#2D6A4F` 森林绿 | `#D4962C` 金赭 | 拱形入口 + 植物叶 |
+| chaosheng | `#C47E6B` 赭玫 | `#1B5C5E` 深青 | 烛火剪影 + 放射光芒 |
+| jishi | `#4A7B5E` 橄榄绿 | `#C46B3A` 赭红 | 遮阳篷 + 台面 + 货品圆点 |
+
+**贴纸资产动态加载架构**（2026-02-26，后端 v3.7.6）：
+- API：`GET /api/config/sticker-assets`（无需登录，ETag 缓存）返回版本 + 各贴纸 CDN URL
+- iOS `StickerAssetService`：App 启动时检查版本，并行下载 PNG 到 `Caches/Stickers/`
+- `StickerTextureCache`：优先读本地磁盘 PNG → 回退 xcassets SVG → 占位符
+- 更新贴纸无需发布新版 App：只需更换服务端文件 + 更新 `tag_definition.icon_url`
+
 **相关文件**：
 ```
-StickerKit/Services/StickerNameService.swift  # 名称服务（API + 缓存）
-StickerKit/Models/StickerKind.swift           # dynamicDisplayName 属性
+StickerKit/StickerNameService.swift           # 名称服务（API + 缓存）
+StickerKit/StickerAssetService.swift          # 图片资产服务（下载 + 磁盘缓存）
 StickerKit/Models/StickerDefinition.swift     # dynamicDisplayName 属性
-guanzhiApp.swift                              # App 启动时预加载
+StickerKit/SpriteKit/StickerTextureCache.swift # 纹理缓存（优先磁盘，无白框）
+guanzhiApp.swift                              # App 启动时预加载名称 + 资产
 ```
+
+**贴纸队列渲染**（2026-02-26 优化）：
+- 贴纸图标直接按尺寸缩放渲染，不加白色圆形背景框和边框
+- 修改文件：`StickerTextureCache.swift`，`.image` case 改用 `renderScaled` 替代 `renderWithFrame`
 
 **配额计算**：
 ```
@@ -1477,6 +1512,7 @@ View/MapPages/
 | **聚合列表排名+最新徽章** | `projectBasicInfo/logs/2026-02-17-cluster-ranking-badge-cc.md` | 加权互动评分排序、48h置顶、最新徽章、缩略图优先选择 |
 | **Token过期+分享页404修复** | `projectBasicInfo/logs/2026-02-18-token-expiry-share-404-fix-cc.md` | Token过期自动登出、Nginx端口80 /s/路由、CSS静态文件提取 |
 | **地图地球仪模式** | `projectBasicInfo/logs/2026-02-20-map-globe-mode-cc.md` | MKMapView地球仪模式、磁滞切换、旧SwiftUI Map清理 |
+| **贴纸视觉资产完成** | `projectBasicInfo/logs/2026-02-26-sticker-visual-assets-cc.md` | 10款贴纸linocut SVG资产生成+部署，技能固化 |
 
 ---
 

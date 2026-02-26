@@ -165,10 +165,11 @@ struct SettingView: View {
         totalSize += Int64(URLCache.shared.currentDiskUsage)
         // tmp 目录
         totalSize += directorySize(at: NSTemporaryDirectory())
-        // Caches/Thumbnails 和 Caches/MediaFiles
+        // Caches/Thumbnails、Caches/MediaFiles、Caches/Stickers
         if let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
             totalSize += directorySize(at: cachesDir.appendingPathComponent("Thumbnails").path)
             totalSize += directorySize(at: cachesDir.appendingPathComponent("MediaFiles").path)
+            totalSize += directorySize(at: cachesDir.appendingPathComponent("Stickers").path)
         }
         return ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
     }
@@ -208,6 +209,10 @@ struct SettingView: View {
 
         // 5. 清除内存中的图片缓存
         ImageCache.shared.clearAll()
+
+        // 6. 清除贴纸图片资产缓存（磁盘文件 + 元数据 + 纹理缓存）
+        StickerAssetService.shared.clearLocalCache()
+        StickerTextureCache.shared.clearCache()
     }
 
     // 根据不同的列表项执行操作

@@ -107,8 +107,15 @@ final class StickerTextureCache {
         let dynamicName = definition.dynamicDisplayName  // 使用动态名称
         switch definition.assetKind {
         case .image(let name):
+            // 优先使用服务端下载的本地 PNG（以 "stickers-" 开头，提取 code 部分）
+            let code = name.hasPrefix("stickers-") ? String(name.dropFirst("stickers-".count)) : name
+            if let localURL = StickerAssetService.shared.localURL(for: code),
+               let image = UIImage(contentsOfFile: localURL.path) {
+                return SKTexture(image: renderScaled(image: image, size: size))
+            }
+            // 回退到 xcassets（SVG）—— 贴纸已有透明圆形背景，直接缩放，无需白框
             if let image = UIImage(named: name) {
-                return SKTexture(image: renderWithFrame(image: image, size: size))
+                return SKTexture(image: renderScaled(image: image, size: size))
             }
             return createPlaceholderTexture(size: size, label: dynamicName)
 
@@ -138,7 +145,15 @@ final class StickerTextureCache {
         }
     }
 
-    /// 将普通图像渲染为带圆形边框的贴纸
+    /// 将图像直接缩放到目标尺寸（无白框，适用于已有透明圆形背景的贴纸）
+    private func renderScaled(image: UIImage, size: CGSize) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// 将普通图像渲染为带圆形边框的贴纸（保留供 systemSymbol 等类型使用）
     private func renderWithFrame(image: UIImage, size: CGSize) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { context in

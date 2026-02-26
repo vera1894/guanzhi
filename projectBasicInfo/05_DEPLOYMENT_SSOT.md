@@ -24,8 +24,9 @@
 │   ├── v3.7.2/app.jar
 │   ├── v3.7.3/app.jar
 │   ├── v3.7.4/app.jar
-│   └── v3.7.5/app.jar           # 当前版本
-├── current -> releases/v3.7.5/  # 软链接，原子切换
+│   ├── v3.7.5/app.jar
+│   └── v3.7.6/app.jar           # 当前版本
+├── current -> releases/v3.7.6/  # 软链接，原子切换
 ├── application-prod.yml         # 外部配置文件
 └── start.sh                     # 备用启动脚本（仅应急使用）
 ```

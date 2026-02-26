@@ -157,7 +157,6 @@ extension StickerDefinition {
 }
 
 // MARK: - 标签类贴纸定义
-// ⚠️ 临时：所有贴纸都使用 stickers-good 图片，后续用户会自行替换为各自的图标
 
 extension StickerDefinition {
 
@@ -166,7 +165,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "mijing"),
         kind: .mijing,
         displayName: "秘境",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-mijing"),
         priority: 70,
         meta: ["tagCode": "MIJING"]
     )
@@ -176,7 +175,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "zhenxiu"),
         kind: .zhenxiu,
         displayName: "珍馐美味",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-zhenxiu"),
         priority: 69,
         meta: ["tagCode": "ZHENXIU"]
     )
@@ -186,7 +185,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "wanqu"),
         kind: .wanqu,
         displayName: "有点儿意思",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-wanqu"),
         priority: 68,
         meta: ["tagCode": "WANQU"]
     )
@@ -196,7 +195,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "caikeng"),
         kind: .caikeng,
         displayName: "踩坑预警！",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-caikeng"),
         priority: 67,
         meta: ["tagCode": "CAIKENG"]
     )
@@ -206,7 +205,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "maomao"),
         kind: .maomao,
         displayName: "猫猫出没",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-maomao"),
         priority: 66,
         meta: ["tagCode": "MAOMAO"]
     )
@@ -216,7 +215,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "chaosheng"),
         kind: .chaosheng,
         displayName: "朝圣点",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-chaosheng"),
         priority: 65,
         meta: ["tagCode": "CHAOSHENG"]
     )
@@ -226,7 +225,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "richu"),
         kind: .richu,
         displayName: "日出点",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-richu"),
         priority: 64,
         meta: ["tagCode": "RICHU"]
     )
@@ -236,7 +235,7 @@ extension StickerDefinition {
         stickerID: StickerID(rawValue: "jishi"),
         kind: .jishi,
         displayName: "集市",
-        assetKind: .image(name: "stickers-like"),  // TODO: 替换为专属图标
+        assetKind: .image(name: "stickers-jishi"),
         priority: 63,
         meta: ["tagCode": "JISHI"]
     )
