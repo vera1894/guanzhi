@@ -1,7 +1,7 @@
 # 观之（Guanzhi）项目概述
 
 **文档版本**: v4.7
-**最后更新**: 2026-02-26（贴纸资产服务端化 + 贴纸队列去白框）
+**最后更新**: 2026-02-26（贴纸资产服务端化 + 贴纸队列去白框 + icons 纳入 git + 脚本整合）
 
 ---
 
@@ -389,8 +389,10 @@ func rebuildStickerSummaries()
 - **生成方式**：Vertex AI Imagen 3（`imagen-3.0-capability-001`），项目 `tajimoji-dev`，风格参考图 `ref-precise-like.png`
 - **服务端文件位置**：`/home/ec2-user/images/image/stickers/{code}.png`（通过 `https://onettoo.com/image/stickers/{code}.png` 访问）
 - **xcassets 备份**：`guanzhi/Assets.xcassets/Stickers/stickers-{name}.imageset/stickers-{name}.svg`（作为回退）
-- **源文件**：`icons/stickers/generated/可用/svg/`，透明 PNG 在 `icons/stickers/generated/stickers_upload/`
-- **生成脚本 & 技能**：`~/.claude/skills/sticker-gen/`（`/sticker-gen [贴纸名]` 可复现）
+- **源文件**：`icons/stickers/generated/可用/svg/`，透明 PNG 在 `icons/stickers/generated/stickers_upload/`（均在 git 追踪范围内）
+- **生成脚本**：`icons/stickers/generated/gen_stickers.py`（合并自 batch2~6，含 10 款精确提示词；版本号自动递增）
+- **SVG 转换脚本**：`icons/stickers/generated/png_to_svg_v2.py`
+- **技能**：`.claude/skills/sticker-gen/`（项目内备份）+ `~/.claude/skills/sticker-gen/`（全局）；`/sticker-gen [贴纸名]` 可复现
 
 | 贴纸名 | 背景色 | 主体色 | 主题图形 |
 |--------|--------|--------|---------|

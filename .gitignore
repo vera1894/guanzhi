@@ -69,3 +69,6 @@ __pycache__/
 .task-contexts/
 .task-outputs/
 .coordinator/
+
+# 贴纸生成历史候选图（大量 PNG，无需版本控制）
+icons/stickers/generated/old/
