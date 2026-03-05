@@ -187,42 +187,14 @@ struct MKMapViewWrapper: UIViewRepresentable {
             return
         }
 
-        // 更新标注（diff 算法，避免全量刷新）
-        updateAnnotations(mapView: mapView)
+        // 更新标注（通过 coordinator 的 coalescing 机制，避免缩放时与聚合引擎竞态）
+        context.coordinator.scheduleAnnotationUpdate(mapView: mapView, newAnnotations: annotations)
     }
 
     func makeCoordinator() -> MKMapViewCoordinator {
         MKMapViewCoordinator(parent: self)
     }
 
-    // MARK: - Private Methods
-
-    /// 使用 diff 算法更新标注，避免全量删除/添加
-    /// 关键：只有在真正有变化时才执行 remove/add，避免打断聚合状态
-    private func updateAnnotations(mapView: MKMapView) {
-        // 获取当前地图上的自定义标注（不包括聚合标注和用户位置）
-        let currentAnnotations = Set(mapView.annotations.compactMap { $0 as? CustomAnnotation })
-        let newAnnotations = Set(annotations)
-
-        let toRemove = currentAnnotations.subtracting(newAnnotations)
-        let toAdd = newAnnotations.subtracting(currentAnnotations)
-
-        // 只有在真的有变化时才执行操作
-        let hasChanges = !toRemove.isEmpty || !toAdd.isEmpty
-
-        #if DEBUG
-        if hasChanges {
-            print("📍 [Annotations] 更新: 移除 \(toRemove.count), 添加 \(toAdd.count), 当前 \(currentAnnotations.count) -> 新 \(newAnnotations.count)")
-        }
-        #endif
-
-        if !toRemove.isEmpty {
-            mapView.removeAnnotations(Array(toRemove))
-        }
-        if !toAdd.isEmpty {
-            mapView.addAnnotations(Array(toAdd))
-        }
-    }
 }
 
 // MARK: - Preview

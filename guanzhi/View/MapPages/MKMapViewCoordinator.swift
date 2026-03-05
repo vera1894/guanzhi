@@ -79,8 +79,67 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
     private var animAltitudeEasingPower: Double = 1.0  // 高度独立缓动指数（1.0 = 与位置同步）
     private var lastContinuousRegionUpdateTime: CFTimeInterval = 0  // mapViewDidChangeVisibleRegion 节流
 
+    /// Coalescing annotation 更新：快速连续调用时只执行最后一次，避免与 MKMapView 聚合引擎竞态
+    private var pendingAnnotationWork: DispatchWorkItem?
+    /// 上次 annotation 操作的时间戳，用于强制最小间隔
+    private var lastAnnotationOperationTime: CFTimeInterval = 0
+    /// annotation 操作之间的最小间隔（秒），给 MKMapView 足够时间完成聚合计算
+    private let minAnnotationInterval: CFTimeInterval = 0.2
+
     init(parent: MKMapViewWrapper) {
         self.parent = parent
+    }
+
+    // MARK: - Coalescing Annotation Update
+
+    /// 安全更新标注：
+    /// 1. 快速连续调用时只执行最后一次（coalescing）
+    /// 2. 两次操作之间强制最小间隔，让 MKMapView 完成聚合计算
+    /// 避免缩放时 annotation 增删与 MKMapView 内部聚合引擎竞态导致闪退
+    func scheduleAnnotationUpdate(mapView: MKMapView, newAnnotations: [CustomAnnotation]) {
+        pendingAnnotationWork?.cancel()
+
+        let now = CACurrentMediaTime()
+        let elapsed = now - lastAnnotationOperationTime
+        let delay = max(0, minAnnotationInterval - elapsed)
+
+        let workItem = DispatchWorkItem { [weak self, weak mapView] in
+            guard let self = self, let mapView = mapView else { return }
+            self.performAnnotationUpdate(mapView: mapView, newAnnotations: newAnnotations)
+        }
+        pendingAnnotationWork = workItem
+
+        if delay > 0 {
+            // 上次操作距今不足 minAnnotationInterval，延迟执行
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+        } else {
+            // 间隔足够，延迟到下一个 run loop 执行（避免同帧竞态）
+            DispatchQueue.main.async(execute: workItem)
+        }
+    }
+
+    private func performAnnotationUpdate(mapView: MKMapView, newAnnotations: [CustomAnnotation]) {
+        let currentAnnotations = Set(mapView.annotations.compactMap { $0 as? CustomAnnotation })
+        let newSet = Set(newAnnotations)
+
+        let toRemove = currentAnnotations.subtracting(newSet)
+        let toAdd = newSet.subtracting(currentAnnotations)
+
+        let hasChanges = !toRemove.isEmpty || !toAdd.isEmpty
+        guard hasChanges else { return }
+
+        #if DEBUG
+        print("📍 [Annotations] 更新: 移除 \(toRemove.count), 添加 \(toAdd.count), 当前 \(currentAnnotations.count) -> 新 \(newSet.count)")
+        #endif
+
+        lastAnnotationOperationTime = CACurrentMediaTime()
+
+        if !toRemove.isEmpty {
+            mapView.removeAnnotations(Array(toRemove))
+        }
+        if !toAdd.isEmpty {
+            mapView.addAnnotations(Array(toAdd))
+        }
     }
 
     // MARK: - Programmatic Camera/Region Control (防回环)
@@ -194,21 +253,37 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
 
     // MARK: - Globe Mode
 
+    /// 待执行的 globe 配置切换（coalescing：快速缩放时只执行最后一次）
+    private var pendingGlobeSwitch: DispatchWorkItem?
+
     /// 根据 camera distance 动态切换 Standard ↔ HybridFlyover
     /// 使用磁滞区间避免边界附近频繁切换：进入地球仪 5M，退出地球仪 3.5M
+    /// 配置变更延迟到下一个 run loop，避免与聚合视图创建在同一调用栈中冲突导致闪退
     private func updateGlobeConfigurationIfNeeded(mapView: MKMapView) {
         let distance = mapView.camera.centerCoordinateDistance
         let enterThreshold: Double = 5_000_000   // 进入地球仪：5000 公里
         let exitThreshold: Double = 3_500_000    // 退出地球仪：3500 公里（磁滞）
 
+        var newConfig: MKMapConfiguration?
+
         if distance >= enterThreshold && !isInGlobeConfiguration {
-            mapView.preferredConfiguration = MKHybridMapConfiguration(elevationStyle: .realistic)
             isInGlobeConfiguration = true
+            newConfig = MKHybridMapConfiguration(elevationStyle: .realistic)
             print("🌍 [Globe] 切换到 HybridFlyover，distance=\(Int(distance))")
         } else if distance < exitThreshold && isInGlobeConfiguration {
-            mapView.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic)
             isInGlobeConfiguration = false
+            newConfig = MKStandardMapConfiguration(elevationStyle: .realistic)
             print("🗺️ [Globe] 切回 Standard，distance=\(Int(distance))")
+        }
+
+        if let config = newConfig {
+            // 取消之前待执行的切换（快速来回缩放时只执行最后一次）
+            pendingGlobeSwitch?.cancel()
+            let workItem = DispatchWorkItem { [weak mapView] in
+                mapView?.preferredConfiguration = config
+            }
+            pendingGlobeSwitch = workItem
+            DispatchQueue.main.async(execute: workItem)
         }
     }
 
@@ -470,13 +545,16 @@ class MKMapViewCoordinator: NSObject, MKMapViewDelegate {
         mapView.isUserInteractionEnabled = true
 
         // 强制标注重新渲染（CADisplayLink 期间 MKMapView 可能延迟了聚合/布局）
-        let customAnnotations = mapView.annotations.compactMap { $0 as? CustomAnnotation }
-        if !customAnnotations.isEmpty {
-            mapView.removeAnnotations(customAnnotations)
-            mapView.addAnnotations(customAnnotations)
+        // 延迟到下一个 run loop，避免与 MKMapView 内部状态竞态
+        DispatchQueue.main.async { [weak self, weak mapView] in
+            guard let mapView = mapView else { return }
+            let customAnnotations = mapView.annotations.compactMap { $0 as? CustomAnnotation }
+            if !customAnnotations.isEmpty {
+                mapView.removeAnnotations(customAnnotations)
+                mapView.addAnnotations(customAnnotations)
+            }
+            self?.parent.onRegionChange?(mapView.region)
         }
-
-        parent.onRegionChange?(mapView.region)
     }
 
     // MARK: - CADisplayLink 动画引擎

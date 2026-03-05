@@ -243,18 +243,21 @@ struct ShareDetailView: View {
         mainMediaContent
             .ignoresSafeArea()
             .navigationBarBackButtonHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
 
             .overlay(topNavigationBar, alignment: .top)
 
             .overlay {
-                let screenHeight = UIScreen.main.bounds.height
-                let isVisible = interactionViewModel.isStickerPanelVisible && isShowShareDetailsCard
+                GeometryReader { stickerGeo in
+                    let isVisible = interactionViewModel.isStickerPanelVisible && isShowShareDetailsCard
 
-                stickerPanelOverlay
-                    .zIndex(2)
-                    .offset(y: isVisible ? 0 : screenHeight)
-                    .allowsHitTesting(isVisible)
-                    .animation(.easeInOut(duration: 0.25), value: isVisible)
+                    stickerPanelOverlay
+                        .zIndex(2)
+                        .offset(y: isVisible ? 0 : stickerGeo.size.height)
+                        .allowsHitTesting(isVisible)
+                        .animation(.easeInOut(duration: 0.25), value: isVisible)
+                }
+                .ignoresSafeArea()
             }
 
             .overlay(bottomDetailCardOverlay)
@@ -351,6 +354,9 @@ struct ShareDetailView: View {
                                             selectedIndex: selectedIndex,
                                             totalMediaCount: searchViewModel.downloadMedia.count  // 传入总数用于页数指示器
                                         )
+                                        // ✅ 显式全屏尺寸，覆盖 PageTabViewStyle 的安全区内缩
+                                        // 避免 iPad 兼容模式和 iPhone Dynamic Island 造成顶部空隙
+                                        .frame(width: fullScreenGeometry.size.width, height: fullScreenGeometry.size.height)
                                         .tag(index)
                                     }
                                 }
@@ -663,19 +669,23 @@ struct ShareDetailView: View {
 
     @ViewBuilder
     private var bottomDetailCardOverlay: some View {
-        GeometryReader { _ in
-            // ✅ 修复：直接从 UIApplication 获取安全区，避免 ignoresSafeArea 影响
+        GeometryReader { geometry in
+            // ✅ 修复：使用 GeometryReader 获取实际视图尺寸，兼容 iPad 兼容模式
+            // UIScreen.main.bounds 在 iPad 兼容模式下返回 iPad 屏幕尺寸而非兼容窗口尺寸
             let safeAreaInsets = UIApplication.shared.connectedScenes
                 .compactMap { $0 as? UIWindowScene }
                 .first?.windows.first?.safeAreaInsets ?? .zero
             let topSafeArea = safeAreaInsets.top
             let bottomSafeArea = safeAreaInsets.bottom
-            let screenHeight = UIScreen.main.bounds.height
-            let screenWidth = UIScreen.main.bounds.width
+            let screenHeight = geometry.size.height
+            let screenWidth = geometry.size.width
             // 展开时的卡片高度：屏幕高度减去顶部安全区
             let expandedHeight = screenHeight - topSafeArea
-            // 收起时的 offset：留出底部安全区空间
-            let collapsedOffset = screenHeight * 0.9 - bottomSafeArea
+            // 收起时的可见区域：确保 grip + 标题 + 输入栏完全可见
+            // iPad 兼容模式下 bottomSafeArea=0，纯百分比会导致输入栏被截断
+            let minVisibleHeight: CGFloat = 140
+            let defaultVisibleHeight = screenHeight * 0.1 + bottomSafeArea
+            let collapsedOffset = screenHeight - max(defaultVisibleHeight, minVisibleHeight)
 
             ShareDetailsCardView(
                 isFullScreen: $isFullScreen,
@@ -694,7 +704,7 @@ struct ShareDetailView: View {
             .offset(y: isFullScreen ? topSafeArea + dragOffset : collapsedOffset + dragOffset)
             // ✅ 贴纸面板展开时隐藏评论卡片（避免层级冲突）
             // 使用 offset 动画：贴纸面板展开时向下移出，收起时恢复
-            .offset(y: interactionViewModel.isStickerPanelVisible ? UIScreen.main.bounds.height * 0.15 : 0)
+            .offset(y: interactionViewModel.isStickerPanelVisible ? geometry.size.height * 0.15 : 0)
             .opacity(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible ? 1 : 0)
             .allowsHitTesting(isShowShareDetailsCard && !interactionViewModel.isStickerPanelVisible)
             .animation(.easeInOut(duration: 0.25), value: interactionViewModel.isStickerPanelVisible)

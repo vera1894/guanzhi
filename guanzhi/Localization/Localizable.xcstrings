@@ -623,29 +623,13 @@
         }
       }
     },
-    "Gravity X: %@" : {
-
-    },
     "HDR %@" : {
 
     },
     "Hello, World!" : {
 
     },
-    "LastSize: %lld×%lld" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "LastSize: %1$lld×%2$lld"
-          }
-        }
-      }
-    },
     "LIVE" : {
-
-    },
-    "Loading: %@" : {
 
     },
     "No media available" : {
@@ -655,19 +639,6 @@
 
     },
     "Quality Prioritization" : {
-
-    },
-    "Scene: %lld×%lld" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Scene: %1$lld×%2$lld"
-          }
-        }
-      }
-    },
-    "Stickers: %lld" : {
 
     },
     "Token 状态" : {
@@ -746,16 +717,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的举报已处理。"
-          }
-        }
-      }
-    },
-    "Zone: (%lld, %lld)" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Zone: (%1$lld, %2$lld)"
           }
         }
       }

@@ -29,8 +29,6 @@ struct LogInView: View {
         let isChecked = ValidateEnum.phoneNum(userlogin.phone).isRight && (userlogin.time == 0 )
 //        let isChecked = true
         
-        NavigationStack{
-            
             ZStack {  //用于在最底层增加点击收起键盘
                 Color.clear // 最底层放置的收起键盘透明背景
                     .contentShape(Rectangle())
@@ -120,7 +118,6 @@ struct LogInView: View {
                 }
             }
             .background(Color("color-white"))
-        }
     }
 }
 
